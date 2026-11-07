@@ -218,7 +218,7 @@ function expectWinterNight() {
   expect(d.season).toBe("winter");
   expect(d.phase).toBe("night");
   expect(dayPhaseWeights(d.sun).night).toBeCloseTo(1, 9);
-  expect(d.lamp).toBe(true);
+  expect(d.ceilingLight).toBe(true);
 }
 
 /** 폰 시각 2026-06-21 12:30: 여름, 낮 = 1, 천장 조명 꺼짐, 해 방위 180°(남중). */
@@ -227,7 +227,7 @@ function expectPhoneNoonInJune() {
   expect(d.season).toBe("summer");
   expect(d.phase).toBe("day");
   expect(dayPhaseWeights(d.sun).day).toBeCloseTo(1, 9);
-  expect(d.lamp).toBe(false);
+  expect(d.ceilingLight).toBe(false);
   expect(Math.abs(d.sun.azimuth - 180)).toBeLessThanOrEqual(0.5);
 }
 
@@ -342,7 +342,7 @@ describe("[spec] 개발 화면에서 미리 보기(D1~D5)", () => {
     expect(d.season).toBe("spring");
     expect(d.phase).toBe("day");
     expect(dayPhaseWeights(d.sun).day).toBeCloseTo(1, 9);
-    expect(d.lamp).toBe(false);
+    expect(d.ceilingLight).toBe(false);
     expect(Math.abs(d.sun.azimuth - 180)).toBeLessThanOrEqual(0.5);
   });
 

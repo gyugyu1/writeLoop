@@ -281,8 +281,7 @@ const FURNITURE_SHADOW: Partial<Record<FurniturePiece, { floor?: [number, number
   desk: { floor: [2.8, 1.65, 0.5] },
   chair: { floor: [0.75, 0.75, 0.42] },
   bookcase: { floor: [1.4, 1.2, 0.52] },
-  wardrobe: { floor: [1.4, 1.2, 0.52] },
-  lamp: { floor: [0.7, 0.7, 0.4] }
+  wardrobe: { floor: [1.4, 1.2, 0.52] }
 };
 
 /**
@@ -443,10 +442,6 @@ function buildWorld(): World {
       case "bookcase":
       case "wardrobe":
         kit.part(new RoundedBoxGeometry(1.0, 2.15, 0.62, 3, 0.04), 0xe39a64, 0.03, g).position.y = 1.08;
-        break;
-      case "lamp":
-        kit.part(new THREE.CylinderGeometry(0.03, 0.03, 1.8, 8), 0xbdd2d6, 0.01, g).position.y = 0.9;
-        kit.part(new THREE.CylinderGeometry(0.15, 0.2, 0.35, 16), 0xffe996, 0.02, g).position.y = 1.95;
         break;
       case "rug":
         kit.part(new THREE.CylinderGeometry(1.15, 1.15, 0.02, 40), 0xef6157, 0, g).position.y = 0.01;

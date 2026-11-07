@@ -370,8 +370,8 @@ export function createOutdoor(centerX: number, groundY: number): Outdoor {
       stars.visible = ambience.stars > 0.01;
       cloudMaterial.emissive.copy(cloudNight).lerp(cloudDay, 1 - ambience.stars);
       paintSeason(season);
-      // 나비는 봄·여름·가을의 낮(노을까지)에만 난다
-      const butterfliesOut = season !== "winter" && (phase === "day" || phase === "sunset");
+      // 나비는 봄·여름·가을의 낮에만 난다
+      const butterfliesOut = season !== "winter" && phase === "day";
       for (const b of butterflies) b.g.visible = butterfliesOut;
     },
     update(t, dt) {

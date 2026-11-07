@@ -5,7 +5,7 @@ import { ROOM, type MarkId } from "./engine";
 // exit는 가구가 아니라 방 앞 입구 발판(밖으로 나가는 길)을 덮는 보이지 않는 누르는 곳이다.
 // rotY는 앞면(+z, 방 앞쪽)을 위에서 보아 반시계로 돌린 각도(라디안)다. 왼쪽 벽에 붙이면 앞면이 +x를 보게 π/2, 오른쪽 벽은 -π/2.
 
-export type FurniturePiece = "board" | "window" | "exit" | "desk" | "chair" | "bookcase" | "lamp" | "wardrobe" | "rug";
+export type FurniturePiece = "board" | "window" | "exit" | "desk" | "chair" | "bookcase" | "wardrobe" | "rug";
 
 export interface FurniturePlacement {
   piece: FurniturePiece;
@@ -35,7 +35,6 @@ export const FURNITURE_LAYOUT: readonly FurniturePlacement[] = [
   // 의자는 책상 밑으로 대부분 밀어 넣는다(앞면이 책상을 본다). 등받이 쪽만 책상 앞(칸 "1,6")으로 조금 나온다
   { piece: "chair", x: 1.5, y: 0, z: 5.95, rotY: Math.PI, mark: "desk" },
   { piece: "bookcase", x: 0.44, y: 0, z: 2.5, rotY: Math.PI / 2, blocker: true },
-  { piece: "lamp", x: 3.3, y: 0, z: 0.35, rotY: 0, blocker: true },
   { piece: "wardrobe", x: W - 0.44, y: 0, z: 3.5, rotY: -Math.PI / 2, blocker: true },
   { piece: "rug", x: 4.6, y: 0.004, z: 7.2, rotY: 0 },
   // 방에는 문이 없고, 앞 가운데 입구 발판으로 밖에 나간다

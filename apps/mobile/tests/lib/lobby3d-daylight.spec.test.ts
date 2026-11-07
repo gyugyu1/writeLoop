@@ -478,35 +478,35 @@ describe("[spec] 창문 빛이 바닥에 닿는 모양(T1~T11)", () => {
 
 describe("[spec] 천장 조명 켜짐(L1~L7, 06 결정)", () => {
   it("L1: 3월 20일 00:00, 21:00은 켜짐", () => {
-    expect(daylightAt(at(3, 20, 0, 0)).lamp).toBe(true);
-    expect(daylightAt(at(3, 20, 21, 0)).lamp).toBe(true);
+    expect(daylightAt(at(3, 20, 0, 0)).ceilingLight).toBe(true);
+    expect(daylightAt(at(3, 20, 21, 0)).ceilingLight).toBe(true);
   });
 
   it("L2: 3월 20일 12:30, 해 뜬 2시간 뒤(08:30)는 꺼짐", () => {
-    expect(daylightAt(at(3, 20, 12, 30)).lamp).toBe(false);
-    expect(daylightAt(at(3, 20, 8, 30)).lamp).toBe(false);
+    expect(daylightAt(at(3, 20, 12, 30)).ceilingLight).toBe(false);
+    expect(daylightAt(at(3, 20, 8, 30)).ceilingLight).toBe(false);
   });
 
   it("L3: 3월 20일 해 지기 20분 전(18:10, 노을)은 꺼짐", () => {
-    expect(daylightAt(at(3, 20, 18, 10)).lamp).toBe(false);
+    expect(daylightAt(at(3, 20, 18, 10)).ceilingLight).toBe(false);
   });
 
   it("L4: 3월 20일 해 진 20분 뒤(18:50, 어스름)는 켜짐", () => {
-    expect(daylightAt(at(3, 20, 18, 50)).lamp).toBe(true);
+    expect(daylightAt(at(3, 20, 18, 50)).ceilingLight).toBe(true);
   });
 
   it("L5: 3월 20일 해 뜨기 2시간 전(04:30)은 켜짐", () => {
-    expect(daylightAt(at(3, 20, 4, 30)).lamp).toBe(true);
+    expect(daylightAt(at(3, 20, 4, 30)).ceilingLight).toBe(true);
   });
 
   it("L6: 19:25에 6월 21일(노을)은 꺼짐, 12월 21일(밤)은 켜짐", () => {
-    expect(daylightAt(at(6, 21, 19, 25)).lamp).toBe(false);
-    expect(daylightAt(at(12, 21, 19, 25)).lamp).toBe(true);
+    expect(daylightAt(at(6, 21, 19, 25)).ceilingLight).toBe(false);
+    expect(daylightAt(at(12, 21, 19, 25)).ceilingLight).toBe(true);
   });
 
   it("L7(03 결정): 해 뜨는 순간에는 아직 켜져 있고, 새벽이 끝난 뒤(해 뜨고 45분, 3월 20일 07:16)는 꺼짐", () => {
     const { rise } = sunriseSunset(3, 20);
-    expect(daylightAt(at(3, 20, Math.floor(rise / 60), rise % 60)).lamp).toBe(true);
-    expect(daylightAt(at(3, 20, 7, 16)).lamp).toBe(false);
+    expect(daylightAt(at(3, 20, Math.floor(rise / 60), rise % 60)).ceilingLight).toBe(true);
+    expect(daylightAt(at(3, 20, 7, 16)).ceilingLight).toBe(false);
   });
 });

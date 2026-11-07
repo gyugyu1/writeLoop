@@ -107,7 +107,6 @@ def rotate_z(meshes, deg):
 for piece, name, scale, depth in [
     ("desk", "desk", SCALE * 1.2, 1.0),
     ("chair", "chair", SCALE, 1.0),
-    ("lamp", "lampRoundFloor", SCALE, 1.0),
     ("wardrobe", "bookcaseClosedDoors", SCALE, 1.25),
     ("rug", "rugRound", SCALE, 1.0),
 ]:

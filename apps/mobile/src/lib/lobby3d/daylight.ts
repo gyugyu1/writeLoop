@@ -100,8 +100,8 @@ export function dayPhaseWeights(sun: SunPosition): Record<DayPhase, number> {
   return weights;
 }
 
-/** 스탠드는 해가 지면(어스름부터) 켜지고 새벽이 끝나면 꺼진다. */
-export function lampOn(phase: DayPhase): boolean {
+/** 천장 조명은 해가 지면(어스름부터) 켜지고 새벽이 끝나면 꺼진다. */
+export function ceilingLightOn(phase: DayPhase): boolean {
   return phase === "dusk" || phase === "night" || phase === "dawn";
 }
 
@@ -148,12 +148,13 @@ const DAY: Ambience = {
   stars: 0
 };
 
+// 밤: 천장 조명이 방 전체를 따뜻하게 밝힌다(방 가장자리는 lobby3d-daylight가 따로 어둡게 한다). 창밖만 어둡다.
 const NIGHT: Ambience = {
-  roomTint: 0x5b6696,
-  ambientColor: 0x8a98d0,
-  ambientIntensity: 0.75,
-  sunColor: 0x8fa0d8,
-  sunIntensity: 0.15,
+  roomTint: 0xe8d2b2,
+  ambientColor: 0xffe2bc,
+  ambientIntensity: 1.1,
+  sunColor: 0xffdcb0,
+  sunIntensity: 0.7,
   windowColor: 0xfff1d0,
   windowStrength: 0,
   skyTop: 0x0b1230,
@@ -164,8 +165,12 @@ const NIGHT: Ambience = {
   stars: 1
 };
 
+/** 해가 머리 위에 있을 때. 낮 동안은 해가 높을수록 창문 빛이 조금씩 진해진다(해가 낮을수록 옅다). */
+const HIGH_NOON: Key = { ...DAY, elevation: 90, windowStrength: 0.62 };
+
 /** 오후·저녁: 해 높이가 내려가는 차례 */
 const EVENING: Key[] = [
+  HIGH_NOON,
   { ...DAY, elevation: 15 },
   {
     ...DAY,
@@ -202,11 +207,11 @@ const EVENING: Key[] = [
   {
     ...NIGHT,
     elevation: -4,
-    roomTint: 0x8186b8,
-    ambientColor: 0x9aa2d8,
-    ambientIntensity: 0.85,
-    sunColor: 0x9a9ad8,
-    sunIntensity: 0.3,
+    roomTint: 0xd9c4b6,
+    ambientColor: 0xf2d8c8,
+    ambientIntensity: 1.0,
+    sunColor: 0xf0c8b0,
+    sunIntensity: 0.6,
     skyTop: 0x27336a,
     skyHorizon: 0x6a6aa0,
     outdoorSunColor: 0xa8a8e0,
@@ -219,6 +224,7 @@ const EVENING: Key[] = [
 
 /** 새벽·아침: 해 높이가 올라가는 차례(높은 쪽부터 적는다) */
 const MORNING: Key[] = [
+  HIGH_NOON,
   { ...DAY, elevation: 15 },
   {
     ...DAY,
@@ -252,11 +258,11 @@ const MORNING: Key[] = [
   {
     ...NIGHT,
     elevation: -4,
-    roomTint: 0x9a8cbc,
-    ambientColor: 0xb0a2d8,
-    ambientIntensity: 0.88,
-    sunColor: 0xb0a0d8,
-    sunIntensity: 0.3,
+    roomTint: 0xdcc8c0,
+    ambientColor: 0xf0dcd4,
+    ambientIntensity: 1.0,
+    sunColor: 0xf0d0c4,
+    sunIntensity: 0.6,
     skyTop: 0x34407e,
     skyHorizon: 0xc39ab8,
     outdoorSunColor: 0xc0a8d8,
@@ -397,7 +403,8 @@ export interface Daylight {
   sun: SunPosition;
   phase: DayPhase;
   season: Season;
-  lamp: boolean;
+  /** 천장 조명이 켜졌는지 */
+  ceilingLight: boolean;
   ambience: Ambience;
 }
 
@@ -405,5 +412,5 @@ export interface Daylight {
 export function daylightAt(date: Date): Daylight {
   const sun = sunPosition(date);
   const phase = dayPhaseOf(sun);
-  return { sun, phase, season: seasonOf(date.getMonth() + 1), lamp: lampOn(phase), ambience: ambienceAt(sun) };
+  return { sun, phase, season: seasonOf(date.getMonth() + 1), ceilingLight: ceilingLightOn(phase), ambience: ambienceAt(sun) };
 }

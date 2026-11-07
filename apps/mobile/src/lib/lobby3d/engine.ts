@@ -93,8 +93,8 @@ export const MENU_FOR_MARK: Partial<Record<MarkId, "question" | "diary" | "thoug
 export const IDLE_LINE = "오늘은 뭘 해 볼까?\n가고 싶은 곳을 눌러 봐.";
 export const POKE_LINES = ["헤헤, 간지러워!", "응? 불렀어?", "오늘도 같이 쓰자!"];
 
-/** 가구가 있어 지나갈 수 없는 칸("열,행"). 일기 책상, 옷장, 책장, 스탠드(가구 자리는 furniture-layout). */
-export const SOLID_TILES: ReadonlySet<string> = new Set(["0,5", "1,5", "2,5", "7,3", "0,2", "3,0"]);
+/** 가구가 있어 지나갈 수 없는 칸("열,행"). 일기 책상, 옷장, 책장(가구 자리는 furniture-layout). */
+export const SOLID_TILES: ReadonlySet<string> = new Set(["0,5", "1,5", "2,5", "7,3", "0,2"]);
 
 const BODY_RADIUS = 0.32;
 const tileKey = (c: number, r: number) => `${c},${r}`;

@@ -220,12 +220,23 @@ export default function Lobby3dScreen({
   const bubbleTop = useRef(nativeValue(320)).current;
   const bubbleOpacity = useRef(nativeValue(1)).current;
   const lastSent = useRef(new Map<Animated.Value, number>()).current;
+  // 네이티브 쪽 값은 그림만 옮기고 화면 구조(누르기 자리를 재는 곳)는 그대로 둔다. 말풍선 자리가 멈추면 한 번 다시 그려
+  // 말풍선 버튼을 누르는 자리가 실제 자리와 맞게 한다(누른 채 손가락이 살짝 움직여도 눌림이 취소되지 않게).
+  const [, setBubbleSettled] = useState(0);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+    },
+    []
+  );
   const send = useCallback(
-    (value: Animated.Value, next: number, epsilon: number) => {
+    (value: Animated.Value, next: number, epsilon: number): boolean => {
       const prev = lastSent.get(value);
-      if (prev !== undefined && Math.abs(prev - next) <= epsilon) return;
+      if (prev !== undefined && Math.abs(prev - next) <= epsilon) return false;
       lastSent.set(value, next);
       value.setValue(next);
+      return true;
     },
     [lastSent]
   );
@@ -240,8 +251,12 @@ export default function Lobby3dScreen({
   ).current;
   const onOverlayFrame = useCallback(
     (bubble: { x: number; y: number }, labels: Record<MarkId, { x: number; y: number }>) => {
-      send(bubbleLeft, Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8)), 0.5);
-      send(bubbleTop, Math.max(120, bubble.y), 0.5);
+      const movedLeft = send(bubbleLeft, Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8)), 0.5);
+      const movedTop = send(bubbleTop, Math.max(120, bubble.y), 0.5);
+      if (movedLeft || movedTop) {
+        if (settleTimer.current) clearTimeout(settleTimer.current);
+        settleTimer.current = setTimeout(() => setBubbleSettled((n) => n + 1), 150);
+      }
       for (const id of Object.keys(labels) as MarkId[]) {
         send(labelPos[id].left, labels[id].x, 0.5);
         send(labelPos[id].top, labels[id].y, 0.5);

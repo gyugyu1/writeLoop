@@ -126,7 +126,8 @@ export default function Lobby3dScreen({
   const sim = simRef.current;
 
   const [view, setView] = useState<ViewState>({ bubbleText: IDLE_LINE, bubbleButton: null, arrived: null, actionType: null, idleBubble: true });
-  const [projection, setProjection] = useState<LobbyProjection | null>(null);
+  // 초당 프레임 표시. 값이 바뀔 때만 다시 그린다(이름표·말풍선 자리는 아래 Animated 값으로 옮긴다).
+  const [fps, setFps] = useState<number | null>(null);
   const [viewWidth, setViewWidth] = useState(VIEW_WIDTH_DEFAULT);
   const [toon, setToon] = useState<ToonSettings>(HOME_TOON);
   const [speed, setSpeed] = useState(sim.settings.speed);
@@ -217,12 +218,23 @@ export default function Lobby3dScreen({
   const bubbleOpacity = useRef(new Animated.Value(1)).current;
   const screenWidthRef = useRef(screenWidth);
   screenWidthRef.current = screenWidth;
-  const onBubbleFrame = useCallback(
-    (x: number, y: number) => {
-      bubbleLeft.setValue(Math.max(8, Math.min(x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8)));
-      bubbleTop.setValue(Math.max(120, y));
+  // 장소 이름표 자리도 같은 까닭으로 매 프레임 값만 바꾼다(카메라가 움직여도 화면 전체를 다시 그리지 않는다)
+  const labelPos = useRef(
+    Object.fromEntries((Object.keys(MARKS) as MarkId[]).map((id) => [id, { left: new Animated.Value(0), top: new Animated.Value(0) }])) as Record<
+      MarkId,
+      { left: Animated.Value; top: Animated.Value }
+    >
+  ).current;
+  const onOverlayFrame = useCallback(
+    (bubble: { x: number; y: number }, labels: Record<MarkId, { x: number; y: number }>) => {
+      bubbleLeft.setValue(Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8)));
+      bubbleTop.setValue(Math.max(120, bubble.y));
+      for (const id of Object.keys(labels) as MarkId[]) {
+        labelPos[id].left.setValue(labels[id].x);
+        labelPos[id].top.setValue(labels[id].y);
+      }
     },
-    [bubbleLeft, bubbleTop]
+    [bubbleLeft, bubbleTop, labelPos]
   );
 
   /** 걷거나 끄는 중이라 말풍선을 숨긴 때인지(스냅숏의 moving 규칙과 같다). */
@@ -268,7 +280,7 @@ export default function Lobby3dScreen({
   const litMenu = view.arrived ? MENU_FOR_MARK[view.arrived] ?? null : null;
   const handleProjection = useCallback(
     (next: LobbyProjection) => {
-      setProjection(next);
+      setFps((prev) => (prev === next.fps ? prev : next.fps));
       onProjection?.(next);
     },
     [onProjection]
@@ -285,19 +297,16 @@ export default function Lobby3dScreen({
         onFrame={onFrame}
         onPointer={onPointer}
         onProject={handleProjection}
-        onBubbleFrame={onBubbleFrame}
+        onOverlayFrame={onOverlayFrame}
         paused={paused}
         daylight={daylight}
       />
 
-      {(Object.keys(MARKS) as MarkId[]).map((id) => {
-        const pos = projection?.labels[id] ?? { x: 0, y: 0 };
-        return (
-          <View key={id} pointerEvents="none" style={[styles.label, { left: pos.x, top: pos.y }]}>
-            <Text style={styles.labelText}>{MARKS[id].label}</Text>
-          </View>
-        );
-      })}
+      {(Object.keys(MARKS) as MarkId[]).map((id) => (
+        <Animated.View key={id} pointerEvents="none" style={[styles.label, { left: labelPos[id].left, top: labelPos[id].top }]}>
+          <Text style={styles.labelText}>{MARKS[id].label}</Text>
+        </Animated.View>
+      ))}
 
       {view.bubbleText ? (
         <Animated.View
@@ -316,8 +325,11 @@ export default function Lobby3dScreen({
             }
           ]}
         >
-          <View style={styles.bubble}>
-            <Text style={styles.bubbleText}>{view.bubbleText}</Text>
+          {/* 글 부분은 누르기를 받지 않고(뒤의 방이 받는다) 버튼만 누를 수 있다 */}
+          <View style={styles.bubble} pointerEvents="box-none">
+            <View pointerEvents="none">
+              <Text style={styles.bubbleText}>{view.bubbleText}</Text>
+            </View>
             {view.bubbleButton ? (
               <Pressable
                 accessibilityRole="button"
@@ -346,7 +358,7 @@ export default function Lobby3dScreen({
               </Pressable>
             ) : null}
           </View>
-          <View style={styles.bubbleTail} />
+          <View style={styles.bubbleTail} pointerEvents="none" />
         </Animated.View>
       ) : null}
 
@@ -411,7 +423,7 @@ export default function Lobby3dScreen({
 
       {showFps ? (
         <View pointerEvents="none" style={[styles.fps, { top: insets.top + 60 }]}>
-          <Text style={styles.fpsText}>FPS {projection?.fps ?? "-"}</Text>
+          <Text style={styles.fpsText}>FPS {fps ?? "-"}</Text>
           <Text style={styles.fpsText}>동작: {view.actionType ? ACTION_LABELS[view.actionType] : "없음"}</Text>
         </View>
       ) : null}

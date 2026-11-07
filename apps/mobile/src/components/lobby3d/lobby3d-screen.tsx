@@ -304,9 +304,24 @@ export default function Lobby3dScreen({
     [send, placeOpacity, bubbleOpacity, menuLitOpacity]
   );
 
+  /** 장소에 들어간다(판 열기·기록 화면 등은 홈이 맡는다). 홈이 맡지 않으면(개발 화면) 들어갈 때 안내를 띄우고 false. */
+  const enterPlace = useCallback(
+    (id: MarkId) => {
+      if (onEnterMark?.(id)) return true;
+      showToast(MARKS[id].enterMessage);
+      return false;
+    },
+    [onEnterMark, showToast]
+  );
+  const enterPlaceRef = useRef(enterPlace);
+  enterPlaceRef.current = enterPlace;
+
   const onFrame = useCallback(
     (dt: number, nowMs: number) => {
       sim.update(dt, nowMs);
+      // '들어가기' 동작이 끝나면 들어간다. 맡을 판이 없으면(개발 화면) 안내만 띄우고 바로 제자리로 돌아온다
+      const entered = sim.consumeSceneEntered();
+      if (entered && !enterPlaceRef.current(entered)) sim.endScene();
       const snap = sim.snapshot(Date.now());
       applyOverlay(snap);
       syncView(snap);
@@ -314,10 +329,17 @@ export default function Lobby3dScreen({
     [sim, syncView, applyOverlay]
   );
 
+  // 판을 닫았거나 기록 화면에서 돌아와 로비를 다시 누를 수 있게 되면, '들어가기' 동작을 마치고 제자리로 돌아온다
+  const interactive = !inputBlocked && !paused;
+  useEffect(() => {
+    if (interactive && sim.scene?.phase === "hold") sim.endScene();
+  }, [interactive, sim]);
+
   const onPointer = useCallback(
     (phase: LobbyPointerPhase, hit: PointerHit | null, x: number, y: number) => {
       // 시트를 연 동안에는 로비를 누르지 못한다. 막는 중에 누른 것이 남지 않게 지금 누르기도 거둔다.
-      if (inputBlockedRef.current) {
+      // 시트를 연 동안과 '들어가기' 동작을 하는 동안에는 로비를 누르지 못한다
+      if (inputBlockedRef.current || sim.scene) {
         if (phase !== "move") sim.pointerCancel();
         return;
       }
@@ -420,8 +442,12 @@ export default function Lobby3dScreen({
                 onPress={() => {
                   // 걷기 시작해 이 안내가 사라졌는데 아직 다시 그리기 전이면 누르지 않은 것으로 본다
                   if (sim.snapshot(Date.now()).place !== id) return;
-                  if (onEnterMark?.(id)) return;
-                  showToast(MARKS[id].enterMessage);
+                  // 장소마다 동작(생각하기·의자에 앉기·책 꺼내기)을 한 뒤 들어간다. 동작이 없거나 "동작 줄이기"면 바로 들어간다
+                  if (sim.startScene(id, Date.now())) {
+                    syncView();
+                    return;
+                  }
+                  enterPlace(id);
                 }}
               >
                 <Text style={styles.bubbleButtonText}>{MARKS[id].buttonLabel}</Text>
@@ -633,7 +659,12 @@ export default function Lobby3dScreen({
                 accessibilityRole="button"
                 accessibilityState={{ selected: lit }}
                 style={[styles.menuButton, item.primary && styles.menuPrimary]}
-                onPress={() => (onMenu ? onMenu(item.id) : showToast(`${item.label} 화면으로 가요`))}
+                onPress={() => {
+                  // '들어가기' 동작 중이면 거두고 이 메뉴가 하는 일을 바로 한다
+                  sim.cancelScene();
+                  if (onMenu) onMenu(item.id);
+                  else showToast(`${item.label} 화면으로 가요`);
+                }}
               >
                 {/* 강조 테두리. 끄는 중에도 바로 따라가게 네이티브 쪽 투명도로 보인다 */}
                 <Animated.View pointerEvents="none" style={[styles.menuLitRing, { opacity: menuLitOpacity[item.id] }]} />

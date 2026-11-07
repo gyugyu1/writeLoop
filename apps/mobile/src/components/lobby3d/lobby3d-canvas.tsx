@@ -5,7 +5,7 @@ import { Suspense, useEffect, useMemo, useRef, type MutableRefObject } from "rea
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { LobbySim, MARKS, ROOM, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import { CHAIR, LobbySim, MARKS, ROOM, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { FURNITURE_LAYOUT, type FurniturePiece } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
@@ -462,6 +462,7 @@ function buildWorld(): World {
     if (place.piece === "bookcase" || place.piece === "wardrobe") g.scale.z *= 1.25;
     g.position.set(place.x, place.y, place.z);
     g.rotation.y = place.rotY;
+    if (place.piece === "chair") g.userData.chairBaseZ = place.z;
     furniture.add(g);
     if (place.mark) {
       const id = place.mark;
@@ -576,11 +577,24 @@ function Scene({
     };
   }, [camera, size, raycaster, world, pickRef]);
 
+  // 일기 책상 의자(대체 모양과 가구 묶음). 가구 묶음은 나중에 불러와지므로 가끔 다시 찾는다.
+  const chairs = useRef<{ list: THREE.Object3D[]; scannedAt: number }>({ list: [], scannedAt: -Infinity });
+
   useFrame((_, delta) => {
     const nowMs = Date.now();
     const dt = Math.min(0.05, delta);
     onFrame(dt, nowMs);
     const lift = character.current?.update(sim, dt, nowMs / 1000) ?? 0;
+    // '들어가기' 때 의자를 책상 밑에서 뒤로 뺀다
+    if (chairs.current.list.length < 2 && nowMs - chairs.current.scannedAt > 1000) {
+      const list: THREE.Object3D[] = [];
+      scene.traverse((o) => {
+        if (typeof o.userData.chairBaseZ === "number") list.push(o);
+      });
+      chairs.current = { list, scannedAt: nowMs };
+    }
+    const pull = sim.chairPull() * CHAIR.pull;
+    for (const chair of chairs.current.list) chair.position.z = (chair.userData.chairBaseZ as number) + pull;
     // 도형 캐릭터 때와 같이, 몸이 들리면 그림자가 작아진다(들린 높이를 그때 단위 1.25로 나눠 같은 비율로).
     const shrink = 1 - (lift / 1.25) * 0.35;
     world.shadow.position.set(sim.x, 0.01, sim.z);

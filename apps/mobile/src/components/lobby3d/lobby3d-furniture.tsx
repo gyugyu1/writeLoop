@@ -82,6 +82,8 @@ export function BakedFurniture({ fallback, daylight }: BakedFurnitureProps) {
       const piece = source.clone(true);
       piece.position.set(place.x, place.y, place.z);
       piece.rotation.set(0, place.rotY, 0);
+      // 일기 책상 의자는 '들어가기' 때 뒤로 뺀다(3D 화면이 이 자리에서 옮긴다)
+      if (place.piece === "chair") piece.userData.chairBaseZ = place.z;
       const meshes: THREE.Mesh[] = [];
       piece.traverse((o) => {
         if (o instanceof THREE.Mesh) meshes.push(o);

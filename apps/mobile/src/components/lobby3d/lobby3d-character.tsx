@@ -31,6 +31,53 @@ export interface CharacterHandle {
   bubblePoint(): THREE.Vector3;
 }
 
+/** 책장에서 꺼내 펼치는 책(칸). 덮은 책 폭·높이·두께. */
+const BOOK = { width: 0.52, height: 0.62, thickness: 0.08 };
+
+/**
+ * 손에 드는 책. 책등(세로축)을 가운데로 두 쪽이 펼쳐진다. 반환한 open(0 덮음 ~ 1 펼침)으로 두 쪽을 돌린다.
+ * 재질은 카툰 명암을 따르도록 toonMaterials로 돌려준다.
+ */
+function makeBook(): { group: THREE.Group; setOpen: (open: number) => void; materials: THREE.MeshToonMaterial[]; dispose: () => void } {
+  const group = new THREE.Group();
+  const cover = new THREE.MeshToonMaterial({ color: 0xc0392b });
+  const pages = new THREE.MeshToonMaterial({ color: 0xfff6e0 });
+  const line = new THREE.MeshBasicMaterial({ color: LINE, side: THREE.BackSide });
+  const half = BOOK.width / 2;
+  const geometries: THREE.BufferGeometry[] = [];
+  const halves = [-1, 1].map((side) => {
+    const pivot = new THREE.Group();
+    const coverGeo = new THREE.BoxGeometry(half, BOOK.height, 0.015);
+    const pageGeo = new THREE.BoxGeometry(half * 0.94, BOOK.height * 0.94, BOOK.thickness / 2 - 0.015);
+    geometries.push(coverGeo, pageGeo);
+    const coverMesh = new THREE.Mesh(coverGeo, cover);
+    coverMesh.position.set((side * half) / 2, 0, -0.0075);
+    const outline = new THREE.Mesh(coverGeo, line);
+    outline.position.copy(coverMesh.position);
+    outline.scale.setScalar(1.12);
+    const pageMesh = new THREE.Mesh(pageGeo, pages);
+    pageMesh.position.set((side * half * 0.94) / 2, 0, (BOOK.thickness / 2 - 0.015) / 2);
+    pivot.add(coverMesh, outline, pageMesh);
+    group.add(pivot);
+    return { pivot, side };
+  });
+  for (const o of [group, ...halves.map((h) => h.pivot)]) o.traverse((m) => ((m as THREE.Mesh).raycast = () => {}));
+  return {
+    group,
+    // 덮으면 두 쪽이 책등을 축으로 앞(+z)으로 접혀 겹치고, 펼치면 나란히 앞을 본다
+    setOpen(open) {
+      for (const h of halves) h.pivot.rotation.y = -h.side * (Math.PI / 2) * (1 - open);
+    },
+    materials: [cover, pages],
+    dispose() {
+      geometries.forEach((g) => g.dispose());
+      cover.dispose();
+      pages.dispose();
+      line.dispose();
+    }
+  };
+}
+
 interface OutlineUniforms {
   thickness: { value: number };
   scale: { value: number };
@@ -140,7 +187,14 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     }
     const head = model.getObjectByName("head") ?? null;
     const hips = model.getObjectByName("hips") ?? null;
-    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips, hit };
+    const handR = model.getObjectByName("hand_r") ?? null;
+    const handL = model.getObjectByName("hand_l") ?? null;
+    // 책장에서 꺼내는 책. 몸이 아니라 위치·방향 묶음(group)에 붙여 손 사이에 둔다
+    const book = makeBook();
+    book.group.visible = false;
+    group.add(book.group);
+    materials.push(...book.materials);
+    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips, hit, handR, handL, book };
   }, [gltf]);
 
   // 카툰 명암 단계·외곽선 굵기 설정을 따른다.
@@ -172,12 +226,16 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     const appliedYaw = new THREE.Quaternion();
     const headWorld = new THREE.Vector3();
     const hipsWorld = new THREE.Vector3();
+    const handRLocal = new THREE.Vector3();
+    const handLLocal = new THREE.Vector3();
+    const handMid = new THREE.Vector3();
+    const bookAt = new THREE.Vector3();
     let activeOneShot: string | null = null;
     const handle: CharacterHandle = {
       group: built.group,
       update(sim, dt, nowSec) {
         const speed = Math.hypot(sim.vx, sim.vz);
-        const state = characterClipState({ speed, action: sim.action, posture: sim.posture });
+        const state = characterClipState({ speed, action: sim.action, posture: sim.posture, scene: sim.scene });
         const base = 1 - state.actionWeight;
         built.actions.get("idle")?.setEffectiveWeight(state.idleWeight * base);
         const walk = built.actions.get("walk");
@@ -220,7 +278,22 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
 
         built.group.position.set(sim.x, 0, sim.z);
         built.group.rotation.y = sim.heading + state.spinAngle;
-        built.lift.position.y = state.spinLift;
+        // 의자에 올라앉으면 몸 전체를 의자 높이로 올린다
+        built.lift.position.y = state.spinLift + sim.sceneLift();
+
+        // 손에 든 책: 오른손에서 두 손 사이로 옮겨 가고, 앞으로 기울여 펼친다
+        const book = sim.sceneBook();
+        built.book.group.visible = book.visible && Boolean(built.handR && built.handL);
+        if (built.book.group.visible && built.handR && built.handL) {
+          built.group.updateMatrixWorld(true);
+          built.group.worldToLocal(built.handR.getWorldPosition(handRLocal));
+          built.group.worldToLocal(built.handL.getWorldPosition(handLLocal));
+          bookAt.copy(handRLocal).lerp(handMid.copy(handRLocal).add(handLLocal).multiplyScalar(0.5), book.hold);
+          // 머리가 커서 위에서 보는 카메라에 가리지 않게 배 앞으로 내밀고, 펼친 면이 위(카메라 쪽)를 보게 뒤로 눕힌다
+          built.book.group.position.set(bookAt.x, bookAt.y + 0.3 * book.hold, bookAt.z + 0.55 * book.hold + 0.08);
+          built.book.group.rotation.set(-1.15 * book.hold, 0, 0);
+          built.book.setOpen(book.open);
+        }
         if (!built.hips) return state.spinLift;
         built.hips.getWorldPosition(hipsWorld);
         return Math.max(0, hipsWorld.y - hipsRestY);
@@ -245,6 +318,7 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
       built.shellMaterials.forEach((m) => m.dispose());
       built.hit.geometry.dispose();
       (built.hit.material as THREE.Material).dispose();
+      built.book.dispose();
     };
   }, [built, handleRef]);
 

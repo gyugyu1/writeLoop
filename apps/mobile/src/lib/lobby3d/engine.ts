@@ -370,6 +370,52 @@ export const STAND_UP_SECONDS = 0.6;
 /** 앉기 자세. 앉는 중 → 앉아 있음(반복) → 일어나는 중. 서 있으면 null. */
 export type PostureKind = "sitting-down" | "sitting" | "standing-up";
 
+// ---------- 장소에서 '들어가기'를 누르면 하는 동작 ----------
+
+/** 장소에서 '들어가기'를 누르면 하는 동작. 생각하기(게시판·창가), 의자에 앉기(일기 책상), 책 꺼내 펼치기(책장). */
+export type SceneKind = "think" | "chair" | "book";
+export const SCENE_FOR_MARK: Partial<Record<MarkId, SceneKind>> = { board: "think", window: "think", desk: "chair", bookcase: "book" };
+/** 들어가기 동작 → 판을 연 동안 유지 → 판을 닫으면(기록 화면에서 돌아오면) 제자리로. */
+export type ScenePhase = "in" | "hold" | "out";
+/** 들어가기 동작 시간(초). 이만큼 지나면 판을 연다(책장은 기록 화면으로 간다). */
+export const SCENE_IN_SECONDS: Record<SceneKind, number> = { think: 1.0, chair: 1.2, book: 1.3 };
+/** 제자리로 돌아오는 시간(초). */
+export const SCENE_OUT_SECONDS: Record<SceneKind, number> = { think: 0.4, chair: 1.0, book: 1.1 };
+
+/** 일기 책상 의자: 책상 밑에서 뒤로 빼는 거리(칸), 앉는 자리(뺀 의자 가운데)와 높이, 앉기 전에 비켜서는 의자 옆 자리. */
+export const CHAIR = {
+  pull: 0.5,
+  seat: { x: 1.5, z: 6.45 },
+  seatHeight: 0.67,
+  side: { x: 2.15, z: 6.55 }
+} as const;
+/** 의자: 옆으로 비켜서며 의자를 빼는 시간, 올라앉는 시간(초). 일어날 때도 같다. */
+const CHAIR_STEP_SECONDS = 0.4;
+const CHAIR_SIT_SECONDS = 0.6;
+/** 책: 손이 책장 칸에 닿는 때, 앞(카메라 쪽)으로 돌아서는 시간, 펼치는 때(초). 클립 book_take와 맞춘다. */
+const BOOK_REACH_SECONDS = 0.4;
+const BOOK_OPEN_FROM = 0.7;
+/** 책을 다시 꽂을 때 책장 쪽으로 돌아서는 시간(초). 그 뒤 클립 book_put을 재생한다. */
+export const BOOK_TURN_BACK_SECONDS = 0.3;
+const BOOK_PUT_REACH = 0.35;
+
+export interface SceneState {
+  kind: SceneKind;
+  mark: MarkId;
+  phase: ScenePhase;
+  /** 이 단계가 시작된 뒤 지난 시간(초). */
+  t: number;
+}
+
+function easeInOut(x: number): number {
+  const k = Math.min(1, Math.max(0, x));
+  return k * k * (3 - 2 * k);
+}
+
+function lerpPoint(a: FloorPoint, b: FloorPoint, k: number): FloorPoint {
+  return { x: a.x + (b.x - a.x) * k, z: a.z + (b.z - a.z) * k };
+}
+
 export interface LobbySettings {
   /** 걷는 속도(칸/초). */
   speed: number;
@@ -389,6 +435,8 @@ export interface LobbySnapshot {
   place: MarkId | null;
   action: { type: ActionType; t: number } | null;
   posture: { kind: PostureKind; t: number } | null;
+  /** 장소에서 '들어가기'를 누른 뒤의 동작. 없으면 null. */
+  scene: SceneState | null;
   bubbleText: string;
   bubbleButton: string | null;
   /** 말풍선이 기본 말이나 로비 인사인지(장소 안내·짧은 말이 아님). 이어 쓰기 버튼을 붙이는 곳이다. */
@@ -416,6 +464,14 @@ export class LobbySim {
   dragging = false;
   /** 앉기 자세(서 있으면 null). 앉아 있는 동안과 일어나는 동안은 걷기·동작이 기다린다. */
   posture: { kind: PostureKind; t: number } | null = null;
+  /** 장소에서 '들어가기'를 누른 뒤의 동작. 하는 동안은 걷기·누르기·앉기가 기다린다. */
+  scene: SceneState | null = null;
+  /** 들어가기 전에 서 있던 자리(돌아올 곳). */
+  private sceneFrom: FloorPoint | null = null;
+  /** 들어가기 동작이 끝나 판을 열 때가 된 장소. 화면이 한 번 가져간다. */
+  private sceneEntered: MarkId | null = null;
+  /** 들어가기 동작 중에 온 인사의 동작. 제자리로 돌아온 뒤 한다. */
+  private greetAfterScene: ActionType | null = null;
   private path: FloorPoint[] = [];
   private target: MarkId | null = null;
   private goalHeading: number | null = null;
@@ -462,6 +518,11 @@ export class LobbySim {
     this.wake(nowMs);
     this.greeting = line;
     this.quipUntilMs = 0;
+    // '들어가기' 동작 중이면(판을 연 채 돌아왔거나 책을 꽂는 중) 동작을 마치고 제자리로 돌아온 뒤 인사한다
+    if (this.scene) {
+      this.greetAfterScene = action;
+      return;
+    }
     if (this.path.length || this.dragging) return;
     this.target = null;
     this.arrived = null;
@@ -480,6 +541,173 @@ export class LobbySim {
     this.arrived = null;
     this.goalHeading = 0;
     return this.startAction(type);
+  }
+
+  /**
+   * 장소에서 '들어가기'를 눌렀을 때의 동작을 시작한다. 동작이 없는 장소이거나 "동작 줄이기"면 false(바로 들어간다).
+   * 동작이 끝나면 consumeSceneEntered()가 그 장소를 한 번 돌려준다.
+   */
+  startScene(mark: MarkId, nowMs: number): boolean {
+    const kind = SCENE_FOR_MARK[mark];
+    if (!kind || this.reduceMotion) return false;
+    this.greeting = null;
+    this.quipUntilMs = 0;
+    this.path = [];
+    this.vx = 0;
+    this.vz = 0;
+    this.target = null;
+    this.action = null;
+    this.posture = null;
+    this.down = null;
+    this.dragging = false;
+    this.dragPoint = null;
+    this.checkZoneWhenStopped = false;
+    this.idleSinceMs = nowMs;
+    this.arrived = mark;
+    this.sceneFrom = { x: this.x, z: this.z };
+    this.sceneEntered = null;
+    this.scene = { kind, mark, phase: "in", t: 0 };
+    this.goalHeading = kind === "chair" ? Math.PI : headingTo({ x: this.x, z: this.z }, MARKS[mark].faceTo);
+    return true;
+  }
+
+  /** 들어가기 동작이 끝나 판을 열 장소(한 번만 돌려준다). */
+  consumeSceneEntered(): MarkId | null {
+    const mark = this.sceneEntered;
+    this.sceneEntered = null;
+    return mark;
+  }
+
+  /** 판을 닫았거나 기록 화면에서 돌아왔을 때: 제자리로 돌아오기 시작한다. 들어가는 중이면 바로 거둔다. */
+  endScene(): void {
+    if (!this.scene) return;
+    if (this.scene.phase === "in") this.cancelScene();
+    else if (this.scene.phase === "hold") this.scene = { ...this.scene, phase: "out", t: 0 };
+  }
+
+  /** 동작을 바로 거두고 들어가기 전 자리에 선다(아래 메뉴를 눌렀을 때). */
+  cancelScene(): void {
+    if (!this.scene) return;
+    const mark = this.scene.mark;
+    if (this.sceneFrom) {
+      this.x = this.sceneFrom.x;
+      this.z = this.sceneFrom.z;
+    }
+    this.scene = null;
+    this.sceneFrom = null;
+    this.sceneEntered = null;
+    this.vx = 0;
+    this.vz = 0;
+    this.goalHeading = headingTo({ x: this.x, z: this.z }, MARKS[mark].faceTo);
+    this.greetAfterSceneEnds();
+  }
+
+  /** 들어가기 동작 중에 왔던 인사를 한다(앞을 보고 동작한다). */
+  private greetAfterSceneEnds(): void {
+    const action = this.greetAfterScene;
+    this.greetAfterScene = null;
+    if (!action || !this.greeting) return;
+    this.target = null;
+    this.arrived = null;
+    this.goalHeading = 0;
+    this.startAction(action);
+  }
+
+  /** 의자를 책상 밑에서 뺀 정도(0 들어가 있음 ~ 1 다 뺌). */
+  chairPull(): number {
+    const s = this.scene;
+    if (!s || s.kind !== "chair") return 0;
+    if (s.phase === "in") return easeInOut(s.t / CHAIR_STEP_SECONDS);
+    if (s.phase === "hold") return 1;
+    // 일어나 옆으로 내려선 뒤 의자를 다시 넣는다
+    return 1 - easeInOut((s.t - CHAIR_SIT_SECONDS) / CHAIR_STEP_SECONDS);
+  }
+
+  /** 의자에 올라앉아 몸 전체가 들린 높이(칸). */
+  sceneLift(): number {
+    const s = this.scene;
+    if (!s || s.kind !== "chair") return 0;
+    let k: number;
+    if (s.phase === "in") k = (s.t - CHAIR_STEP_SECONDS) / CHAIR_SIT_SECONDS;
+    else if (s.phase === "hold") k = 1;
+    else k = 1 - s.t / CHAIR_SIT_SECONDS;
+    k = Math.min(1, Math.max(0, k));
+    // 폴짝 올라앉는다(내려올 때도)
+    return CHAIR.seatHeight * easeInOut(k) + 0.25 * Math.sin(Math.PI * k);
+  }
+
+  /** 손에 든 책: 보이는지, 두 손으로 든 정도(0 오른손만 ~ 1 두 손), 펼친 정도(0 덮음 ~ 1 펼침). */
+  sceneBook(): { visible: boolean; hold: number; open: number } {
+    const s = this.scene;
+    const hidden = { visible: false, hold: 0, open: 0 };
+    if (!s || s.kind !== "book") return hidden;
+    if (s.phase === "in") {
+      if (s.t < BOOK_REACH_SECONDS) return hidden;
+      return {
+        visible: true,
+        hold: easeInOut((s.t - BOOK_REACH_SECONDS) / 0.3),
+        open: easeInOut((s.t - BOOK_OPEN_FROM) / 0.3)
+      };
+    }
+    if (s.phase === "hold") return { visible: true, hold: 1, open: 1 };
+    // 책장 쪽으로 돌아서며 덮고, 손이 칸에 닿으면 꽂혀 사라진다
+    const put = s.t - BOOK_TURN_BACK_SECONDS;
+    if (put >= BOOK_PUT_REACH) return hidden;
+    return { visible: true, hold: 1 - easeInOut(put / BOOK_PUT_REACH), open: 1 - easeInOut(s.t / BOOK_TURN_BACK_SECONDS) };
+  }
+
+  /** 들어가기 동작을 한 프레임 진행한다. */
+  private updateScene(step: number): void {
+    const s = this.scene;
+    if (!s || !this.sceneFrom) return;
+    s.t += step;
+    const mark = MARKS[s.mark];
+    const prevX = this.x;
+    const prevZ = this.z;
+    if (s.kind === "chair") {
+      // 옆으로 비켜서며 의자를 빼고, 의자에 올라앉아 책상을 본다. 돌아올 때는 거꾸로.
+      let at: FloorPoint;
+      if (s.phase === "in") {
+        at =
+          s.t < CHAIR_STEP_SECONDS
+            ? lerpPoint(this.sceneFrom, CHAIR.side, easeInOut(s.t / CHAIR_STEP_SECONDS))
+            : lerpPoint(CHAIR.side, CHAIR.seat, easeInOut((s.t - CHAIR_STEP_SECONDS) / CHAIR_SIT_SECONDS));
+      } else if (s.phase === "hold") at = CHAIR.seat;
+      else {
+        at =
+          s.t < CHAIR_SIT_SECONDS
+            ? lerpPoint(CHAIR.seat, CHAIR.side, easeInOut(s.t / CHAIR_SIT_SECONDS))
+            : lerpPoint(CHAIR.side, this.sceneFrom, easeInOut((s.t - CHAIR_SIT_SECONDS) / CHAIR_STEP_SECONDS));
+      }
+      this.x = at.x;
+      this.z = at.z;
+      this.goalHeading = Math.PI;
+    } else if (s.kind === "book") {
+      // 책장을 보고 꺼낸 뒤 앞(카메라 쪽)으로 돌아서서 펼친다. 꽂을 때는 다시 책장 쪽으로 돌아선다.
+      const facing = headingTo(this.sceneFrom, mark.faceTo);
+      if (s.phase === "out") this.goalHeading = facing;
+      else this.goalHeading = s.phase === "in" && s.t < BOOK_REACH_SECONDS + 0.1 ? facing : 0;
+    }
+    // 걷는 모습은 옮겨 간 만큼의 속도로 정한다(의자 옆으로 비켜서기·돌아가기)
+    const sitting = s.kind === "chair" && this.sceneLift() > 0.01;
+    this.vx = step > 0 && !sitting ? (this.x - prevX) / step : 0;
+    this.vz = step > 0 && !sitting ? (this.z - prevZ) / step : 0;
+    if (this.goalHeading !== null) this.heading = lerpAngle(this.heading, this.goalHeading, Math.min(1, step * this.settings.turn));
+
+    if (s.phase === "in" && s.t >= SCENE_IN_SECONDS[s.kind]) {
+      this.scene = { ...s, phase: "hold", t: 0 };
+      this.sceneEntered = s.mark;
+    } else if (s.phase === "out" && s.t >= SCENE_OUT_SECONDS[s.kind]) {
+      this.x = this.sceneFrom.x;
+      this.z = this.sceneFrom.z;
+      this.vx = 0;
+      this.vz = 0;
+      this.scene = null;
+      this.sceneFrom = null;
+      this.arrived = s.mark;
+      this.goalHeading = headingTo({ x: this.x, z: this.z }, mark.faceTo);
+      this.greetAfterSceneEnds();
+    }
   }
 
   /** 바닥 점이나 장소로 걸어간다. 갈 수 없으면 false(움직이지 않는다). */
@@ -574,6 +802,13 @@ export class LobbySim {
     const gap = this.lastUpdateMs === null ? 0 : nowMs - this.lastUpdateMs;
     this.lastUpdateMs = nowMs;
     if (this.idleSinceMs === null || dt > 1 || gap > 1000) this.idleSinceMs = nowMs;
+
+    // 장소에서 '들어가기'를 누른 뒤의 동작: 하는 동안은 걷기·앉기가 기다린다
+    if (this.scene) {
+      this.updateScene(step);
+      this.idleSinceMs = nowMs;
+      return;
+    }
 
     // 앉기: 오래 가만히 두면 앉고, 일어나는 중에는 걷기·동작이 기다린다
     if (this.posture) {
@@ -670,8 +905,10 @@ export class LobbySim {
     let idleBubble = false;
     // 장소 구역 안에 있으면 걷거나 끌리는 중에도 그 장소 안내를 보인다. 구역 밖에서 움직이는 동안은 말풍선을 숨긴다.
     // 서 있으면 짧은 말 → 로비 인사 → 장소 안내 순서이고, 셋 다 없으면 말풍선이 없다(기본 말은 없앴다).
-    const place = this.currentPlace();
-    if (moving && !place) bubbleText = "";
+    // 장소에서 '들어가기'를 누른 뒤에는 말풍선을 거둔다
+    const place = this.scene ? null : this.currentPlace();
+    if (this.scene) bubbleText = "";
+    else if (moving && !place) bubbleText = "";
     else if (nowMs < this.quipUntilMs) bubbleText = this.quip;
     else if (!moving && this.greeting) {
       bubbleText = this.greeting;
@@ -692,6 +929,7 @@ export class LobbySim {
       place: shownPlace,
       action: this.action ? { ...this.action } : null,
       posture: this.posture ? { ...this.posture } : null,
+      scene: this.scene ? { ...this.scene } : null,
       bubbleText,
       bubbleButton,
       idleBubble

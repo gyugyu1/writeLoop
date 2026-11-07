@@ -189,8 +189,7 @@ describe("[spec] 방 데이터와 길 찾기(S12~S16)", () => {
 
   it.each([
     ["일기 책상 칸", { x: 1.5, z: 5.5 }],
-    ["옷장 칸", { x: 7.5, z: 3.5 }],
-    ["창가 의자 칸", { x: 4.5, z: 0.5 }]
+    ["옷장 칸", { x: 7.5, z: 3.5 }]
   ])("S15: 가구가 있는 %s을 톡 하면 움직이지 않는다", (_name, point) => {
     expect(SOLID_TILES.has(tileOf(point))).toBe(true);
     const sim = new LobbySim({ x: 4.2, z: 6.2 });

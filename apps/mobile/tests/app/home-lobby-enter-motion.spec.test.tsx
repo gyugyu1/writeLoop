@@ -11,6 +11,7 @@
 // 돌아선다(B1, B2). "앞"은 방향 0(방 앞쪽 +z)에서 0.35라디안(약 20도) 안으로 본다.
 // - 바뀔 동작(고치기 전에는 실패해야 한다): D1~D3, T1~T4, B1·B2, I1, U1~U3, G1, W1·W2, X1.
 // - 그대로 둘 동작(고치기 전에도 통과해야 한다): R1·R2(명세 5: 동작 줄이기면 지금처럼 바로), P1~P3.
+// - 13-main-decision.md 1(사용자 2026-11-08 "떠나면 동작 거두기")로 더한 것: L1·L2. 구현 커밋(8c1447a) 뒤에 더한 새 동작이라 그 커밋에서 실패해야 한다.
 //
 // 명세에 없는 이름·숫자(02-qa-tests.md "가정"):
 // - 새 클립 이름은 명세에 없다. "새 동작 중" = 지금 고른 동작 클립이 있고 기존 클립 11개(아래 OLD_CLIPS)가 아님.
@@ -984,6 +985,60 @@ describe("[spec] 작업 063 바뀔 동작: 판을 닫은 뒤 제자리로 돌아
 
     await tap({ point: goal, mark: null, onCharacter: false });
     expect(await framesUntil(8, () => distance(position(), goal) < 1e-3)).toBe(true);
+  }, SLOW_TEST_MS);
+});
+
+// ---------- 바뀔 동작: 13 결정 1 ----------
+
+describe("[spec] 작업 063 바뀔 동작: 들어가는 동작 중에 다른 화면으로 가면 들어가기를 거두고 원래 자리에 선다(13 결정 1)", () => {
+  /**
+   * 들어가는 동작 중(누르고 0.2초, 아직 판·기록 화면 전)에 다른 화면으로 갔다가(포커스 잃음) 돌아온다(포커스 받음).
+   * 일기 책상은 의자를 빼는 동안 새 클립이 아직 없을 수 있어, 동작 중인지는 판·기록 화면이 아직인 것으로만 본다.
+   * 다른 화면에 있는 동안은 3D 그리기가 멈추므로 프레임을 진행하지 않는다.
+   */
+  async function leaveDuringEnter(mark: MarkId) {
+    await renderHome();
+    await arriveAt(mark);
+    const spot = position();
+    await pressEnter(mark);
+    await frames(0.2);
+    // 정말 들어가는 동작 중에 떠나는지 먼저 본다
+    expect({ sheets: openSheets(), navigated: navigatedTo() }).toEqual({ sheets: [], navigated: [] });
+
+    await setFocused(false);
+    await setFocused(true);
+    await frames(0.05);
+    const right = { atSpot: distance(position(), spot) < 1e-6, newClip: newClip() };
+    const sheetsSeen = new Set<string>();
+    const newClips = new Set<string>();
+    await frames(3, () => {
+      openSheets().forEach((title) => sheetsSeen.add(title));
+      const clip = newClip();
+      if (clip) newClips.add(clip);
+    });
+    return { right, sheetsSeen: [...sheetsSeen], newClips: [...newClips], navigated: navigatedTo(), atSpotLater: distance(position(), spot) < 1e-6 };
+  }
+
+  const SHEET_PLACES: ["desk" | "board" | "window"][] = [["desk"], ["board"], ["window"]];
+
+  it.each(SHEET_PLACES)("L1 %s: 동작 중에 다른 화면에 갔다 오면 원래 자리에 새 클립 없이 서 있고, 그 뒤 3초 동안 판이 열리지 않는다", async (mark) => {
+    expect(await leaveDuringEnter(mark)).toEqual({
+      right: { atSpot: true, newClip: null },
+      sheetsSeen: [],
+      newClips: [],
+      navigated: [],
+      atSpotLater: true
+    });
+  }, SLOW_TEST_MS);
+
+  it("L2 bookcase: 책을 꺼내는 동작 중에 다른 화면에 갔다 오면 원래 자리에 새 클립 없이 서 있고, 그 뒤 3초 동안 기록 화면으로 가지 않는다", async () => {
+    expect(await leaveDuringEnter("bookcase")).toEqual({
+      right: { atSpot: true, newClip: null },
+      sheetsSeen: [],
+      newClips: [],
+      navigated: [],
+      atSpotLater: true
+    });
   }, SLOW_TEST_MS);
 });
 

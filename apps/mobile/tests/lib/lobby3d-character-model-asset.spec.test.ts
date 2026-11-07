@@ -15,6 +15,10 @@
 // - "앞쪽 +Z"는 약속의 뼈(head, hips)만으로는 파일에서 가려낼 수 없어 이 테스트가 보지 않는다(02-qa-tests.md).
 // - 검사가 약속보다 좁지도 넓지도 않은지 보려고, 약속을 지키지만 확정본과 다른 가짜 모델과 약속을 어긴 가짜 모델에도 같은 검사를 돌린다.
 // - Metro가 .glb를 자산으로 받는지: metro.config.js를 불러 resolver.assetExts를 본다(059에서 그대로).
+// 작업 063 13 결정 2(사용자 2026-11-08 "약속에 더하기")로 약속을 넓혔다: '들어가기' 동작 클립 8개(think_in think_idle think_out
+// chair_sit_down chair_sit_idle chair_stand_up book_take book_put)와 손 뼈 hand_r·hand_l이 있어야 한다. 개수·모양은 여전히 보지 않는다.
+// 약속을 지키는 가짜 모델(keepingModel)과 뼈를 하나씩 빼 보는 테스트의 뼈 목록에 새 약속을 넣고, 클립·손 뼈가 없으면 잡는지 보는 테스트를 더했다.
+// "뼈대의 뼈가 아니면 잡는다" 테스트는 뼈대에 root만 있으므로 기대에 손 뼈 둘도 들어갔다.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -23,7 +27,11 @@ const MODEL = join(MOBILE, "assets", "models", "writeloop.glb");
 
 const APP_CLIPS = ["idle", "walk", "wave", "jump", "hop", "point", "look_around", "poke"];
 const SIT_CLIPS = ["sit_down", "sit_idle", "stand_up"];
+/** 작업 063 13 결정 2: '들어가기' 동작 클립(생각하기 들어가기·유지·나오기, 의자에 앉기·앉아 있기·일어나기, 책 꺼내 들기, 책 다시 꽂기). */
+const ENTER_CLIPS = ["think_in", "think_idle", "think_out", "chair_sit_down", "chair_sit_idle", "chair_stand_up", "book_take", "book_put"];
 const APP_BONES = ["head", "hips"];
+/** 작업 063 13 결정 2: 책을 손에 붙이는 데 쓰는 손 뼈. */
+const HAND_BONES = ["hand_r", "hand_l"];
 const TOLERANCE = 0.02;
 const EPS = 1e-9;
 
@@ -65,12 +73,12 @@ function brokenPromises(buffer: Buffer): string[] {
   }
 
   const clips = new Set((gltf.animations ?? []).map((a) => a.name));
-  [...APP_CLIPS, ...SIT_CLIPS].forEach((name) => {
+  [...APP_CLIPS, ...SIT_CLIPS, ...ENTER_CLIPS].forEach((name) => {
     if (!clips.has(name)) problems.push(`클립 없음: ${name}`);
   });
 
   const joints = new Set((gltf.skins ?? []).flatMap((skin) => skin.joints.map((i) => gltf.nodes?.[i]?.name)));
-  APP_BONES.forEach((name) => {
+  [...APP_BONES, ...HAND_BONES].forEach((name) => {
     if (!joints.has(name)) problems.push(`뼈 없음: ${name}`);
   });
   return problems;
@@ -96,8 +104,8 @@ function fakeGlb(gltf: Gltf, override?: { magic?: string; version?: number; leng
  * 규격 밖 클립(sleep, extra)이 더 있고 클립 길이가 다르다.
  */
 function keepingModel(options?: { minY?: number; maxY?: number; clips?: string[]; bones?: string[] }): Gltf {
-  const bones = options?.bones ?? ["root", "hips", "head"];
-  const clips = options?.clips ?? [...APP_CLIPS, ...SIT_CLIPS, "sleep", "extra"];
+  const bones = options?.bones ?? ["root", "hips", "head", ...HAND_BONES];
+  const clips = options?.clips ?? [...APP_CLIPS, ...SIT_CLIPS, ...ENTER_CLIPS, "sleep", "extra"];
   return {
     nodes: [{ name: "body", mesh: 0, skin: 0 }, ...bones.map((name) => ({ name }))],
     skins: bones.length > 1 ? [{ joints: [1] }, { joints: bones.slice(1).map((_, i) => i + 2) }] : [{ joints: bones.map((_, i) => i + 1) }],
@@ -116,7 +124,7 @@ describe("[spec] 넣을 모델 파일", () => {
     expect(existsSync(MODEL)).toBe(true);
   });
 
-  it("[spec] 앱과의 약속을 지킨다(glTF 2 바이너리, 키 1.0±0.02, 발밑이 원점±0.02, 클립 8+3개, 뼈 head·hips)", () => {
+  it("[spec] 앱과의 약속을 지킨다(glTF 2 바이너리, 키 1.0±0.02, 발밑이 원점±0.02, 클립 8+3+8개, 뼈 head·hips·hand_r·hand_l)", () => {
     expect(brokenPromises(readFileSync(MODEL))).toEqual([]);
   });
 });
@@ -144,20 +152,20 @@ describe("[spec] 약속 검사는 약속만 본다(확정본을 바꿔도 약속
     expect(brokenPromises(fakeGlb(keepingModel({ minY, maxY })))).toEqual(expected);
   });
 
-  it.each([...APP_CLIPS, ...SIT_CLIPS])("[spec] 클립 %s가 없으면 잡는다", (missing) => {
-    const clips = [...APP_CLIPS, ...SIT_CLIPS].filter((c) => c !== missing);
+  it.each([...APP_CLIPS, ...SIT_CLIPS, ...ENTER_CLIPS])("[spec] 클립 %s가 없으면 잡는다", (missing) => {
+    const clips = [...APP_CLIPS, ...SIT_CLIPS, ...ENTER_CLIPS].filter((c) => c !== missing);
     expect(brokenPromises(fakeGlb(keepingModel({ clips })))).toEqual([`클립 없음: ${missing}`]);
   });
 
-  it.each(APP_BONES)("[spec] 뼈 %s가 없으면 잡는다", (missing) => {
-    const bones = ["root", "hips", "head"].filter((b) => b !== missing);
+  it.each([...APP_BONES, ...HAND_BONES])("[spec] 뼈 %s가 없으면 잡는다", (missing) => {
+    const bones = ["root", "hips", "head", ...HAND_BONES].filter((b) => b !== missing);
     expect(brokenPromises(fakeGlb(keepingModel({ bones })))).toEqual([`뼈 없음: ${missing}`]);
   });
 
   it("[spec] 뼈 이름의 노드가 있어도 뼈대(skin)의 뼈가 아니면 잡는다", () => {
     const model = keepingModel();
-    model.skins = [{ joints: [1] }]; // root만 뼈, hips·head는 노드로만 있다
-    expect(brokenPromises(fakeGlb(model))).toEqual(["뼈 없음: head", "뼈 없음: hips"]);
+    model.skins = [{ joints: [1] }]; // root만 뼈, hips·head·hand_r·hand_l은 노드로만 있다
+    expect(brokenPromises(fakeGlb(model))).toEqual(["뼈 없음: head", "뼈 없음: hips", "뼈 없음: hand_r", "뼈 없음: hand_l"]);
   });
 
   it.each([

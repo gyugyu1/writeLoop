@@ -104,11 +104,10 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
       const toon = new THREE.MeshToonMaterial({ map: source.map, side: THREE.DoubleSide });
       mesh.material = toon;
       materials.push(toon);
-      mesh.userData.isCharacter = true;
       mesh.frustumCulled = false;
-      // 누르기 판정은 처음 자세의 경계 구를 쓴다. 점프로 몸이 들려도 귀 끝까지 잡히게 넉넉히 키운다.
-      mesh.computeBoundingSphere();
-      mesh.boundingSphere?.set(mesh.boundingSphere.center, mesh.boundingSphere.radius * 1.5);
+      // 뼈대로 휘는 메시를 누르기 판정에 쓰면 three가 꼭짓점마다 휜 자리를 다시 계산해, 끄는 동안(초당 120번) 앱이 멈춘다.
+      // 판정은 아래의 보이지 않는 통이 맡는다.
+      mesh.raycast = () => {};
       // 법선이 없는 모델이면 불러올 때 계산한다(명암과, 외곽선 속성이 없을 때의 부풀리는 방향에 쓴다).
       if (!mesh.geometry.attributes.normal) mesh.geometry.computeVertexNormals();
       const choice = outlineAttributes({
@@ -123,6 +122,13 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
       shell.raycast = () => {};
       mesh.parent?.add(shell);
     }
+    // 누르기 판정용 보이지 않는 통. 라룹이와 함께 움직이고 돈다. 점프로 몸이 들려도 귀 끝까지 들게 키보다 조금 높다.
+    // (Raycaster는 보이지 않는 물체도 맞힌다.)
+    const hit = new THREE.Mesh(new THREE.CapsuleGeometry(0.75, 1.9, 4, 12), new THREE.MeshBasicMaterial());
+    hit.visible = false;
+    hit.position.y = 0.75 + 1.9 / 2;
+    hit.userData.isCharacter = true;
+    group.add(hit);
     const mixer = new THREE.AnimationMixer(model);
     const actions = new Map<string, THREE.AnimationAction>();
     for (const clip of gltf.animations) {
@@ -133,7 +139,7 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     }
     const head = model.getObjectByName("head") ?? null;
     const hips = model.getObjectByName("hips") ?? null;
-    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips };
+    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips, hit };
   }, [gltf]);
 
   // 카툰 명암 단계·외곽선 굵기 설정을 따른다.
@@ -236,6 +242,8 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
       built.mixer.stopAllAction();
       built.materials.forEach((m) => m.dispose());
       built.shellMaterials.forEach((m) => m.dispose());
+      built.hit.geometry.dispose();
+      (built.hit.material as THREE.Material).dispose();
     };
   }, [built, handleRef]);
 

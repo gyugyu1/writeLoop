@@ -25,6 +25,8 @@ const SPOT_WIDTH = 150;
 const SPOT_ABOVE = 24;
 const SPOT_BELOW = 120;
 const EDGE = 8;
+/** 3D가 장소 좌표를 이만큼 기다려도 보내지 않으면, 옛 튜토리얼처럼 저장하지 않고 조용히 닫는다(다음에 다시 뜬다). */
+const POSITION_TIMEOUT_MS = 3000;
 
 export function lobbyTutorialSpotlight(
   projection: LobbyProjection | null,
@@ -35,12 +37,15 @@ export function lobbyTutorialSpotlight(
   const mark = TUTORIAL_MARKS[stepIndex];
   const label = mark ? projection?.labels[mark] : undefined;
   if (!label) return null;
-  const left = Math.max(EDGE, label.x - SPOT_WIDTH / 2);
-  const top = Math.max(EDGE, label.y - SPOT_ABOVE);
-  const right = Math.min(windowWidth - EDGE, label.x + SPOT_WIDTH / 2);
-  const bottom = Math.min(windowHeight - EDGE, label.y + SPOT_BELOW);
-  if (right <= left || bottom <= top) return null;
-  return { x: left, y: top, width: right - left, height: bottom - top };
+  // 카메라가 가까우면 장소가 화면 밖에 있을 수 있다. 짚는 영역을 화면 안으로 끌어와, 카드와 버튼이 늘 나오게 한다.
+  const maxLeft = Math.max(EDGE, windowWidth - EDGE - SPOT_WIDTH);
+  const maxTop = Math.max(EDGE, windowHeight - EDGE - SPOT_ABOVE - SPOT_BELOW);
+  const left = Math.min(maxLeft, Math.max(EDGE, label.x - SPOT_WIDTH / 2));
+  const top = Math.min(maxTop, Math.max(EDGE, label.y - SPOT_ABOVE));
+  const width = Math.min(SPOT_WIDTH, windowWidth - EDGE * 2);
+  const height = Math.min(SPOT_ABOVE + SPOT_BELOW, windowHeight - EDGE * 2);
+  if (width <= 0 || height <= 0) return null;
+  return { x: left, y: top, width, height };
 }
 
 export function useLobbyTutorial({
@@ -133,6 +138,20 @@ export function useLobbyTutorial({
     void completeHomeTutorial().catch(() => undefined);
   }, []);
 
+  const spotlight = isVisible ? lobbyTutorialSpotlight(projection, stepIndex, windowWidth, windowHeight) : null;
+
+  // 짚을 곳을 끝내 구하지 못하면(3D가 장소 좌표를 보내지 못함) 도는 표시만 남아 홈이 막힌다. 저장하지 않고 닫는다.
+  const waitingForPosition = isVisible && !spotlight;
+  useEffect(() => {
+    if (!waitingForPosition) return;
+    const timerId = setTimeout(() => {
+      closedRef.current = true;
+      setIsVisible(false);
+      setIsRequested(false);
+    }, POSITION_TIMEOUT_MS);
+    return () => clearTimeout(timerId);
+  }, [waitingForPosition]);
+
   const handleAdvance = useCallback(() => {
     if (stepIndex >= HOME_TUTORIAL_STEP_COUNT - 1) {
       handleClose();
@@ -141,15 +160,13 @@ export function useLobbyTutorial({
     setStepIndex(stepIndex + 1);
   }, [handleClose, stepIndex]);
 
-  const spotlight = isVisible ? lobbyTutorialSpotlight(projection, stepIndex, windowWidth, windowHeight) : null;
-
   return {
     handleAdvanceHomeTutorial: handleAdvance,
     handleCloseHomeTutorial: handleClose,
     homeTutorialSpotlight: spotlight,
     homeTutorialStepIndex: stepIndex,
     // 3D가 아직 장소 좌표를 보내지 않았으면 짚을 곳이 없어 기다린다.
-    isHomeTutorialPositioning: isVisible && !spotlight,
+    isHomeTutorialPositioning: waitingForPosition,
     isHomeTutorialVisible: isVisible
   };
 }

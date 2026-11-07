@@ -61,8 +61,10 @@ function sameView(a: ViewState, b: ViewState) {
 }
 
 export interface Lobby3dScreenProps {
-  /** 시험판(동작 버튼·속도·명암·외곽선 조절)과 초당 프레임·동작 표시. 기본은 켬(개발 화면). */
+  /** 시험판(동작 버튼·속도·명암·외곽선 조절). 기본은 켬(개발 화면). */
   devPanel?: boolean;
+  /** 초당 프레임·동작 표시. 기본은 시험판과 같다(홈은 개발 빌드에서만 켠다). */
+  showFps?: boolean;
   /** 머리 줄 왼쪽 칩 글. 기본은 시험판의 고정 글. */
   streakLabel?: string;
   onStreakPress?: () => void;
@@ -78,10 +80,13 @@ export interface Lobby3dScreenProps {
   onProjection?: (projection: LobbyProjection) => void;
   /** 아래 여백. 기본은 기기 아래 안전 영역(홈은 내비게이션 바가 맡아 0). */
   bottomInset?: number;
+  /** 다른 화면 아래에 깔려 있는 동안 3D 그리기를 멈춘다(그 화면이 무거워지지 않게). */
+  paused?: boolean;
 }
 
 export default function Lobby3dScreen({
   devPanel = true,
+  showFps = devPanel,
   streakLabel = "연속 1일",
   onStreakPress,
   onMenu,
@@ -89,7 +94,8 @@ export default function Lobby3dScreen({
   idleButton = null,
   inputBlocked = false,
   onProjection,
-  bottomInset
+  bottomInset,
+  paused = false
 }: Lobby3dScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const bottomPad = bottomInset ?? insets.bottom;
@@ -214,7 +220,15 @@ export default function Lobby3dScreen({
 
   return (
     <View style={styles.root}>
-      <Lobby3dCanvas sim={sim} viewWidth={viewWidth} toon={shownToon} onFrame={onFrame} onPointer={onPointer} onProject={handleProjection} />
+      <Lobby3dCanvas
+        sim={sim}
+        viewWidth={viewWidth}
+        toon={shownToon}
+        onFrame={onFrame}
+        onPointer={onPointer}
+        onProject={handleProjection}
+        paused={paused}
+      />
 
       {(Object.keys(MARKS) as MarkId[]).map((id) => {
         const pos = projection?.labels[id] ?? { x: 0, y: 0 };
@@ -315,7 +329,7 @@ export default function Lobby3dScreen({
         </View>
       ) : null}
 
-      {devPanel ? (
+      {showFps ? (
         <View pointerEvents="none" style={[styles.fps, { top: insets.top + 60 }]}>
           <Text style={styles.fpsText}>FPS {projection?.fps ?? "-"}</Text>
           <Text style={styles.fpsText}>동작: {view.actionType ? ACTION_LABELS[view.actionType] : "없음"}</Text>

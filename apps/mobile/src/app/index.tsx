@@ -1,3 +1,4 @@
+import { useFocusEffect } from "@react-navigation/native";
 import { Redirect, router, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
@@ -69,6 +70,17 @@ export default function HomeScreen() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   // 로비 위로 올라오는 판(질문·일기·생각). 한 번에 하나만 연다.
   const [openSheet, setOpenSheet] = useState<LobbyMenuId | null>(null);
+  // 다른 화면이 홈 위에 있는 동안은 3D를 멈추고 판도 숨긴다(iOS에서 판이 새 화면을 덮지 않게).
+  // 판은 닫지 않아서, 돌아오면 보던 판이 그대로 있다.
+  const [isFocused, setIsFocused] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      return () => {
+        setIsFocused(false);
+      };
+    }, [])
+  );
   const [diaryMonthCursor, setDiaryMonthCursor] = useState(() => getMonthStart(new Date()));
   const historyRoute: Href = currentUser ? "/records" : buildLoginHref("/records");
   const diaryOverviewRoute: Href = currentUser ? "/diary" : buildLoginHref("/diary");
@@ -343,6 +355,8 @@ export default function HomeScreen() {
       <View style={styles.lobbyArea}>
         <Lobby3dScreen
           devPanel={false}
+          // 개발하는 동안 홈에서도 초당 프레임을 본다(2026-11-07 사용자 결정). 출시 빌드에서는 보이지 않는다.
+          showFps={__DEV__}
           streakLabel={streakChipLabel}
           onStreakPress={() => router.push(historyRoute)}
           onMenu={setOpenSheet}
@@ -351,11 +365,12 @@ export default function HomeScreen() {
           inputBlocked={openSheet !== null || isCalendarOpen}
           onProjection={handleProjection}
           bottomInset={lobbyBottomInset}
+          paused={!isFocused}
         />
       </View>
       <MobileNavBar activeTab="home" />
 
-      <LobbySheet visible={openSheet === "question"} title="질문에 답하기" onClose={closeSheet}>
+      <LobbySheet visible={isFocused && openSheet === "question"} title="질문에 답하기" onClose={closeSheet}>
         <HomeStatusPanel
           diaryStreakBadgeLabel={diaryStreakBadgeLabel}
           handleOpenCalendar={handleOpenCalendar}
@@ -402,7 +417,7 @@ export default function HomeScreen() {
         />
       </LobbySheet>
 
-      <LobbySheet visible={openSheet === "diary"} title="영어일기" onClose={closeSheet}>
+      <LobbySheet visible={isFocused && openSheet === "diary"} title="영어일기" onClose={closeSheet}>
         <View style={styles.statusBadgeRow}>
           <View style={[styles.statusBadge, styles.statusBadgeSecondary]}>
             <Text style={styles.statusBadgeText}>{diaryStreakBadgeLabel}</Text>
@@ -424,7 +439,7 @@ export default function HomeScreen() {
         </View>
       </LobbySheet>
 
-      <LobbySheet visible={openSheet === "thought"} title="지금 생각나는대로" onClose={closeSheet}>
+      <LobbySheet visible={isFocused && openSheet === "thought"} title="지금 생각나는대로" onClose={closeSheet}>
         <View style={styles.nowEnglishSection}>
           <NowInEnglishSectionContent
             handleOpenNowInEnglish={handleOpenNowInEnglish}

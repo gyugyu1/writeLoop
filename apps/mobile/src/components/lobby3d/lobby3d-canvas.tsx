@@ -37,6 +37,8 @@ export interface Lobby3dCanvasProps {
   onFrame: (dt: number, nowMs: number) => void;
   onPointer: (phase: LobbyPointerPhase, hit: PointerHit | null, x: number, y: number) => void;
   onProject: (projection: LobbyProjection) => void;
+  /** 화면이 다른 화면 아래에 깔려 있을 때처럼 그리기를 멈출 때. */
+  paused?: boolean;
 }
 
 const LINE = 0x3d1b0f;
@@ -63,6 +65,7 @@ export default function Lobby3dCanvas(props: Lobby3dCanvasProps) {
       <Canvas
         style={styles.fill}
         orthographic
+        frameloop={props.paused ? "never" : "always"}
         camera={{ position: [4, 20, 26], zoom: 60, near: 0.1, far: 120 }}
         gl={{ antialias: true }}
       >

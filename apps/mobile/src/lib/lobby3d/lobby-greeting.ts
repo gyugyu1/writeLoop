@@ -8,10 +8,10 @@ export type GreetingKind = "first" | "resume" | "done" | "streak" | "longTime" |
 export interface LearningStatus {
   /** 로그인했고 홈 정보를 다 받았는지. 아니면 "그 밖"이다. */
   ready: boolean;
-  /** 전체 작문(답) 수 */
-  answerSessions: number;
-  /** 전체 일기 편수 */
-  diaryEntries: number;
+  /** 전체 작문(답) 수. 오늘 작문 상태를 받지 못했으면 null(모른다). */
+  answerSessions: number | null;
+  /** 전체 일기 편수. 일기 요약을 받지 못했으면 null(모른다). */
+  diaryEntries: number | null;
   /** 끝내지 않은 답이 있는지(이어 쓰기) */
   hasIncomplete: boolean;
   /** 오늘 작문을 마쳤는지 */
@@ -20,6 +20,8 @@ export interface LearningStatus {
   streakDays: number;
   /** 작문을 시작했거나 마친 가장 늦은 날("YYYY-MM-DD"). 이번 달·지난달 안에 없으면 null. */
   lastWritingDate: string | null;
+  /** 작문 달력(이번 달·지난달)을 다 받았는지. 받지 못했으면 "오랜만"인지 모르므로 오랜만이 아니다. 없으면 받은 것으로 본다. */
+  historyKnown?: boolean;
   /** 오늘("YYYY-MM-DD") */
   today: string;
 }
@@ -41,14 +43,20 @@ function daysBetween(from: string, to: string): number {
   return Math.round(ms / 86400000);
 }
 
-/** 마지막 작문이 오래됐는지. 두 달 안에 작문한 날이 없는데 작문한 적은 있으면 오래된 것이다. */
-export function isLongTimeAway(status: Pick<LearningStatus, "answerSessions" | "lastWritingDate" | "today">): boolean {
-  if (status.answerSessions <= 0) return false;
+/**
+ * 마지막 작문이 오래됐는지. 두 달 안에 작문한 날이 없는데 작문한 적은 있으면 오래된 것이다.
+ * 작문 수나 작문 달력을 받지 못했으면 모르므로 오래되지 않은 것으로 본다(받은 것만으로 판정).
+ */
+export function isLongTimeAway(status: Pick<LearningStatus, "answerSessions" | "lastWritingDate" | "today" | "historyKnown">): boolean {
+  if (status.answerSessions === null || status.answerSessions <= 0 || status.historyKnown === false) return false;
   if (!status.lastWritingDate) return true;
   return daysBetween(status.lastWritingDate, status.today) >= LONG_TIME_DAYS;
 }
 
-/** 표의 위에서부터 맞는 첫 상태를 고른다(첫 방문 → 이어 쓰기 → 오늘 완료 → 연속 기록 → 오랜만 → 그 밖). */
+/**
+ * 표의 위에서부터 맞는 첫 상태를 고른다(첫 방문 → 이어 쓰기 → 오늘 완료 → 연속 기록 → 오랜만 → 그 밖).
+ * 받지 못한 정보로만 알 수 있는 상태는 아닌 것으로 본다(예: 작문 수나 일기 수를 모르면 첫 방문이 아니다).
+ */
 export function lobbyGreeting(status: LearningStatus): LobbyGreeting {
   if (!status.ready) return { kind: "default", line: IDLE_LINE, action: "wave" };
   if (status.answerSessions === 0 && status.diaryEntries === 0) {

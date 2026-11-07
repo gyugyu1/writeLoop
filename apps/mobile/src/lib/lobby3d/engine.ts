@@ -372,6 +372,8 @@ export class LobbySim {
   private greeting: string | null = null;
   /** 마지막으로 무언가 한 때(밀리초). 이때부터 SIT_AFTER_MS가 지나면 앉는다. null이면 다음 프레임에 지금으로 잡는다. */
   private idleSinceMs: number | null = null;
+  /** 앞 프레임의 시각(밀리초). 그리기가 멈췄다 다시 돌면(다른 화면·배경) 그 사이를 앉기까지의 시간에 넣지 않으려고 본다. */
+  private lastUpdateMs: number | null = null;
   private random: () => number;
 
   constructor(options?: { x?: number; z?: number; reduceMotion?: boolean; random?: () => number }) {
@@ -499,8 +501,11 @@ export class LobbySim {
   update(dt: number, nowMs: number): void {
     const step = Math.min(0.05, Math.max(0, dt));
     if (this.down && !this.dragging && nowMs - this.down.t >= HOLD_MS) this.startDrag();
-    // 처음 프레임이거나, 다른 화면·배경에 가 있다 돌아와 프레임 사이가 길면 앉기까지의 시간을 처음부터 잰다(홈을 보는 동안만 센다)
-    if (this.idleSinceMs === null || dt > 1) this.idleSinceMs = nowMs;
+    // 처음 프레임이거나, 다른 화면·배경에 가 있다 돌아와 프레임 사이가 길면 앉기까지의 시간을 처음부터 잰다(홈을 보는 동안만 센다).
+    // 그리기 쪽이 dt를 짧게 잘라 넘기므로 공백은 시각으로 본다.
+    const gap = this.lastUpdateMs === null ? 0 : nowMs - this.lastUpdateMs;
+    this.lastUpdateMs = nowMs;
+    if (this.idleSinceMs === null || dt > 1 || gap > 1000) this.idleSinceMs = nowMs;
 
     // 앉기: 오래 가만히 두면 앉고, 일어나는 중에는 걷기·동작이 기다린다
     if (this.posture) {

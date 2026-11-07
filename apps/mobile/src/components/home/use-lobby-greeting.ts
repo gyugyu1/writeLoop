@@ -23,8 +23,9 @@ interface UseLobbyGreetingOptions {
   homeLoadCount: number;
   /** 끝내지 않은 답을 아직 확인하는 중인지 */
   resolvingIncomplete: boolean;
-  answerSessions: number;
-  diaryEntries: number;
+  /** 전체 작문 수와 일기 편수. 받지 못했으면 null. */
+  answerSessions: number | null;
+  diaryEntries: number | null;
   hasIncomplete: boolean;
   completedToday: boolean;
   streakDays: number;
@@ -88,14 +89,18 @@ export function useLobbyGreeting(options: UseLobbyGreetingOptions): LobbyGreetin
     };
     // 오랜만인지 볼 차례(앞의 상태가 하나도 맞지 않음)일 때만 작문 달력을 읽는다
     const needsHistory =
-      loggedIn &&
       !(status.answerSessions === 0 && status.diaryEntries === 0) &&
       !status.hasIncomplete &&
       !status.completedToday &&
       status.streakDays < STREAK_GREETING_DAYS &&
+      status.answerSessions !== null &&
       status.answerSessions > 0;
     if (!needsHistory) finish(status);
-    else void loadRecentMonths(now).then((months) => finish({ ...status, lastWritingDate: lastWritingDateOf(months) }));
+    else
+      void loadRecentMonths(now).then((months) =>
+        // 한 달이라도 받지 못했으면 마지막 작문 날짜를 모른다(오랜만이 아니다)
+        finish({ ...status, lastWritingDate: lastWritingDateOf(months), historyKnown: months.every((m) => m !== null) })
+      );
     return () => {
       cancelled = true;
     };

@@ -334,6 +334,10 @@ export default function Lobby3dScreen({
   useEffect(() => {
     if (interactive && sim.scene?.phase === "hold") sim.endScene();
   }, [interactive, sim]);
+  // 들어가는 동작 중에 다른 화면으로 가면 들어가기를 거두고 원래 자리에 선다(돌아와 남은 동작이 끝나며 판이 열리지 않게)
+  useEffect(() => {
+    if (paused && sim.scene?.phase === "in") sim.cancelScene();
+  }, [paused, sim]);
 
   const onPointer = useCallback(
     (phase: LobbyPointerPhase, hit: PointerHit | null, x: number, y: number) => {

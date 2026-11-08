@@ -104,6 +104,31 @@ const FLOOR_SHAPE: Record<FloorPieceId, { width: number; depth: number; blocks: 
   rug: { width: 2, depth: 2, blocks: false, drawAt: { x: 0, z: 0 } }
 };
 
+/** 바닥 가구가 차지하는 칸 모양을 놓인 방향대로 돌린 가로(x)·깊이(z) 칸 수. */
+export function floorPieceSize(id: FloorPieceId, facing: Facing): { width: number; depth: number } {
+  const { width, depth } = FLOOR_SHAPE[id];
+  return facing % 2 === 0 ? { width, depth } : { width: depth, depth: width };
+}
+
+/** 바닥 가구가 차지하는 칸 모양의 범위(방 좌표). 깔개처럼 칸에 맞지 않은 자리도 있다. */
+export function floorPieceBounds(id: FloorPieceId, placement: FloorPlacementData): { minX: number; maxX: number; minZ: number; maxZ: number } {
+  const { width, depth } = floorPieceSize(id, placement.facing);
+  return {
+    minX: round(placement.x - width / 2),
+    maxX: round(placement.x + width / 2),
+    minZ: round(placement.z - depth / 2),
+    maxZ: round(placement.z + depth / 2)
+  };
+}
+
+/** 지나갈 수 없게 칸을 막는 바닥 가구인지(깔개는 막지 않는다). */
+export function floorPieceBlocks(id: FloorPieceId): boolean {
+  return FLOOR_SHAPE[id].blocks;
+}
+
+/** 벽 가구가 벽을 따라 차지하는 폭(칸). 바로 아래 칸에는 키 큰 가구를 놓지 못한다(편집 모드). */
+export const WALL_PIECE_WIDTH: Record<WallPieceId, number> = { board: 1.8, window: 2.3 };
+
 /** 벽 가구를 거는 높이와 벽에서 나온 거리. */
 const WALL_MOUNT: Record<WallPieceId, { y: number; depth: number }> = {
   board: { y: 1.75, depth: 0.06 },

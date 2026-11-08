@@ -1,4 +1,4 @@
-import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type LobbyLayout } from "./lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type FloorPieceId, type LobbyLayout } from "./lobby-layout";
 
 // 3D 로비(라이트루프의 방)의 동작 규칙. 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 // 좌표: 바닥 한 칸 = 1. x는 왼쪽→오른쪽(0..width), z는 뒷벽→앞(0..depth). 높이는 y.
@@ -19,6 +19,8 @@ export interface PointerHit {
   mark: MarkId | null;
   /** 라이트루프를 눌렀는지. */
   onCharacter: boolean;
+  /** 누른 곳에 있는 바닥 가구(의자는 일기 책상). 편집 모드에서 쓴다. */
+  piece?: FloorPieceId | null;
 }
 
 export const ROOM = {
@@ -154,26 +156,28 @@ export const SOLID_TILES: ReadonlySet<string> = solidTiles;
 const BODY_RADIUS = 0.32;
 const tileKey = (c: number, r: number) => `${c},${r}`;
 
-export function isBlocked(x: number, z: number): boolean {
+// 아래 길 찾기는 막힌 칸(solid)을 받을 수 있다. 주지 않으면 지금 배치의 막힌 칸이다(편집 모드는 편집 중인 배치의 칸을 준다).
+
+export function isBlocked(x: number, z: number, solid: ReadonlySet<string> = SOLID_TILES): boolean {
   if (x < 0.25 || x > ROOM.width - 0.25 || z < 0.45 || z > ROOM.depth) return true;
-  return SOLID_TILES.has(tileKey(Math.floor(x), Math.floor(z)));
+  return solid.has(tileKey(Math.floor(x), Math.floor(z)));
 }
 
 /** 라이트루프가 그 자리에 설 수 있는지(몸 둘레까지 본다). */
-export function isFree(x: number, z: number): boolean {
+export function isFree(x: number, z: number, solid: ReadonlySet<string> = SOLID_TILES): boolean {
   return (
-    !isBlocked(x - BODY_RADIUS, z) &&
-    !isBlocked(x + BODY_RADIUS, z) &&
-    !isBlocked(x, z - BODY_RADIUS) &&
-    !isBlocked(x, z + 0.15)
+    !isBlocked(x - BODY_RADIUS, z, solid) &&
+    !isBlocked(x + BODY_RADIUS, z, solid) &&
+    !isBlocked(x, z - BODY_RADIUS, solid) &&
+    !isBlocked(x, z + 0.15, solid)
   );
 }
 
-export function isClearLine(a: FloorPoint, b: FloorPoint): boolean {
+export function isClearLine(a: FloorPoint, b: FloorPoint, solid: ReadonlySet<string> = SOLID_TILES): boolean {
   const steps = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.12);
   for (let i = 1; i <= steps; i += 1) {
     const t = i / steps;
-    if (!isFree(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t)) return false;
+    if (!isFree(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, solid)) return false;
   }
   return true;
 }
@@ -183,8 +187,8 @@ export function isClearLine(a: FloorPoint, b: FloorPoint): boolean {
  * 칸 단위(대각선 포함)로 찾은 뒤, 막힘 없이 곧게 갈 수 있는 점은 건너뛰어 자연스럽게 편다.
  * 갈 수 없으면 null.
  */
-export function findPath(from: FloorPoint, goals: FloorPoint[]): FloorPoint[] | null {
-  const reachable = goals.filter((g) => isFree(g.x, g.z));
+export function findPath(from: FloorPoint, goals: FloorPoint[], solid: ReadonlySet<string> = SOLID_TILES): FloorPoint[] | null {
+  const reachable = goals.filter((g) => isFree(g.x, g.z, solid));
   if (reachable.length === 0) return null;
   const sc = Math.floor(from.x);
   const sr = Math.floor(from.z);
@@ -205,8 +209,8 @@ export function findPath(from: FloorPoint, goals: FloorPoint[]): FloorPoint[] | 
       const nr = r + dr;
       const k = tileKey(nc, nr);
       if (nc < 0 || nr < 0 || nc >= ROOM.width || nr >= ROOM.depth) continue;
-      if (SOLID_TILES.has(k) || prev.has(k)) continue;
-      if (dc !== 0 && dr !== 0 && (SOLID_TILES.has(tileKey(c + dc, r)) || SOLID_TILES.has(tileKey(c, r + dr)))) continue;
+      if (solid.has(k) || prev.has(k)) continue;
+      if (dc !== 0 && dr !== 0 && (solid.has(tileKey(c + dc, r)) || solid.has(tileKey(c, r + dr)))) continue;
       prev.set(k, tileKey(c, r));
       if (goalByTile.has(k)) {
         end = k;
@@ -230,7 +234,7 @@ export function findPath(from: FloorPoint, goals: FloorPoint[]): FloorPoint[] | 
   let i = 0;
   while (i < tiles.length) {
     let j = tiles.length - 1;
-    while (j > i && !isClearLine(cur, tiles[j])) j -= 1;
+    while (j > i && !isClearLine(cur, tiles[j], solid)) j -= 1;
     points.push(tiles[j]);
     cur = tiles[j];
     i = j + 1;
@@ -357,6 +361,25 @@ export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number
     lookAt: { x: cx, y: 0, z: cz },
     fovDeg: ROOM.fovDeg
   };
+}
+
+/**
+ * 방이 가로로 다 보이는 가장 가까운 카메라 거리(화면 가로에 보이는 폭). 편집 모드가 이 거리로 물러난다.
+ * 따라갈 점이 방 양끝 어디여도 카메라가 옆으로 움직이지 않으면(cameraPose가 가로 가운데에 고정하면) 다 보이는 것이다.
+ */
+export function roomFitViewWidth(aspect: number): number {
+  const centerX = (ROOM_BOUNDS.minX + ROOM_BOUNDS.maxX) / 2;
+  const fits = (v: number) =>
+    [ROOM_BOUNDS.minX, ROOM_BOUNDS.maxX].every((x) => Math.abs(cameraPose({ x, z: ROOM.depth / 2 }, v, aspect).lookAt.x - centerX) < 1e-6);
+  let lo = VIEW_WIDTH_MIN;
+  let hi = VIEW_WIDTH_MAX * 3;
+  if (fits(lo)) return lo;
+  for (let i = 0; i < 40; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) hi = mid;
+    else lo = mid;
+  }
+  return hi;
 }
 
 // ---------- 톡·꾹·끌기와 이동 ----------

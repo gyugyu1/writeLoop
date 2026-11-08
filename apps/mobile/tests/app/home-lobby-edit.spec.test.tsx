@@ -3,7 +3,7 @@
 // 결정(같은 폴더 03-main-decision.md, 06-main-decision.md)에서만 가져온다.
 // 구현 코드는 부르는 방법(3D 그리기가 받는 edit·viewWidth, 누르기 결과의 piece, 돌리기 버튼의 접근성 이름 "돌리기")을 알려고만 읽었다.
 // 가짜로 두는 것: 기존 홈 테스트(home-lobby-layout-load.spec.test.tsx)와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내 상태,
-// 라우터, 포커스, 3D 그리기). 3D 그리기는 가짜라서, 어느 가구를 눌렀는지(의자 → 책상, 깔개 위 가구, 벽 가구는 고르지 않음)는
+// 라우터, 포커스, 3D 그리기). 3D 그리기는 가짜라서, 어느 가구를 눌렀는지(의자 → 책상, 깔개 위 가구, 벽 가구는 ④부터 골라짐)는
 // 3D 그리기가 판정한 값(piece)을 누르기 결과로 그대로 넣어 보낸다. 그 판정 자체는 이 테스트로 보지 못한다(보고에 적음).
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다(02 가정 A6).
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -763,19 +763,23 @@ describe("고르기", () => {
     expect(rotateButton()).toBeNull();
   });
 
+  // 064-④ 결정 03의 1: ③의 옛 동작(벽 가구는 고르지 않음)을 ④ 명세 1대로 고쳤다. 벽 가구를 끄는 것은 home-lobby-wall-edit.spec.test.tsx가 본다.
   test.each([
-    ["게시판", "board" as MarkId, { x: 1.8, z: 0.2 }],
-    ["창문", "window" as MarkId, { x: 4.8, z: 0.2 }]
-  ])("[spec] S6 책상을 골라 둔 뒤 %s을 톡하면 고르기가 풀리고, 끌어도 움직이지 않는다", async (_label, mark, at) => {
+    ["게시판", "board" as const, 1.8],
+    ["창문", "window" as const, 4.8]
+  ])("[spec] S6(④ 명세 1) 책상을 골라 둔 뒤 %s을 톡하면 그 벽 가구가 골라지고 돌리기 버튼이 없으며, 배치는 그대로다", async (_label, piece, along) => {
     await renderHome();
     await enterEdit();
     await selectAt("desk");
 
-    await tapAt(at, null, mark);
-    expect(rotateButton()).toBeNull();
+    const wallHit: PointerHit = { point: null, mark: piece, onCharacter: false, piece, wall: { wall: "back", along } };
+    await pointer("down", wallHit, 200, 300);
+    await pointer("up", null, 200, 300);
+    await flushAsync();
 
-    await drag(null, at, { x: 4.5, z: 8.5 }, mark);
     expect(rotateButton()).toBeNull();
+    expect(canvas().edit!.marks).toEqual([]);
+    expect(canvas().edit!.wallMarks.map((m) => m.piece)).toEqual([piece]);
     expect(editLayout()).toEqual(P0);
     await finishExpectNoSave();
   });

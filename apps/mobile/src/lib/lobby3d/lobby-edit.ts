@@ -24,8 +24,10 @@ import {
 const EPS = 1e-6;
 const FLOOR_PIECES: readonly FloorPieceId[] = ["desk", "bookcase", "wardrobe", "rug"];
 const WALL_PIECES: readonly WallPieceId[] = ["board", "window"];
-/** 게시판·창문 바로 아래에 놓지 못하는 키 큰 가구. */
-const TALL_PIECES: ReadonlySet<FloorPieceId> = new Set<FloorPieceId>(["bookcase", "wardrobe"]);
+/** 게시판·창문 바로 아래에 놓지 못하는 가구. 책상도 윗면이 벽 가구 아래 끝보다 높아 겹친다. 깔개만 된다. */
+const UNDER_WALL_BLOCKED: ReadonlySet<FloorPieceId> = new Set<FloorPieceId>(["bookcase", "wardrobe", "desk"]);
+/** 벽 가구 앞 바닥 띠의 깊이(칸). 편집 모드에서 이 띠를 눌러도 그 벽 가구를 고른다(옆벽 가구는 화면에서 아주 좁게 보인다). */
+const WALL_FRONT_DEPTH = 1;
 /** 벽 가구 폭의 양 끝을 벽 끝(모서리, 옆벽 앞끝)에서 띄우는 거리(칸). */
 const WALL_END_GAP = 0.2;
 /** 벽 가구를 벽을 따라 맞추는 단위(칸). */
@@ -55,7 +57,7 @@ function underWallBounds(layout: LobbyLayout, id: WallPieceId): Bounds {
 
 /**
  * 가구를 놓을 수 있는 배치인지.
- * 바닥 가구가 모두 방 안이고, 막는 가구끼리 겹치지 않고, 책장·옷장이 게시판·창문 바로 아래에 있지 않고,
+ * 바닥 가구가 모두 방 안이고, 막는 가구끼리 겹치지 않고, 책장·옷장·책상이 게시판·창문 바로 아래에 있지 않고,
  * 벽 가구가 벽 안(양 끝에서 띄워)에 있고 같은 벽에서 서로 겹치지 않고,
  * 다섯 장소마다 서는 자리 중 하나에 입구(밖으로의 서는 자리)에서 걸어갈 수 있어야 한다.
  */
@@ -80,7 +82,7 @@ export function isPlaceableLayout(layout: LobbyLayout): boolean {
   }
   const under = WALL_PIECES.map((id) => underWallBounds(layout, id));
   for (const { id, box } of bounds) {
-    if (TALL_PIECES.has(id) && under.some((u) => overlaps(box, u))) return false;
+    if (UNDER_WALL_BLOCKED.has(id) && under.some((u) => overlaps(box, u))) return false;
   }
   const geometry = layoutGeometry(layout, ROOM.width);
   const door = MARKS.door.approach;
@@ -104,6 +106,19 @@ export function nearestWall(point: FloorPoint): { wall: WallSide; along: number 
   const toRight = ROOM.width - point.x;
   if (toBack <= toLeft && toBack <= toRight) return { wall: "back", along: point.x };
   return toLeft <= toRight ? { wall: "left", along: point.z } : { wall: "right", along: point.z };
+}
+
+/** 바닥 점이 벽 가구 앞 바닥 띠(그 벽에서 WALL_FRONT_DEPTH 안, 벽 가구 폭 안)에 있으면 그 벽 가구. 두 벽에 걸치면 가장 가까운 벽으로 본다. */
+export function wallPieceInFront(layout: LobbyLayout, point: FloorPoint): WallPieceId | null {
+  const near = nearestWall(point);
+  const depth = near.wall === "back" ? point.z : near.wall === "left" ? point.x : ROOM.width - point.x;
+  if (depth < -EPS || depth >= WALL_FRONT_DEPTH) return null;
+  return (
+    WALL_PIECES.find((id) => {
+      const { wall, along } = layout.wall[id];
+      return wall === near.wall && Math.abs(near.along - along) <= WALL_PIECE_WIDTH[id] / 2 + EPS;
+    }) ?? null
+  );
 }
 
 /** 누른 곳의 벽 자리: 벽 위를 눌렀으면 그 벽, 아니면 바닥 점에서 가장 가까운 벽. */
@@ -207,7 +222,8 @@ export class LobbyEditor {
   pointerDown(hit: PointerHit, screenX: number, screenY: number): EditNotice {
     this.press = null;
     this.drag = null;
-    const piece = hit.piece ?? null;
+    // 가구를 맞히지 않았어도 벽 가구 앞 바닥 띠를 눌렀으면 그 벽 가구다
+    const piece = hit.piece ?? (hit.point ? wallPieceInFront(this.layout, hit.point) : null);
     if (piece && this.red && piece !== this.red) return "red-first";
     this.press = { piece, x: screenX, y: screenY, point: hit.point, wall: wallPointOf(hit) };
     return null;

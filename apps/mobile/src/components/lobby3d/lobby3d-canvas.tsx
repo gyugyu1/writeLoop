@@ -45,6 +45,8 @@ export interface LobbyCanvasEdit {
   wallMarks: EditWallMark[];
   /** 가구를 끄는 중인지. 끄는 동안은 창밖 장면·창문 빛을 끌기 전 배치로 둔다. */
   dragging: boolean;
+  /** 끄는 가구. 끄는 줄 알게 살짝 띄운다(바닥 가구는 위로, 벽 가구는 벽에서 앞으로). 그림자는 제자리다. */
+  lifted: FloorPieceId | WallPieceId | null;
   /** 카메라가 따라갈 점. 없으면 지금 자리에 둔다. */
   focus: FloorPoint | null;
   /** 돌리기 버튼을 띄울 가구. 없으면 숨긴다. */
@@ -571,11 +573,15 @@ function editPieceOf(piece: FurniturePiece | undefined): FloorPieceId | WallPiec
   return piece;
 }
 
+/** 끄는 가구를 띄우는 높이와 벽 가구를 벽에서 내미는 거리(칸). */
+const LIFT_HEIGHT = 0.25;
+const LIFT_OUT = 0.15;
+
 /**
  * 가구(대체 모양과 가구 묶음)와 바닥 그림자를 placements 자리로 옮긴다. 편집 모드에서 방을 다시 만들지 않고 가구만 옮길 때 쓴다.
- * 의자는 '들어가기' 때 빼는 기준 자리도 옮긴다(매 프레임 그 자리에서 뺀다).
+ * 의자는 '들어가기' 때 빼는 기준 자리도 옮긴다(매 프레임 그 자리에서 뺀다). lifted 가구는 살짝 띄운다(의자는 책상을 따라 뜬다).
  */
-function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[]) {
+function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[], lifted: FloorPieceId | WallPieceId | null = null) {
   const byPiece = new Map(placements.map((p) => [p.piece, p]));
   scene.traverse((o) => {
     const of = o.userData.furnitureOf as FurniturePiece | undefined;
@@ -583,7 +589,11 @@ function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[]) 
     const place = byPiece.get((of ?? shadowOf) as FurniturePiece);
     if (!place) return;
     if (of) {
-      o.position.set(place.x, place.y, place.z);
+      const up = lifted !== null && (of === lifted || (of === "chair" && lifted === "desk"));
+      const wallPiece = of === "board" || of === "window";
+      // 벽 가구는 방 안쪽(앞면이 보는 쪽)으로 내민다
+      const out = up && wallPiece ? LIFT_OUT : 0;
+      o.position.set(place.x + Math.sin(place.rotY) * out, place.y + (up && !wallPiece ? LIFT_HEIGHT : 0), place.z + Math.cos(place.rotY) * out);
       o.rotation.y = place.rotY;
       if (of === "chair") o.userData.chairBase = { x: place.x, z: place.z };
     } else if (shadowOf === "board" || shadowOf === "window") {
@@ -718,9 +728,9 @@ function Scene({
 
   // 편집 모드: 가구를 편집 중인 배치대로 옮긴다. 가구 묶음은 나중에 불러와지므로 편집하는 동안 가끔 다시 옮긴다.
   // 편집을 마치면 지금 배치로 되돌린다(배치가 바뀌었으면 방을 다시 만들어 어차피 지금 배치다).
-  const posed = useRef<{ layout: LobbyLayout | null; at: number }>({ layout: null, at: 0 });
+  const posed = useRef<{ layout: LobbyLayout | null; lifted: FloorPieceId | WallPieceId | null; at: number }>({ layout: null, lifted: null, at: 0 });
   useEffect(() => {
-    posed.current = { layout: null, at: 0 };
+    posed.current = { layout: null, lifted: null, at: 0 };
   }, [world]);
   // 바닥에 칠한 칸과 벽에 칠한 자리. 칠할 것이 바뀌면 매 프레임(다시 그리기를 기다리지 않고) 다시 만든다
   const markGroup = useMemo(() => new THREE.Group(), []);
@@ -780,9 +790,10 @@ function Scene({
       shownMarks.current = { marks: editing?.marks, wallMarks: editing?.wallMarks };
     }
     const want = editing?.layout ?? null;
-    if (want !== posed.current.layout || (want && nowMs - posed.current.at > 500)) {
-      poseFurniture(scene, furniturePlacements(want ?? activeLobbyLayout()));
-      posed.current = { layout: want, at: nowMs };
+    const lifted = editing?.lifted ?? null;
+    if (want !== posed.current.layout || lifted !== posed.current.lifted || (want && nowMs - posed.current.at > 500)) {
+      poseFurniture(scene, furniturePlacements(want ?? activeLobbyLayout()), lifted);
+      posed.current = { layout: want, lifted, at: nowMs };
     }
     if (!editing) lightLayout.current = activeLobbyLayout();
     else if (!editing.dragging) lightLayout.current = editing.layout;

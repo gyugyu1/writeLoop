@@ -220,6 +220,7 @@ export default function Lobby3dScreen({
       marks: editor.marks(),
       wallMarks: editor.wallMarks(),
       dragging: editor.dragging !== null,
+      lifted: editor.dragging,
       focus: editor.focus(),
       handle: editor.handle,
       canFinish: editor.canFinish
@@ -553,13 +554,16 @@ export default function Lobby3dScreen({
   // 돌리기 버튼 자리. 말풍선처럼 매 프레임 값만 바꾼다
   const handleLeft = useRef(new Animated.Value(0, { useNativeDriver: true })).current;
   const handleTop = useRef(new Animated.Value(0, { useNativeDriver: true })).current;
+  // 보임도 매 프레임 바로 바꾼다(끌기 시작하면 다시 그리기를 기다리지 않고 숨는다)
+  const handleOpacity = useRef(new Animated.Value(1, { useNativeDriver: true })).current;
   const onEditHandleFrame = useCallback(
     (point: { x: number; y: number } | null) => {
+      send(handleOpacity, point ? 1 : 0, 0);
       if (!point) return;
       send(handleLeft, point.x - HANDLE_SIZE / 2, 0.5);
       send(handleTop, point.y - HANDLE_SIZE, 0.5);
     },
-    [send, handleLeft, handleTop]
+    [send, handleLeft, handleTop, handleOpacity]
   );
   // 슬라이더는 왼쪽이 멀리(넓게 보임), 오른쪽이 가까이다.
   const closeness = VIEW_WIDTH_MAX + VIEW_WIDTH_MIN - viewWidth;
@@ -704,7 +708,7 @@ export default function Lobby3dScreen({
       {editing && editView?.handle ? (
         <Animated.View
           pointerEvents="box-none"
-          style={[styles.handleWrap, { transform: [{ translateX: handleLeft }, { translateY: handleTop }] }]}
+          style={[styles.handleWrap, { opacity: handleOpacity, transform: [{ translateX: handleLeft }, { translateY: handleTop }] }]}
         >
           <Pressable
             accessibilityRole="button"

@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 import { layoutGeometry, type FloorPieceId, type LobbyLayout, type WallPieceId, type WallSide } from "@/lib/lobby3d/lobby-layout";
-import type { EditMark, EditWallMark } from "@/lib/lobby3d/lobby-edit";
+import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { currentFurnitureLayout, furniturePlacements, type FurniturePiece, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
@@ -43,9 +43,11 @@ export interface LobbyCanvasEdit {
   marks: EditMark[];
   /** 벽에 칠할 자리(고른 벽 가구). */
   wallMarks: EditWallMark[];
+  /** 고른 가구에 딸린 장소의 구역과 서는 자리. 바닥에 노랑으로 보인다. */
+  zone: EditZone | null;
   /** 가구를 끄는 중인지. 끄는 동안은 창밖 장면·창문 빛을 끌기 전 배치로 둔다. */
   dragging: boolean;
-  /** 끄는 가구. 끄는 줄 알게 살짝 띄운다(바닥 가구는 위로, 벽 가구는 벽에서 앞으로). 그림자는 제자리다. */
+  /** 고른 가구. 골라진 줄 알게 띄우고 천천히 출렁이게 한다(바닥 가구는 위로, 벽 가구는 벽에서 앞으로). 그림자는 제자리다. */
   lifted: FloorPieceId | WallPieceId | null;
   /** 카메라가 따라갈 점. 없으면 지금 자리에 둔다. */
   focus: FloorPoint | null;
@@ -573,15 +575,26 @@ function editPieceOf(piece: FurniturePiece | undefined): FloorPieceId | WallPiec
   return piece;
 }
 
-/** 끄는 가구를 띄우는 높이와 벽 가구를 벽에서 내미는 거리(칸). */
-const LIFT_HEIGHT = 0.25;
-const LIFT_OUT = 0.15;
+/** 고른 가구를 띄우는 높이와 벽 가구를 벽에서 내미는 거리(칸), 출렁이는 폭(칸)과 한 번 오르내리는 시간(초). */
+const LIFT_HEIGHT = 0.6;
+const LIFT_OUT = 0.35;
+const BOB_AMPLITUDE = 0.06;
+const BOB_SECONDS = 1.5;
+
+/** 띄운 가구 하나: 띄우기 전 자리와 벽 가구인지. 매 프레임 이 자리에서 띄우고 출렁인다. */
+interface LiftedObject {
+  object: THREE.Object3D;
+  base: { x: number; y: number; z: number; rotY: number };
+  wall: boolean;
+}
 
 /**
  * 가구(대체 모양과 가구 묶음)와 바닥 그림자를 placements 자리로 옮긴다. 편집 모드에서 방을 다시 만들지 않고 가구만 옮길 때 쓴다.
- * 의자는 '들어가기' 때 빼는 기준 자리도 옮긴다(매 프레임 그 자리에서 뺀다). lifted 가구는 살짝 띄운다(의자는 책상을 따라 뜬다).
+ * 의자는 '들어가기' 때 빼는 기준 자리도 옮긴다(매 프레임 그 자리에서 뺀다).
+ * lifted 가구(의자는 책상을 따라)는 제자리에 두고 목록으로 돌려준다. 띄우기와 출렁임은 매 프레임 liftObjects가 한다.
  */
-function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[], lifted: FloorPieceId | WallPieceId | null = null) {
+function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[], lifted: FloorPieceId | WallPieceId | null = null): LiftedObject[] {
+  const raised: LiftedObject[] = [];
   const byPiece = new Map(placements.map((p) => [p.piece, p]));
   scene.traverse((o) => {
     const of = o.userData.furnitureOf as FurniturePiece | undefined;
@@ -589,12 +602,11 @@ function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[], 
     const place = byPiece.get((of ?? shadowOf) as FurniturePiece);
     if (!place) return;
     if (of) {
-      const up = lifted !== null && (of === lifted || (of === "chair" && lifted === "desk"));
-      const wallPiece = of === "board" || of === "window";
-      // 벽 가구는 방 안쪽(앞면이 보는 쪽)으로 내민다
-      const out = up && wallPiece ? LIFT_OUT : 0;
-      o.position.set(place.x + Math.sin(place.rotY) * out, place.y + (up && !wallPiece ? LIFT_HEIGHT : 0), place.z + Math.cos(place.rotY) * out);
+      o.position.set(place.x, place.y, place.z);
       o.rotation.y = place.rotY;
+      if (lifted !== null && (of === lifted || (of === "chair" && lifted === "desk"))) {
+        raised.push({ object: o, base: { x: place.x, y: place.y, z: place.z, rotY: place.rotY }, wall: of === "board" || of === "window" });
+      }
       if (of === "chair") o.userData.chairBase = { x: place.x, z: place.z };
     } else if (shadowOf === "board" || shadowOf === "window") {
       placeWallShadow(o, place);
@@ -603,7 +615,64 @@ function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[], 
       o.rotation.set(-Math.PI / 2, place.rotY, 0, "YXZ");
     }
   });
+  return raised;
 }
+
+/** 띄운 가구를 띄우고 출렁이게 한다. 바닥 가구는 위로, 벽 가구는 방 안쪽(앞면이 보는 쪽)으로 내민다. 의자의 x·z는 매 프레임 의자 빼기가 정한다. */
+function liftObjects(list: LiftedObject[], seconds: number) {
+  const bob = Math.sin((seconds / BOB_SECONDS) * Math.PI * 2) * BOB_AMPLITUDE;
+  for (const { object, base, wall } of list) {
+    const out = wall ? LIFT_OUT : 0;
+    object.position.set(base.x + Math.sin(base.rotY) * out, base.y + (wall ? 0 : LIFT_HEIGHT) + bob, base.z + Math.cos(base.rotY) * out);
+  }
+}
+
+/** 모서리가 둥근 사각형(가운데가 원점, 가로 w·세로 h, 모서리 반지름 r). 칠한 칸에 쓴다. */
+function roundedRectGeometry(w: number, h: number, r: number): THREE.ShapeGeometry {
+  const rr = Math.min(r, w / 2, h / 2);
+  const x = -w / 2;
+  const y = -h / 2;
+  const shape = new THREE.Shape();
+  shape.moveTo(x + rr, y);
+  shape.lineTo(x + w - rr, y);
+  shape.quadraticCurveTo(x + w, y, x + w, y + rr);
+  shape.lineTo(x + w, y + h - rr);
+  shape.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  shape.lineTo(x + rr, y + h);
+  shape.quadraticCurveTo(x, y + h, x, y + h - rr);
+  shape.lineTo(x, y + rr);
+  shape.quadraticCurveTo(x, y, x + rr, y);
+  return new THREE.ShapeGeometry(shape, 6);
+}
+
+/**
+ * 바닥의 장소 구역 모양: from을 중심으로 한 반지름 r 원이 to까지 이어진 길쭉한 모양(to가 없거나 같으면 원).
+ * 바닥(y = 0)에 눕힐 모양이라 바닥 좌표 (x, z)를 모양 좌표 (x, −z)로 둔다(눕히면 −z가 다시 z가 된다).
+ */
+function zoneGeometry(from: FloorPoint, to: FloorPoint | null, r: number): THREE.ShapeGeometry {
+  const end = to ?? from;
+  const dx = end.x - from.x;
+  const dz = end.z - from.z;
+  const angle = Math.atan2(dz, dx);
+  const shape = new THREE.Shape();
+  const at = (p: FloorPoint, a: number) => ({ x: p.x + Math.cos(a) * r, y: -(p.z + Math.sin(a) * r) });
+  const steps = 16;
+  // 끝(to) 쪽 반원, 시작(from) 쪽 반원 순서로 둘레를 잇는다
+  for (let i = 0; i <= steps; i += 1) {
+    const p = at(end, angle - Math.PI / 2 + (Math.PI * i) / steps);
+    if (i === 0) shape.moveTo(p.x, p.y);
+    else shape.lineTo(p.x, p.y);
+  }
+  for (let i = 0; i <= steps; i += 1) {
+    const p = at(from, angle + Math.PI / 2 + (Math.PI * i) / steps);
+    shape.lineTo(p.x, p.y);
+  }
+  return new THREE.ShapeGeometry(shape);
+}
+
+/** 칠한 칸 모서리 반지름과 장소 구역·서는 자리 색(칸). */
+const MARK_CORNER = 0.16;
+const ZONE_COLOR = 0xffd23f;
 
 /** 벽에 칠하는 띠의 높이(가운데)와 세로 크기. 벽 가구가 걸린 높이를 따른다. */
 const WALL_MARK: Record<WallPieceId, { y: number; height: number }> = { board: { y: 1.75, height: 1.6 }, window: { y: 2.05, height: 2.1 } };
@@ -728,14 +797,23 @@ function Scene({
 
   // 편집 모드: 가구를 편집 중인 배치대로 옮긴다. 가구 묶음은 나중에 불러와지므로 편집하는 동안 가끔 다시 옮긴다.
   // 편집을 마치면 지금 배치로 되돌린다(배치가 바뀌었으면 방을 다시 만들어 어차피 지금 배치다).
-  const posed = useRef<{ layout: LobbyLayout | null; lifted: FloorPieceId | WallPieceId | null; at: number }>({ layout: null, lifted: null, at: 0 });
+  const posed = useRef<{ layout: LobbyLayout | null; lifted: FloorPieceId | WallPieceId | null; at: number; raised: LiftedObject[] }>({
+    layout: null,
+    lifted: null,
+    at: 0,
+    raised: []
+  });
   useEffect(() => {
-    posed.current = { layout: null, lifted: null, at: 0 };
+    posed.current = { layout: null, lifted: null, at: 0, raised: [] };
   }, [world]);
   // 바닥에 칠한 칸과 벽에 칠한 자리. 칠할 것이 바뀌면 매 프레임(다시 그리기를 기다리지 않고) 다시 만든다
   const markGroup = useMemo(() => new THREE.Group(), []);
-  const shownMarks = useRef<{ marks: EditMark[] | undefined; wallMarks: EditWallMark[] | undefined }>({ marks: undefined, wallMarks: undefined });
-  const drawMarks = (editMarks: EditMark[] | undefined, editWallMarks: EditWallMark[] | undefined) => {
+  const shownMarks = useRef<{ marks: EditMark[] | undefined; wallMarks: EditWallMark[] | undefined; zone: EditZone | null | undefined }>({
+    marks: undefined,
+    wallMarks: undefined,
+    zone: undefined
+  });
+  const drawMarks = (editMarks: EditMark[] | undefined, editWallMarks: EditWallMark[] | undefined, zone: EditZone | null | undefined) => {
     for (const child of [...markGroup.children]) {
       const m = child as THREE.Mesh;
       m.geometry.dispose();
@@ -746,7 +824,7 @@ function Scene({
       const w = mark.maxX - mark.minX;
       const d = mark.maxZ - mark.minZ;
       const m = new THREE.Mesh(
-        new THREE.PlaneGeometry(Math.max(0.1, w - 0.06), Math.max(0.1, d - 0.06)),
+        roundedRectGeometry(Math.max(0.1, w - 0.06), Math.max(0.1, d - 0.06), MARK_CORNER),
         new THREE.MeshBasicMaterial({ color: mark.ok ? 0x8fe3b0 : 0xff4a3d, transparent: true, opacity: 0.55, depthWrite: false })
       );
       m.rotation.x = -Math.PI / 2;
@@ -758,7 +836,7 @@ function Scene({
     for (const mark of editWallMarks ?? []) {
       const { y, height } = WALL_MARK[mark.piece];
       const m = new THREE.Mesh(
-        new THREE.PlaneGeometry(Math.max(0.1, mark.to - mark.from), height),
+        roundedRectGeometry(Math.max(0.1, mark.to - mark.from), height, MARK_CORNER),
         new THREE.MeshBasicMaterial({ color: mark.ok ? 0x8fe3b0 : 0xff4a3d, transparent: true, opacity: 0.45, depthWrite: false })
       );
       const mid = (mark.from + mark.to) / 2;
@@ -775,6 +853,29 @@ function Scene({
       m.renderOrder = 2;
       markGroup.add(m);
     }
+    if (zone) {
+      // 장소 구역(옅은 노랑)과 서는 자리(진한 노랑 점). 가구 칸 칠보다 아래에 깐다
+      const area = new THREE.Mesh(
+        zoneGeometry(zone.center, zone.reach, zone.radius),
+        new THREE.MeshBasicMaterial({ color: ZONE_COLOR, transparent: true, opacity: 0.28, depthWrite: false })
+      );
+      area.rotation.x = -Math.PI / 2;
+      area.position.y = 0.014;
+      area.raycast = () => {};
+      area.renderOrder = 1;
+      markGroup.add(area);
+      for (const spot of zone.approach) {
+        const dot = new THREE.Mesh(
+          zoneGeometry(spot, null, 0.14),
+          new THREE.MeshBasicMaterial({ color: ZONE_COLOR, transparent: true, opacity: 0.9, depthWrite: false })
+        );
+        dot.rotation.x = -Math.PI / 2;
+        dot.position.y = 0.024;
+        dot.raycast = () => {};
+        dot.renderOrder = 3;
+        markGroup.add(dot);
+      }
+    }
   };
 
   // 창밖 장면·창문 빛이 따를 배치: 편집 중이면 놓인 배치(끄는 동안은 끌기 전 배치), 아니면 지금 배치
@@ -785,16 +886,17 @@ function Scene({
     const dt = Math.min(0.05, delta);
     onFrame(dt, nowMs);
     const editing = currentEdit();
-    if (editing?.marks !== shownMarks.current.marks || editing?.wallMarks !== shownMarks.current.wallMarks) {
-      drawMarks(editing?.marks, editing?.wallMarks);
-      shownMarks.current = { marks: editing?.marks, wallMarks: editing?.wallMarks };
+    if (editing?.marks !== shownMarks.current.marks || editing?.wallMarks !== shownMarks.current.wallMarks || editing?.zone !== shownMarks.current.zone) {
+      drawMarks(editing?.marks, editing?.wallMarks, editing?.zone);
+      shownMarks.current = { marks: editing?.marks, wallMarks: editing?.wallMarks, zone: editing?.zone };
     }
     const want = editing?.layout ?? null;
     const lifted = editing?.lifted ?? null;
     if (want !== posed.current.layout || lifted !== posed.current.lifted || (want && nowMs - posed.current.at > 500)) {
-      poseFurniture(scene, furniturePlacements(want ?? activeLobbyLayout()), lifted);
-      posed.current = { layout: want, lifted, at: nowMs };
+      const raised = poseFurniture(scene, furniturePlacements(want ?? activeLobbyLayout()), lifted);
+      posed.current = { layout: want, lifted, at: nowMs, raised };
     }
+    liftObjects(posed.current.raised, nowMs / 1000);
     if (!editing) lightLayout.current = activeLobbyLayout();
     else if (!editing.dragging) lightLayout.current = editing.layout;
     if (character.current) character.current.group.visible = !editing;

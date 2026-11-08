@@ -107,6 +107,11 @@ export const MARK_ZONE_RADIUS = 1;
 /** 장소 구역이 서는 자리에서 바라볼 지점(벽)까지 이어지는 장소. 벽에 바짝 붙어도 구역 안이다. */
 const ZONE_REACHES_WALL: ReadonlySet<MarkId> = new Set<MarkId>(["board", "window", "bookcase"]);
 
+/** 장소 구역이 바라볼 지점(벽)까지 이어지는 장소인지. */
+export function zoneReachesWall(id: MarkId): boolean {
+  return ZONE_REACHES_WALL.has(id);
+}
+
 /** 장소 구역의 가운데(서는 자리들의 가운데). */
 export function markZoneCenter(id: MarkId): FloorPoint {
   const points = MARKS[id].approach;

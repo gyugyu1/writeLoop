@@ -219,8 +219,9 @@ export default function Lobby3dScreen({
       layout: editor.layout,
       marks: editor.marks(),
       wallMarks: editor.wallMarks(),
+      zone: editor.zone(),
       dragging: editor.dragging !== null,
-      lifted: editor.dragging,
+      lifted: editor.selected,
       focus: editor.focus(),
       handle: editor.handle,
       canFinish: editor.canFinish

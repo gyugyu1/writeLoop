@@ -1,4 +1,4 @@
-import { MARKS, ROOM, TAP_MAX_MOVE_PX, findPath, isFree, type FloorPoint, type PointerHit } from "./engine";
+import { MARKS, MARK_ZONE_RADIUS, ROOM, TAP_MAX_MOVE_PX, findPath, isFree, zoneReachesWall, type FloorPoint, type PointerHit } from "./engine";
 import {
   DEFAULT_LOBBY_LAYOUT,
   WALL_PIECE_WIDTH,
@@ -158,6 +158,20 @@ export interface EditWallMark {
   to: number;
   ok: boolean;
 }
+
+/** 바닥에 보일 장소 구역: 라이트루프가 멈추면 그 장소 안내가 뜨는 곳과 서는 자리. */
+export interface EditZone {
+  place: "board" | "window" | "desk" | "bookcase";
+  /** 서는 자리들의 가운데(원의 중심). */
+  center: FloorPoint;
+  /** 구역이 벽까지 이어지는 장소면 바라볼 지점(그 끝), 아니면 null(원). */
+  reach: FloorPoint | null;
+  radius: number;
+  approach: FloorPoint[];
+}
+
+/** 장소가 딸린 가구. 가구 이름과 장소 이름이 같다. */
+const PLACE_PIECES: ReadonlySet<EditPieceId> = new Set<EditPieceId>(["board", "window", "desk", "bookcase"]);
 
 /** 누른 결과. 화면이 안내를 띄운다. */
 export type EditNotice = "red-first" | null;
@@ -342,6 +356,17 @@ export class LobbyEditor {
     const { wall, along } = this.layout.wall[id];
     const half = WALL_PIECE_WIDTH[id] / 2;
     return [{ piece: id, wall, from: along - half, to: along + half, ok: isPlaceableLayout(this.layout) }];
+  }
+
+  /** 고른 가구에 딸린 장소의 구역과 서는 자리(편집 중인 배치로 계산). 장소가 없는 가구거나 고르지 않았으면 null. */
+  zone(): EditZone | null {
+    const id = this.selected;
+    if (!id || !PLACE_PIECES.has(id)) return null;
+    const place = id as EditZone["place"];
+    const spot = layoutGeometry(this.layout, ROOM.width).places[place];
+    const n = spot.approach.length;
+    const center = { x: spot.approach.reduce((s, p) => s + p.x, 0) / n, z: spot.approach.reduce((s, p) => s + p.z, 0) / n };
+    return { place, center, reach: zoneReachesWall(place) ? spot.faceTo : null, radius: MARK_ZONE_RADIUS, approach: spot.approach };
   }
 
   /** 카메라가 따라갈 점: 끄는 가구, 없으면 고른 가구. 벽 가구는 그 앞 바닥이다. */

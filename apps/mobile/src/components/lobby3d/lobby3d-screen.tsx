@@ -771,6 +771,8 @@ export default function Lobby3dScreen({
               style={[styles.popButton, styles.popGhost]}
               onPress={() => {
                 setViewWidth(VIEW_WIDTH_DEFAULT);
+                // 편집 중이면 슬라이더처럼 편집 카메라도 이 거리를 따른다
+                setEditViewWidth(null);
                 void resetLobbyViewWidth();
               }}
             >

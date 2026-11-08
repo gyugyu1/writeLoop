@@ -73,6 +73,12 @@ export interface Lobby3dCanvasProps {
   layoutKey?: number;
   /** 편집 모드. 있으면 라이트루프와 발밑 그림자를 숨기고, 가구를 편집 중인 배치대로 그리고, 칠할 칸을 바닥에 보인다. */
   edit?: LobbyCanvasEdit | null;
+  /**
+   * 편집 모드를 매 프레임 직접 읽는 곳. 있으면 edit 대신 이것을 읽는다.
+   * 가구를 끄는 동안에는 3D 그리기와 누르기 처리가 자바스크립트 일꾼을 차지해 화면 다시 그리기가 밀리므로,
+   * 다시 그리기를 기다리지 않고 가구·칸 칠·카메라가 바로 따라가게 한다.
+   */
+  editLive?: MutableRefObject<LobbyCanvasEdit | null>;
   /** 편집 모드에서 매 프레임 돌리기 버튼이 설 화면 좌표(고른 가구 위). 띄울 가구가 없으면 null. */
   onEditHandleFrame?: (point: { x: number; y: number } | null) => void;
 }
@@ -627,6 +633,7 @@ function Scene({
   daylight,
   layoutKey = 0,
   edit = null,
+  editLive,
   onEditHandleFrame,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
@@ -642,6 +649,10 @@ function Scene({
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const editRef = useRef(edit);
   editRef.current = edit;
+  const editLiveRef = useRef(editLive);
+  editLiveRef.current = editLive;
+  /** 지금 편집 모습(매 프레임 직접 읽는 곳이 있으면 그것). */
+  const currentEdit = () => (editLiveRef.current ? editLiveRef.current.current : editRef.current);
 
   useEffect(() => {
     scene.background = new THREE.Color(0x000000);
@@ -678,7 +689,7 @@ function Scene({
         return raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), floorHit) ? { x: floorHit.x, z: floorHit.z } : null;
       };
       // 편집 모드: 가구만 누르기 판정을 받는다(라이트루프는 숨어 있다). 가장 앞에 맞은 가구를 고른다.
-      if (editRef.current) {
+      if (currentEdit()) {
         const first = raycaster.intersectObjects(world.pieceObjects, true)[0]?.object.userData as { pickPiece?: FurniturePiece } | undefined;
         return { point: floorPoint(), mark: null, onCharacter: false, piece: editPieceOf(first?.pickPiece), wall: wallUnderRay(raycaster.ray) };
       }
@@ -711,11 +722,10 @@ function Scene({
   useEffect(() => {
     posed.current = { layout: null, at: 0 };
   }, [world]);
-  // 바닥에 칠한 칸과 벽에 칠한 자리
+  // 바닥에 칠한 칸과 벽에 칠한 자리. 칠할 것이 바뀌면 매 프레임(다시 그리기를 기다리지 않고) 다시 만든다
   const markGroup = useMemo(() => new THREE.Group(), []);
-  const editMarks = edit?.marks;
-  const editWallMarks = edit?.wallMarks;
-  useEffect(() => {
+  const shownMarks = useRef<{ marks: EditMark[] | undefined; wallMarks: EditWallMark[] | undefined }>({ marks: undefined, wallMarks: undefined });
+  const drawMarks = (editMarks: EditMark[] | undefined, editWallMarks: EditWallMark[] | undefined) => {
     for (const child of [...markGroup.children]) {
       const m = child as THREE.Mesh;
       m.geometry.dispose();
@@ -755,7 +765,7 @@ function Scene({
       m.renderOrder = 2;
       markGroup.add(m);
     }
-  }, [editMarks, editWallMarks, markGroup]);
+  };
 
   // 창밖 장면·창문 빛이 따를 배치: 편집 중이면 놓인 배치(끄는 동안은 끌기 전 배치), 아니면 지금 배치
   const lightLayout = useRef<LobbyLayout>(activeLobbyLayout());
@@ -764,7 +774,11 @@ function Scene({
     const nowMs = Date.now();
     const dt = Math.min(0.05, delta);
     onFrame(dt, nowMs);
-    const editing = editRef.current;
+    const editing = currentEdit();
+    if (editing?.marks !== shownMarks.current.marks || editing?.wallMarks !== shownMarks.current.wallMarks) {
+      drawMarks(editing?.marks, editing?.wallMarks);
+      shownMarks.current = { marks: editing?.marks, wallMarks: editing?.wallMarks };
+    }
     const want = editing?.layout ?? null;
     if (want !== posed.current.layout || (want && nowMs - posed.current.at > 500)) {
       poseFurniture(scene, furniturePlacements(want ?? activeLobbyLayout()));

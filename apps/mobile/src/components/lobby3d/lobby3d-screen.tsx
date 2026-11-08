@@ -201,18 +201,21 @@ export default function Lobby3dScreen({
   savingRef.current = saving;
   // 편집 모드의 카메라 거리. 들어갈 때 방이 가로로 다 보이게 물러나고, 편집 중에 카메라 거리를 바꾸면 그 거리를 따른다.
   const [editViewWidth, setEditViewWidth] = useState<number | null>(null);
+  // 3D 그리기가 매 프레임 직접 읽는 편집 모습. 끄는 동안 다시 그리기가 밀려도 가구가 바로 따라가게 한다
+  const editLive = useRef<LobbyCanvasEdit | null>(null);
   const editShape = useRef<{ layout: LobbyLayout; selected: string | null; red: string | null; dragging: string | null } | null>(null);
   const refreshEdit = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) {
       editShape.current = null;
+      editLive.current = null;
       setEditView(null);
       return;
     }
     const prev = editShape.current;
     if (prev && prev.layout === editor.layout && prev.selected === editor.selected && prev.red === editor.red && prev.dragging === editor.dragging) return;
     editShape.current = { layout: editor.layout, selected: editor.selected, red: editor.red, dragging: editor.dragging };
-    setEditView({
+    const next: EditView = {
       layout: editor.layout,
       marks: editor.marks(),
       wallMarks: editor.wallMarks(),
@@ -220,7 +223,9 @@ export default function Lobby3dScreen({
       focus: editor.focus(),
       handle: editor.handle,
       canFinish: editor.canFinish
-    });
+    };
+    editLive.current = next;
+    setEditView(next);
   }, []);
 
   // 가구 배치가 바뀌면 방에 적용하고, 라이트루프를 멈춰 막히지 않은 자리에 세운 뒤 3D를 다시 그린다.
@@ -591,6 +596,7 @@ export default function Lobby3dScreen({
         daylight={daylight}
         layoutKey={layoutKey}
         edit={editView}
+        editLive={editLive}
         onEditHandleFrame={onEditHandleFrame}
       />
 

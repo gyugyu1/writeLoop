@@ -73,6 +73,7 @@ jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
 jest.mock("@/lib/api", () => ({
   getDiaryCalendarSummary: jest.fn(),
   getFeaturedDailyPrompt: jest.fn(),
+  getLobbyLayout: jest.fn(() => Promise.resolve(null)),
   getMobileHomeSnapshot: jest.fn(),
   getMonthWritingStatus: jest.fn(),
   getTodayWritingStatus: jest.fn(),

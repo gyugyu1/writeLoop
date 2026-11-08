@@ -13,40 +13,63 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * 모바일 홈 로비의 가구 배치를 계정마다 하나 저장하고 돌려준다.
- * 서버는 배치의 모양(아는 가구가 빠짐없이 있는지, 방 안인지, 방향·벽 값)만 검사한다.
+ * 서버는 배치의 모양(아는 종류인지, 종류에 맞는 자리가 방 안인지, 방향·벽 값, id가 겹치지 않는지, 장소 가구가 하나씩 있는지)만 검사한다.
  * 가구끼리 겹치는지와 장소로 가는 길이 막히는지는 앱의 편집 화면이 막는다.
  */
 @Service
 @RequiredArgsConstructor
 public class LobbyLayoutService {
 
-    /** 지금 아는 배치 모양 버전. 모양이 바뀌면 올리고 옛 버전을 읽는 방법을 정한다. */
-    static final int SHAPE_VERSION = 1;
+    /** 지금 아는 배치 모양 버전. 2: 가구 인스턴스 목록. 옛 버전(1)으로 저장된 배치는 없는 것으로 본다. */
+    static final int SHAPE_VERSION = 2;
 
     /** 방의 가로(x)·깊이(z), 칸 단위(앱 engine.ts의 ROOM). */
     static final double ROOM_WIDTH = 8;
     static final double ROOM_DEPTH = 11;
 
-    private static final List<String> LAYOUT_KEYS = List.of("version", "floor", "wall");
-    private static final List<String> FLOOR_PIECES = List.of("desk", "bookcase", "wardrobe", "rug");
-    private static final List<String> FLOOR_PIECE_KEYS = List.of("x", "z", "facing");
-    private static final List<String> WALL_PIECES = List.of("board", "window");
-    private static final List<String> WALL_PIECE_KEYS = List.of("wall", "along");
+    /** 한 배치에 둘 수 있는 가구 수. */
+    static final int MAX_ITEMS = 40;
+
+    private static final Pattern ITEM_ID = Pattern.compile("[A-Za-z0-9_-]{1,40}");
+    private static final List<String> LAYOUT_KEYS = List.of("version", "items");
+    private static final List<String> FLOOR_ITEM_KEYS = List.of("id", "type", "floor");
+    private static final List<String> WALL_ITEM_KEYS = List.of("id", "type", "wall");
+    private static final List<String> FLOOR_SPOT_KEYS = List.of("x", "z", "facing");
+    private static final List<String> WALL_SPOT_KEYS = List.of("wall", "along");
     private static final List<String> WALLS = List.of("back", "left", "right");
+
+    /** 아는 가구 종류(앱 furniture-catalog.ts): 벽에 거는지, 장소가 딸려 배치에 정확히 하나 있어야 하는지. */
+    private record FurnitureKind(boolean onWall, boolean place) {
+    }
+
+    private static final Map<String, FurnitureKind> KINDS = Map.of(
+            "desk", new FurnitureKind(false, true),
+            "bookcase", new FurnitureKind(false, true),
+            "wardrobe", new FurnitureKind(false, false),
+            "rug", new FurnitureKind(false, false),
+            "board", new FurnitureKind(true, true),
+            "window", new FurnitureKind(true, true)
+    );
 
     private final LobbyLayoutRepository lobbyLayoutRepository;
     private final ObjectMapper objectMapper;
 
-    /** 저장한 배치. 저장한 적이 없으면 null이다. */
+    /** 저장한 배치. 저장한 적이 없거나 옛 모양 버전이면 null이다. */
     @Transactional(readOnly = true)
     public LobbyLayoutDto getLayout(Long userId) {
         return lobbyLayoutRepository.findByUserId(userId)
+                .filter(entity -> entity.getShapeVersion() == SHAPE_VERSION)
                 .map(this::toDto)
                 .orElse(null);
     }
@@ -54,7 +77,7 @@ public class LobbyLayoutService {
     @Transactional
     public LobbyLayoutDto saveLayout(Long userId, JsonNode request) {
         LobbyLayoutDto layout = parse(request);
-        String layoutJson = writeJson(new StoredLayout(layout.floor(), layout.wall()));
+        String layoutJson = writeJson(new StoredLayout(layout.items()));
         lobbyLayoutRepository.upsert(userId, layout.version(), layoutJson, Instant.now());
         return layout;
     }
@@ -65,44 +88,71 @@ public class LobbyLayoutService {
         if (!version.isIntegralNumber() || !version.canConvertToInt() || version.intValue() != SHAPE_VERSION) {
             throw invalid("모르는 배치 모양 버전이에요.");
         }
-
-        JsonNode floor = request.get("floor");
-        requireObjectWithKeys(floor, FLOOR_PIECES);
-        LobbyLayoutDto.Floor parsedFloor = new LobbyLayoutDto.Floor(
-                parseFloorPiece(floor.get("desk")),
-                parseFloorPiece(floor.get("bookcase")),
-                parseFloorPiece(floor.get("wardrobe")),
-                parseFloorPiece(floor.get("rug"))
-        );
-
-        JsonNode wall = request.get("wall");
-        requireObjectWithKeys(wall, WALL_PIECES);
-        LobbyLayoutDto.Wall parsedWall = new LobbyLayoutDto.Wall(
-                parseWallPiece(wall.get("board")),
-                parseWallPiece(wall.get("window"))
-        );
-        return new LobbyLayoutDto(SHAPE_VERSION, parsedFloor, parsedWall);
+        JsonNode items = request.get("items");
+        if (!items.isArray() || items.isEmpty() || items.size() > MAX_ITEMS) {
+            throw invalid("가구 목록이 맞지 않아요.");
+        }
+        List<LobbyLayoutDto.Item> parsed = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
+        Map<String, Integer> placeCounts = new HashMap<>();
+        for (JsonNode item : items) {
+            LobbyLayoutDto.Item next = parseItem(item);
+            if (!ids.add(next.id())) {
+                throw invalid("가구 id가 겹쳐요.");
+            }
+            if (KINDS.get(next.type()).place()) {
+                placeCounts.merge(next.type(), 1, Integer::sum);
+            }
+            parsed.add(next);
+        }
+        // 장소가 딸린 가구는 종류마다 정확히 하나다
+        for (Map.Entry<String, FurnitureKind> kind : KINDS.entrySet()) {
+            if (kind.getValue().place() && placeCounts.getOrDefault(kind.getKey(), 0) != 1) {
+                throw invalid("장소가 딸린 가구는 하나씩 있어야 해요.");
+            }
+        }
+        return new LobbyLayoutDto(SHAPE_VERSION, List.copyOf(parsed));
     }
 
-    private LobbyLayoutDto.FloorPiece parseFloorPiece(JsonNode piece) {
-        requireObjectWithKeys(piece, FLOOR_PIECE_KEYS);
+    private LobbyLayoutDto.Item parseItem(JsonNode item) {
+        if (item == null || !item.isObject()) {
+            throw invalid("가구 배치 모양이 맞지 않아요.");
+        }
+        JsonNode id = item.get("id");
+        JsonNode type = item.get("type");
+        if (id == null || !id.isTextual() || !ITEM_ID.matcher(id.textValue()).matches()) {
+            throw invalid("가구 id가 맞지 않아요.");
+        }
+        if (type == null || !type.isTextual() || !KINDS.containsKey(type.textValue())) {
+            throw invalid("모르는 가구예요.");
+        }
+        if (KINDS.get(type.textValue()).onWall()) {
+            requireObjectWithKeys(item, WALL_ITEM_KEYS);
+            return new LobbyLayoutDto.Item(id.textValue(), type.textValue(), null, parseWallSpot(item.get("wall")));
+        }
+        requireObjectWithKeys(item, FLOOR_ITEM_KEYS);
+        return new LobbyLayoutDto.Item(id.textValue(), type.textValue(), parseFloorSpot(item.get("floor")), null);
+    }
+
+    private LobbyLayoutDto.FloorSpot parseFloorSpot(JsonNode piece) {
+        requireObjectWithKeys(piece, FLOOR_SPOT_KEYS);
         double x = requireWithin(piece.get("x"), ROOM_WIDTH);
         double z = requireWithin(piece.get("z"), ROOM_DEPTH);
         JsonNode facing = piece.get("facing");
         if (!facing.isIntegralNumber() || !facing.canConvertToInt() || facing.intValue() < 0 || facing.intValue() > 3) {
             throw invalid("가구 방향은 0~3 중 하나여야 해요.");
         }
-        return new LobbyLayoutDto.FloorPiece(x, z, facing.intValue());
+        return new LobbyLayoutDto.FloorSpot(x, z, facing.intValue());
     }
 
-    private LobbyLayoutDto.WallPiece parseWallPiece(JsonNode piece) {
-        requireObjectWithKeys(piece, WALL_PIECE_KEYS);
+    private LobbyLayoutDto.WallSpot parseWallSpot(JsonNode piece) {
+        requireObjectWithKeys(piece, WALL_SPOT_KEYS);
         JsonNode wall = piece.get("wall");
         if (!wall.isTextual() || !WALLS.contains(wall.textValue())) {
             throw invalid("벽은 back·left·right 중 하나여야 해요.");
         }
         double along = requireWithin(piece.get("along"), "back".equals(wall.textValue()) ? ROOM_WIDTH : ROOM_DEPTH);
-        return new LobbyLayoutDto.WallPiece(wall.textValue(), along);
+        return new LobbyLayoutDto.WallSpot(wall.textValue(), along);
     }
 
     private double requireWithin(JsonNode value, double max) {
@@ -128,7 +178,7 @@ public class LobbyLayoutService {
     private LobbyLayoutDto toDto(LobbyLayoutEntity entity) {
         try {
             StoredLayout stored = objectMapper.readValue(entity.getLayoutJson(), StoredLayout.class);
-            return new LobbyLayoutDto(entity.getShapeVersion(), stored.floor(), stored.wall());
+            return new LobbyLayoutDto(entity.getShapeVersion(), stored.items());
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("저장된 가구 배치를 읽지 못했어요.", exception);
         }
@@ -147,6 +197,6 @@ public class LobbyLayoutService {
     }
 
     /** DB에 두는 배치. 모양 버전은 열로 따로 둔다. */
-    record StoredLayout(LobbyLayoutDto.Floor floor, LobbyLayoutDto.Wall wall) {
+    record StoredLayout(List<LobbyLayoutDto.Item> items) {
     }
 }

@@ -1,18 +1,18 @@
 import type { FloorPoint, MarkId } from "./engine";
+import { furnitureType, type FurniturePlaceId, type FurnitureType } from "./furniture-catalog";
 
 // 방의 가구 배치(배치 데이터)와, 거기서 계산하는 값(막힌 칸, 장소의 서는 자리·바라볼 지점·이름표, 의자, 3D 자리).
+// 배치는 가구 인스턴스 목록이고, 가구마다의 값(크기·장소·의자·모델)은 카탈로그(furniture-catalog)에서 읽는다.
 // 좌표는 engine과 같다(바닥 한 칸 = 1, x는 왼쪽→오른쪽, z는 뒷벽→앞). 방향은 위에서 보아 반시계로 돈 각도(three.js rotY)다.
 // 가구마다 앞면이 +z(방 앞쪽)를 보는 모양을 기준으로 적고, 놓인 방향만큼 돌려 방 좌표로 옮긴다.
 
-export type FloorPieceId = "desk" | "bookcase" | "wardrobe" | "rug";
-export type WallPieceId = "board" | "window";
 /** 바닥 가구의 방향: 앞면이 보는 쪽. 0 앞(+z), 1 오른쪽(+x), 2 뒤(-z), 3 왼쪽(-x). */
 export type Facing = 0 | 1 | 2 | 3;
 /** 벽 가구를 거는 벽. 앞쪽은 열려 있어(카메라 쪽) 걸 수 없다. */
 export type WallSide = "back" | "left" | "right";
 
 export interface FloorPlacementData {
-  /** 가구가 차지하는 칸 모양의 가운데(바닥 좌표). 깔개는 칸을 막지 않아 그림 가운데다. */
+  /** 가구가 차지하는 칸 모양의 가운데(바닥 좌표). 깔개처럼 칸에 맞지 않은 자리도 있다. */
   x: number;
   z: number;
   facing: Facing;
@@ -24,40 +24,54 @@ export interface WallPlacementData {
   along: number;
 }
 
+/** 배치한 가구 하나. 바닥형·덮개형은 floor, 벽 부착형은 wall 자리를 갖는다. */
+export interface FurnitureItem {
+  /** 배치 안에서 겹치지 않는 id. 처음 배치의 가구는 종류 id와 같다. */
+  id: string;
+  /** 가구 종류(카탈로그 id). */
+  type: string;
+  floor?: FloorPlacementData;
+  wall?: WallPlacementData;
+}
+
 export interface LobbyLayout {
-  floor: Record<FloorPieceId, FloorPlacementData>;
-  wall: Record<WallPieceId, WallPlacementData>;
+  items: FurnitureItem[];
 }
 
 /** 처음 배치. 로비를 처음 만들 때의 자리와 같다. */
 export const DEFAULT_LOBBY_LAYOUT: LobbyLayout = {
-  floor: {
-    // 칸 "0,5"·"1,5"·"2,5"(3×1). 그림은 1.2배 커서 "2,5" 절반까지 나온다
-    desk: { x: 1.5, z: 5.5, facing: 0 },
+  items: [
+    // 칸 "0,5"·"1,5"·"2,5"(3×1). 그림은 칸보다 커서 "2,5" 절반까지 나온다
+    { id: "desk", type: "desk", floor: { x: 1.5, z: 5.5, facing: 0 } },
     // 칸 "0,2". 왼쪽 벽에 붙어 앞면이 방(+x)을 본다
-    bookcase: { x: 0.5, z: 2.5, facing: 1 },
+    { id: "bookcase", type: "bookcase", floor: { x: 0.5, z: 2.5, facing: 1 } },
     // 칸 "7,3". 오른쪽 벽에 붙어 앞면이 방(-x)을 본다
-    wardrobe: { x: 7.5, z: 3.5, facing: 3 },
-    rug: { x: 4.6, z: 7.2, facing: 0 }
-  },
-  wall: {
-    board: { wall: "back", along: 1.8 },
-    // 창문은 미닫이 창 두 벌을 나란히 놓은 넓은 창이다
-    window: { wall: "back", along: 4.8 }
-  }
+    { id: "wardrobe", type: "wardrobe", floor: { x: 7.5, z: 3.5, facing: 3 } },
+    { id: "rug", type: "rug", floor: { x: 4.6, z: 7.2, facing: 0 } },
+    { id: "board", type: "board", wall: { wall: "back", along: 1.8 } },
+    { id: "window", type: "window", wall: { wall: "back", along: 4.8 } }
+  ]
 };
 
-/** 두 배치의 가구 자리·방향·벽이 모두 같은지. */
+/** 배치 안의 가구(id로). */
+export function layoutItem(layout: LobbyLayout, id: string): FurnitureItem | undefined {
+  return layout.items.find((item) => item.id === id);
+}
+
+/** 그 가구의 id를 자리만 바꾼 새 배치. */
+export function withItemPlacement(layout: LobbyLayout, id: string, placement: { floor?: FloorPlacementData; wall?: WallPlacementData }): LobbyLayout {
+  return { items: layout.items.map((item) => (item.id === id ? { ...item, ...placement } : item)) };
+}
+
+/** 두 배치의 가구(id·종류)와 자리·방향·벽이 모두 같은지. 순서는 보지 않는다. */
 export function sameLobbyLayout(a: LobbyLayout, b: LobbyLayout): boolean {
-  const floorSame = (Object.keys(a.floor) as FloorPieceId[]).every((id) => {
-    const p = a.floor[id];
-    const q = b.floor[id];
-    return p.x === q.x && p.z === q.z && p.facing === q.facing;
+  if (a.items.length !== b.items.length) return false;
+  return a.items.every((p) => {
+    const q = layoutItem(b, p.id);
+    if (!q || q.type !== p.type) return false;
+    if (p.floor || q.floor) return Boolean(p.floor && q.floor) && p.floor!.x === q.floor!.x && p.floor!.z === q.floor!.z && p.floor!.facing === q.floor!.facing;
+    return Boolean(p.wall && q.wall) && p.wall!.wall === q.wall!.wall && p.wall!.along === q.wall!.along;
   });
-  const wallSame = (Object.keys(a.wall) as WallPieceId[]).every(
-    (id) => a.wall[id].wall === b.wall[id].wall && a.wall[id].along === b.wall[id].along
-  );
-  return floorSame && wallSame;
 }
 
 /** 방향마다의 회전(rotY)과 그 cos·sin. 정확한 값을 써서 처음 배치의 좌표가 소수 오차 없이 나오게 한다. */
@@ -101,29 +115,15 @@ export function wallLength(wall: WallSide, roomWidth: number, roomDepth: number)
   return wall === "back" ? roomWidth : roomDepth;
 }
 
-/**
- * 바닥 가구가 차지하는 칸 모양(가구 기준, 앞면 +z: 가로 칸 × 깊이 칸)과, 그 안에서 그림을 놓는 자리(칸 모양 가운데에서 옮긴 만큼).
- * 막는 가구는 칸 모양의 칸을 막는다. 돌리면 칸 모양이 가운데를 중심으로 돈다.
- */
-const FLOOR_SHAPE: Record<FloorPieceId, { width: number; depth: number; blocks: boolean; drawAt: FloorPoint }> = {
-  // 그림이 칸보다 1.2배 커서 왼쪽으로 조금 치우쳐 놓는다
-  desk: { width: 3, depth: 1, blocks: true, drawAt: { x: -0.25, z: 0 } },
-  // 책장·옷장은 벽에 붙게 칸 안에서 뒤로 조금 민다
-  bookcase: { width: 1, depth: 1, blocks: true, drawAt: { x: 0, z: -0.06 } },
-  wardrobe: { width: 1, depth: 1, blocks: true, drawAt: { x: 0, z: -0.06 } },
-  // 깔개는 걸어 다니는 바닥 장식이라 칸을 막지 않는다
-  rug: { width: 2, depth: 2, blocks: false, drawAt: { x: 0, z: 0 } }
-};
-
 /** 바닥 가구가 차지하는 칸 모양을 놓인 방향대로 돌린 가로(x)·깊이(z) 칸 수. */
-export function floorPieceSize(id: FloorPieceId, facing: Facing): { width: number; depth: number } {
-  const { width, depth } = FLOOR_SHAPE[id];
+export function floorPieceSize(type: string, facing: Facing): { width: number; depth: number } {
+  const { width, depth } = furnitureType(type).size;
   return facing % 2 === 0 ? { width, depth } : { width: depth, depth: width };
 }
 
 /** 바닥 가구가 차지하는 칸 모양의 범위(방 좌표). 깔개처럼 칸에 맞지 않은 자리도 있다. */
-export function floorPieceBounds(id: FloorPieceId, placement: FloorPlacementData): { minX: number; maxX: number; minZ: number; maxZ: number } {
-  const { width, depth } = floorPieceSize(id, placement.facing);
+export function floorPieceBounds(type: string, placement: FloorPlacementData): { minX: number; maxX: number; minZ: number; maxZ: number } {
+  const { width, depth } = floorPieceSize(type, placement.facing);
   return {
     minX: round(placement.x - width / 2),
     maxX: round(placement.x + width / 2),
@@ -132,46 +132,15 @@ export function floorPieceBounds(id: FloorPieceId, placement: FloorPlacementData
   };
 }
 
-/** 지나갈 수 없게 칸을 막는 바닥 가구인지(깔개는 막지 않는다). */
-export function floorPieceBlocks(id: FloorPieceId): boolean {
-  return FLOOR_SHAPE[id].blocks;
-}
-
-/** 벽 가구가 벽을 따라 차지하는 폭(칸). 바로 아래 칸에는 키 큰 가구를 놓지 못한다(편집 모드). */
-export const WALL_PIECE_WIDTH: Record<WallPieceId, number> = { board: 1.8, window: 2.3 };
-
-/** 벽 가구를 거는 높이와 벽에서 나온 거리. */
-const WALL_MOUNT: Record<WallPieceId, { y: number; depth: number }> = {
-  board: { y: 1.75, depth: 0.06 },
-  window: { y: 2.05, depth: 0.17 }
-};
-
 type PlaceId = Exclude<MarkId, "door">;
 
-/**
- * 가구에 딸린 장소(가구 기준 좌표). 서는 자리, 바라볼 지점, 이름표(바닥 좌표와 높이).
- * 벽 가구는 벽 면 위 자리가 기준이다.
- */
-const PLACE_OF: Record<PlaceId, { piece: FloorPieceId | WallPieceId; approach: FloorPoint[]; faceTo: FloorPoint; label: { x: number; y: number; z: number } }> = {
-  board: { piece: "board", approach: [{ x: -0.2, z: 1.3 }, { x: 0.4, z: 1.3 }], faceTo: { x: 0, z: 0 }, label: { x: 0, y: 2.75, z: 0.3 } },
-  window: { piece: "window", approach: [{ x: -0.3, z: 1.55 }, { x: 0.3, z: 1.55 }], faceTo: { x: 0, z: 0 }, label: { x: 0, y: 3.05, z: 0.3 } },
-  // 의자 바로 뒤에 서서 책상(그림 가운데)을 본다(장소 구역도 서는 자리를 가운데로 한다)
-  desk: { piece: "desk", approach: [{ x: 0, z: 1.25 }], faceTo: { x: -0.25, z: 0 }, label: { x: -0.25, y: 2.1, z: 0 } },
-  // 책장 앞에 서서 책장 뒤(벽 쪽)를 본다. 이름표는 방 쪽으로 조금 옮긴다(벽 가까이면 화면 끝에서 잘린다)
-  bookcase: { piece: "bookcase", approach: [{ x: 0, z: 0.9 }], faceTo: { x: 0, z: -0.5 }, label: { x: 0, y: 2.3, z: 0.4 } }
-};
-
-/** 일기 책상 의자(책상 기준). 책상 밑 자리와, '들어가기' 때 빼는 쪽(앞), 앉는 자리, 비켜서는 옆 자리. */
-const DESK_CHAIR = {
-  at: { x: 0, z: 0.45 },
-  pull: 0.5,
-  seat: { x: 0, z: 0.95 },
-  side: { x: 0.65, z: 1.05 },
-  seatHeight: 0.67
-};
-
 export interface PlacedPiece {
-  piece: FloorPieceId | WallPieceId | "chair";
+  /** 배치한 가구 id. 딸린 의자는 그 책상의 id다. */
+  item: string;
+  /** 3D 모델 이름(가구 묶음 안의 이름). 딸린 의자는 의자 모델이다. */
+  piece: string;
+  /** 딸린 의자인지. */
+  companion: boolean;
   x: number;
   y: number;
   z: number;
@@ -179,7 +148,7 @@ export interface PlacedPiece {
 }
 
 export interface LayoutGeometry {
-  /** 3D에 놓는 가구(의자 포함). 입구 발판은 넣지 않는다. */
+  /** 3D에 놓는 가구(딸린 의자 포함). 입구 발판은 넣지 않는다. */
   pieces: PlacedPiece[];
   /** 가구가 있어 지나갈 수 없는 칸("열,행"). */
   solidTiles: Set<string>;
@@ -198,71 +167,87 @@ export interface LayoutGeometry {
   };
 }
 
-/** 배치 데이터에서 3D 자리·막힌 칸·장소·의자를 계산한다. */
+/** 가구 하나의 기준 자리(바닥 가구는 칸 모양 가운데, 벽 가구는 벽 면 위). */
+function poseOf(item: FurnitureItem, roomWidth: number): Pose {
+  if (item.floor) return item.floor;
+  return wallPose(item.wall!, roomWidth);
+}
+
+/** 배치 데이터에서 3D 자리·막힌 칸·장소·의자를 계산한다. 장소 가구는 배치에 하나씩 있다(불러올 때 검사한다). */
 export function layoutGeometry(layout: LobbyLayout, roomWidth: number): LayoutGeometry {
-  const poseOf = (piece: FloorPieceId | WallPieceId): Pose =>
-    piece in layout.floor ? layout.floor[piece as FloorPieceId] : wallPose(layout.wall[piece as WallPieceId], roomWidth);
-
   const pieces: PlacedPiece[] = [];
-  for (const id of Object.keys(layout.wall) as WallPieceId[]) {
-    const pose = poseOf(id);
-    const at = toRoom(pose, { x: 0, z: WALL_MOUNT[id].depth });
-    pieces.push({ piece: id, x: at.x, y: WALL_MOUNT[id].y, z: at.z, rotY: FACING_ROT[pose.facing].rotY });
-  }
-  for (const id of Object.keys(layout.floor) as FloorPieceId[]) {
-    const pose = poseOf(id);
-    const drawn = toRoom(pose, FLOOR_SHAPE[id].drawAt);
-    pieces.push({ piece: id, x: drawn.x, y: id === "rug" ? 0.004 : 0, z: drawn.z, rotY: FACING_ROT[pose.facing].rotY });
-  }
-  const desk = layout.floor.desk;
-  const chairAt = toRoom(desk, DESK_CHAIR.at);
-  // 의자는 앞면이 책상을 본다
-  const deskBack = ((desk.facing + 2) % 4) as Facing;
-  pieces.push({ piece: "chair", x: chairAt.x, y: 0, z: chairAt.z, rotY: FACING_ROT[deskBack].rotY });
-
   const solidTiles = new Set<string>();
-  for (const id of Object.keys(layout.floor) as FloorPieceId[]) {
-    const f = FLOOR_SHAPE[id];
-    if (!f.blocks) continue;
-    const pose = layout.floor[id];
-    const corners = [
-      toRoom(pose, { x: -f.width / 2, z: -f.depth / 2 }),
-      toRoom(pose, { x: f.width / 2, z: f.depth / 2 })
-    ];
-    const minX = Math.min(corners[0].x, corners[1].x);
-    const maxX = Math.max(corners[0].x, corners[1].x);
-    const minZ = Math.min(corners[0].z, corners[1].z);
-    const maxZ = Math.max(corners[0].z, corners[1].z);
-    for (let c = Math.floor(minX + 1e-6); c < Math.ceil(maxX - 1e-6); c += 1) {
-      for (let r = Math.floor(minZ + 1e-6); r < Math.ceil(maxZ - 1e-6); r += 1) solidTiles.add(`${c},${r}`);
-    }
-  }
-
   const places = {} as LayoutGeometry["places"];
-  for (const id of Object.keys(PLACE_OF) as PlaceId[]) {
-    const spec = PLACE_OF[id];
-    const pose = poseOf(spec.piece);
-    const labelAt = toRoom(pose, { x: spec.label.x, z: spec.label.z });
-    places[id] = {
-      approach: spec.approach.map((p) => toRoom(pose, p)),
-      faceTo: toRoom(pose, spec.faceTo),
-      label: { x: labelAt.x, y: spec.label.y, z: labelAt.z }
-    };
+  let chair: LayoutGeometry["chair"] | null = null;
+
+  const typed = layout.items.map((item) => ({ item, type: furnitureType(item.type), pose: poseOf(item, roomWidth) }));
+  // 벽 가구를 먼저 놓는다(그리는 순서를 예전과 같게)
+  const ordered = [...typed.filter((t) => t.type.mount === "wall"), ...typed.filter((t) => t.type.mount !== "wall")];
+  for (const { item, type, pose } of ordered) {
+    const rotY = FACING_ROT[pose.facing].rotY;
+    if (type.mount === "wall") {
+      const at = toRoom(pose, { x: 0, z: type.model.wallDepth ?? 0 });
+      pieces.push({ item: item.id, piece: type.model.piece, companion: false, x: at.x, y: type.model.y, z: at.z, rotY });
+    } else {
+      const drawn = toRoom(pose, type.model.drawAt);
+      pieces.push({ item: item.id, piece: type.model.piece, companion: false, x: drawn.x, y: type.model.y, z: drawn.z, rotY });
+    }
+    if (type.chair) chair = placeChair(item.id, type, pose, pieces);
+    if (type.blocksWalk && type.mount !== "wall") addSolid(type, pose, solidTiles);
+    if (type.place) places[type.place.id as PlaceId] = placeSpot(type, pose);
   }
 
-  const front = toRoom({ x: 0, z: 0, facing: desk.facing }, { x: 0, z: 1 });
+  return { pieces, solidTiles, places, chair: chair ?? NO_CHAIR };
+}
+
+/** 책상이 없을 때의 의자 값(장소 가구는 늘 있으므로 실제로는 쓰이지 않는다). */
+const NO_CHAIR: LayoutGeometry["chair"] = { home: { x: 0, z: 0 }, pullDir: { x: 0, z: 1 }, pull: 0, seat: { x: 0, z: 0 }, side: { x: 0, z: 0 }, seatHeight: 0, heading: 0 };
+
+function placeChair(itemId: string, type: FurnitureType, pose: Pose, pieces: PlacedPiece[]): LayoutGeometry["chair"] {
+  const spec = type.chair!;
+  const at = toRoom(pose, spec.at);
+  // 의자는 앞면이 책상을 본다
+  const back = ((pose.facing + 2) % 4) as Facing;
+  pieces.push({ item: itemId, piece: spec.piece, companion: true, x: at.x, y: 0, z: at.z, rotY: FACING_ROT[back].rotY });
   return {
-    pieces,
-    solidTiles,
-    places,
-    chair: {
-      home: chairAt,
-      pullDir: front,
-      pull: DESK_CHAIR.pull,
-      seat: toRoom(desk, DESK_CHAIR.seat),
-      side: toRoom(desk, DESK_CHAIR.side),
-      seatHeight: DESK_CHAIR.seatHeight,
-      heading: FACING_ROT[deskBack].rotY
-    }
+    home: at,
+    pullDir: toRoom({ x: 0, z: 0, facing: pose.facing }, { x: 0, z: 1 }),
+    pull: spec.pull,
+    seat: toRoom(pose, spec.seat),
+    side: toRoom(pose, spec.side),
+    seatHeight: spec.seatHeight,
+    heading: FACING_ROT[back].rotY
   };
+}
+
+function addSolid(type: FurnitureType, pose: Pose, solidTiles: Set<string>) {
+  const { width, depth } = type.size;
+  const corners = [toRoom(pose, { x: -width / 2, z: -depth / 2 }), toRoom(pose, { x: width / 2, z: depth / 2 })];
+  const minX = Math.min(corners[0].x, corners[1].x);
+  const maxX = Math.max(corners[0].x, corners[1].x);
+  const minZ = Math.min(corners[0].z, corners[1].z);
+  const maxZ = Math.max(corners[0].z, corners[1].z);
+  for (let c = Math.floor(minX + 1e-6); c < Math.ceil(maxX - 1e-6); c += 1) {
+    for (let r = Math.floor(minZ + 1e-6); r < Math.ceil(maxZ - 1e-6); r += 1) solidTiles.add(`${c},${r}`);
+  }
+}
+
+function placeSpot(type: FurnitureType, pose: Pose): LayoutGeometry["places"][PlaceId] {
+  const spec = type.place!;
+  const labelAt = toRoom(pose, { x: spec.label.x, z: spec.label.z });
+  return {
+    approach: spec.approach.map((p) => toRoom(pose, p)),
+    faceTo: toRoom(pose, spec.faceTo),
+    label: { x: labelAt.x, y: spec.label.y, z: labelAt.z }
+  };
+}
+
+/** 창밖 장면과 바닥 창문 빛을 내는 창문의 자리(배치에서 맨 앞의 창문). 없으면 null. */
+export function viewWindow(layout: LobbyLayout): WallPlacementData | null {
+  return layout.items.find((item) => furnitureType(item.type).view && item.wall)?.wall ?? null;
+}
+
+/** 장소 id에 딸린 가구(배치에 하나씩 있다). */
+export function placeItem(layout: LobbyLayout, place: FurniturePlaceId): FurnitureItem | undefined {
+  return layout.items.find((item) => furnitureType(item.type).place?.id === place);
 }

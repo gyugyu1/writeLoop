@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { ROOM } from "@/lib/lobby3d/engine";
 import { blendAmbience, windowLightPanes, type Ambience, type Daylight, type SunPosition } from "@/lib/lobby3d/daylight";
 import { WINDOW_OPENING, currentFurnitureLayout } from "@/lib/lobby3d/furniture-layout";
-import type { LobbyLayout } from "@/lib/lobby3d/lobby-layout";
+import { viewWindow, type LobbyLayout, type WallPlacementData } from "@/lib/lobby3d/lobby-layout";
 
 // 시각에 따른 방의 빛. 방 조명 색·세기, 구운 방에 곱하는 색, 바닥의 창문 빛, 밤의 천장 조명을 맡는다.
 // 시각이 바뀌면 그때 보이던 색감에서 새 색감으로 TRANSITION_SECONDS 동안 부드럽게 넘어간다. 창밖 풍경은 이 상태를 읽어 lobby3d-furniture가 그린다.
@@ -152,10 +152,10 @@ export function DaylightRig({ state, daylight, ambient, sun, roomTint, lightLayo
   }, []);
 
   // 창문 빛 모양을 해 자리와 창 크기로 다시 만든다(넘어가는 동안은 매 프레임, 그 밖에는 바뀔 때만)
-  const shown = useMemo(() => ({ sun: null as SunPosition | null, width: 0, height: 0, window: null as LobbyLayout["wall"]["window"] | null }), []);
+  const shown = useMemo(() => ({ sun: null as SunPosition | null, width: 0, height: 0, window: null as WallPlacementData | null }), []);
   const buildWindowLight = (sun: SunPosition) => {
     const { width, height } = state.opening;
-    const hung = lightLayout?.current.wall.window ?? null;
+    const hung = lightLayout ? viewWindow(lightLayout.current) : null;
     if (
       shown.sun &&
       shown.sun.elevation === sun.elevation &&
@@ -170,7 +170,7 @@ export function DaylightRig({ state, daylight, ambient, sun, roomTint, lightLayo
     shown.height = height;
     shown.window = hung;
     // 창문이 걸린 벽과 벽을 따라간 자리로 계산한다(뒷벽 창은 남쪽, 왼벽 창은 동쪽, 오른벽 창은 서쪽 하늘의 해를 받는다)
-    const place = currentFurnitureLayout().find((p) => p.piece === "window");
+    const place = currentFurnitureLayout().find((p) => p.view);
     const opening = { ...WINDOW_OPENING, width, height, x: hung?.along ?? place?.x ?? 4.8, y: place?.y ?? 2.05 };
     const panes = windowLightPanes(sun, opening, ROOM.width, ROOM.depth, hung?.wall ?? "back");
     const positions: number[] = [];

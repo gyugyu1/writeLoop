@@ -3,8 +3,8 @@ import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } 
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ROOM, activeLobbyLayout } from "@/lib/lobby3d/engine";
-import { currentFurnitureLayout } from "@/lib/lobby3d/furniture-layout";
-import { wallPiecePose, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
+import { currentFurnitureLayout, placementKey } from "@/lib/lobby3d/furniture-layout";
+import { viewWindow, wallPiecePose, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
 
@@ -49,7 +49,7 @@ export function BakedFurniture({ fallback, daylight, lightLayout, windowLift }: 
   // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 매 프레임 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
   const outdoor = useMemo(() => createOutdoor(0, 0), []);
   // 창이 높이 걸려도 창 너머 풀밭과 덤불이 창 아래쪽에 보이게, 바깥 풀밭을 창 가운데보다 OUTDOOR_DROP 아래에 둔다
-  const groundY = useMemo(() => (currentFurnitureLayout().find((p) => p.piece === "window")?.y ?? OUTDOOR_DROP) - OUTDOOR_DROP, []);
+  const groundY = useMemo(() => (currentFurnitureLayout().find((p) => p.view)?.y ?? OUTDOOR_DROP) - OUTDOOR_DROP, []);
   const target = useMemo(() => new THREE.WebGLRenderTarget(VIEW_TEXTURE.width, VIEW_TEXTURE.height), []);
   const eyeCamera = useMemo(() => new THREE.PerspectiveCamera(), []);
   const built = useMemo(() => {
@@ -88,9 +88,12 @@ export function BakedFurniture({ fallback, daylight, lightLayout, windowLift }: 
       piece.position.set(place.x, place.y, place.z);
       piece.rotation.set(0, place.rotY, 0);
       // 일기 책상 의자는 '들어가기' 때 뒤로 뺀다(3D 화면이 이 자리에서 옮긴다)
-      if (place.piece === "chair") piece.userData.chairBase = { x: place.x, z: place.z };
-      // 편집 모드에서 3D 화면이 이 가구를 편집 중인 자리로 옮긴다
-      piece.userData.furnitureOf = place.piece;
+      if (place.companion) piece.userData.chairBase = { x: place.x, z: place.z };
+      // 편집 모드에서 3D 화면이 이 가구를 편집 중인 자리로 옮기고, 고르면 띄운다
+      piece.userData.furnitureOf = placementKey(place);
+      piece.userData.liftItem = place.item;
+      piece.userData.wallPiece = place.mount === "wall";
+      piece.userData.view = Boolean(place.view);
       const meshes: THREE.Mesh[] = [];
       piece.traverse((o) => {
         if (o instanceof THREE.Mesh) meshes.push(o);
@@ -100,7 +103,7 @@ export function BakedFurniture({ fallback, daylight, lightLayout, windowLift }: 
         o.material = Array.isArray(o.material) ? o.material.map((m) => soft(m, shaded)) : soft(o.material, shaded);
         o.raycast = () => {};
       }
-      if (place.piece === "window" && viewSource && views.length === 0) {
+      if (place.view && viewSource && views.length === 0) {
         // 창 안쪽에 창밖 그림판을 둔다. 매 프레임 창밖 장면을 들여다본 모습을 그린다(아래 useFrame).
         const view = new THREE.Mesh(new THREE.PlaneGeometry(viewSize.x, viewSize.y), new THREE.MeshBasicMaterial({ map: target.texture, toneMapped: false }));
         view.position.set(0, 0, -VIEW_DEPTH);
@@ -119,7 +122,9 @@ export function BakedFurniture({ fallback, daylight, lightLayout, windowLift }: 
   useFrame((state, delta) => {
     const view = built.view;
     if (!view) return;
-    const mount = wallPiecePose((lightLayout?.current ?? activeLobbyLayout()).wall.window, ROOM.width);
+    const hung = viewWindow(lightLayout?.current ?? activeLobbyLayout());
+    if (!hung) return;
+    const mount = wallPiecePose(hung, ROOM.width);
     const lift = windowLift?.current;
     outdoor.scene.position.set(mount.x + (lift?.x ?? 0), groundY + (lift?.y ?? 0), mount.z + (lift?.z ?? 0));
     outdoor.scene.rotation.y = mount.rotY;

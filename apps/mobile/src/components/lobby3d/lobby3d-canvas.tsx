@@ -476,8 +476,6 @@ function buildWorld(): World {
     furniture.add(g);
     if (place.piece !== "exit") {
       g.userData.furnitureOf = placementKey(place);
-      g.userData.liftItem = place.item;
-      g.userData.wallPiece = place.mount === "wall";
       g.userData.view = Boolean(place.view);
       // 누르면 그 가구(딸린 의자는 책상)를 고른다
       const id = place.item;

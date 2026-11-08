@@ -72,8 +72,12 @@ export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
 /** 처음 배치의 가구 자리. */
 export const FURNITURE_LAYOUT: readonly FurniturePlacement[] = furniturePlacements(DEFAULT_LOBBY_LAYOUT);
 
-/** 3D 물체를 가구 자리와 맞출 때 쓰는 이름: 배치한 가구 id, 딸린 의자는 그 뒤에 "#chair"를 붙인다. */
+/**
+ * 3D 물체를 가구 자리와 맞출 때 쓰는 이름: 배치한 가구 id, 딸린 의자는 그 뒤에 "#chair"를 붙인다.
+ * 입구 발판은 가구 id로 만들 수 없는 "#exit"다(가구 id에는 "#"를 쓸 수 없어 겹치지 않는다).
+ */
 export function placementKey(place: FurniturePlacement): string {
+  if (place.piece === "exit" && place.mark === "door") return "#exit";
   return place.companion ? `${place.item}#chair` : place.item;
 }
 

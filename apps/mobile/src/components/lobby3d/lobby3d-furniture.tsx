@@ -9,7 +9,7 @@ import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
 
 // 라룹이 방의 가구. Kenney Furniture Kit(CC0)에서 고른 가구를 scripts/lobby3d/build-furniture.py가 한 glb로 묶는다.
-// 묶음마다 이름(FurniturePiece)이 있고, 놓는 자리는 지금 배치(currentFurnitureLayout)가 정한다.
+// 묶음마다 이름(카탈로그의 모델 이름)이 있고, 놓는 자리는 지금 배치(currentFurnitureLayout)가 정한다.
 // 누르기 판정은 코드로 만든 대체 모양이 보이지 않는 채로 맡으므로, 여기서는 판정을 받지 않는다.
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -91,8 +91,6 @@ export function BakedFurniture({ fallback, daylight, lightLayout, windowLift }: 
       if (place.companion) piece.userData.chairBase = { x: place.x, z: place.z };
       // 편집 모드에서 3D 화면이 이 가구를 편집 중인 자리로 옮기고, 고르면 띄운다
       piece.userData.furnitureOf = placementKey(place);
-      piece.userData.liftItem = place.item;
-      piece.userData.wallPiece = place.mount === "wall";
       piece.userData.view = Boolean(place.view);
       const meshes: THREE.Mesh[] = [];
       piece.traverse((o) => {

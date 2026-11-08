@@ -1,6 +1,8 @@
 // [spec] qa 테스트(작업 064-④ 편집 모드: 벽 가구, 모바일): 벽 가구를 놓을 수 있는 배치인지, 옆벽 벽 가구에 딸린 장소, 옆벽 창문의 바닥 창문 빛.
 // 기대값은 시나리오(private 작업 폴더 064/05-벽-가구-편집/02-qa-scenarios.md의 P1~P30, F1·F2, W1~W7)와 결정(같은 폴더 03-main-decision.md)에서만 가져온다.
 // 구현 코드는 부르는 방법(isPlaceableLayout, layoutGeometry, windowLightPanes의 다섯째 인자 wall, daylightAt)을 알려고만 읽었다.
+// 064-④ 결정 11의 1(책상도 게시판·창문 바로 아래 칸에 놓을 수 없음, 깔개만 됨)에 맞춰 P20을 고치고(창문 왼벽 5.0이 책상 칸 0,5 위),
+// 같은 벽 겹치지 않음은 P20b·P20c(오른벽)로 옮겼으며, 책상·깔개와 벽 가구 아래를 N1~N7로 더했다.
 // W1·W2의 숫자는 시나리오 가정 A6(옆벽 창도 뒷벽 창과 크기·높이 2.05·벽에서 0.05가 같다)에서 나온다. 창 안쪽 크기는 WINDOW_OPENING이다.
 import { daylightAt, windowLightPanes, type SunPosition, type WindowLightPane } from "@/lib/lobby3d/daylight";
 import { ROOM } from "@/lib/lobby3d/engine";
@@ -56,7 +58,9 @@ describe("[spec] 064-④ P: 벽 가구를 놓을 수 있는 배치인지(명세 
     ["P17 창문 뒷벽 3.5(게시판 1.8과 겹침)", layoutOf({ window: back(3.5) }), false],
     ["P18 창문 뒷벽 4.0", layoutOf({ window: back(4.0) }), true],
     ["P19 게시판 왼벽 7.5, 창문 왼벽 9.5(겹침)", layoutOf({ board: left(7.5), window: left(9.5) }), false],
-    ["P20 게시판 왼벽 7.5, 창문 왼벽 5.0", layoutOf({ board: left(7.5), window: left(5.0) }), true],
+    ["P20(결정 11) 게시판 왼벽 7.5, 창문 왼벽 5.0(창문이 책상 칸 0,5 바로 위)", layoutOf({ board: left(7.5), window: left(5.0) }), false],
+    ["P20b 게시판 오른벽 9.5, 창문 오른벽 6.5(같은 벽, 겹치지 않음)", layoutOf({ board: right(9.5), window: right(6.5) }), true],
+    ["P20c 게시판 오른벽 9.5, 창문 오른벽 7.5(같은 벽, 겹침)", layoutOf({ board: right(9.5), window: right(7.5) }), false],
     ["P21 게시판 왼벽 7.5, 창문 오른벽 7.5(다른 벽)", layoutOf({ board: left(7.5), window: right(7.5) }), true],
     ["P22 게시판 뒷벽 6.5, 창문 오른벽 1.5(다른 벽, 같은 모서리)", layoutOf({ board: back(6.5), window: right(1.5) }), true],
     ["P23 게시판 왼벽 2.5(책장 칸 0,2 바로 위)", layoutOf({ board: left(2.5) }), false],
@@ -66,6 +70,13 @@ describe("[spec] 064-④ P: 벽 가구를 놓을 수 있는 배치인지(명세 
     ["P27 게시판 왼벽 5.5(서는 자리 둘 다 책상 칸)", layoutOf({ board: left(5.5) }), false],
     ["P28 창문 왼벽 5.5(서는 자리 둘 다 책상 칸)", layoutOf({ window: left(5.5) }), false],
     ["P29 게시판 왼벽 7.5, 옷장 (1.5, 7.5, 3)(서는 자리 막힘)", layoutOf({ board: left(7.5) }, { wardrobe: { x: 1.5, z: 7.5, facing: 3 } }), false],
+    ["N1(결정 11) 책상 (4.5, 0.5, 0): 창문 바로 아래 칸 3~5,0", layoutOf({}, { desk: { x: 4.5, z: 0.5, facing: 0 } }), false],
+    ["N2(결정 11) 책상 (6.5, 0.5, 0): 칸 5,0이 창문 바로 아래", layoutOf({}, { desk: { x: 6.5, z: 0.5, facing: 0 } }), false],
+    ["N3 책상 (6.5, 0.5, 0), 창문 왼벽 8.5: 벽 가구 아래가 아님", layoutOf({ window: left(8.5) }, { desk: { x: 6.5, z: 0.5, facing: 0 } }), true],
+    ["N4(결정 11) 창문 왼벽 5.0: 책상 칸 0,5 바로 위", layoutOf({ window: left(5.0) }), false],
+    ["N5(결정 11) 게시판 왼벽 5.0: 책상 칸 0,5 바로 위", layoutOf({ board: left(5.0) }), false],
+    ["N6 깔개 (4.6, 1.0, 0): 창문 아래라도 깔개는 됨", layoutOf({}, { rug: { x: 4.6, z: 1.0, facing: 0 } }), true],
+    ["N7 깔개 (1.0, 1.0, 0): 게시판 아래라도 깔개는 됨", layoutOf({}, { rug: { x: 1.0, z: 1.0, facing: 0 } }), true],
     ["P30 P0", layoutOf({}), true],
     ["P30 게시판만 왼벽 7.5", layoutOf({ board: left(7.5) }), true],
     ["P30 창문만 오른벽 8.5", layoutOf({ window: right(8.5) }), true],

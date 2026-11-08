@@ -6,6 +6,9 @@
 // 라우터, 포커스, 3D 그리기). 3D 그리기는 가짜라서, 어느 가구·어느 벽을 눌렀는지는 3D 그리기가 판정한 값(piece, wall, 바닥 point)을
 // 누르기 결과로 그대로 넣어 보낸다(시나리오 가정 A8). 그 판정 자체와 3D 그림(벽에 칠한 색, 창밖, 창문 빛)은 이 테스트로 보지 못한다.
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다.
+// 064-④ 결정 11에 맞춰 D17을 고치고(창문 왼벽 5.0은 책상 칸 0,5 바로 위라 놓을 수 없음), 게시판을 책상 위로 끄는 경우(결정11-가)와
+// 벽 가구 앞 바닥 띠로 고르고 끄는 테스트(B1~B10)를 더했다. 띠를 누른 것은 3D 그리기가 바닥 점만 넘기고(piece·wall 없음) 화면·편집이
+// 그 벽 가구로 본다고 가정한다(띠 판정을 3D 그리기 안에서 해 piece로 넘기는 구현이면 이 가정이 맞지 않는다. 12-qa-tests.md에 적음).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -519,7 +522,16 @@ const DRAG_CASES: DragCase[] = [
     moves: [{ to: left(9.4), expect: left(9.5), ok: false }],
     after: back(4.8)
   },
-  { label: "D17 (D5 뒤) 창문 → 왼벽 z 5.1: 5.0은 놓을 수 있음", afterD5: true, piece: "window", pressAt: back(4.8), moves: [{ to: left(5.1), expect: left(5.0), ok: true }], after: left(5.0) },
+  {
+    label: "D17(결정 11) (D5 뒤) 창문 → 왼벽 z 5.1: 5.0은 책상 칸 0,5 바로 위라 빨강, 떼면 뒷벽 4.8",
+    afterD5: true,
+    piece: "window",
+    pressAt: back(4.8),
+    moves: [{ to: left(5.1), expect: left(5.0), ok: false }],
+    after: back(4.8)
+  },
+  // 결정 11의 1: 벽 가구를 끌어 책상 바로 위가 되는 자리도 놓을 수 없다
+  { label: "결정11-가 게시판 → 왼벽 z 5.1: 5.0은 책상 칸 0,5 바로 위라 빨강, 떼면 뒷벽 1.8", piece: "board", pressAt: back(1.8), moves: [{ to: left(5.1), expect: left(5.0), ok: false }], after: back(1.8) },
   // 결정 03의 2: 다른 벽으로 넘어가도 벽을 따라간 거리(along의 차이)를 숫자 그대로 더한다
   { label: "결정2-가 게시판을 뒷벽 2.4(가운데 −0.6)에서 눌러 왼벽 z 8.1로: 8.1 − 0.6 = 7.5", piece: "board", pressAt: back(2.4), moves: [{ to: left(8.1), expect: left(7.5) }], after: left(7.5) },
   { label: "결정2-나 창문을 뒷벽 4.3(가운데 +0.5)에서 눌러 오른벽 z 7.6으로: 7.6 + 0.5 = 8.1 → 8.0", piece: "window", pressAt: back(4.3), moves: [{ to: right(7.6), expect: right(8.0) }], after: right(8.0) },
@@ -638,5 +650,152 @@ describe("[spec] 064-④ W9: 창문을 끄는 동안과 놓은 뒤 3D 그리기�
     await release();
     expect(canvas().edit!.dragging).toBe(false);
     expect(editLayout().wall.window).toEqual(right(8.5));
+  });
+});
+
+// ---------- B. 벽 가구 앞 바닥 띠로 고르기·끌기(결정 11의 2) ----------
+// 띠: 그 벽에서 1칸 안(뒷벽 z < 1, 왼벽 x < 1, 오른벽 x > 7)이고 벽을 따라 그 벽 가구 폭 안(along ± 폭/2)인 바닥.
+// 바닥 가구를 맞혔으면 바닥 가구가 먼저, 벽 가구를 직접 맞혔으면 그 벽 가구, 두 벽 띠에 모두 들면 가장 가까운 벽의 가구.
+
+/** 창문을 왼벽 8.5에 건 배치(③의 LW와 같다). 창문 띠: x < 1, z 7.35~9.65. */
+const LW: LobbyLayout = withWall(P0, "window", left(8.5));
+/** 게시판 오른벽 6.0, 창문 왼벽 8.0. 게시판 띠: x > 7, z 5.1~6.9. */
+const L3: LobbyLayout = withWall(withWall(P0, "board", right(6.0)), "window", left(8.0));
+/** 게시판 뒷벽 6.5(띠 x 5.6~7.4, z < 1), 창문 오른벽 1.5(띠 x > 7, z 0.35~2.65). 뒤·오른쪽 모서리에서 두 띠가 겹친다. */
+const CORNER: LobbyLayout = withWall(withWall(P0, "board", back(6.5)), "window", right(1.5));
+/** 깔개를 창문 아래(4.6, 1.0)에 둔 배치(깔개는 벽 가구 아래도 된다). */
+const RUG_UNDER: LobbyLayout = { floor: { ...P0.floor, rug: { x: 4.6, z: 1.0, facing: 0 } }, wall: P0.wall };
+
+async function startEditingFrom(layout: LobbyLayout) {
+  jest.mocked(getLobbyLayout).mockResolvedValue(layout);
+  await renderHome();
+  expect(activeLobbyLayout()).toEqual(layout);
+  await enterEdit();
+  expect(editLayout()).toEqual(layout);
+}
+
+/** 바닥만 누른 것(3D 그리기가 바닥 가구도 벽 가구도 맞히지 못함). */
+async function tapFloor(point: FloorPoint) {
+  await tap({ floor: point });
+}
+
+describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
+  test("B1 뒷벽 창문 앞 띠 (4.8, 0.5)를 톡하면 창문이 골라진다", async () => {
+    await startEditing();
+
+    await tapFloor({ x: 4.8, z: 0.5 });
+
+    expect(wallMarks()).toEqual([{ piece: "window", wall: "back", from: 3.65, to: 5.95, ok: true }]);
+    expect(rotateButton()).toBeNull();
+  });
+
+  test("B2 뒷벽 게시판 앞 띠 (1.8, 0.6)를 톡하면 게시판이 골라진다", async () => {
+    await startEditing();
+
+    await tapFloor({ x: 1.8, z: 0.6 });
+
+    expect(wallMarks()).toEqual([{ piece: "board", wall: "back", from: 0.9, to: 2.7, ok: true }]);
+  });
+
+  test("B3 왼벽 창문(8.5) 앞 띠 (0.5, 8.5)를 톡하면 창문이 골라진다", async () => {
+    await startEditingFrom(LW);
+
+    await tapFloor({ x: 0.5, z: 8.5 });
+
+    expect(wallMarks().map((m) => ({ piece: m.piece, wall: m.wall }))).toEqual([{ piece: "window", wall: "left" }]);
+  });
+
+  test("B4 오른벽 게시판(6.0) 앞 띠 (7.6, 6.0)을 톡하면 게시판이 골라진다", async () => {
+    await startEditingFrom(L3);
+
+    await tapFloor({ x: 7.6, z: 6.0 });
+
+    expect(wallMarks().map((m) => ({ piece: m.piece, wall: m.wall }))).toEqual([{ piece: "board", wall: "right" }]);
+  });
+
+  test("B5 뒷벽 창문 띠 (4.8, 0.5)를 눌러 뒷벽 x 5.6으로 끌면 창문이 끌려 뒷벽 5.5에 놓인다", async () => {
+    await startEditing();
+
+    screenStep = 0;
+    await pointer("down", hitAt({ floor: { x: 4.8, z: 0.5 } }), 200, 300);
+    await moveTo(back(5.6));
+    expect(editLayout()).toEqual(withWall(P0, "window", back(5.5)));
+    await release();
+
+    expect(editLayout()).toEqual(withWall(P0, "window", back(5.5)));
+    expect(wallMarks().map((m) => m.piece)).toEqual(["window"]);
+  });
+
+  test("B6 왼벽 창문 띠 (0.5, 8.5)를 눌러 왼벽 z 9.4로 끌면 창문이 왼벽 9.5에 놓인다", async () => {
+    await startEditingFrom(LW);
+
+    screenStep = 0;
+    await pointer("down", hitAt({ floor: { x: 0.5, z: 8.5 } }), 200, 300);
+    await moveTo(left(9.4));
+    await release();
+
+    expect(editLayout()).toEqual(withWall(P0, "window", left(9.5)));
+  });
+
+  test("B7 뒤·오른쪽 모서리에서 두 띠에 모두 들면 가장 가까운 벽의 가구: (7.3, 0.5)는 뒷벽 게시판, (7.3, 0.9)는 오른벽 창문", async () => {
+    await startEditingFrom(CORNER);
+
+    await tapFloor({ x: 7.3, z: 0.5 });
+    expect(wallMarks().map((m) => m.piece)).toEqual(["board"]);
+
+    await tapFloor({ x: 7.3, z: 0.9 });
+    expect(wallMarks().map((m) => m.piece)).toEqual(["window"]);
+  });
+
+  test("B8 빨간 책장이 있는 동안 창문 띠 (4.8, 0.5)를 톡하면 '빨간 가구부터 옮겨 주세요'가 뜨고 창문은 골라지지 않는다", async () => {
+    await startEditing();
+    await makeRedBookcase();
+
+    await tapFloor({ x: 4.8, z: 0.5 });
+
+    expect(screen.getByText(RED_FIRST)).toBeTruthy();
+    expect(wallMarks()).toEqual([]);
+    expect(floorMarks()).toEqual([{ piece: "bookcase", ok: false }]);
+  });
+
+  test.each([
+    ["뒷벽에서 1칸 넘음 (4.8, 1.2)", P0, { x: 4.8, z: 1.2 }],
+    ["창문 폭 밖 (6.2, 0.5)", P0, { x: 6.2, z: 0.5 }],
+    ["게시판과 창문 사이 (3.2, 0.5)", P0, { x: 3.2, z: 0.5 }],
+    ["왼벽에서 1칸 넘음 (1.2, 8.5)", LW, { x: 1.2, z: 8.5 }],
+    ["왼벽 창문 폭 밖 (0.5, 7.0)", LW, { x: 0.5, z: 7.0 }]
+  ])("B9 띠 밖 %s 를 톡하거나 끌어도 아무것도 골라지지 않고 배치가 그대로다", async (_label, layout, point) => {
+    await startEditingFrom(layout);
+
+    await tapFloor(point);
+    expect(wallMarks()).toEqual([]);
+    expect(floorMarks()).toEqual([]);
+
+    screenStep = 0;
+    await pointer("down", hitAt({ floor: point }), 200, 300);
+    await moveTo(back(6.4));
+    await release();
+    expect(editLayout()).toEqual(layout);
+    expect(wallMarks()).toEqual([]);
+  });
+
+  test("B10 띠 안이라도 바닥 가구를 맞혔으면 바닥 가구가 먼저: 창문 아래 깔개를 (4.8, 0.5)에서 톡하면 깔개가 골라진다", async () => {
+    await startEditingFrom(RUG_UNDER);
+
+    await tap({ floor: { x: 4.8, z: 0.5 } }, "rug");
+
+    expect(rotateButton()).not.toBeNull();
+    expect(floorMarks()).toEqual([{ piece: "rug", ok: true }]);
+    expect(wallMarks()).toEqual([]);
+  });
+
+  test("B11 게시판 띠 (1.8, 0.5) 위라도 창문을 직접 맞혔으면 창문이 골라진다", async () => {
+    await startEditing();
+
+    await pointer("down", { point: { x: 1.8, z: 0.5 }, mark: "window", onCharacter: false, piece: "window", wall: { wall: "back", along: 4.8 } }, 200, 300);
+    await pointer("up", null, 200, 300);
+    await flushAsync();
+
+    expect(wallMarks().map((m) => m.piece)).toEqual(["window"]);
   });
 });

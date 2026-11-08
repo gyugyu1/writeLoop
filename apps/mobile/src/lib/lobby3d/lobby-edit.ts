@@ -108,17 +108,20 @@ export function nearestWall(point: FloorPoint): { wall: WallSide; along: number 
   return toLeft <= toRight ? { wall: "left", along: point.z } : { wall: "right", along: point.z };
 }
 
-/** 바닥 점이 벽 가구 앞 바닥 띠(그 벽에서 WALL_FRONT_DEPTH 안, 벽 가구 폭 안)에 있으면 그 벽 가구. 두 벽에 걸치면 가장 가까운 벽으로 본다. */
+/**
+ * 바닥 점이 벽 가구 앞 바닥 띠(그 벽에서 WALL_FRONT_DEPTH 안, 벽 가구 폭 안)에 있으면 그 벽 가구.
+ * 모서리처럼 여러 띠에 들면 벽 가구가 있는 띠 가운데 가장 가까운 벽의 가구다.
+ */
 export function wallPieceInFront(layout: LobbyLayout, point: FloorPoint): WallPieceId | null {
-  const near = nearestWall(point);
-  const depth = near.wall === "back" ? point.z : near.wall === "left" ? point.x : ROOM.width - point.x;
-  if (depth < -EPS || depth >= WALL_FRONT_DEPTH) return null;
-  return (
-    WALL_PIECES.find((id) => {
-      const { wall, along } = layout.wall[id];
-      return wall === near.wall && Math.abs(near.along - along) <= WALL_PIECE_WIDTH[id] / 2 + EPS;
-    }) ?? null
-  );
+  let best: { id: WallPieceId; depth: number } | null = null;
+  for (const id of WALL_PIECES) {
+    const { wall, along } = layout.wall[id];
+    const depth = wall === "back" ? point.z : wall === "left" ? point.x : ROOM.width - point.x;
+    const at = wall === "back" ? point.x : point.z;
+    if (depth < -EPS || depth >= WALL_FRONT_DEPTH || Math.abs(at - along) > WALL_PIECE_WIDTH[id] / 2 + EPS) continue;
+    if (!best || depth < best.depth) best = { id, depth };
+  }
+  return best?.id ?? null;
 }
 
 /** 누른 곳의 벽 자리: 벽 위를 눌렀으면 그 벽, 아니면 바닥 점에서 가장 가까운 벽. */

@@ -5,6 +5,10 @@
 // 가짜로 두는 것: 기존 홈 테스트(home-lobby.spec.test.tsx)와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내 상태, 라우터, 포커스, 3D 그리기).
 // 불러오기 함수는 가짜(jest.fn)로 두고, 서버 응답 모양을 거쳐야 하는 시나리오(S5, S8)에서는 진짜 함수(api.ts)를 그대로 부르고 전역 fetch를 가짜로 둔다.
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다(02-배치-데이터 결정 03).
+// 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터와 저장 본문이 v2(version 2, 가구 인스턴스 목록)로 바뀌어,
+// 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
+// S8-1의 "V+1"은 3이 되고, S8-4는 v2에서 꼭 있어야 하는 가구가 장소 가구뿐이라(066-① 명세 4) 빠뜨리는 가구를 옷장에서 책장으로 바꿨다.
+// S8-16(옛 모양 v1 본문은 처음 배치)은 066-① 명세 4·5로 더했다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, render, screen } from "@testing-library/react-native";
 import HomeScreen from "@/app/index";
@@ -126,18 +130,38 @@ const actualApi = jest.requireActual<typeof import("@/lib/api")>("@/lib/api");
 
 // ---------- 시나리오의 배치 ----------
 
+// ---------- 066-① 배치 데이터 v2 ----------
+// 배치는 { items: [{ id, type, floor?: { x, z, facing }, wall?: { wall, along } }] }이고 처음 배치의 인스턴스 id는 종류 id와 같다(066-① 명세 2).
+// 064·065 때 적은 배치 값을 바닥 가구·벽 가구 묶음으로 그대로 두고 v2()로 목록을 만든다. 목록 순서는 명세가 정하지 않아 견줄 때 id 순으로 늘어놓는다.
+type LayoutItem = LobbyLayout["items"][number];
+type FloorSpot = NonNullable<LayoutItem["floor"]>;
+type WallSpot = NonNullable<LayoutItem["wall"]>;
+
+function v2(floor: Record<string, FloorSpot>, wall: Record<string, WallSpot>): LobbyLayout {
+  return {
+    items: [
+      ...Object.entries(floor).map(([id, spot]) => ({ id, type: id, floor: spot }) as LayoutItem),
+      ...Object.entries(wall).map(([id, spot]) => ({ id, type: id, wall: spot }) as LayoutItem)
+    ]
+  };
+}
+
+/** id 순으로 늘어놓은 인스턴스(목록 순서를 보지 않고 견준다). */
+function sortedItems(layout: { items: readonly { id: string }[] } | null | undefined) {
+  return [...(layout?.items ?? [])].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
 type PlaceId = "board" | "window" | "desk" | "bookcase";
 type PlaceValues = Record<PlaceId, { approach: FloorPoint[]; faceTo: FloorPoint }>;
 
-const P0: LobbyLayout = {
-  floor: {
-    desk: { x: 1.5, z: 5.5, facing: 0 },
-    bookcase: { x: 0.5, z: 2.5, facing: 1 },
-    wardrobe: { x: 7.5, z: 3.5, facing: 3 },
-    rug: { x: 4.6, z: 7.2, facing: 0 }
-  },
-  wall: { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } }
+const P0_FLOOR: Record<string, FloorSpot> = {
+  desk: { x: 1.5, z: 5.5, facing: 0 },
+  bookcase: { x: 0.5, z: 2.5, facing: 1 },
+  wardrobe: { x: 7.5, z: 3.5, facing: 3 },
+  rug: { x: 4.6, z: 7.2, facing: 0 }
 };
+const P0_WALL: Record<string, WallSpot> = { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } };
+const P0: LobbyLayout = v2(P0_FLOOR, P0_WALL);
 const P0_SOLID = ["0,2", "0,5", "1,5", "2,5", "7,3"];
 const P0_PLACES: PlaceValues = {
   board: { approach: [{ x: 1.6, z: 1.3 }, { x: 2.2, z: 1.3 }], faceTo: { x: 1.8, z: 0 } },
@@ -146,15 +170,14 @@ const P0_PLACES: PlaceValues = {
   bookcase: { approach: [{ x: 1.4, z: 2.5 }], faceTo: { x: 0, z: 2.5 } }
 };
 
-const L1: LobbyLayout = {
-  floor: {
-    desk: { x: 1.5, z: 5.5, facing: 0 },
-    bookcase: { x: 0.5, z: 4.5, facing: 1 },
-    wardrobe: { x: 7.5, z: 6.5, facing: 3 },
-    rug: { x: 3.0, z: 8.0, facing: 1 }
-  },
-  wall: { board: { wall: "back", along: 2.0 }, window: { wall: "back", along: 5.6 } }
+const L1_FLOOR: Record<string, FloorSpot> = {
+  desk: { x: 1.5, z: 5.5, facing: 0 },
+  bookcase: { x: 0.5, z: 4.5, facing: 1 },
+  wardrobe: { x: 7.5, z: 6.5, facing: 3 },
+  rug: { x: 3.0, z: 8.0, facing: 1 }
 };
+const L1_WALL: Record<string, WallSpot> = { board: { wall: "back", along: 2.0 }, window: { wall: "back", along: 5.6 } };
+const L1: LobbyLayout = v2(L1_FLOOR, L1_WALL);
 const L1_SOLID = ["0,4", "0,5", "1,5", "2,5", "7,6"];
 const L1_PLACES: PlaceValues = {
   board: { approach: [{ x: 1.8, z: 1.3 }, { x: 2.4, z: 1.3 }], faceTo: { x: 2.0, z: 0 } },
@@ -163,10 +186,10 @@ const L1_PLACES: PlaceValues = {
   bookcase: { approach: [{ x: 1.4, z: 4.5 }], faceTo: { x: 0, z: 4.5 } }
 };
 
-const L2: LobbyLayout = { floor: { ...P0.floor, wardrobe: { x: 4.5, z: 6.5, facing: 0 } }, wall: P0.wall };
+const L2: LobbyLayout = v2({ ...P0_FLOOR, wardrobe: { x: 4.5, z: 6.5, facing: 0 } }, P0_WALL);
 const L2_SOLID = ["0,2", "0,5", "1,5", "2,5", "4,6"];
 
-const L3: LobbyLayout = { floor: P0.floor, wall: { board: { wall: "right", along: 6.0 }, window: { wall: "left", along: 8.0 } } };
+const L3: LobbyLayout = v2(P0_FLOOR, { board: { wall: "right", along: 6.0 }, window: { wall: "left", along: 8.0 } });
 const L3_PLACES: PlaceValues = {
   board: { approach: [{ x: 6.7, z: 5.8 }, { x: 6.7, z: 6.4 }], faceTo: { x: 8, z: 6.0 } },
   window: { approach: [{ x: 1.55, z: 8.3 }, { x: 1.55, z: 7.7 }], faceTo: { x: 0, z: 8.0 } },
@@ -175,7 +198,7 @@ const L3_PLACES: PlaceValues = {
 };
 
 // S8-15: P0에서 게시판을 왼벽 along 10으로
-const L4: LobbyLayout = { floor: P0.floor, wall: { board: { wall: "left", along: 10 }, window: P0.wall.window } };
+const L4: LobbyLayout = v2(P0_FLOOR, { board: { wall: "left", along: 10 }, window: P0_WALL.window });
 const L4_PLACES: PlaceValues = {
   ...P0_PLACES,
   board: { approach: [{ x: 1.3, z: 10.2 }, { x: 1.3, z: 9.6 }], faceTo: { x: 0, z: 10 } }
@@ -243,9 +266,9 @@ function respond(status: number, body?: unknown): FakeResponse {
 const fetchMock = jest.fn<Promise<FakeResponse>, [string, RequestInit?]>();
 const originalFetch = globalThis.fetch;
 
-/** 지금 버전(결정 04의 1: version 1)을 붙인 본문. */
+/** 지금 버전(066-① 명세 2: version 2)을 붙인 본문. */
 function payload(layout: LobbyLayout): Record<string, unknown> {
-  return JSON.parse(JSON.stringify({ version: 1, ...layout }));
+  return JSON.parse(JSON.stringify({ version: 2, ...layout }));
 }
 
 /** 불러오기를 진짜 함수로 돌리고, 서버가 이 응답을 주게 한다. */
@@ -348,7 +371,7 @@ function sortedSolid() {
 
 /** "방에 적용됨": 배치·막힌 칸·장소 넷의 서는 자리·바라볼 지점·3D 가구 자리가 그 배치를 따른다. */
 function expectApplied(layout: LobbyLayout, solid: string[], places: PlaceValues) {
-  expect(activeLobbyLayout()).toEqual(layout);
+  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(layout));
   expect(sortedSolid()).toEqual([...solid].sort());
   for (const id of Object.keys(places) as PlaceId[]) {
     expect({ id, approach: MARKS[id].approach, faceTo: MARKS[id].faceTo }).toEqual({ id, ...places[id] });
@@ -562,15 +585,19 @@ describe("A. 홈을 열 때 불러와 적용", () => {
 // ---------- B. 모르는 모양 버전, 맞지 않는 모양 ----------
 
 function invalidPayloadCases(): [string, unknown][] {
-  const base = () => payload(L1) as { version?: unknown; floor: Record<string, unknown>; wall: Record<string, unknown> };
+  type Body = { version?: unknown; items: Record<string, unknown>[] };
+  const base = () => payload(L1) as unknown as Body;
+  const item = (p: Body, id: string) => p.items.find((i) => i.id === id)!;
+  const floorOf = (p: Body, id: string) => item(p, id).floor as Record<string, unknown>;
+  const wallOf = (p: Body, id: string) => item(p, id).wall as Record<string, unknown>;
   const cases: [string, unknown][] = [];
-  const add = (label: string, change: (p: ReturnType<typeof base>) => unknown) => {
+  const add = (label: string, change: (p: Body) => unknown) => {
     const p = base();
     const changed = change(p);
     cases.push([label, changed === undefined ? p : changed]);
   };
-  add("S8-1 모양 버전이 V+1(2)", (p) => {
-    p.version = 2;
+  add("S8-1 모양 버전이 V+1(3)", (p) => {
+    p.version = 3;
   });
   add("S8-2 모양 버전이 999", (p) => {
     p.version = 999;
@@ -578,41 +605,41 @@ function invalidPayloadCases(): [string, unknown][] {
   add("S8-3 모양 버전 필드가 없음", (p) => {
     delete p.version;
   });
-  add("S8-4 바닥에서 wardrobe가 빠짐", (p) => {
-    delete p.floor.wardrobe;
+  add("S8-4 꼭 있어야 하는 가구(장소 가구 bookcase)가 빠짐", (p) => {
+    p.items = p.items.filter((i) => i.id !== "bookcase");
   });
-  add("S8-5 벽에서 window가 빠짐", (p) => {
-    delete p.wall.window;
+  add("S8-5 벽 가구 window가 빠짐", (p) => {
+    p.items = p.items.filter((i) => i.id !== "window");
   });
-  add("S8-6 바닥에 모르는 가구 lamp", (p) => {
-    p.floor.lamp = { x: 4.5, z: 4.5, facing: 0 };
+  add("S8-6 모르는 가구 lamp", (p) => {
+    p.items.push({ id: "lamp", type: "lamp", floor: { x: 4.5, z: 4.5, facing: 0 } });
   });
   add("S8-7 desk facing 4", (p) => {
-    (p.floor.desk as { facing: number }).facing = 4;
+    floorOf(p, "desk").facing = 4;
   });
   add("S8-8 rug facing -1", (p) => {
-    (p.floor.rug as { facing: number }).facing = -1;
+    floorOf(p, "rug").facing = -1;
   });
   add("S8-9 board wall front", (p) => {
-    (p.wall.board as { wall: string }).wall = "front";
+    wallOf(p, "board").wall = "front";
   });
   add("S8-10 bookcase x -1(방 밖)", (p) => {
-    (p.floor.bookcase as { x: number }).x = -1;
+    floorOf(p, "bookcase").x = -1;
   });
   add("S8-11 wardrobe z 13(깊이 11 밖)", (p) => {
-    (p.floor.wardrobe as { z: number }).z = 13;
+    floorOf(p, "wardrobe").z = 13;
   });
   add("S8-12 board along 10(뒷벽, 가로 8 밖)", (p) => {
-    (p.wall.board as { along: number }).along = 10;
+    wallOf(p, "board").along = 10;
   });
   add("S8-13 window left along 13(옆벽, 깊이 11 밖)", (p) => {
-    p.wall.window = { wall: "left", along: 13 };
+    item(p, "window").wall = { wall: "left", along: 13 };
   });
   add("S8-14 desk 자리가 null", (p) => {
-    p.floor.desk = null;
+    item(p, "desk").floor = null;
   });
   add("S8-14 board 자리가 문자열", (p) => {
-    p.wall.board = "x";
+    item(p, "board").wall = "x";
   });
   add("S8-14 본문 전체가 null", () => null);
   return cases;
@@ -621,6 +648,18 @@ function invalidPayloadCases(): [string, unknown][] {
 describe("B. 모르는 모양 버전, 맞지 않는 모양", () => {
   test.each(invalidPayloadCases())("[spec] %s → 처음 배치로 보이고 홈은 그대로 보인다", async (_label, body) => {
     serverRespondsWith(async () => respond(200, body));
+
+    await renderHome();
+
+    expect(getLobbyLayout).toHaveBeenCalledTimes(1);
+    await expectLastLoad("none");
+    expectDefaultRoom();
+    expect(screen.getByRole("button", { name: "질문에 답하기" })).toBeTruthy();
+  });
+
+  test("[spec] S8-16(066-① 명세 4·5) 옛 모양 v1 본문(version 1, 바닥·벽 묶음, L1의 값)을 받으면 처음 배치로 보이고 홈은 그대로 보인다", async () => {
+    const v1Body = { version: 1, floor: L1_FLOOR, wall: L1_WALL };
+    serverRespondsWith(async () => respond(200, v1Body));
 
     await renderHome();
 

@@ -9,6 +9,8 @@
 // 064-④ 결정 11에 맞춰 D17을 고치고(창문 왼벽 5.0은 책상 칸 0,5 바로 위라 놓을 수 없음), 게시판을 책상 위로 끄는 경우(결정11-가)와
 // 벽 가구 앞 바닥 띠로 고르고 끄는 테스트(B1~B10)를 더했다. 띠를 누른 것은 3D 그리기가 바닥 점만 넘기고(piece·wall 없음) 화면·편집이
 // 그 벽 가구로 본다고 가정한다(띠 판정을 3D 그리기 안에서 해 piece로 넘기는 구현이면 이 가정이 맞지 않는다. 12-qa-tests.md에 적음).
+// 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터와 저장 본문이 v2(version 2, 가구 인스턴스 목록)로 바뀌어,
+// 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -30,7 +32,7 @@ import { useAppOverlayStatus } from "@/lib/app-overlay-status";
 import { completeHomeTutorial, consumeHomeTutorialReplay, hasCompletedHomeTutorial } from "@/lib/home-tutorial";
 import { clearIncompleteLoop, getIncompleteLoop } from "@/lib/incomplete-loop";
 import { MARKS, activeLobbyLayout, applyLobbyLayout, markZoneAt, type FloorPoint, type PointerHit } from "@/lib/lobby3d/engine";
-import { DEFAULT_LOBBY_LAYOUT, type FloorPieceId, type LobbyLayout, type WallPieceId, type WallSide } from "@/lib/lobby3d/lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import { getNowInEnglishSummary, type NowInEnglishSummary } from "@/lib/now-in-english";
 import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { useSession } from "@/lib/session";
@@ -157,21 +159,49 @@ function nowSummary(): NowInEnglishSummary {
 
 const RED_FIRST = "빨간 가구부터 옮겨 주세요";
 
-const P0: LobbyLayout = {
-  floor: {
-    desk: { x: 1.5, z: 5.5, facing: 0 },
-    bookcase: { x: 0.5, z: 2.5, facing: 1 },
-    wardrobe: { x: 7.5, z: 3.5, facing: 3 },
-    rug: { x: 4.6, z: 7.2, facing: 0 }
-  },
-  wall: { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } }
-};
+// ---------- 066-① 배치 데이터 v2 ----------
+// 배치는 { items: [{ id, type, floor?: { x, z, facing }, wall?: { wall, along } }] }이고 처음 배치의 인스턴스 id는 종류 id와 같다(066-① 명세 2).
+// 064·065 때 적은 배치 값을 바닥 가구·벽 가구 묶음으로 그대로 두고 v2()로 목록을 만든다. 목록 순서는 명세가 정하지 않아 견줄 때 id 순으로 늘어놓는다.
+type LayoutItem = LobbyLayout["items"][number];
+type FloorSpot = NonNullable<LayoutItem["floor"]>;
+type WallSpot = NonNullable<LayoutItem["wall"]>;
 
-type WallSpot = { wall: WallSide; along: number };
-
-function withWall(base: LobbyLayout, id: WallPieceId, spot: WallSpot): LobbyLayout {
-  return { floor: base.floor, wall: { ...base.wall, [id]: spot } };
+function v2(floor: Record<string, FloorSpot>, wall: Record<string, WallSpot>): LobbyLayout {
+  return {
+    items: [
+      ...Object.entries(floor).map(([id, spot]) => ({ id, type: id, floor: spot }) as LayoutItem),
+      ...Object.entries(wall).map(([id, spot]) => ({ id, type: id, wall: spot }) as LayoutItem)
+    ]
+  };
 }
+
+/** id 순으로 늘어놓은 인스턴스(목록 순서를 보지 않고 견준다). */
+function sortedItems(layout: { items: readonly { id: string }[] } | null | undefined) {
+  return [...(layout?.items ?? [])].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/** 가구를 가리키는 값(누르기 결과의 piece, 고른 가구, 뜨는 가구, 칠한 칸의 piece)은 인스턴스 id다(066-① 명세 5. 처음 배치에서는 종류 id와 같다). */
+type PieceId = NonNullable<PointerHit["piece"]>;
+
+/** 인스턴스 id가 id인 가구의 자리(바닥형·덮개형은 floor, 벽 부착형은 wall). */
+function spotOf(layout: LobbyLayout, id: string) {
+  const item = layout.items.find((i) => i.id === id);
+  return item?.floor ?? item?.wall;
+}
+
+/** 인스턴스 id가 id인 벽 가구만 그 자리로 옮긴 배치. */
+function withWall(base: LobbyLayout, id: PieceId, spot: WallSpot): LobbyLayout {
+  return { items: base.items.map((item) => (item.id === id ? { ...item, wall: spot } : item)) };
+}
+
+const P0_FLOOR: Record<string, FloorSpot> = {
+  desk: { x: 1.5, z: 5.5, facing: 0 },
+  bookcase: { x: 0.5, z: 2.5, facing: 1 },
+  wardrobe: { x: 7.5, z: 3.5, facing: 3 },
+  rug: { x: 4.6, z: 7.2, facing: 0 }
+};
+const P0_WALL: Record<string, WallSpot> = { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } };
+const P0: LobbyLayout = v2(P0_FLOOR, P0_WALL);
 
 const back = (along: number): WallSpot => ({ wall: "back", along });
 const left = (along: number): WallSpot => ({ wall: "left", along });
@@ -223,10 +253,10 @@ function canvas() {
 /** 3D 그리기가 넘기는 누르기 결과. 벽 위면 wall, 바닥 위면 point, 방 밖이면 둘 다 null이다. */
 type Spot = WallSpot | { floor: FloorPoint } | "outside";
 
-function hitAt(spot: Spot, piece: FloorPieceId | WallPieceId | null = null): PointerHit {
+function hitAt(spot: Spot, piece: PieceId | null = null): PointerHit {
   if (spot === "outside") return { point: null, mark: null, onCharacter: false, piece, wall: null };
   if ("floor" in spot) return { point: spot.floor, mark: null, onCharacter: false, piece, wall: null };
-  return { point: null, mark: piece === "board" || piece === "window" ? piece : null, onCharacter: false, piece, wall: { wall: spot.wall, along: spot.along } };
+  return { point: null, mark: (piece === "board" || piece === "window" ? piece : null) as PointerHit["mark"], onCharacter: false, piece, wall: { wall: spot.wall, along: spot.along } };
 }
 
 async function pointer(phase: "down" | "move" | "up" | "cancel", h: PointerHit | null, x: number, y: number) {
@@ -236,7 +266,7 @@ async function pointer(phase: "down" | "move" | "up" | "cancel", h: PointerHit |
 }
 
 /** 톡(같은 화면 자리에서 누르고 뗀다). */
-async function tap(spot: Spot, piece: FloorPieceId | WallPieceId | null = null) {
+async function tap(spot: Spot, piece: PieceId | null = null) {
   await pointer("down", hitAt(spot, piece), 200, 300);
   await pointer("up", null, 200, 300);
   await flushAsync();
@@ -245,7 +275,7 @@ async function tap(spot: Spot, piece: FloorPieceId | WallPieceId | null = null) 
 let screenStep = 0;
 
 /** 벽 가구를 누른다(화면 200,300). */
-async function press(piece: WallPieceId, spot: Spot) {
+async function press(piece: PieceId, spot: Spot) {
   screenStep = 0;
   await pointer("down", hitAt(spot, piece), 200, 300);
 }
@@ -303,10 +333,10 @@ function floorMarks() {
   return canvas().edit!.marks.map((m) => ({ piece: m.piece, ok: m.ok }));
 }
 
-const WIDTH: Record<WallPieceId, number> = { board: 1.8, window: 2.3 };
+const WIDTH: Record<string, number> = { board: 1.8, window: 2.3 };
 
 /** 벽 가구가 그 자리에 있을 때 칠하는 자리(가정 A7: along ± 폭/2). */
-function markOf(piece: WallPieceId, spot: WallSpot, ok: boolean) {
+function markOf(piece: PieceId, spot: WallSpot, ok: boolean) {
   return { piece, wall: spot.wall, from: r4(spot.along - WIDTH[piece] / 2), to: r4(spot.along + WIDTH[piece] / 2), ok };
 }
 
@@ -355,7 +385,7 @@ afterEach(() => {
 async function startEditing() {
   await renderHome();
   await enterEdit();
-  expect(editLayout()).toEqual(P0);
+  expect(sortedItems(editLayout())).toEqual(sortedItems(P0));
 }
 
 /** D5: 게시판 가운데(뒷벽 1.8)를 눌러 왼벽 z 7.4로 끌어 놓는다 → 왼벽 7.5. */
@@ -363,7 +393,7 @@ async function moveBoardToLeft() {
   await press("board", back(1.8));
   await moveTo(left(7.4));
   await release();
-  expect(editLayout()).toEqual(withWall(P0, "board", left(7.5)));
+  expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "board", left(7.5))));
 }
 
 /** 책장을 골라 한 번 돌려(앞면이 벽을 봄) 빨간 가구로 만들고 고르기를 푼다(③과 같은 방법). */
@@ -435,11 +465,10 @@ describe("[spec] 064-④ S: 벽 가구 고르기", () => {
 
     await tap(back(1.8), "board");
     await tap(back(4.8), "window");
-    expect(editLayout()).toEqual(P0);
-
+    expect(sortedItems(editLayout())).toEqual(sortedItems(P0));
     await pressButton("완료");
     expect(saveLobbyLayout).not.toHaveBeenCalled();
-    expect(activeLobbyLayout()).toEqual(P0);
+    expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(P0));
   });
 
   test("S7 빨간 책장이 있는 동안 게시판을 톡하면 '빨간 가구부터 옮겨 주세요'가 뜨고 게시판은 골라지지 않는다", async () => {
@@ -462,7 +491,7 @@ describe("[spec] 064-④ S: 벽 가구 고르기", () => {
     await release();
 
     expect(screen.getByText(RED_FIRST)).toBeTruthy();
-    expect(editLayout().wall.window).toEqual(back(4.8));
+    expect(spotOf(editLayout(), "window")).toEqual(back(4.8));
     expect(wallMarks()).toEqual([]);
   });
 });
@@ -473,7 +502,7 @@ type DragCase = {
   label: string;
   /** D5를 먼저 해 둔다(게시판 왼벽 7.5에서 시작). */
   afterD5?: boolean;
-  piece: WallPieceId;
+  piece: PieceId;
   pressAt: Spot;
   /** 손가락 자리와, 그때(끌기 중) 편집 중 배치의 그 가구 자리, 칠하기의 놓을 수 있음(적은 것만 본다). */
   moves: { to: Spot; expect: WallSpot; ok?: boolean }[];
@@ -568,19 +597,19 @@ describe("[spec] 064-④ D: 벽 가구 끌기", () => {
     for (const step of c.moves) {
       await moveTo(step.to);
       // 끌기 중: 그 가구만 옮겨지고, 돌리기 버튼은 없다
-      expect(editLayout()).toEqual(withWall(before, c.piece, step.expect));
+      expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(before, c.piece, step.expect)));
       expect(rotateButton()).toBeNull();
       if (step.ok !== undefined) expect(wallMarks()).toEqual([markOf(c.piece, step.expect, step.ok)]);
     }
     await release();
 
     // 뗀 뒤: 그 가구가 골라져 있고(벽에 칠함), 돌리기 버튼은 없다
-    expect(editLayout()).toEqual(withWall(before, c.piece, c.after));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(before, c.piece, c.after)));
     expect(rotateButton()).toBeNull();
     expect(wallMarks().map((m) => m.piece)).toEqual([c.piece]);
     // D18: 끌기 전과 다른 자리에 놓였으면 반 칸(0.5) 단위다
-    const placed = editLayout().wall[c.piece];
-    const from = before.wall[c.piece];
+    const placed = spotOf(editLayout(), c.piece) as WallSpot;
+    const from = spotOf(before, c.piece) as WallSpot;
     if (placed.wall !== from.wall || placed.along !== from.along) expect(Number.isInteger(placed.along * 2)).toBe(true);
   });
 });
@@ -596,9 +625,9 @@ describe("[spec] 064-④ E·F3: 벽 가구를 옮긴 뒤 완료·취소·처음 
 
     const saved = withWall(P0, "board", left(7.5));
     expect(saveLobbyLayout).toHaveBeenCalledTimes(1);
-    expect(saveLobbyLayout).toHaveBeenCalledWith(saved);
+    expect(sortedItems(jest.mocked(saveLobbyLayout).mock.calls[0][0])).toEqual(sortedItems(saved));
     expect(screen.getByText("꾸미기")).toBeTruthy();
-    expect(activeLobbyLayout()).toEqual(saved);
+    expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(saved));
     expect(MARKS.board.approach.map((p) => [r4(p.x), r4(p.z)])).toEqual([
       [1.3, 7.7],
       [1.3, 7.1]
@@ -613,13 +642,12 @@ describe("[spec] 064-④ E·F3: 벽 가구를 옮긴 뒤 완료·취소·처음 
     await press("window", back(4.8));
     await moveTo(back(4.1));
     await release();
-    expect(editLayout()).toEqual(withWall(withWall(P0, "board", left(7.5)), "window", back(4.0)));
-
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(withWall(P0, "board", left(7.5)), "window", back(4.0))));
     await pressButton("취소");
 
     expect(saveLobbyLayout).not.toHaveBeenCalled();
     expect(screen.getByText("꾸미기")).toBeTruthy();
-    expect(activeLobbyLayout()).toEqual(P0);
+    expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(P0));
   });
 
   test("E3 같은 두 가지를 옮기고 '처음 배치로': 편집 중 배치가 P0(게시판 뒷벽 1.8, 창문 뒷벽 4.8)이고 편집 모드에 남는다", async () => {
@@ -631,7 +659,7 @@ describe("[spec] 064-④ E·F3: 벽 가구를 옮긴 뒤 완료·취소·처음 
 
     await pressButton("처음 배치로");
 
-    expect(editLayout()).toEqual(P0);
+    expect(sortedItems(editLayout())).toEqual(sortedItems(P0));
     expect(screen.queryByText("꾸미기")).toBeNull();
     expect(screen.getByRole("button", { name: "완료" })).toBeTruthy();
   });
@@ -649,7 +677,7 @@ describe("[spec] 064-④ W9: 창문을 끄는 동안과 놓은 뒤 3D 그리기�
 
     await release();
     expect(canvas().edit!.dragging).toBe(false);
-    expect(editLayout().wall.window).toEqual(right(8.5));
+    expect(spotOf(editLayout(), "window")).toEqual(right(8.5));
   });
 });
 
@@ -664,14 +692,14 @@ const L3: LobbyLayout = withWall(withWall(P0, "board", right(6.0)), "window", le
 /** 게시판 뒷벽 6.5(띠 x 5.6~7.4, z < 1), 창문 오른벽 1.5(띠 x > 7, z 0.35~2.65). 뒤·오른쪽 모서리에서 두 띠가 겹친다. */
 const CORNER: LobbyLayout = withWall(withWall(P0, "board", back(6.5)), "window", right(1.5));
 /** 깔개를 창문 아래(4.6, 1.0)에 둔 배치(깔개는 벽 가구 아래도 된다). */
-const RUG_UNDER: LobbyLayout = { floor: { ...P0.floor, rug: { x: 4.6, z: 1.0, facing: 0 } }, wall: P0.wall };
+const RUG_UNDER: LobbyLayout = v2({ ...P0_FLOOR, rug: { x: 4.6, z: 1.0, facing: 0 } }, P0_WALL);
 
 async function startEditingFrom(layout: LobbyLayout) {
   jest.mocked(getLobbyLayout).mockResolvedValue(layout);
   await renderHome();
-  expect(activeLobbyLayout()).toEqual(layout);
+  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(layout));
   await enterEdit();
-  expect(editLayout()).toEqual(layout);
+  expect(sortedItems(editLayout())).toEqual(sortedItems(layout));
 }
 
 /** 바닥만 누른 것(3D 그리기가 바닥 가구도 벽 가구도 맞히지 못함). */
@@ -719,10 +747,10 @@ describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
     screenStep = 0;
     await pointer("down", hitAt({ floor: { x: 4.8, z: 0.5 } }), 200, 300);
     await moveTo(back(5.6));
-    expect(editLayout()).toEqual(withWall(P0, "window", back(5.5)));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
     await release();
 
-    expect(editLayout()).toEqual(withWall(P0, "window", back(5.5)));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
     expect(wallMarks().map((m) => m.piece)).toEqual(["window"]);
   });
 
@@ -734,7 +762,7 @@ describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
     await moveTo(left(9.4));
     await release();
 
-    expect(editLayout()).toEqual(withWall(P0, "window", left(9.5)));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "window", left(9.5))));
   });
 
   test("B7 뒤·오른쪽 모서리에서 두 띠에 모두 들면 가장 가까운 벽의 가구: (7.3, 0.5)는 뒷벽 게시판, (7.3, 0.9)는 오른벽 창문", async () => {
@@ -775,7 +803,7 @@ describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
     await pointer("down", hitAt({ floor: point }), 200, 300);
     await moveTo(back(6.4));
     await release();
-    expect(editLayout()).toEqual(layout);
+    expect(sortedItems(editLayout())).toEqual(sortedItems(layout));
     expect(wallMarks()).toEqual([]);
   });
 

@@ -4,6 +4,8 @@
 // 결정 14: 고친 뒤(498892e 뒤)에는 통과, 고치기 전(e21a60a)에는 실패가 맞다.
 // "방을 다시 그린다"는 3D 그리기(lobby3d-canvas)가 받는 layoutKey가 바뀌는 것으로 본다(바뀌면 가구·이름표·창문 빛을 다시 만든다. 1ebc54d의 속성 설명).
 // 가짜·도우미는 앞 qa 테스트(home-lobby-layout-decisions.spec.test.tsx)와 같다. 그 파일은 커밋됐으므로 고치지 않고 이 파일에 옮겨 적었다.
+// 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터와 저장 본문이 v2(version 2, 가구 인스턴스 목록)로 바뀌어,
+// 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -120,18 +122,39 @@ jest.mock("@/lib/writing-drafts", () => ({ getLocalWritingDraft: jest.fn() }));
 
 // ---------- 시나리오의 배치 ----------
 
+// ---------- 066-① 배치 데이터 v2 ----------
+// 배치는 { items: [{ id, type, floor?: { x, z, facing }, wall?: { wall, along } }] }이고 처음 배치의 인스턴스 id는 종류 id와 같다(066-① 명세 2).
+// 064·065 때 적은 배치 값을 바닥 가구·벽 가구 묶음으로 그대로 두고 v2()로 목록을 만든다. 목록 순서는 명세가 정하지 않아 견줄 때 id 순으로 늘어놓는다.
+type LayoutItem = LobbyLayout["items"][number];
+type FloorSpot = NonNullable<LayoutItem["floor"]>;
+type WallSpot = NonNullable<LayoutItem["wall"]>;
+
+function v2(floor: Record<string, FloorSpot>, wall: Record<string, WallSpot>): LobbyLayout {
+  return {
+    items: [
+      ...Object.entries(floor).map(([id, spot]) => ({ id, type: id, floor: spot }) as LayoutItem),
+      ...Object.entries(wall).map(([id, spot]) => ({ id, type: id, wall: spot }) as LayoutItem)
+    ]
+  };
+}
+
+/** id 순으로 늘어놓은 인스턴스(목록 순서를 보지 않고 견준다). */
+function sortedItems(layout: { items: readonly { id: string }[] } | null | undefined) {
+  return [...(layout?.items ?? [])].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
 type PlaceId = "board" | "window" | "desk" | "bookcase";
 type PlaceValues = Record<PlaceId, { approach: FloorPoint[]; faceTo: FloorPoint }>;
 
-const P0: LobbyLayout = {
-  floor: {
+const P0: LobbyLayout = v2(
+  {
     desk: { x: 1.5, z: 5.5, facing: 0 },
     bookcase: { x: 0.5, z: 2.5, facing: 1 },
     wardrobe: { x: 7.5, z: 3.5, facing: 3 },
     rug: { x: 4.6, z: 7.2, facing: 0 }
   },
-  wall: { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } }
-};
+  { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } }
+);
 const P0_PLACES: PlaceValues = {
   board: { approach: [{ x: 1.6, z: 1.3 }, { x: 2.2, z: 1.3 }], faceTo: { x: 1.8, z: 0 } },
   window: { approach: [{ x: 4.5, z: 1.55 }, { x: 5.1, z: 1.55 }], faceTo: { x: 4.8, z: 0 } },
@@ -139,15 +162,15 @@ const P0_PLACES: PlaceValues = {
   bookcase: { approach: [{ x: 1.4, z: 2.5 }], faceTo: { x: 0, z: 2.5 } }
 };
 
-const L1: LobbyLayout = {
-  floor: {
+const L1: LobbyLayout = v2(
+  {
     desk: { x: 1.5, z: 5.5, facing: 0 },
     bookcase: { x: 0.5, z: 4.5, facing: 1 },
     wardrobe: { x: 7.5, z: 6.5, facing: 3 },
     rug: { x: 3.0, z: 8.0, facing: 1 }
   },
-  wall: { board: { wall: "back", along: 2.0 }, window: { wall: "back", along: 5.6 } }
-};
+  { board: { wall: "back", along: 2.0 }, window: { wall: "back", along: 5.6 } }
+);
 const L1_SOLID = ["0,4", "0,5", "1,5", "2,5", "7,6"];
 const L1_PLACES: PlaceValues = {
   board: { approach: [{ x: 1.8, z: 1.3 }, { x: 2.4, z: 1.3 }], faceTo: { x: 2.0, z: 0 } },
@@ -289,7 +312,7 @@ function sortedSolid() {
 
 /** "방에 적용됨": 배치·막힌 칸·장소 넷의 서는 자리·바라볼 지점·3D 가구 자리가 그 배치를 따른다. */
 function expectApplied(layout: LobbyLayout, solid: string[], places: PlaceValues) {
-  expect(activeLobbyLayout()).toEqual(layout);
+  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(layout));
   expect(sortedSolid()).toEqual([...solid].sort());
   for (const id of Object.keys(places) as PlaceId[]) {
     expect({ id, approach: MARKS[id].approach, faceTo: MARKS[id].faceTo }).toEqual({ id, ...places[id] });

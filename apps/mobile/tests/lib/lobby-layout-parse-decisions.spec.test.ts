@@ -4,6 +4,9 @@
 // "폰도 불러온 배치를 같은 기준으로 본다. 틀리면 처음 배치다".
 // 값은 서버 qa의 D1~D21(같은 폴더 06-qa-tests.md)과 같은 것을 쓴다. 폰에서 틀린 본문은 불러오기 함수가 null(→ 홈은 처음 배치)로 돌려준다.
 // 홈에서 null이 처음 배치로 보이는 것은 home-lobby-layout-load.spec의 S4·S8이 본다.
+// 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 본문이 v2(version 2, items 목록)로 바뀌어,
+// 명세의 "고칠 기존 테스트"대로 확인하는 뜻은 그대로 두고 배치 모양만 v2로 고쳤다. "모르는 버전"은 2 대신 3, 문자열 버전은 "2"로,
+// "바닥 묶음에 든 벽 가구"는 벽 부착형(board)에 floor 자리를 준 것으로, "바닥 묶음이 null"은 items가 null인 것으로 옮겼다(066-① 명세 4).
 // 네트워크는 전역 fetch 가짜다. 실제 서버에 닿지 않는다.
 import * as SecureStore from "expo-secure-store";
 import { getLobbyLayout } from "@/lib/api";
@@ -15,20 +18,39 @@ jest.mock("expo-secure-store", () => ({
   deleteItemAsync: jest.fn(() => Promise.resolve())
 }));
 
-const P0: LobbyLayout = {
-  floor: {
-    desk: { x: 1.5, z: 5.5, facing: 0 },
-    bookcase: { x: 0.5, z: 2.5, facing: 1 },
-    wardrobe: { x: 7.5, z: 3.5, facing: 3 },
-    rug: { x: 4.6, z: 7.2, facing: 0 }
-  },
-  wall: { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } }
-};
+// ---------- 066-① 배치 데이터 v2 ----------
+// 배치는 { items: [{ id, type, floor?: { x, z, facing }, wall?: { wall, along } }] }이고 처음 배치의 인스턴스 id는 종류 id와 같다(066-① 명세 2).
+// 064 때 적은 배치 값을 바닥 가구·벽 가구 묶음으로 그대로 두고 v2()로 목록을 만든다. 목록 순서는 명세가 정하지 않아 견줄 때 id 순으로 늘어놓는다.
+type LayoutItem = LobbyLayout["items"][number];
+type FloorSpot = NonNullable<LayoutItem["floor"]>;
+type WallSpot = NonNullable<LayoutItem["wall"]>;
 
-type Body = { version?: unknown; floor: Record<string, unknown>; wall: Record<string, unknown>; [key: string]: unknown };
+function v2(floor: Record<string, FloorSpot>, wall: Record<string, WallSpot>): LobbyLayout {
+  return {
+    items: [
+      ...Object.entries(floor).map(([id, spot]) => ({ id, type: id, floor: spot }) as LayoutItem),
+      ...Object.entries(wall).map(([id, spot]) => ({ id, type: id, wall: spot }) as LayoutItem)
+    ]
+  };
+}
+
+/** id 순으로 늘어놓은 인스턴스(목록 순서를 보지 않고 견준다). */
+function sortedItems(layout: { items: readonly { id: string }[] } | null | undefined) {
+  return [...(layout?.items ?? [])].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+const P0_FLOOR: Record<string, FloorSpot> = {
+  desk: { x: 1.5, z: 5.5, facing: 0 },
+  bookcase: { x: 0.5, z: 2.5, facing: 1 },
+  wardrobe: { x: 7.5, z: 3.5, facing: 3 },
+  rug: { x: 4.6, z: 7.2, facing: 0 }
+};
+const P0: LobbyLayout = v2(P0_FLOOR, { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } });
+
+type Body = { version?: unknown; items: Record<string, unknown>[]; [key: string]: unknown };
 
 function payload(layout: LobbyLayout): Body {
-  return JSON.parse(JSON.stringify({ version: 1, ...layout }));
+  return JSON.parse(JSON.stringify({ version: 2, ...layout }));
 }
 
 function respond(status: number, body: unknown) {
@@ -61,12 +83,16 @@ beforeEach(() => {
   });
 });
 
+function itemOf(body: Body, id: string) {
+  return body.items.find((i) => i.id === id)!;
+}
+
 function floorPiece(body: Body, id: string) {
-  return body.floor[id] as Record<string, unknown>;
+  return itemOf(body, id).floor as Record<string, unknown>;
 }
 
 function wallPiece(body: Body, id: string) {
-  return body.wall[id] as Record<string, unknown>;
+  return itemOf(body, id).wall as Record<string, unknown>;
 }
 
 function rejectedCases(): [string, unknown][] {
@@ -79,11 +105,11 @@ function rejectedCases(): [string, unknown][] {
   add("D1 버전이 빠짐", (b) => {
     delete b.version;
   });
-  add("D2 버전 2", (b) => {
-    b.version = 2;
+  add("D2 모르는 버전 3", (b) => {
+    b.version = 3;
   });
-  add("D3 버전이 문자열 \"1\"", (b) => {
-    b.version = "1";
+  add("D3 버전이 문자열 \"2\"", (b) => {
+    b.version = "2";
   });
   add("D4 뒷벽 along 8.5(경계 바로 밖)", (b) => {
     wallPiece(b, "board").along = 8.5;
@@ -124,11 +150,13 @@ function rejectedCases(): [string, unknown][] {
   add("D16 맨 위의 모르는 키 theme", (b) => {
     b.theme = "wood";
   });
-  add("D17 바닥 묶음에 든 벽 가구 board", (b) => {
-    b.floor.board = { x: 4.5, z: 4.5, facing: 0 };
+  add("D17 벽 가구 board에 바닥 자리(floor)", (b) => {
+    const board = itemOf(b, "board");
+    delete board.wall;
+    board.floor = { x: 4.5, z: 4.5, facing: 0 };
   });
-  add("D18 바닥 묶음이 null", (b) => {
-    (b as { floor: unknown }).floor = null;
+  add("D18 가구 목록(items)이 null", (b) => {
+    (b as { items: unknown }).items = null;
   });
   add("D19 board 안의 모르는 키 height", (b) => {
     wallPiece(b, "board").height = 1.75;
@@ -146,28 +174,28 @@ describe("서버와 같은 기준으로 거절(결정 04의 1)", () => {
 
 describe("경계값은 방 안(결정 04의 1)", () => {
   test("[spec] D20 바닥 x 0·8, z 0·11과 뒷벽 along 0·8을 받아 값을 그대로 돌려준다", async () => {
-    const layout: LobbyLayout = {
-      floor: {
+    const layout: LobbyLayout = v2(
+      {
         desk: { x: 0, z: 0, facing: 0 },
         bookcase: { x: 8, z: 11, facing: 1 },
         wardrobe: { x: 0, z: 11, facing: 2 },
         rug: { x: 8, z: 0, facing: 3 }
       },
-      wall: { board: { wall: "back", along: 0 }, window: { wall: "back", along: 8 } }
-    };
+      { board: { wall: "back", along: 0 }, window: { wall: "back", along: 8 } }
+    );
     fetchMock.mockResolvedValue(respond(200, payload(layout)));
 
-    await expect(getLobbyLayout()).resolves.toEqual(layout);
+    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(layout));
   });
 
   test("[spec] D21 옆벽 along 0·11(왼벽·오른벽)을 받아 값을 그대로 돌려준다", async () => {
-    const first: LobbyLayout = { floor: P0.floor, wall: { board: { wall: "left", along: 0 }, window: { wall: "right", along: 11 } } };
-    const second: LobbyLayout = { floor: P0.floor, wall: { board: { wall: "right", along: 0 }, window: { wall: "left", along: 11 } } };
+    const first: LobbyLayout = v2(P0_FLOOR, { board: { wall: "left", along: 0 }, window: { wall: "right", along: 11 } });
+    const second: LobbyLayout = v2(P0_FLOOR, { board: { wall: "right", along: 0 }, window: { wall: "left", along: 11 } });
 
     fetchMock.mockResolvedValue(respond(200, payload(first)));
-    await expect(getLobbyLayout()).resolves.toEqual(first);
+    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(first));
 
     fetchMock.mockResolvedValue(respond(200, payload(second)));
-    await expect(getLobbyLayout()).resolves.toEqual(second);
+    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(second));
   });
 });

@@ -2,6 +2,8 @@
 // 기대값은 결정(private 작업 폴더 064/03-계정-저장/04-main-decision.md의 2·3, 08-main-decision.md의 1·2)과 시나리오 03의 배치 값에서만 가져온다.
 // 결정 08의 1: 모두 이미 구현한 동작을 지키는 테스트라 테스트 커밋 시점(구현 1ebc54d 뒤)에 통과가 맞다.
 // 가짜·도우미는 앞 qa 테스트(home-lobby-layout-load.spec.test.tsx)와 같다. 그 파일은 커밋됐으므로 고치지 않고 이 파일에 옮겨 적었다.
+// 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터와 저장 본문이 v2(version 2, 가구 인스턴스 목록)로 바뀌어,
+// 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { AppState } from "react-native";
@@ -123,18 +125,38 @@ const actualApi = jest.requireActual<typeof import("@/lib/api")>("@/lib/api");
 
 // ---------- 시나리오의 배치 ----------
 
+// ---------- 066-① 배치 데이터 v2 ----------
+// 배치는 { items: [{ id, type, floor?: { x, z, facing }, wall?: { wall, along } }] }이고 처음 배치의 인스턴스 id는 종류 id와 같다(066-① 명세 2).
+// 064·065 때 적은 배치 값을 바닥 가구·벽 가구 묶음으로 그대로 두고 v2()로 목록을 만든다. 목록 순서는 명세가 정하지 않아 견줄 때 id 순으로 늘어놓는다.
+type LayoutItem = LobbyLayout["items"][number];
+type FloorSpot = NonNullable<LayoutItem["floor"]>;
+type WallSpot = NonNullable<LayoutItem["wall"]>;
+
+function v2(floor: Record<string, FloorSpot>, wall: Record<string, WallSpot>): LobbyLayout {
+  return {
+    items: [
+      ...Object.entries(floor).map(([id, spot]) => ({ id, type: id, floor: spot }) as LayoutItem),
+      ...Object.entries(wall).map(([id, spot]) => ({ id, type: id, wall: spot }) as LayoutItem)
+    ]
+  };
+}
+
+/** id 순으로 늘어놓은 인스턴스(목록 순서를 보지 않고 견준다). */
+function sortedItems(layout: { items: readonly { id: string }[] } | null | undefined) {
+  return [...(layout?.items ?? [])].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
 type PlaceId = "board" | "window" | "desk" | "bookcase";
 type PlaceValues = Record<PlaceId, { approach: FloorPoint[]; faceTo: FloorPoint }>;
 
-const P0: LobbyLayout = {
-  floor: {
-    desk: { x: 1.5, z: 5.5, facing: 0 },
-    bookcase: { x: 0.5, z: 2.5, facing: 1 },
-    wardrobe: { x: 7.5, z: 3.5, facing: 3 },
-    rug: { x: 4.6, z: 7.2, facing: 0 }
-  },
-  wall: { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } }
+const P0_FLOOR: Record<string, FloorSpot> = {
+  desk: { x: 1.5, z: 5.5, facing: 0 },
+  bookcase: { x: 0.5, z: 2.5, facing: 1 },
+  wardrobe: { x: 7.5, z: 3.5, facing: 3 },
+  rug: { x: 4.6, z: 7.2, facing: 0 }
 };
+const P0_WALL: Record<string, WallSpot> = { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } };
+const P0: LobbyLayout = v2(P0_FLOOR, P0_WALL);
 const P0_SOLID = ["0,2", "0,5", "1,5", "2,5", "7,3"];
 const P0_PLACES: PlaceValues = {
   board: { approach: [{ x: 1.6, z: 1.3 }, { x: 2.2, z: 1.3 }], faceTo: { x: 1.8, z: 0 } },
@@ -143,15 +165,15 @@ const P0_PLACES: PlaceValues = {
   bookcase: { approach: [{ x: 1.4, z: 2.5 }], faceTo: { x: 0, z: 2.5 } }
 };
 
-const L1: LobbyLayout = {
-  floor: {
+const L1: LobbyLayout = v2(
+  {
     desk: { x: 1.5, z: 5.5, facing: 0 },
     bookcase: { x: 0.5, z: 4.5, facing: 1 },
     wardrobe: { x: 7.5, z: 6.5, facing: 3 },
     rug: { x: 3.0, z: 8.0, facing: 1 }
   },
-  wall: { board: { wall: "back", along: 2.0 }, window: { wall: "back", along: 5.6 } }
-};
+  { board: { wall: "back", along: 2.0 }, window: { wall: "back", along: 5.6 } }
+);
 const L1_SOLID = ["0,4", "0,5", "1,5", "2,5", "7,6"];
 const L1_PLACES: PlaceValues = {
   board: { approach: [{ x: 1.8, z: 1.3 }, { x: 2.4, z: 1.3 }], faceTo: { x: 2.0, z: 0 } },
@@ -160,7 +182,7 @@ const L1_PLACES: PlaceValues = {
   bookcase: { approach: [{ x: 1.4, z: 4.5 }], faceTo: { x: 0, z: 4.5 } }
 };
 
-const L3: LobbyLayout = { floor: P0.floor, wall: { board: { wall: "right", along: 6.0 }, window: { wall: "left", along: 8.0 } } };
+const L3: LobbyLayout = v2(P0_FLOOR, { board: { wall: "right", along: 6.0 }, window: { wall: "left", along: 8.0 } });
 const L3_PLACES: PlaceValues = {
   board: { approach: [{ x: 6.7, z: 5.8 }, { x: 6.7, z: 6.4 }], faceTo: { x: 8, z: 6.0 } },
   window: { approach: [{ x: 1.55, z: 8.3 }, { x: 1.55, z: 7.7 }], faceTo: { x: 0, z: 8.0 } },
@@ -227,9 +249,9 @@ function respond(status: number, body?: unknown): FakeResponse {
 const fetchMock = jest.fn<Promise<FakeResponse>, [string, RequestInit?]>();
 const originalFetch = globalThis.fetch;
 
-/** 지금 버전(결정 04의 1: version 1)을 붙인 본문. */
+/** 지금 버전(066-① 명세 2: version 2)을 붙인 본문. */
 function payload(layout: LobbyLayout): Record<string, unknown> {
-  return JSON.parse(JSON.stringify({ version: 1, ...layout }));
+  return JSON.parse(JSON.stringify({ version: 2, ...layout }));
 }
 
 /** 불러오기를 진짜 함수로 돌리고, 서버가 이 응답을 주게 한다. */
@@ -332,7 +354,7 @@ function sortedSolid() {
 
 /** "방에 적용됨": 배치·막힌 칸·장소 넷의 서는 자리·바라볼 지점·3D 가구 자리가 그 배치를 따른다. */
 function expectApplied(layout: LobbyLayout, solid: string[], places: PlaceValues) {
-  expect(activeLobbyLayout()).toEqual(layout);
+  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(layout));
   expect(sortedSolid()).toEqual([...solid].sort());
   for (const id of Object.keys(places) as PlaceId[]) {
     expect({ id, approach: MARKS[id].approach, faceTo: MARKS[id].faceTo }).toEqual({ id, ...places[id] });
@@ -405,13 +427,13 @@ afterEach(() => {
 // ---------- 결정 08에서 더 쓰는 배치 ----------
 
 /** 처음 자리 (4.2, 6.2)를 막고, 그 왼쪽 칸도 막는 배치(가장 가까운 설 수 있는 칸이 하나로 정해진다). P0에서 옷장 (4.5, 6.5, 0), 책장 (3.5, 6.5, 1). */
-const L6: LobbyLayout = { floor: { ...P0.floor, wardrobe: { x: 4.5, z: 6.5, facing: 0 }, bookcase: { x: 3.5, z: 6.5, facing: 1 } }, wall: P0.wall };
+const L6: LobbyLayout = v2({ ...P0_FLOOR, wardrobe: { x: 4.5, z: 6.5, facing: 0 }, bookcase: { x: 3.5, z: 6.5, facing: 1 } }, P0_WALL);
 const L6_SOLID = ["0,5", "1,5", "2,5", "3,6", "4,6"];
 /** 가구가 겹치는 배치: P0에서 책장을 책상과 같은 자리 (1.5, 5.5, 0)로. */
-const OVERLAP: LobbyLayout = { floor: { ...P0.floor, bookcase: { x: 1.5, z: 5.5, facing: 0 } }, wall: P0.wall };
+const OVERLAP: LobbyLayout = v2({ ...P0_FLOOR, bookcase: { x: 1.5, z: 5.5, facing: 0 } }, P0_WALL);
 const OVERLAP_SOLID = ["0,5", "1,5", "2,5", "7,3"];
 /** 길을 막는 배치: P0에서 옷장을 책장 서는 자리 (1.4, 2.5)의 칸 "1,2"로 (1.5, 2.5, 3). */
-const PATH_BLOCKED: LobbyLayout = { floor: { ...P0.floor, wardrobe: { x: 1.5, z: 2.5, facing: 3 } }, wall: P0.wall };
+const PATH_BLOCKED: LobbyLayout = v2({ ...P0_FLOOR, wardrobe: { x: 1.5, z: 2.5, facing: 3 } }, P0_WALL);
 const PATH_BLOCKED_SOLID = ["0,2", "1,2", "0,5", "1,5", "2,5"];
 
 // ---------- 더 쓰는 도우미 ----------
@@ -624,7 +646,7 @@ describe("결정 08 1-4. 배치를 적용할 때 걷기·들어가기 동작을 
 
     await renderHome();
 
-    expect(activeLobbyLayout()).toEqual(L6);
+    expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(L6));
     expect([...SOLID_TILES].sort()).toEqual([...L6_SOLID].sort());
     expect(isFree(4.2, 6.2)).toBe(false);
     const at = position();
@@ -650,7 +672,7 @@ describe("결정 08 1-5. 모양이 맞으면 가구가 겹치거나 길을 막�
 
     await renderHome();
 
-    expect(activeLobbyLayout()).toEqual(OVERLAP);
+    expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(OVERLAP));
     expect([...SOLID_TILES].sort()).toEqual([...OVERLAP_SOLID].sort());
     expect(MARKS.bookcase.approach).toEqual([{ x: 1.5, z: 6.4 }]);
     expect(currentFurnitureLayout()).toEqual(furniturePlacements(OVERLAP));
@@ -661,7 +683,7 @@ describe("결정 08 1-5. 모양이 맞으면 가구가 겹치거나 길을 막�
 
     await renderHome();
 
-    expect(activeLobbyLayout()).toEqual(PATH_BLOCKED);
+    expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(PATH_BLOCKED));
     expect([...SOLID_TILES].sort()).toEqual([...PATH_BLOCKED_SOLID].sort());
     expect(MARKS.bookcase.approach).toEqual([{ x: 1.4, z: 2.5 }]);
     expect(findPath(position(), MARKS.bookcase.approach)).toBeNull();

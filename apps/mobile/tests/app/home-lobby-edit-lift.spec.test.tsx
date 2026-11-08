@@ -14,6 +14,8 @@
 // 기대값은 결정 03(구역 = 엔진의 장소 구역 판정과 같은 모양: 서는 자리들의 가운데를 중심으로 반지름 1칸, 게시판·창가·책장은 바라볼
 // 지점까지 이어짐, 일기 책상은 원만. 편집 중인 배치로 계산)과, 지금 코드의 가구별 서는 자리·바라볼 지점(lobby-layout의 PLACE_OF를
 // 배치에 놓은 값, 이 작업에서 바뀌지 않는 동작)으로 손으로 셈한 값이다. 칠의 노랑, 둥근 모서리는 3D라 보지 못한다.
+// 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터와 저장 본문이 v2(version 2, 가구 인스턴스 목록)로 바뀌어,
+// 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -35,7 +37,7 @@ import { useAppOverlayStatus } from "@/lib/app-overlay-status";
 import { completeHomeTutorial, consumeHomeTutorialReplay, hasCompletedHomeTutorial } from "@/lib/home-tutorial";
 import { clearIncompleteLoop, getIncompleteLoop } from "@/lib/incomplete-loop";
 import { applyLobbyLayout, type FloorPoint, type PointerHit } from "@/lib/lobby3d/engine";
-import { DEFAULT_LOBBY_LAYOUT, type Facing, type FloorPieceId, type LobbyLayout, type WallPieceId, type WallSide } from "@/lib/lobby3d/lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import { getNowInEnglishSummary, type NowInEnglishSummary } from "@/lib/now-in-english";
 import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { useSession } from "@/lib/session";
@@ -164,26 +166,51 @@ function nowSummary(): NowInEnglishSummary {
 
 const RED_FIRST = "빨간 가구부터 옮겨 주세요";
 
-const P0: LobbyLayout = {
-  floor: {
-    desk: { x: 1.5, z: 5.5, facing: 0 },
-    bookcase: { x: 0.5, z: 2.5, facing: 1 },
-    wardrobe: { x: 7.5, z: 3.5, facing: 3 },
-    rug: { x: 4.6, z: 7.2, facing: 0 }
-  },
-  wall: { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } }
+// ---------- 066-① 배치 데이터 v2 ----------
+// 배치는 { items: [{ id, type, floor?: { x, z, facing }, wall?: { wall, along } }] }이고 처음 배치의 인스턴스 id는 종류 id와 같다(066-① 명세 2).
+// 064·065 때 적은 배치 값을 바닥 가구·벽 가구 묶음으로 그대로 두고 v2()로 목록을 만든다. 목록 순서는 명세가 정하지 않아 견줄 때 id 순으로 늘어놓는다.
+type LayoutItem = LobbyLayout["items"][number];
+type FloorSpot = NonNullable<LayoutItem["floor"]>;
+type WallSpot = NonNullable<LayoutItem["wall"]>;
+
+function v2(floor: Record<string, FloorSpot>, wall: Record<string, WallSpot>): LobbyLayout {
+  return {
+    items: [
+      ...Object.entries(floor).map(([id, spot]) => ({ id, type: id, floor: spot }) as LayoutItem),
+      ...Object.entries(wall).map(([id, spot]) => ({ id, type: id, wall: spot }) as LayoutItem)
+    ]
+  };
+}
+
+/** id 순으로 늘어놓은 인스턴스(목록 순서를 보지 않고 견준다). */
+function sortedItems(layout: { items: readonly { id: string }[] } | null | undefined) {
+  return [...(layout?.items ?? [])].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/** 가구를 가리키는 값(누르기 결과의 piece, 고른 가구, 뜨는 가구, 칠한 칸의 piece)은 인스턴스 id다(066-① 명세 5. 처음 배치에서는 종류 id와 같다). */
+type PieceId = NonNullable<PointerHit["piece"]>;
+type Facing = FloorSpot["facing"];
+
+/** 인스턴스 id가 id인 바닥 가구만 그 자리로 옮긴 배치. */
+function withFloor(base: LobbyLayout, id: PieceId, x: number, z: number, facing: Facing): LobbyLayout {
+  return { items: base.items.map((item) => (item.id === id ? { ...item, floor: { x, z, facing } } : item)) };
+}
+
+/** 인스턴스 id가 id인 벽 가구만 그 자리로 옮긴 배치. */
+function withWall(base: LobbyLayout, id: PieceId, spot: WallSpot): LobbyLayout {
+  return { items: base.items.map((item) => (item.id === id ? { ...item, wall: spot } : item)) };
+}
+
+const P0_FLOOR: Record<string, FloorSpot> = {
+  desk: { x: 1.5, z: 5.5, facing: 0 },
+  bookcase: { x: 0.5, z: 2.5, facing: 1 },
+  wardrobe: { x: 7.5, z: 3.5, facing: 3 },
+  rug: { x: 4.6, z: 7.2, facing: 0 }
 };
+const P0_WALL: Record<string, WallSpot> = { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } };
+const P0: LobbyLayout = v2(P0_FLOOR, P0_WALL);
 
-type WallSpot = { wall: WallSide; along: number };
 const back = (along: number): WallSpot => ({ wall: "back", along });
-
-function withFloor(base: LobbyLayout, id: FloorPieceId, x: number, z: number, facing: Facing): LobbyLayout {
-  return { floor: { ...base.floor, [id]: { x, z, facing } }, wall: base.wall };
-}
-
-function withWall(base: LobbyLayout, id: WallPieceId, spot: WallSpot): LobbyLayout {
-  return { floor: base.floor, wall: { ...base.wall, [id]: spot } };
-}
 
 /** 옷장을 방 가운데 칸 4,6으로 옮긴 배치(064 ③의 W_CENTER와 같다). */
 const W_CENTER = withFloor(P0, "wardrobe", 4.5, 6.5, 3);
@@ -232,9 +259,9 @@ function canvas() {
 /** 3D 그리기가 넘기는 누르기 결과. 벽 위면 wall, 바닥 위면 point. */
 type Spot = WallSpot | { floor: FloorPoint };
 
-function hitAt(spot: Spot, piece: FloorPieceId | WallPieceId | null = null): PointerHit {
+function hitAt(spot: Spot, piece: PieceId | null = null): PointerHit {
   if ("floor" in spot) return { point: spot.floor, mark: null, onCharacter: false, piece, wall: null };
-  return { point: null, mark: piece === "board" || piece === "window" ? piece : null, onCharacter: false, piece, wall: { wall: spot.wall, along: spot.along } };
+  return { point: null, mark: (piece === "board" || piece === "window" ? piece : null) as PointerHit["mark"], onCharacter: false, piece, wall: { wall: spot.wall, along: spot.along } };
 }
 
 async function pointer(phase: "down" | "move" | "up" | "cancel", h: PointerHit | null, x: number, y: number) {
@@ -244,14 +271,14 @@ async function pointer(phase: "down" | "move" | "up" | "cancel", h: PointerHit |
 }
 
 /** 톡(같은 화면 자리에서 누르고 뗀다). */
-async function tap(spot: Spot, piece: FloorPieceId | WallPieceId | null = null) {
+async function tap(spot: Spot, piece: PieceId | null = null) {
   await pointer("down", hitAt(spot, piece), 200, 300);
   await pointer("up", null, 200, 300);
   await flushAsync();
 }
 
 /** 누르고(화면 200,300) 손가락을 옮긴다(화면으로 100px 넘게). 떼지는 않는다. */
-async function pressAndMove(from: Spot, piece: FloorPieceId | WallPieceId | null, to: Spot) {
+async function pressAndMove(from: Spot, piece: PieceId | null, to: Spot) {
   await pointer("down", hitAt(from, piece), 200, 300);
   await pointer("move", hitAt(to), 300, 400);
   await flushAsync();
@@ -276,11 +303,11 @@ async function startEditing() {
   await flushAsync();
   await fireEvent.press(screen.getByText("꾸미기"));
   await flushAsync();
-  expect(canvas().edit!.layout).toEqual(P0);
+  expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(P0));
 }
 
 /** 3D 그리기에 넘긴 뜨는 가구: 다시 그린 값(edit)과 매 프레임 바로 읽는 값(editLive) 둘 다. */
-function expectLifted(expected: FloorPieceId | WallPieceId | null) {
+function expectLifted(expected: PieceId | null) {
   const edit = canvas().edit;
   expect(edit).toBeTruthy();
   expect(edit!.lifted).toBe(expected);
@@ -390,7 +417,7 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
 
     expectLifted("desk");
     expect(canvas().edit!.dragging).toBe(false);
-    expect(canvas().edit!.layout).toEqual(P0);
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(P0));
     expect(floorMarks()).toEqual([{ piece: "desk", ok: true }]);
   });
 
@@ -423,7 +450,7 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
 
     await release();
 
-    expect(canvas().edit!.layout).toEqual(W_CENTER);
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(W_CENTER));
     expect(canvas().edit!.dragging).toBe(false);
     expectLifted("wardrobe");
   });
@@ -446,7 +473,7 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
     await pressAndMove({ floor: AT.wardrobe }, "wardrobe", { floor: AT.desk });
     await release();
 
-    expect(canvas().edit!.layout).toEqual(P0);
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(P0));
     expect(floorMarks()).toEqual([{ piece: "wardrobe", ok: true }]);
     expectLifted("wardrobe");
   });
@@ -467,7 +494,7 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
     expectLifted("window");
     await release();
 
-    expect(canvas().edit!.layout).toEqual(withWall(P0, "window", back(5.5)));
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
     expectLifted("window");
   });
 
@@ -487,7 +514,7 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
     expectLifted("window");
     await release();
 
-    expect(canvas().edit!.layout).toEqual(withWall(P0, "window", back(5.5)));
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
     expectLifted("window");
   });
 
@@ -542,7 +569,7 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
     await pressButton("완료");
 
     expect(saveLobbyLayout).toHaveBeenCalledTimes(1);
-    expect(saveLobbyLayout).toHaveBeenCalledWith(W_CENTER);
+    expect(sortedItems(jest.mocked(saveLobbyLayout).mock.calls[0][0])).toEqual(sortedItems(W_CENTER));
     expectNoEdit();
   });
 });
@@ -551,10 +578,10 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
 
 describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자리를 넘긴다", () => {
   test.each([
-    ["Z1 게시판", back(1.8) as Spot, "board" as FloorPieceId | WallPieceId, ZONE_BOARD_P0],
-    ["Z2 창문(생각 창가)", back(4.8) as Spot, "window" as FloorPieceId | WallPieceId, ZONE_WINDOW_P0],
-    ["Z3 일기 책상(의자를 눌러도 책상으로 골라진다)", { floor: AT.desk } as Spot, "desk" as FloorPieceId | WallPieceId, ZONE_DESK_P0],
-    ["Z4 책장", { floor: AT.bookcase } as Spot, "bookcase" as FloorPieceId | WallPieceId, ZONE_BOOKCASE_P0]
+    ["Z1 게시판", back(1.8) as Spot, "board" as PieceId, ZONE_BOARD_P0],
+    ["Z2 창문(생각 창가)", back(4.8) as Spot, "window" as PieceId, ZONE_WINDOW_P0],
+    ["Z3 일기 책상(의자를 눌러도 책상으로 골라진다)", { floor: AT.desk } as Spot, "desk" as PieceId, ZONE_DESK_P0],
+    ["Z4 책장", { floor: AT.bookcase } as Spot, "bookcase" as PieceId, ZONE_BOOKCASE_P0]
   ])("[spec] %s를 톡해 고르면 처음 배치에서의 그 장소 구역(반지름 1칸)과 서는 자리를 넘긴다", async (_label, spot, piece, zone) => {
     await startEditing();
 
@@ -572,8 +599,8 @@ describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자�
   });
 
   test.each([
-    ["Z6 옷장", AT.wardrobe, "wardrobe" as FloorPieceId],
-    ["Z7 깔개", AT.rug, "rug" as FloorPieceId]
+    ["Z6 옷장", AT.wardrobe, "wardrobe" as PieceId],
+    ["Z7 깔개", AT.rug, "rug" as PieceId]
   ])("[spec] %s처럼 장소가 없는 가구를 고르면 구역이 없다", async (_label, at, piece) => {
     await startEditing();
 
@@ -623,13 +650,13 @@ describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자�
     await startEditing();
 
     await pressAndMove({ floor: AT.desk }, "desk", { floor: { x: 2.5, z: 5.5 } });
-    expect(canvas().edit!.layout).toEqual(withFloor(P0, "desk", 2.5, 5.5, 0));
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withFloor(P0, "desk", 2.5, 5.5, 0)));
     const moved: Zone = { place: "desk", center: { x: 2.5, z: 6.75 }, reach: null, radius: 1, approach: [{ x: 2.5, z: 6.75 }] };
     expectZone(moved);
 
     await release();
 
-    expect(canvas().edit!.layout).toEqual(withFloor(P0, "desk", 2.5, 5.5, 0));
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withFloor(P0, "desk", 2.5, 5.5, 0)));
     expectZone(moved);
   });
 
@@ -638,7 +665,7 @@ describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자�
     const moved: Zone = { place: "window", center: { x: 5.5, z: 1.55 }, reach: { x: 5.5, z: 0 }, radius: 1, approach: [{ x: 5.2, z: 1.55 }, { x: 5.8, z: 1.55 }] };
 
     await pressAndMove(back(4.8), "window", back(5.6));
-    expect(canvas().edit!.layout).toEqual(withWall(P0, "window", back(5.5)));
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
     expectZone(moved);
     await release();
 
@@ -649,13 +676,13 @@ describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자�
     await startEditing();
 
     await pressAndMove({ floor: AT.bookcase }, "bookcase", { floor: AT.desk });
-    expect(canvas().edit!.layout).toEqual(withFloor(P0, "bookcase", 1.5, 5.5, 1));
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withFloor(P0, "bookcase", 1.5, 5.5, 1)));
     // 책장 (1.5, 5.5) 오른쪽 보기 → 서는 자리 (2.4, 5.5), 바라볼 지점 (1.0, 5.5)
     expectZone({ place: "bookcase", center: { x: 2.4, z: 5.5 }, reach: { x: 1, z: 5.5 }, radius: 1, approach: [{ x: 2.4, z: 5.5 }] });
 
     await release();
 
-    expect(canvas().edit!.layout).toEqual(P0);
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(P0));
     expectZone(ZONE_BOOKCASE_P0);
   });
 

@@ -11,6 +11,9 @@
 // 회전: 로컬 차이 (a, b)를 rotY θ로 돌리면 (a·cosθ + b·sinθ, −a·sinθ + b·cosθ).
 // 창문이 옆벽일 때의 창문 빛·창밖 방향은 ④에서 하므로 보지 않는다(옆벽 창문은 자리·서는 자리·바라볼 지점·이름표만 본다).
 // 배치를 바꾼 테스트는 끝에 처음 배치로 되돌린다(afterEach).
+// 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터가 v2(가구 인스턴스 목록)로 바뀌어,
+// 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대값은 그대로 두고 배치 모양만 v2로 고쳤다(처음 배치의 인스턴스 id는 종류 id와 같다).
+// 배치는 064 때처럼 바닥 가구·벽 가구 묶음으로 적고 바꾼 뒤 v2 목록으로 만든다(layoutWith). 목록 순서는 명세가 정하지 않아 id 순으로 견준다.
 //
 // 기준 코드에서는 새 입구가 없어 타입 검사가 깨지지 않게, 입구는 아래 "지금 코드를 부르는 곳"에서 require로 불러오고 타입은 결정 03대로 여기서 적는다.
 // 구현이 부르는 모양을 바꾸면 그곳만 따라 고친다(결정 03의 4). 그 아래의 기대값·단언·입력은 고치지 않는다.
@@ -31,7 +34,12 @@ interface WallSpot {
   wall: "back" | "left" | "right";
   along: number;
 }
+/** 066-① 명세 2의 배치 데이터 v2(앱 안의 값은 API 본문에서 version을 뺀 모양). */
 interface LobbyLayout {
+  items: { id: string; type: string; floor?: FloorSpot; wall?: WallSpot }[];
+}
+/** 064 때 적던 배치 묶음. 테스트 안에서만 쓰고 v2 목록으로 바꿔 넘긴다. */
+interface LayoutParts {
   floor: { desk: FloorSpot; bookcase: FloorSpot; wardrobe: FloorSpot; rug: FloorSpot };
   wall: { board: WallSpot; window: WallSpot };
 }
@@ -114,8 +122,8 @@ function angle(v: number): number {
 const pt = (p: FloorPoint): [number, number] => [r4(p.x), r4(p.z)];
 const p3 = (p: Point3): [number, number, number] => [r4(p.x), r4(p.y), r4(p.z)];
 
-/** 처음 배치(결정 03의 1·2). */
-function defaultLayout(): LobbyLayout {
+/** 처음 배치(결정 03의 1·2)의 묶음. */
+function defaultParts(): LayoutParts {
   return {
     floor: {
       desk: { x: 1.5, z: 5.5, facing: 0 },
@@ -127,10 +135,30 @@ function defaultLayout(): LobbyLayout {
   };
 }
 
-function layoutWith(change: (layout: LobbyLayout) => void): LobbyLayout {
-  const layout = defaultLayout();
-  change(layout);
-  return layout;
+/** 묶음을 v2 목록으로(인스턴스 id = 종류 id). */
+function toV2(parts: LayoutParts): LobbyLayout {
+  return {
+    items: [
+      ...Object.entries(parts.floor).map(([id, floor]) => ({ id, type: id, floor })),
+      ...Object.entries(parts.wall).map(([id, wall]) => ({ id, type: id, wall }))
+    ]
+  };
+}
+
+/** 처음 배치(결정 03의 1·2). */
+function defaultLayout(): LobbyLayout {
+  return toV2(defaultParts());
+}
+
+function layoutWith(change: (layout: LayoutParts) => void): LobbyLayout {
+  const parts = defaultParts();
+  change(parts);
+  return toV2(parts);
+}
+
+/** id 순으로 늘어놓은 인스턴스(목록 순서를 보지 않고 견준다). */
+function sortedItems(layout: LobbyLayout | null | undefined) {
+  return [...(layout?.items ?? [])].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 function piecesByName(list: readonly { piece: string; x: number; y: number; z: number; rotY: number }[]) {
@@ -238,11 +266,11 @@ const DEFAULT_CHAIR = {
 
 describe("[spec] 064-① 범위 3 T0: 처음 배치를 데이터로 넣으면 지금과 같은 값이 나온다", () => {
   it("T0-1: DEFAULT_LOBBY_LAYOUT은 결정 03의 처음 배치(책상 (1.5, 5.5) 앞, 책장 (0.5, 2.5) 오른쪽, 옷장 (7.5, 3.5) 왼쪽, 깔개 (4.6, 7.2), 게시판 뒷벽 1.8, 창문 뒷벽 4.8)다", () => {
-    expect(current.defaultLayout()).toEqual(defaultLayout());
+    expect(sortedItems(current.defaultLayout())).toEqual(sortedItems(defaultLayout()));
   });
 
   it("T0-2: 처음 지금 배치(activeLobbyLayout)는 처음 배치다", () => {
-    expect(current.active()).toEqual(defaultLayout());
+    expect(sortedItems(current.active())).toEqual(sortedItems(defaultLayout()));
   });
 
   it("T0-3: layoutGeometry(처음 배치)의 3D 가구 자리·막힌 칸·장소(서는 자리·바라볼 지점·이름표)·의자가 지금 값과 같다", () => {
@@ -308,7 +336,7 @@ describe("[spec] 064-① 범위 3 T1: 일기 책상을 오른쪽으로 1칸(가�
 
   it("T1-2: 넣으면 막힌 칸·장소 데이터·의자가 따라가고, 칸 \"0,5\"는 지나갈 수 있고 \"3,5\"는 막힌다", () => {
     current.apply(layout());
-    expect(current.active()).toEqual(layout());
+    expect(sortedItems(current.active())).toEqual(sortedItems(layout()));
     expect(sortedTiles(current.solidTiles())).toEqual(["0,2", "1,5", "2,5", "3,5", "7,3"]);
     expect({ free05: current.isBlocked(0.5, 5.5), blocked35: current.isBlocked(3.5, 5.5) }).toEqual({ free05: false, blocked35: true });
     expect(marksOf().desk).toEqual({ approach: [[2.5, 6.75]], faceTo: [2.25, 5.5] });
@@ -553,7 +581,7 @@ describe("[spec] 064-① 범위 3: 처음 배치로 되돌리기", () => {
   it("R1: 바꾼 배치를 넣은 뒤 처음 배치를 넣으면 막힌 칸·장소·의자가 처음 값으로 돌아온다", () => {
     current.apply(layoutWith((l) => (l.floor.desk = { x: 1.5, z: 5.5, facing: 1 })));
     current.apply(current.defaultLayout());
-    expect(current.active()).toEqual(defaultLayout());
+    expect(sortedItems(current.active())).toEqual(sortedItems(defaultLayout()));
     expect(sortedTiles(current.solidTiles())).toEqual(DEFAULT_SOLID);
     expect(marksOf().desk).toEqual({ approach: [[1.5, 6.75]], faceTo: [1.25, 5.5] });
     expect(pt(current.chair().seat)).toEqual([1.5, 6.45]);

@@ -4,30 +4,37 @@
 // 064-④ 결정 11의 1(책상도 게시판·창문 바로 아래 칸에 놓을 수 없음, 깔개만 됨)에 맞춰 P20을 고치고(창문 왼벽 5.0이 책상 칸 0,5 위),
 // 같은 벽 겹치지 않음은 P20b·P20c(오른벽)로 옮겼으며, 책상·깔개와 벽 가구 아래를 N1~N7로 더했다.
 // W1·W2의 숫자는 시나리오 가정 A6(옆벽 창도 뒷벽 창과 크기·높이 2.05·벽에서 0.05가 같다)에서 나온다. 창 안쪽 크기는 WINDOW_OPENING이다.
+// 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터가 v2(가구 인스턴스 목록)로 바뀌어,
+// 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대값은 그대로 두고 배치를 만드는 layoutOf만 v2로 고쳤다(처음 배치의 인스턴스 id는 종류 id와 같다).
 import { daylightAt, windowLightPanes, type SunPosition, type WindowLightPane } from "@/lib/lobby3d/daylight";
 import { ROOM } from "@/lib/lobby3d/engine";
 import { WINDOW_OPENING } from "@/lib/lobby3d/furniture-layout";
 import { isPlaceableLayout } from "@/lib/lobby3d/lobby-edit";
-import {
-  DEFAULT_LOBBY_LAYOUT,
-  layoutGeometry,
-  type Facing,
-  type FloorPieceId,
-  type LobbyLayout,
-  type WallPieceId,
-  type WallSide
-} from "@/lib/lobby3d/lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 
 // ---------- 배치 ----------
 
-type WallSpec = { wall: WallSide; along: number };
-type FloorSpec = { x: number; z: number; facing: Facing };
+type LayoutItem = LobbyLayout["items"][number];
+type WallSpec = NonNullable<LayoutItem["wall"]>;
+type FloorSpec = NonNullable<LayoutItem["floor"]>;
+type WallSide = WallSpec["wall"];
+type WallPieceId = "board" | "window";
+type FloorPieceId = "desk" | "bookcase" | "wardrobe" | "rug";
 
-/** P0(처음 배치)에서 적은 것만 바꾼 배치. */
+/** P0(처음 배치)에서 적은 것만 바꾼 배치. 인스턴스 id가 적은 이름(= 종류 id)인 가구의 자리만 바꾼다. */
 function layoutOf(wall: Partial<Record<WallPieceId, WallSpec>>, floor: Partial<Record<FloorPieceId, FloorSpec>> = {}): LobbyLayout {
+  const walls: Record<string, WallSpec | undefined> = wall;
+  const floors: Record<string, FloorSpec | undefined> = floor;
+  // 표(cases)는 테스트를 모을 때 만들어지므로, 처음 배치가 아직 v2가 아니어도 모으기에서 멈추지 않게 한다(그때는 각 테스트가 실패한다)
+  const defaults: readonly LayoutItem[] = (DEFAULT_LOBBY_LAYOUT as { items?: readonly LayoutItem[] }).items ?? [];
   return {
-    floor: { ...DEFAULT_LOBBY_LAYOUT.floor, ...floor },
-    wall: { ...DEFAULT_LOBBY_LAYOUT.wall, ...wall }
+    items: defaults.map((item) => {
+      const w = walls[item.id];
+      const f = floors[item.id];
+      if (w) return { ...item, wall: w };
+      if (f) return { ...item, floor: f };
+      return item;
+    })
   };
 }
 

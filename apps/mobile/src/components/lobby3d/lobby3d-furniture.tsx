@@ -1,8 +1,10 @@
 import { useFrame, useLoader } from "@react-three/fiber/native";
-import { Component, useEffect, useMemo, type ReactNode } from "react";
+import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { ROOM, activeLobbyLayout } from "@/lib/lobby3d/engine";
 import { currentFurnitureLayout } from "@/lib/lobby3d/furniture-layout";
+import { wallPiecePose, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
 
@@ -35,16 +37,17 @@ interface BakedFurnitureProps {
   fallback: THREE.Object3D;
   /** 지금 보이는 하루의 때 색감과 계절(창밖 풍경이 따라간다). */
   daylight: DaylightState;
+  /** 창밖 장면이 따를 배치(창문이 걸린 벽과 자리). 없으면 지금 배치다. 편집 모드에서는 놓인 배치다. */
+  lightLayout?: MutableRefObject<LobbyLayout>;
 }
 
-export function BakedFurniture({ fallback, daylight }: BakedFurnitureProps) {
+export function BakedFurniture({ fallback, daylight, lightLayout }: BakedFurnitureProps) {
   const gltf = useLoader(GLTFLoader, FURNITURE_ASSET as string) as GLTF;
-  // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판
-  const outdoor = useMemo(() => {
-    const place = currentFurnitureLayout().find((p) => p.piece === "window");
-    // 창이 높이 걸려도 창 너머 풀밭과 덤불이 창 아래쪽에 보이게, 바깥 풀밭을 창 가운데보다 OUTDOOR_DROP 아래에 둔다
-    return createOutdoor(place?.x ?? 4, (place?.y ?? OUTDOOR_DROP) - OUTDOOR_DROP);
-  }, []);
+  // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판.
+  // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 매 프레임 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
+  const outdoor = useMemo(() => createOutdoor(0, 0), []);
+  // 창이 높이 걸려도 창 너머 풀밭과 덤불이 창 아래쪽에 보이게, 바깥 풀밭을 창 가운데보다 OUTDOOR_DROP 아래에 둔다
+  const groundY = useMemo(() => (currentFurnitureLayout().find((p) => p.piece === "window")?.y ?? OUTDOOR_DROP) - OUTDOOR_DROP, []);
   const target = useMemo(() => new THREE.WebGLRenderTarget(VIEW_TEXTURE.width, VIEW_TEXTURE.height), []);
   const eyeCamera = useMemo(() => new THREE.PerspectiveCamera(), []);
   const built = useMemo(() => {
@@ -114,6 +117,9 @@ export function BakedFurniture({ fallback, daylight }: BakedFurnitureProps) {
   useFrame((state, delta) => {
     const view = built.view;
     if (!view) return;
+    const mount = wallPiecePose((lightLayout?.current ?? activeLobbyLayout()).wall.window, ROOM.width);
+    outdoor.scene.position.set(mount.x, groundY, mount.z);
+    outdoor.scene.rotation.y = mount.rotY;
     outdoor.setDaylight(daylight.ambience, daylight.target.season, daylight.target.phase);
     outdoor.update(state.clock.elapsedTime, delta);
     view.piece.updateWorldMatrix(true, false);

@@ -215,8 +215,10 @@ export default function Lobby3dScreen({
     setEditView({
       layout: editor.layout,
       marks: editor.marks(),
+      wallMarks: editor.wallMarks(),
+      dragging: editor.dragging !== null,
       focus: editor.focus(),
-      handle: editor.selected && !editor.dragging ? editor.selected : null,
+      handle: editor.handle,
       canFinish: editor.canFinish
     });
   }, []);

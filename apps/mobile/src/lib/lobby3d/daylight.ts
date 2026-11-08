@@ -1,3 +1,4 @@
+import type { WallSide } from "./lobby-layout";
 // 라이트루프 방의 햇빛과 하루의 때(그림을 그리지 않는 계산). 그리기는 lobby3d-canvas·lobby3d-outdoor가 한다.
 // 위치는 묻지 않고 서울(북위 37.5도)로 보고, 해가 가장 높은 때(남중)를 12시 30분으로 본다. 시각은 폰의 지금 시각(그 폰의 시간대)이다.
 // 방 뒷벽 창문은 남쪽을 본다. 앱 좌표로 남쪽은 -z(창 밖), 북쪽은 +z(방 앞), 창을 바라보면 동쪽이 왼쪽(-x)이다.
@@ -314,10 +315,10 @@ export function blendAmbience(from: Ambience, to: Ambience, t: number): Ambience
 
 /** 창 안쪽(햇빛이 지나는 곳). 가운데 세로 창살과 가운데 가로 창살로 네 칸이 된다. 좌표는 앱 좌표(칸). */
 export interface WindowOpening {
-  /** 창 안쪽 가운데 */
+  /** 창 안쪽 가운데. x는 벽을 따라간 자리(뒷벽은 x, 옆벽은 z)다. */
   x: number;
   y: number;
-  /** 햇빛이 지나는 면의 z(뒷벽 바로 앞) */
+  /** 햇빛이 지나는 면이 벽에서 방 안쪽으로 나온 거리(벽 바로 앞) */
   z: number;
   width: number;
   height: number;
@@ -338,18 +339,36 @@ export interface WindowLightPane {
   v: FloorPoint2;
 }
 
+/** 창이 걸린 벽 기준 좌표(x: 벽을 따라, z: 방 안쪽)를 방 좌표로 옮기는 틀. 뒷벽은 남쪽, 왼벽은 동쪽, 오른벽은 서쪽을 본다. */
+function wallFrame(wall: WallSide, floorWidth: number) {
+  // 방 좌표 = 원점 + (x·cos + z·sin, −x·sin + z·cos). along은 벽을 따라간 자리를 기준 좌표 x로 바꾼다
+  if (wall === "left") return { ox: 0, oz: 0, cos: 0, sin: 1, along: (v: number) => -v };
+  if (wall === "right") return { ox: floorWidth, oz: 0, cos: 0, sin: -1, along: (v: number) => v };
+  return { ox: 0, oz: 0, cos: 1, sin: 0, along: (v: number) => v };
+}
+
 /**
  * 해 자리와 창 크기로 바닥에 비치는 창문 빛(네 칸)을 구한다. 방 바닥(0~floorWidth, 0~floorDepth) 밖은 자른다.
- * 해가 졌거나(높이 0 이하) 창 뒤쪽(북쪽 하늘)에 있으면 빈 목록이다.
+ * wall은 창이 걸린 벽이다. 해가 졌거나(높이 0 이하) 창이 보는 쪽 하늘에 해가 없으면(뒷벽 창은 북쪽 하늘, 왼벽 창은 서쪽, 오른벽 창은 동쪽) 빈 목록이다.
  */
-export function windowLightPanes(sun: SunPosition, opening: WindowOpening, floorWidth: number, floorDepth: number): WindowLightPane[] {
-  const s = sunDirection(sun);
+export function windowLightPanes(
+  sun: SunPosition,
+  opening: WindowOpening,
+  floorWidth: number,
+  floorDepth: number,
+  wall: WallSide = "back"
+): WindowLightPane[] {
+  const world = sunDirection(sun);
+  // 벽 기준 좌표로 계산한다(뒷벽 창이면 방 좌표 그대로다)
+  const f = wallFrame(wall, floorWidth);
+  const s = { x: world.x * f.cos - world.z * f.sin, y: world.y, z: world.x * f.sin + world.z * f.cos };
   if (s.y <= 0.001 || s.z >= -0.001) return [];
+  const toRoom = (p: FloorPoint2): FloorPoint2 => ({ x: f.ox + p.x * f.cos + p.z * f.sin, z: f.oz - p.x * f.sin + p.z * f.cos });
   // 창 면의 점 (px, py, z)을 햇빛 방향(-s)으로 바닥(y = 0)까지 옮긴다
-  const toFloor = (px: number, py: number): FloorPoint2 => ({ x: px - (py * s.x) / s.y, z: opening.z - (py * s.z) / s.y });
+  const toFloor = (px: number, py: number): FloorPoint2 => toRoom({ x: px - (py * s.x) / s.y, z: opening.z - (py * s.z) / s.y });
   const paneW = (opening.width - opening.bar) / 2;
   const paneH = (opening.height - opening.bar) / 2;
-  const left = opening.x - opening.width / 2;
+  const left = f.along(opening.x) - opening.width / 2;
   const bottom = opening.y - opening.height / 2;
   const panes: WindowLightPane[] = [];
   for (const col of [0, 1]) {

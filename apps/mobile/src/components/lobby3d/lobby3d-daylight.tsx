@@ -1,9 +1,10 @@
 import { useFrame } from "@react-three/fiber/native";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type MutableRefObject } from "react";
 import * as THREE from "three";
 import { ROOM } from "@/lib/lobby3d/engine";
 import { blendAmbience, windowLightPanes, type Ambience, type Daylight, type SunPosition } from "@/lib/lobby3d/daylight";
 import { WINDOW_OPENING, currentFurnitureLayout } from "@/lib/lobby3d/furniture-layout";
+import type { LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 
 // 시각에 따른 방의 빛. 방 조명 색·세기, 구운 방에 곱하는 색, 바닥의 창문 빛, 밤의 천장 조명을 맡는다.
 // 시각이 바뀌면 그때 보이던 색감에서 새 색감으로 TRANSITION_SECONDS 동안 부드럽게 넘어간다. 창밖 풍경은 이 상태를 읽어 lobby3d-furniture가 그린다.
@@ -59,6 +60,8 @@ interface DaylightRigProps {
   sun: THREE.DirectionalLight;
   /** 구운 방(바닥·벽) 재질이 함께 쓰는 색. 여기서 바꾸면 방 전체 색이 바뀐다. */
   roomTint: THREE.Color;
+  /** 창문 빛이 따를 배치(창문이 걸린 벽과 자리). 없으면 지금 배치다. 편집 모드에서는 놓인 배치다. */
+  lightLayout?: MutableRefObject<LobbyLayout>;
 }
 
 function dataTexture(size: number, alphaAt: (u: number, v: number) => number): THREE.DataTexture {
@@ -93,7 +96,7 @@ const CEILING_COLOR = 0xffe2b4;
 const EDGE_COLOR = 0x1c1008;
 const EDGE_OPACITY = 0.75;
 
-export function DaylightRig({ state, daylight, ambient, sun, roomTint }: DaylightRigProps) {
+export function DaylightRig({ state, daylight, ambient, sun, roomTint, lightLayout }: DaylightRigProps) {
   state.target = daylight;
 
   const parts = useMemo(() => {
@@ -149,16 +152,27 @@ export function DaylightRig({ state, daylight, ambient, sun, roomTint }: Dayligh
   }, []);
 
   // 창문 빛 모양을 해 자리와 창 크기로 다시 만든다(넘어가는 동안은 매 프레임, 그 밖에는 바뀔 때만)
-  const shown = useMemo(() => ({ sun: null as SunPosition | null, width: 0, height: 0 }), []);
+  const shown = useMemo(() => ({ sun: null as SunPosition | null, width: 0, height: 0, window: null as LobbyLayout["wall"]["window"] | null }), []);
   const buildWindowLight = (sun: SunPosition) => {
     const { width, height } = state.opening;
-    if (shown.sun && shown.sun.elevation === sun.elevation && shown.sun.azimuth === sun.azimuth && shown.width === width && shown.height === height) return;
+    const hung = lightLayout?.current.wall.window ?? null;
+    if (
+      shown.sun &&
+      shown.sun.elevation === sun.elevation &&
+      shown.sun.azimuth === sun.azimuth &&
+      shown.width === width &&
+      shown.height === height &&
+      shown.window === hung
+    )
+      return;
     shown.sun = sun;
     shown.width = width;
     shown.height = height;
-    // 창문은 뒷벽에 걸린 것으로 계산한다(옆벽 창문의 빛은 아직 없다)
+    shown.window = hung;
+    // 창문이 걸린 벽과 벽을 따라간 자리로 계산한다(뒷벽 창은 남쪽, 왼벽 창은 동쪽, 오른벽 창은 서쪽 하늘의 해를 받는다)
     const place = currentFurnitureLayout().find((p) => p.piece === "window");
-    const panes = windowLightPanes(sun, { ...WINDOW_OPENING, width, height, x: place?.x ?? 4.8, y: place?.y ?? 2.05 }, ROOM.width, ROOM.depth);
+    const opening = { ...WINDOW_OPENING, width, height, x: hung?.along ?? place?.x ?? 4.8, y: place?.y ?? 2.05 };
+    const panes = windowLightPanes(sun, opening, ROOM.width, ROOM.depth, hung?.wall ?? "back");
     const positions: number[] = [];
     const uvs: number[] = [];
     for (const pane of panes) {

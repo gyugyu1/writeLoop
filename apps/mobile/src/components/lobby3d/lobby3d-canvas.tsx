@@ -6,8 +6,8 @@ import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
-import { layoutGeometry, type FloorPieceId, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
-import type { EditMark } from "@/lib/lobby3d/lobby-edit";
+import { layoutGeometry, type FloorPieceId, type LobbyLayout, type WallPieceId, type WallSide } from "@/lib/lobby3d/lobby-layout";
+import type { EditMark, EditWallMark } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { currentFurnitureLayout, furniturePlacements, type FurniturePiece, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
@@ -41,6 +41,10 @@ export interface LobbyCanvasEdit {
   layout: LobbyLayout;
   /** 바닥에 칠할 칸. */
   marks: EditMark[];
+  /** 벽에 칠할 자리(고른 벽 가구). */
+  wallMarks: EditWallMark[];
+  /** 가구를 끄는 중인지. 끄는 동안은 창밖 장면·창문 빛을 끌기 전 배치로 둔다. */
+  dragging: boolean;
   /** 카메라가 따라갈 점. 없으면 지금 자리에 둔다. */
   focus: FloorPoint | null;
   /** 돌리기 버튼을 띄울 가구. 없으면 숨긴다. */
@@ -328,6 +332,16 @@ function bakeCornerShade(geometry: THREE.BufferGeometry) {
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 }
 
+/** 벽에 건 가구 뒤 그림자를 걸린 벽 안쪽 면 바로 앞에 둔다(뒷벽 z = 0, 왼벽 x = 0, 오른벽 x = 방 폭). 앞면이 방 안쪽을 본다. */
+function placeWallShadow(m: THREE.Object3D, place: { x: number; y: number; z: number; rotY: number }) {
+  const inward = { x: Math.sin(place.rotY), z: Math.cos(place.rotY) };
+  const along = { x: Math.cos(place.rotY), z: -Math.sin(place.rotY) };
+  const onWall =
+    Math.abs(inward.z) > 0.5 ? { x: place.x, z: 0 } : inward.x > 0 ? { x: 0, z: place.z } : { x: ROOM.width, z: place.z };
+  m.rotation.set(0, place.rotY, 0);
+  m.position.set(onWall.x + inward.x * 0.01 + along.x * 0.07, place.y - 0.1, onWall.z + inward.z * 0.01 + along.z * 0.07);
+}
+
 // ---------- 방과 라이트루프 ----------
 
 interface World {
@@ -423,13 +437,9 @@ function buildWorld(): World {
         new THREE.PlaneGeometry(w, h),
         new THREE.MeshBasicMaterial({ map: softRect, color: 0x3a2214, transparent: true, opacity, depthWrite: false })
       );
-      const inward = { x: Math.sin(place.rotY), z: Math.cos(place.rotY) };
-      const along = { x: Math.cos(place.rotY), z: -Math.sin(place.rotY) };
-      const onWall =
-        Math.abs(inward.z) > 0.5 ? { x: place.x, z: 0 } : inward.x > 0 ? { x: 0, z: place.z } : { x: W, z: place.z };
-      m.rotation.y = place.rotY;
-      m.position.set(onWall.x + inward.x * 0.01 + along.x * 0.07, place.y - 0.1, onWall.z + inward.z * 0.01 + along.z * 0.07);
+      placeWallShadow(m, place);
       m.raycast = () => {};
+      m.userData.shadowOf = place.piece;
       root.add(m);
     }
   }
@@ -548,11 +558,11 @@ function buildWorld(): World {
   return { root, kit, shadow, markObjects, blockers, pieceObjects, labelPoints, floor, shell, furniture, ambient, sun };
 }
 
-/** 누른 가구를 편집 모드에서 고를 바닥 가구로 바꾼다. 의자는 일기 책상이고, 벽 가구는 고를 수 없다. */
-function floorPieceOf(piece: FurniturePiece | undefined): FloorPieceId | null {
+/** 누른 가구를 편집 모드에서 고를 가구로 바꾼다. 의자는 일기 책상이다. */
+function editPieceOf(piece: FurniturePiece | undefined): FloorPieceId | WallPieceId | null {
   if (piece === "chair") return "desk";
-  if (piece === "desk" || piece === "bookcase" || piece === "wardrobe" || piece === "rug") return piece;
-  return null;
+  if (piece === undefined || piece === "exit") return null;
+  return piece;
 }
 
 /**
@@ -570,11 +580,36 @@ function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[]) 
       o.position.set(place.x, place.y, place.z);
       o.rotation.y = place.rotY;
       if (of === "chair") o.userData.chairBase = { x: place.x, z: place.z };
+    } else if (shadowOf === "board" || shadowOf === "window") {
+      placeWallShadow(o, place);
     } else {
       o.position.set(place.x, 0.006, place.z);
       o.rotation.set(-Math.PI / 2, place.rotY, 0, "YXZ");
     }
   });
+}
+
+/** 벽에 칠하는 띠의 높이(가운데)와 세로 크기. 벽 가구가 걸린 높이를 따른다. */
+const WALL_MARK: Record<WallPieceId, { y: number; height: number }> = { board: { y: 1.75, height: 1.6 }, window: { y: 2.05, height: 2.1 } };
+
+/** 화면을 누른 곳의 벽: 누른 광선이 방 안쪽 벽 면(뒷벽·양옆 벽, 바닥~벽 높이)에 닿는 가장 가까운 곳. 없으면 null. */
+function wallUnderRay(ray: THREE.Ray): { wall: WallSide; along: number } | null {
+  const planes: { wall: WallSide; plane: THREE.Plane }[] = [
+    { wall: "back", plane: new THREE.Plane(new THREE.Vector3(0, 0, 1), 0) },
+    { wall: "left", plane: new THREE.Plane(new THREE.Vector3(1, 0, 0), 0) },
+    { wall: "right", plane: new THREE.Plane(new THREE.Vector3(-1, 0, 0), ROOM.width) }
+  ];
+  let best: { wall: WallSide; along: number; distance: number } | null = null;
+  const at = new THREE.Vector3();
+  for (const { wall, plane } of planes) {
+    if (!ray.intersectPlane(plane, at)) continue;
+    if (at.y < 0 || at.y > ROOM.wallHeight) continue;
+    const along = wall === "back" ? at.x : at.z;
+    if (along < 0 || along > (wall === "back" ? ROOM.width : ROOM.depth)) continue;
+    const distance = at.distanceTo(ray.origin);
+    if (!best || distance < best.distance) best = { wall, along, distance };
+  }
+  return best ? { wall: best.wall, along: best.along } : null;
 }
 
 /** 돌리기 버튼을 띄울 높이(가구 위). */
@@ -645,7 +680,7 @@ function Scene({
       // 편집 모드: 가구만 누르기 판정을 받는다(라이트루프는 숨어 있다). 가장 앞에 맞은 가구를 고른다.
       if (editRef.current) {
         const first = raycaster.intersectObjects(world.pieceObjects, true)[0]?.object.userData as { pickPiece?: FurniturePiece } | undefined;
-        return { point: floorPoint(), mark: null, onCharacter: false, piece: floorPieceOf(first?.pickPiece) };
+        return { point: floorPoint(), mark: null, onCharacter: false, piece: editPieceOf(first?.pickPiece), wall: wallUnderRay(raycaster.ray) };
       }
       // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).
       const objects: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...world.markObjects.map((m) => m.object), ...world.blockers];
@@ -676,9 +711,10 @@ function Scene({
   useEffect(() => {
     posed.current = { layout: null, at: 0 };
   }, [world]);
-  // 바닥에 칠한 칸
+  // 바닥에 칠한 칸과 벽에 칠한 자리
   const markGroup = useMemo(() => new THREE.Group(), []);
   const editMarks = edit?.marks;
+  const editWallMarks = edit?.wallMarks;
   useEffect(() => {
     for (const child of [...markGroup.children]) {
       const m = child as THREE.Mesh;
@@ -699,7 +735,30 @@ function Scene({
       m.renderOrder = 2;
       markGroup.add(m);
     }
-  }, [editMarks, markGroup]);
+    for (const mark of editWallMarks ?? []) {
+      const { y, height } = WALL_MARK[mark.piece];
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(Math.max(0.1, mark.to - mark.from), height),
+        new THREE.MeshBasicMaterial({ color: mark.ok ? 0x8fe3b0 : 0xff4a3d, transparent: true, opacity: 0.45, depthWrite: false })
+      );
+      const mid = (mark.from + mark.to) / 2;
+      // 벽 안쪽 면 바로 앞, 방 안쪽을 보게 둔다
+      if (mark.wall === "back") m.position.set(mid, y, 0.012);
+      else if (mark.wall === "left") {
+        m.position.set(0.012, y, mid);
+        m.rotation.y = Math.PI / 2;
+      } else {
+        m.position.set(ROOM.width - 0.012, y, mid);
+        m.rotation.y = -Math.PI / 2;
+      }
+      m.raycast = () => {};
+      m.renderOrder = 2;
+      markGroup.add(m);
+    }
+  }, [editMarks, editWallMarks, markGroup]);
+
+  // 창밖 장면·창문 빛이 따를 배치: 편집 중이면 놓인 배치(끄는 동안은 끌기 전 배치), 아니면 지금 배치
+  const lightLayout = useRef<LobbyLayout>(activeLobbyLayout());
 
   useFrame((_, delta) => {
     const nowMs = Date.now();
@@ -711,6 +770,8 @@ function Scene({
       poseFurniture(scene, furniturePlacements(want ?? activeLobbyLayout()));
       posed.current = { layout: want, at: nowMs };
     }
+    if (!editing) lightLayout.current = activeLobbyLayout();
+    else if (!editing.dragging) lightLayout.current = editing.layout;
     if (character.current) character.current.group.visible = !editing;
     world.shadow.visible = !editing;
     const lift = character.current?.update(sim, dt, nowMs / 1000) ?? 0;
@@ -789,10 +850,18 @@ function Scene({
       <primitive object={world.root} />
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={markGroup} />
-      <DaylightRig key={`daylight-${layoutKey}`} state={daylightState} daylight={daylight} ambient={world.ambient} sun={world.sun} roomTint={roomTint} />
+      <DaylightRig
+        key={`daylight-${layoutKey}`}
+        state={daylightState}
+        daylight={daylight}
+        ambient={world.ambient}
+        sun={world.sun}
+        roomTint={roomTint}
+        lightLayout={lightLayout}
+      />
       <BakedFurnitureErrorBoundary>
         <Suspense fallback={null}>
-          <BakedFurniture key={`furniture-${layoutKey}`} fallback={world.furniture} daylight={daylightState} />
+          <BakedFurniture key={`furniture-${layoutKey}`} fallback={world.furniture} daylight={daylightState} lightLayout={lightLayout} />
         </Suspense>
       </BakedFurnitureErrorBoundary>
       <BakedRoomErrorBoundary>

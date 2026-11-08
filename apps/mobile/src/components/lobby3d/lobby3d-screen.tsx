@@ -557,14 +557,36 @@ export default function Lobby3dScreen({
   const handleTop = useRef(new Animated.Value(0, { useNativeDriver: true })).current;
   // 보임도 매 프레임 바로 바꾼다(끌기 시작하면 다시 그리기를 기다리지 않고 숨는다)
   const handleOpacity = useRef(new Animated.Value(1, { useNativeDriver: true })).current;
+  // 네이티브 쪽 값은 그림만 옮기고 누르는 자리는 그대로 둔다(말풍선 버튼과 같다). 버튼이 멈추면 한 번 다시 그려
+  // 누르는 자리를 실제 자리에 맞춘다(안 그러면 누른 뒤 손이 조금만 움직여도 자리 밖으로 보고 눌림이 취소된다).
+  const [, setHandleSettled] = useState(0);
+  const handleSettleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSettledAt = useRef({ left: Number.NaN, top: Number.NaN });
+  useEffect(
+    () => () => {
+      if (handleSettleTimer.current) clearTimeout(handleSettleTimer.current);
+    },
+    []
+  );
   const onEditHandleFrame = useCallback(
     (point: { x: number; y: number } | null) => {
       send(handleOpacity, point ? 1 : 0, 0);
       if (!point) return;
-      send(handleLeft, point.x - HANDLE_SIZE / 2, 0.5);
-      send(handleTop, point.y - HANDLE_SIZE, 0.5);
+      const left = point.x - HANDLE_SIZE / 2;
+      const top = point.y - HANDLE_SIZE;
+      const movedLeft = send(handleLeft, left, 0.5);
+      const movedTop = send(handleTop, top, 0.5);
+      const moved = movedLeft || movedTop;
+      const settled = handleSettledAt.current;
+      if (moved && !(Math.abs(left - settled.left) <= 4 && Math.abs(top - settled.top) <= 4)) {
+        if (handleSettleTimer.current) clearTimeout(handleSettleTimer.current);
+        handleSettleTimer.current = setTimeout(() => {
+          handleSettledAt.current = { left: lastSent.get(handleLeft) ?? left, top: lastSent.get(handleTop) ?? top };
+          setHandleSettled((n) => n + 1);
+        }, 150);
+      }
     },
-    [send, handleLeft, handleTop, handleOpacity]
+    [send, handleLeft, handleTop, handleOpacity, lastSent]
   );
   // 슬라이더는 왼쪽이 멀리(넓게 보임), 오른쪽이 가까이다.
   const closeness = VIEW_WIDTH_MAX + VIEW_WIDTH_MIN - viewWidth;

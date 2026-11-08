@@ -129,7 +129,18 @@ export function wallPieceInFront(layout: LobbyLayout, point: FloorPoint): WallPi
 /** 누른 곳의 벽 자리: 벽 위를 눌렀으면 그 벽, 아니면 바닥 점에서 가장 가까운 벽. */
 function wallPointOf(hit: PointerHit): { wall: WallSide; along: number } | null {
   if (hit.wall) return hit.wall;
-  return hit.point ? nearestWall(hit.point) : null;
+  return hit.point && nearRoom(hit.point) ? nearestWall(hit.point) : null;
+}
+
+/** 끄는 손가락이 방에서 이만큼(칸) 넘게 벗어나면 가구를 옮기지 않는다(마지막 자리에 멈춘다). */
+const DRAG_REACH = 1.5;
+
+/**
+ * 끌 때 쓸 수 있는 바닥 점인지. 손가락이 벽 위나 그 위쪽으로 가면 그 방향의 바닥 점은 벽 너머 아주 먼 곳이라,
+ * 그대로 쓰면 가구가 화면 밖으로 날아간다.
+ */
+function nearRoom(p: FloorPoint): boolean {
+  return p.x >= -DRAG_REACH && p.x <= ROOM.width + DRAG_REACH && p.z >= -DRAG_REACH && p.z <= ROOM.depth + DRAG_REACH;
 }
 
 const withPiece = (layout: LobbyLayout, id: FloorPieceId, placement: FloorPlacementData): LobbyLayout => ({
@@ -274,7 +285,7 @@ export class LobbyEditor {
       this.layout = withWallPiece(this.layout, drag.piece, { wall: at.wall, along });
       return;
     }
-    if (!hit.point) return;
+    if (!hit.point || !nearRoom(hit.point)) return;
     const facing = this.layout.floor[drag.piece].facing;
     const at = snapPiece(drag.piece, facing, { x: hit.point.x + drag.offset.x, z: hit.point.z + drag.offset.z });
     const current = this.layout.floor[drag.piece];

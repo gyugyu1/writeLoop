@@ -676,6 +676,41 @@ function zoneGeometry(from: FloorPoint, to: FloorPoint | null, r: number): THREE
   return new THREE.ShapeGeometry(shape);
 }
 
+/**
+ * 편집 모드 격자. 바닥은 칸 경계를 흰 실선, 칸 가운데를 옅은 점선으로 긋고,
+ * 뒷벽·양옆 벽은 벽 가구를 맞추는 반 칸 간격으로 옅게 긋는다.
+ */
+function buildEditGrid(): THREE.Group {
+  const W = ROOM.width;
+  const D = ROOM.depth;
+  const H = ROOM.wallHeight;
+  const group = new THREE.Group();
+  const lines = (points: number[], material: THREE.LineBasicMaterial | THREE.LineDashedMaterial) => {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
+    const segments = new THREE.LineSegments(geometry, material);
+    if (material instanceof THREE.LineDashedMaterial) segments.computeLineDistances();
+    segments.raycast = () => {};
+    segments.renderOrder = 1;
+    group.add(segments);
+  };
+  const y = 0.012;
+  const solid: number[] = [];
+  const dashed: number[] = [];
+  for (let x = 0; x <= W; x += 0.5) (x % 1 === 0 ? solid : dashed).push(x, y, 0, x, y, D);
+  for (let z = 0; z <= D; z += 0.5) (z % 1 === 0 ? solid : dashed).push(0, y, z, W, y, z);
+  lines(solid, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false }));
+  lines(dashed, new THREE.LineDashedMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, dashSize: 0.12, gapSize: 0.1, depthWrite: false }));
+  const wall: number[] = [];
+  const off = 0.008;
+  for (let x = 0; x <= W; x += 0.5) wall.push(x, 0, off, x, H, off);
+  for (let z = 0; z <= D; z += 0.5) wall.push(off, 0, z, off, H, z, W - off, 0, z, W - off, H, z);
+  for (let h = 0.5; h <= H; h += 0.5) wall.push(0, h, off, W, h, off, off, h, 0, off, h, D, W - off, h, 0, W - off, h, D);
+  lines(wall, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false }));
+  group.visible = false;
+  return group;
+}
+
 /** 칠한 칸 모서리 반지름과 장소 구역·서는 자리 색(칸). */
 const MARK_CORNER = 0.16;
 const ZONE_COLOR = 0xffd23f;
@@ -814,6 +849,19 @@ function Scene({
   }, [world]);
   // 바닥에 칠한 칸과 벽에 칠한 자리. 칠할 것이 바뀌면 매 프레임(다시 그리기를 기다리지 않고) 다시 만든다
   const markGroup = useMemo(() => new THREE.Group(), []);
+  // 편집 모드에서만 보이는 격자(바닥 칸, 벽 반 칸)
+  const editGrid = useMemo(buildEditGrid, []);
+  useEffect(
+    () => () => {
+      editGrid.traverse((o) => {
+        if (o instanceof THREE.LineSegments) {
+          o.geometry.dispose();
+          (o.material as THREE.Material).dispose();
+        }
+      });
+    },
+    [editGrid]
+  );
   const shownMarks = useRef<{ marks: EditMark[] | undefined; wallMarks: EditWallMark[] | undefined; zone: EditZone | null | undefined }>({
     marks: undefined,
     wallMarks: undefined,
@@ -860,16 +908,7 @@ function Scene({
       markGroup.add(m);
     }
     if (zone) {
-      // 장소 구역(옅은 노랑)과 서는 자리(진한 노랑 점). 가구 칸 칠보다 아래에 깐다
-      const area = new THREE.Mesh(
-        zoneGeometry(zone.center, zone.reach, zone.radius),
-        new THREE.MeshBasicMaterial({ color: ZONE_COLOR, transparent: true, opacity: 0.28, depthWrite: false })
-      );
-      area.rotation.x = -Math.PI / 2;
-      area.position.y = 0.014;
-      area.raycast = () => {};
-      area.renderOrder = 1;
-      markGroup.add(area);
+      // 서는 자리(노랑 점). 장소 구역은 칠하지 않는다(사용자 결정)
       for (const spot of zone.approach) {
         const dot = new THREE.Mesh(
           zoneGeometry(spot, null, 0.14),
@@ -908,6 +947,7 @@ function Scene({
     if (!editing) lightLayout.current = activeLobbyLayout();
     else if (!editing.dragging) lightLayout.current = editing.layout;
     if (character.current) character.current.group.visible = !editing;
+    editGrid.visible = Boolean(editing);
     world.shadow.visible = !editing;
     const lift = character.current?.update(sim, dt, nowMs / 1000) ?? 0;
     // '들어가기' 때 의자를 책상 밑에서 뒤로 뺀다
@@ -985,6 +1025,8 @@ function Scene({
       <primitive object={world.root} />
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={markGroup} />
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <primitive object={editGrid} />
       <DaylightRig
         key={`daylight-${layoutKey}`}
         state={daylightState}

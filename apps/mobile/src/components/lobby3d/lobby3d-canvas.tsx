@@ -5,10 +5,11 @@ import { Suspense, useEffect, useMemo, useRef, type MutableRefObject } from "rea
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
-import { layoutGeometry } from "@/lib/lobby3d/lobby-layout";
+import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import { layoutGeometry, type FloorPieceId, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
+import type { EditMark } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
-import { currentFurnitureLayout, type FurniturePiece } from "@/lib/lobby3d/furniture-layout";
+import { currentFurnitureLayout, furniturePlacements, type FurniturePiece, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
 import { DaylightRig, createDaylightState } from "./lobby3d-daylight";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
@@ -34,6 +35,18 @@ export interface LobbyProjection {
 
 export type LobbyPointerPhase = "down" | "move" | "up" | "cancel";
 
+/** 편집 모드(꾸미기)에서 그릴 것. */
+export interface LobbyCanvasEdit {
+  /** 편집 중인 배치. 가구를 이 배치대로 옮겨 그린다(방을 다시 만들지 않는다). */
+  layout: LobbyLayout;
+  /** 바닥에 칠할 칸. */
+  marks: EditMark[];
+  /** 카메라가 따라갈 점. 없으면 지금 자리에 둔다. */
+  focus: FloorPoint | null;
+  /** 돌리기 버튼을 띄울 가구. 없으면 숨긴다. */
+  handle: FloorPieceId | null;
+}
+
 export interface Lobby3dCanvasProps {
   sim: LobbySim;
   /** 화면 가로에 보이는 바닥 폭(칸). */
@@ -54,6 +67,10 @@ export interface Lobby3dCanvasProps {
   daylight: Daylight;
   /** 가구 배치를 바꿀 때마다(applyLobbyLayout) 바뀌는 수. 바뀌면 가구·이름표·창문 빛을 지금 배치로 다시 만든다. */
   layoutKey?: number;
+  /** 편집 모드. 있으면 라이트루프와 발밑 그림자를 숨기고, 가구를 편집 중인 배치대로 그리고, 칠할 칸을 바닥에 보인다. */
+  edit?: LobbyCanvasEdit | null;
+  /** 편집 모드에서 매 프레임 돌리기 버튼이 설 화면 좌표(고른 가구 위). 띄울 가구가 없으면 null. */
+  onEditHandleFrame?: (point: { x: number; y: number } | null) => void;
 }
 
 const LINE = 0x3d1b0f;
@@ -325,6 +342,8 @@ interface World {
   shell: THREE.Group;
   /** 장소가 아닌 가구. 누르면 움직이지 않는다. */
   blockers: THREE.Object3D[];
+  /** 편집 모드에서 누르기 판정을 받는 가구(입구 발판 빼고 모두). */
+  pieceObjects: THREE.Object3D[];
   /** 코드로 만든 대체 가구. Kenney 가구 묶음(lobby3d-furniture)이 뜨면 숨기지만, 보이지 않는 채로 누르기 판정을 맡는다. */
   furniture: THREE.Group;
   /** 방 조명. 하루의 때에 따라 색·세기가 바뀐다(lobby3d-daylight). */
@@ -393,6 +412,8 @@ function buildWorld(): World {
       m.rotation.set(-Math.PI / 2, place.rotY, 0, "YXZ");
       m.position.set(place.x, 0.006, place.z);
       m.raycast = () => {};
+      // 편집 모드에서 가구를 따라 옮긴다(poseFurniture)
+      m.userData.shadowOf = place.piece;
       root.add(m);
     }
     if (shade.wall) {
@@ -420,6 +441,7 @@ function buildWorld(): World {
   root.add(furniture);
   const markObjects: World["markObjects"] = [];
   const blockers: THREE.Object3D[] = [];
+  const pieceObjects: THREE.Object3D[] = [];
   const makePiece = (piece: FurniturePiece): THREE.Group => {
     const g = new THREE.Group();
     switch (piece) {
@@ -474,6 +496,14 @@ function buildWorld(): World {
     g.rotation.y = place.rotY;
     if (place.piece === "chair") g.userData.chairBase = { x: place.x, z: place.z };
     furniture.add(g);
+    if (place.piece !== "exit") {
+      g.userData.furnitureOf = place.piece;
+      const id = place.piece;
+      g.traverse((o) => {
+        o.userData.pickPiece = id;
+      });
+      pieceObjects.push(g);
+    }
     if (place.mark) {
       const id = place.mark;
       g.traverse((o) => {
@@ -515,8 +545,40 @@ function buildWorld(): World {
   shadow.position.y = 0.01;
   root.add(shadow);
 
-  return { root, kit, shadow, markObjects, blockers, labelPoints, floor, shell, furniture, ambient, sun };
+  return { root, kit, shadow, markObjects, blockers, pieceObjects, labelPoints, floor, shell, furniture, ambient, sun };
 }
+
+/** 누른 가구를 편집 모드에서 고를 바닥 가구로 바꾼다. 의자는 일기 책상이고, 벽 가구는 고를 수 없다. */
+function floorPieceOf(piece: FurniturePiece | undefined): FloorPieceId | null {
+  if (piece === "chair") return "desk";
+  if (piece === "desk" || piece === "bookcase" || piece === "wardrobe" || piece === "rug") return piece;
+  return null;
+}
+
+/**
+ * 가구(대체 모양과 가구 묶음)와 바닥 그림자를 placements 자리로 옮긴다. 편집 모드에서 방을 다시 만들지 않고 가구만 옮길 때 쓴다.
+ * 의자는 '들어가기' 때 빼는 기준 자리도 옮긴다(매 프레임 그 자리에서 뺀다).
+ */
+function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[]) {
+  const byPiece = new Map(placements.map((p) => [p.piece, p]));
+  scene.traverse((o) => {
+    const of = o.userData.furnitureOf as FurniturePiece | undefined;
+    const shadowOf = o.userData.shadowOf as FurniturePiece | undefined;
+    const place = byPiece.get((of ?? shadowOf) as FurniturePiece);
+    if (!place) return;
+    if (of) {
+      o.position.set(place.x, place.y, place.z);
+      o.rotation.y = place.rotY;
+      if (of === "chair") o.userData.chairBase = { x: place.x, z: place.z };
+    } else {
+      o.position.set(place.x, 0.006, place.z);
+      o.rotation.set(-Math.PI / 2, place.rotY, 0, "YXZ");
+    }
+  });
+}
+
+/** 돌리기 버튼을 띄울 높이(가구 위). */
+const HANDLE_HEIGHT: Record<FloorPieceId, number> = { desk: 1.8, bookcase: 2.8, wardrobe: 2.8, rug: 0.5 };
 
 // ---------- 장면 ----------
 
@@ -529,6 +591,8 @@ function Scene({
   onOverlayFrame,
   daylight,
   layoutKey = 0,
+  edit = null,
+  onEditHandleFrame,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   // buildWorld는 지금 배치를 읽는다. 배치가 바뀌면(layoutKey) 다시 만든다.
@@ -541,6 +605,8 @@ function Scene({
   const character = useRef<CharacterHandle | null>(null);
   const fps = useRef({ frames: 0, since: 0, value: 0, lastSent: 0 });
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const editRef = useRef(edit);
+  editRef.current = edit;
 
   useEffect(() => {
     scene.background = new THREE.Color(0x000000);
@@ -572,6 +638,15 @@ function Scene({
       if (size.width <= 0 || size.height <= 0) return null;
       const ndc = new THREE.Vector2((x / size.width) * 2 - 1, -(y / size.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
+      const floorPoint = () => {
+        const floorHit = new THREE.Vector3();
+        return raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), floorHit) ? { x: floorHit.x, z: floorHit.z } : null;
+      };
+      // 편집 모드: 가구만 누르기 판정을 받는다(라이트루프는 숨어 있다). 가장 앞에 맞은 가구를 고른다.
+      if (editRef.current) {
+        const first = raycaster.intersectObjects(world.pieceObjects, true)[0]?.object.userData as { pickPiece?: FurniturePiece } | undefined;
+        return { point: floorPoint(), mark: null, onCharacter: false, piece: floorPieceOf(first?.pickPiece) };
+      }
       // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).
       const objects: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...world.markObjects.map((m) => m.object), ...world.blockers];
       const hits = raycaster.intersectObjects(objects, true);
@@ -582,9 +657,7 @@ function Scene({
       else if (first?.mark) mark = first.mark;
       // 장소가 아닌 가구(화분)를 누르면 그 뒤 바닥으로 걸어가지 않게 바닥 점을 주지 않는다.
       if (first?.blocker) return { point: null, mark: null, onCharacter: false };
-      const floorHit = new THREE.Vector3();
-      const onFloor = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), floorHit);
-      return { point: onFloor ? { x: floorHit.x, z: floorHit.z } : null, mark, onCharacter };
+      return { point: floorPoint(), mark, onCharacter };
     };
     return () => {
       pickRef.current = null;
@@ -597,10 +670,49 @@ function Scene({
     chairs.current = { list: [], scannedAt: -Infinity };
   }, [world]);
 
+  // 편집 모드: 가구를 편집 중인 배치대로 옮긴다. 가구 묶음은 나중에 불러와지므로 편집하는 동안 가끔 다시 옮긴다.
+  // 편집을 마치면 지금 배치로 되돌린다(배치가 바뀌었으면 방을 다시 만들어 어차피 지금 배치다).
+  const posed = useRef<{ layout: LobbyLayout | null; at: number }>({ layout: null, at: 0 });
+  useEffect(() => {
+    posed.current = { layout: null, at: 0 };
+  }, [world]);
+  // 바닥에 칠한 칸
+  const markGroup = useMemo(() => new THREE.Group(), []);
+  const editMarks = edit?.marks;
+  useEffect(() => {
+    for (const child of [...markGroup.children]) {
+      const m = child as THREE.Mesh;
+      m.geometry.dispose();
+      (m.material as THREE.Material).dispose();
+      markGroup.remove(m);
+    }
+    for (const mark of editMarks ?? []) {
+      const w = mark.maxX - mark.minX;
+      const d = mark.maxZ - mark.minZ;
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(Math.max(0.1, w - 0.06), Math.max(0.1, d - 0.06)),
+        new THREE.MeshBasicMaterial({ color: mark.ok ? 0x8fe3b0 : 0xff4a3d, transparent: true, opacity: 0.55, depthWrite: false })
+      );
+      m.rotation.x = -Math.PI / 2;
+      m.position.set((mark.minX + mark.maxX) / 2, 0.02, (mark.minZ + mark.maxZ) / 2);
+      m.raycast = () => {};
+      m.renderOrder = 2;
+      markGroup.add(m);
+    }
+  }, [editMarks, markGroup]);
+
   useFrame((_, delta) => {
     const nowMs = Date.now();
     const dt = Math.min(0.05, delta);
     onFrame(dt, nowMs);
+    const editing = editRef.current;
+    const want = editing?.layout ?? null;
+    if (want !== posed.current.layout || (want && nowMs - posed.current.at > 500)) {
+      poseFurniture(scene, furniturePlacements(want ?? activeLobbyLayout()));
+      posed.current = { layout: want, at: nowMs };
+    }
+    if (character.current) character.current.group.visible = !editing;
+    world.shadow.visible = !editing;
     const lift = character.current?.update(sim, dt, nowMs / 1000) ?? 0;
     // '들어가기' 때 의자를 책상 밑에서 뒤로 뺀다
     if (chairs.current.list.length < 2 && nowMs - chairs.current.scannedAt > 1000) {
@@ -627,8 +739,9 @@ function Scene({
     const persp = camera as THREE.PerspectiveCamera;
     const aspect = size.width / Math.max(1, size.height);
     const k = Math.min(1, dt * 4);
-    target.current.x += (sim.x - target.current.x) * k;
-    target.current.z += (sim.z - target.current.z) * k;
+    const follow = editing ? editing.focus ?? target.current : sim;
+    target.current.x += (follow.x - target.current.x) * k;
+    target.current.z += (follow.z - target.current.z) * k;
     const pose = cameraPose(target.current, viewWidth, aspect);
     if (Math.abs(persp.fov - pose.fovDeg) > 0.01 || Math.abs(persp.aspect - aspect) > 0.001) {
       persp.fov = pose.fovDeg;
@@ -649,6 +762,11 @@ function Scene({
       labels[id] = toScreen(world.labelPoints[id]);
     });
     onOverlayFrame?.(bubble, labels);
+    if (onEditHandleFrame) {
+      const handle = editing?.handle;
+      const at = handle ? editing.layout.floor[handle] : null;
+      onEditHandleFrame(handle && at ? toScreen(new THREE.Vector3(at.x, HANDLE_HEIGHT[handle], at.z)) : null);
+    }
 
     // 초당 프레임 수, 말풍선·이름표 위치(초당 약 15번 보낸다)
     const f = fps.current;
@@ -669,6 +787,8 @@ function Scene({
       {/* react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다. */}
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={world.root} />
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <primitive object={markGroup} />
       <DaylightRig key={`daylight-${layoutKey}`} state={daylightState} daylight={daylight} ambient={world.ambient} sun={world.sun} roomTint={roomTint} />
       <BakedFurnitureErrorBoundary>
         <Suspense fallback={null}>

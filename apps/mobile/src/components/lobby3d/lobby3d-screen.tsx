@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, Animated, BackHandler, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Lobby3dCanvas, { type LobbyPointerPhase, type LobbyProjection, type ToonSettings } from "@/components/lobby3d/lobby3d-canvas";
+import Lobby3dCanvas, {
+  type LobbyCanvasEdit,
+  type LobbyPointerPhase,
+  type LobbyProjection,
+  type ToonSettings
+} from "@/components/lobby3d/lobby3d-canvas";
 import SimpleSlider from "@/components/lobby3d/simple-slider";
 import {
   LobbySim,
@@ -13,12 +18,14 @@ import {
   activeLobbyLayout,
   applyLobbyLayout,
   clampViewWidth,
+  roomFitViewWidth,
   type ActionType,
   type LobbySnapshot,
   type MarkId,
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { daylightAt } from "@/lib/lobby3d/daylight";
+import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
 import { sameLobbyLayout, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import { useLobbyClock, type ClockOverride } from "@/lib/lobby3d/use-lobby-clock";
 import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/lib/lobby3d/view-storage";
@@ -40,6 +47,20 @@ export const ACTION_LABELS: Record<ActionType, string> = {
   poke: "눌렀을 때 반응"
 };
 const TEST_ACTIONS: ActionType[] = ["wave", "jump", "hop", "point", "spin", "look"];
+
+/** 편집 모드('꾸미기')의 안내와 짧은 알림. */
+const EDIT_GUIDE = "가구를 눌러 고르고, 끌어서 옮겨요";
+const EDIT_RED_FIRST = "빨간 가구부터 옮겨 주세요";
+const EDIT_RED_FINISH = "빨간 가구를 놓을 수 있는 자리로 옮기거나 돌려 주세요";
+const EDIT_SAVE_FAILED = "배치를 저장하지 못했어요. 다시 눌러 주세요";
+
+/** 편집 모드에서 그릴 것과 '완료'를 누를 수 있는지. */
+interface EditView extends LobbyCanvasEdit {
+  canFinish: boolean;
+}
+
+/** 편집 모드의 돌리기 버튼 크기. */
+const HANDLE_SIZE = 44;
 
 export type LobbyMenuId = "question" | "diary" | "thought" | "records";
 
@@ -104,8 +125,12 @@ export interface Lobby3dScreenProps {
   bottomInset?: number;
   /** 다른 화면 아래에 깔려 있는 동안 3D 그리기를 멈춘다(그 화면이 무거워지지 않게). */
   paused?: boolean;
-  /** 가구 배치. 바뀌면 방에 적용하고 다시 그린다. 없으면 지금 배치(activeLobbyLayout) 그대로다(개발 화면). */
+  /** 가구 배치. 바뀌면 방에 적용하고 다시 그린다. 없으면 지금 배치(activeLobbyLayout) 그대로다(개발 화면). 편집 모드 동안은 나올 때 적용한다. */
   layout?: LobbyLayout;
+  /** 편집 모드('꾸미기')의 저장. 있으면 머리 줄에 '꾸미기' 버튼이 보인다. 저장한 배치를 돌려주고, 실패하면 던진다. */
+  onSaveLayout?: (layout: LobbyLayout) => Promise<LobbyLayout>;
+  /** 편집 모드에 들어가고 나올 때(홈이 아래 탭바를 숨긴다). */
+  onEditingChange?: (editing: boolean) => void;
 }
 
 export default function Lobby3dScreen({
@@ -121,13 +146,15 @@ export default function Lobby3dScreen({
   onProjection,
   bottomInset,
   paused = false,
-  layout
+  layout,
+  onSaveLayout,
+  onEditingChange
 }: Lobby3dScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const bottomPad = bottomInset ?? insets.bottom;
   const inputBlockedRef = useRef(inputBlocked);
   inputBlockedRef.current = inputBlocked;
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const simRef = useRef<LobbySim | null>(null);
   if (!simRef.current) simRef.current = new LobbySim();
   const sim = simRef.current;
@@ -165,16 +192,52 @@ export default function Lobby3dScreen({
     setView((prev) => (sameView(prev, next) ? prev : next));
   }, [sim]);
 
+  // 편집 모드('꾸미기'). editorRef가 편집 중인 배치와 고른 가구를 갖고, editView는 그릴 때 쓰는 그 모습이다(바뀔 때만 다시 그린다).
+  const editorRef = useRef<LobbyEditor | null>(null);
+  const [editView, setEditView] = useState<EditView | null>(null);
+  const editing = editView !== null;
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  savingRef.current = saving;
+  // 편집 모드의 카메라 거리. 들어갈 때 방이 가로로 다 보이게 물러나고, 편집 중에 카메라 거리를 바꾸면 그 거리를 따른다.
+  const [editViewWidth, setEditViewWidth] = useState<number | null>(null);
+  const editShape = useRef<{ layout: LobbyLayout; selected: string | null; red: string | null; dragging: string | null } | null>(null);
+  const refreshEdit = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) {
+      editShape.current = null;
+      setEditView(null);
+      return;
+    }
+    const prev = editShape.current;
+    if (prev && prev.layout === editor.layout && prev.selected === editor.selected && prev.red === editor.red && prev.dragging === editor.dragging) return;
+    editShape.current = { layout: editor.layout, selected: editor.selected, red: editor.red, dragging: editor.dragging };
+    setEditView({
+      layout: editor.layout,
+      marks: editor.marks(),
+      focus: editor.focus(),
+      handle: editor.selected && !editor.dragging ? editor.selected : null,
+      canFinish: editor.canFinish
+    });
+  }, []);
+
   // 가구 배치가 바뀌면 방에 적용하고, 라이트루프를 멈춰 막히지 않은 자리에 세운 뒤 3D를 다시 그린다.
-  // 같은 배치를 다시 받았으면(홈에 들어올 때마다 불러온다) 아무것도 하지 않는다.
+  // 같은 배치를 다시 받았으면(홈에 들어올 때마다 불러온다) 아무것도 하지 않는다. 편집하는 동안 받은 배치는 나온 뒤 적용한다.
   const [layoutKey, setLayoutKey] = useState(0);
+  const applyLayout = useCallback(
+    (next: LobbyLayout) => {
+      if (sameLobbyLayout(next, activeLobbyLayout())) return;
+      applyLobbyLayout(next);
+      sim.relayout(Date.now());
+      syncView();
+      setLayoutKey((key) => key + 1);
+    },
+    [sim, syncView]
+  );
   useEffect(() => {
-    if (!layout || sameLobbyLayout(layout, activeLobbyLayout())) return;
-    applyLobbyLayout(layout);
-    sim.relayout(Date.now());
-    syncView();
-    setLayoutKey((key) => key + 1);
-  }, [layout, sim, syncView]);
+    if (!layout || editing) return;
+    applyLayout(layout);
+  }, [layout, editing, applyLayout]);
 
   // 로비 인사: 홈이 새 인사를 줄 때마다(key) 한 번 한다
   const greetingKey = greeting?.key;
@@ -358,6 +421,19 @@ export default function Lobby3dScreen({
 
   const onPointer = useCallback(
     (phase: LobbyPointerPhase, hit: PointerHit | null, x: number, y: number) => {
+      // 편집 모드: 가구를 고르고 끈다. 저장하는 동안에는 누르지 못한다
+      const editor = editorRef.current;
+      if (editor) {
+        if (savingRef.current) return;
+        if (phase === "down") {
+          setCameraOpen(false);
+          if (editor.pointerDown(hit ?? EMPTY_HIT, x, y) === "red-first") showToast(EDIT_RED_FIRST);
+        } else if (phase === "move") editor.pointerMove(hit ?? EMPTY_HIT, x, y);
+        else if (phase === "up") editor.pointerUp();
+        else editor.pointerCancel();
+        refreshEdit();
+        return;
+      }
       // 시트를 연 동안에는 로비를 누르지 못한다. 막는 중에 누른 것이 남지 않게 지금 누르기도 거둔다.
       // 시트를 연 동안과 '들어가기' 동작을 하는 동안에는 로비를 누르지 못한다
       if (inputBlockedRef.current || sim.scene) {
@@ -373,14 +449,111 @@ export default function Lobby3dScreen({
       else sim.pointerCancel();
       syncView();
     },
-    [sim, syncView]
+    [sim, syncView, showToast, refreshEdit]
   );
 
   const changeViewWidth = (value: number) => {
     const next = clampViewWidth(value);
     setViewWidth(next);
+    setEditViewWidth(null);
     void saveLobbyViewWidth(next);
   };
+
+  // ---------- 편집 모드 ----------
+  const aliveRef = useRef(true);
+  useEffect(
+    () => () => {
+      aliveRef.current = false;
+    },
+    []
+  );
+  const startEdit = () => {
+    if (editorRef.current) return;
+    // 걷기·'들어가기' 동작을 거두고 선다(편집하는 동안 라이트루프는 숨는다)
+    sim.relayout(Date.now());
+    syncView();
+    setCameraOpen(false);
+    editorRef.current = new LobbyEditor(activeLobbyLayout());
+    setEditViewWidth(Math.max(viewWidth, roomFitViewWidth(screenWidth / Math.max(1, screenHeight))));
+    refreshEdit();
+  };
+  /** 편집 모드에서 나온다. saved가 있으면 그 배치를 적용한다(없으면 그동안 받은 배치를 위 효과가 적용한다). */
+  const finishEdit = (saved: LobbyLayout | null) => {
+    editorRef.current = null;
+    setSaving(false);
+    setEditViewWidth(null);
+    refreshEdit();
+    if (saved) applyLayout(saved);
+  };
+  const cancelEdit = () => {
+    if (!editorRef.current || savingRef.current) return;
+    finishEdit(null);
+  };
+  const resetEdit = () => {
+    const editor = editorRef.current;
+    if (!editor || savingRef.current) return;
+    editor.resetToDefault();
+    refreshEdit();
+  };
+  const rotateEdit = () => {
+    const editor = editorRef.current;
+    if (!editor || savingRef.current) return;
+    editor.rotate();
+    refreshEdit();
+  };
+  const finishEditWithSave = async () => {
+    const editor = editorRef.current;
+    if (!editor || savingRef.current) return;
+    if (!editor.canFinish) {
+      showToast(EDIT_RED_FINISH);
+      return;
+    }
+    if (!editor.changed || !onSaveLayout) {
+      finishEdit(null);
+      return;
+    }
+    setSaving(true);
+    savingRef.current = true;
+    try {
+      const saved = await onSaveLayout(editor.layout);
+      if (aliveRef.current) finishEdit(saved);
+    } catch {
+      if (!aliveRef.current) return;
+      setSaving(false);
+      savingRef.current = false;
+      showToast(EDIT_SAVE_FAILED);
+    }
+  };
+  const cancelEditRef = useRef(cancelEdit);
+  cancelEditRef.current = cancelEdit;
+  // 안드로이드 뒤로 가기는 '취소'와 같다(저장하는 동안에는 아무 일도 하지 않는다)
+  useEffect(() => {
+    if (!editing) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      cancelEditRef.current();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [editing]);
+  const onEditingChangeRef = useRef(onEditingChange);
+  onEditingChangeRef.current = onEditingChange;
+  const editingSent = useRef(false);
+  useEffect(() => {
+    if (editingSent.current === editing) return;
+    editingSent.current = editing;
+    onEditingChangeRef.current?.(editing);
+  }, [editing]);
+  // 돌리기 버튼 자리. 말풍선처럼 매 프레임 값만 바꾼다
+  const handleLeft = useRef(new Animated.Value(0, { useNativeDriver: true })).current;
+  const handleTop = useRef(new Animated.Value(0, { useNativeDriver: true })).current;
+  const onEditHandleFrame = useCallback(
+    (point: { x: number; y: number } | null) => {
+      if (!point) return;
+      send(handleLeft, point.x - HANDLE_SIZE / 2, 0.5);
+      send(handleTop, point.y - HANDLE_SIZE, 0.5);
+    },
+    [send, handleLeft, handleTop]
+  );
   // 슬라이더는 왼쪽이 멀리(넓게 보임), 오른쪽이 가까이다.
   const closeness = VIEW_WIDTH_MAX + VIEW_WIDTH_MIN - viewWidth;
   const closenessPercent = Math.round(((closeness - VIEW_WIDTH_MIN) / (VIEW_WIDTH_MAX - VIEW_WIDTH_MIN)) * 100);
@@ -406,7 +579,7 @@ export default function Lobby3dScreen({
     <View style={styles.root}>
       <Lobby3dCanvas
         sim={sim}
-        viewWidth={viewWidth}
+        viewWidth={editing ? editViewWidth ?? viewWidth : viewWidth}
         toon={shownToon}
         onFrame={onFrame}
         onPointer={onPointer}
@@ -415,9 +588,12 @@ export default function Lobby3dScreen({
         paused={paused}
         daylight={daylight}
         layoutKey={layoutKey}
+        edit={editView}
+        onEditHandleFrame={onEditHandleFrame}
       />
 
-      {(Object.keys(MARKS) as MarkId[]).map((id) => (
+      {/* 편집 모드에서는 이름표·장소 안내·말풍선을 숨긴다 */}
+      {editing ? null : (Object.keys(MARKS) as MarkId[]).map((id) => (
         <Animated.View
           key={id}
           pointerEvents="none"
@@ -433,7 +609,7 @@ export default function Lobby3dScreen({
         </Animated.View>
       ))}
 
-      {(Object.keys(MARKS) as MarkId[]).map((id) => {
+      {editing ? null : (Object.keys(MARKS) as MarkId[]).map((id) => {
         const active = view.place === id;
         return (
           <Animated.View
@@ -480,7 +656,7 @@ export default function Lobby3dScreen({
         );
       })}
 
-      {lineText ? (
+      {lineText && !editing ? (
         <Animated.View
           pointerEvents="box-none"
           onLayout={(e) => {
@@ -517,14 +693,45 @@ export default function Lobby3dScreen({
         </Animated.View>
       ) : null}
 
-      <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
-        {onStreakPress ? (
-          <Pressable accessibilityRole="button" style={styles.chip} onPress={onStreakPress}>
-            <Text style={styles.chipText}>{streakLabel}</Text>
+      {editing && editView?.handle ? (
+        <Animated.View
+          pointerEvents="box-none"
+          style={[styles.handleWrap, { transform: [{ translateX: handleLeft }, { translateY: handleTop }] }]}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="돌리기"
+            accessibilityState={{ disabled: saving }}
+            disabled={saving}
+            style={styles.handleButton}
+            onPress={rotateEdit}
+          >
+            <Text style={styles.handleText}>↻</Text>
           </Pressable>
+        </Animated.View>
+      ) : null}
+
+      <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
+        {editing ? (
+          <View style={styles.editGuide}>
+            <Text style={styles.editGuideText}>{EDIT_GUIDE}</Text>
+          </View>
         ) : (
-          <View style={styles.chip}>
-            <Text style={styles.chipText}>{streakLabel}</Text>
+          <View style={styles.headerLeft}>
+            {onStreakPress ? (
+              <Pressable accessibilityRole="button" style={styles.chip} onPress={onStreakPress}>
+                <Text style={styles.chipText}>{streakLabel}</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.chip}>
+                <Text style={styles.chipText}>{streakLabel}</Text>
+              </View>
+            )}
+            {onSaveLayout ? (
+              <Pressable accessibilityRole="button" style={styles.decorButton} onPress={startEdit}>
+                <Text style={styles.decorText}>꾸미기</Text>
+              </Pressable>
+            ) : null}
           </View>
         )}
         <Pressable
@@ -672,6 +879,37 @@ export default function Lobby3dScreen({
             <Text style={styles.panelToggleText}>{panelOpen ? "시험판 접기" : "시험판 펴기"}</Text>
           </Pressable>
         ) : null}
+        {editing ? (
+          <View style={styles.menu}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saving }}
+              disabled={saving}
+              style={[styles.editButton, saving && styles.editButtonBusy]}
+              onPress={cancelEdit}
+            >
+              <Text style={styles.editButtonText}>취소</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saving }}
+              disabled={saving}
+              style={[styles.editButton, saving && styles.editButtonBusy]}
+              onPress={resetEdit}
+            >
+              <Text style={styles.editButtonText}>처음 배치로</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saving }}
+              disabled={saving}
+              style={[styles.editButton, styles.editDone, (saving || !editView?.canFinish) && styles.editButtonBusy]}
+              onPress={() => void finishEditWithSave()}
+            >
+              <Text style={[styles.editButtonText, styles.editDoneText]}>{saving ? "저장 중…" : "완료"}</Text>
+            </Pressable>
+          </View>
+        ) : (
         <View style={styles.menu}>
           {MENU.map((item) => {
             const lit = litMenu === item.id;
@@ -695,6 +933,7 @@ export default function Lobby3dScreen({
             );
           })}
         </View>
+        )}
       </View>
     </View>
   );
@@ -743,6 +982,54 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "45deg" }]
   },
   header: { position: "absolute", left: 12, right: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  decorButton: {
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: LINE,
+    backgroundColor: "rgba(255,255,255,0.94)",
+    justifyContent: "center"
+  },
+  decorText: { color: "#2B1810", fontSize: 13, fontWeight: "700" },
+  editGuide: {
+    flexShrink: 1,
+    minHeight: 40,
+    marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    backgroundColor: "rgba(43,24,16,0.82)",
+    justifyContent: "center"
+  },
+  editGuideText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
+  handleWrap: { position: "absolute", left: 0, top: 0 },
+  handleButton: {
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    borderRadius: HANDLE_SIZE / 2,
+    borderWidth: 2,
+    borderColor: LINE,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  handleText: { fontSize: 22, color: LINE, fontWeight: "700" },
+  editButton: {
+    flex: 1,
+    height: 56,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: LINE,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    justifyContent: "center",
+    paddingHorizontal: 6
+  },
+  editDone: { backgroundColor: ACCENT },
+  editButtonBusy: { opacity: 0.45 },
+  editButtonText: { fontSize: 14, fontWeight: "700", color: "#2B1810", textAlign: "center" },
+  editDoneText: { color: "#FFFFFF" },
   chip: {
     height: 40,
     paddingHorizontal: 12,

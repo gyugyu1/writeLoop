@@ -736,7 +736,6 @@ function wallUnderRay(ray: THREE.Ray): { wall: WallSide; along: number } | null 
   return best ? { wall: best.wall, along: best.along } : null;
 }
 
-
 // ---------- 장면 ----------
 
 function Scene({

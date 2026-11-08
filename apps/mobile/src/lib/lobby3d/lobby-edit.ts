@@ -315,7 +315,7 @@ export class LobbyEditor {
     return true;
   }
 
-  /** 손을 뗀다. 끈 가구를 놓을 수 없는 자리면 끌기 전 자리로 돌려놓고 "cannot-place"를 돌려준다(화면이 알린다). */
+  /** 손을 뗀다. 끈 가구를 놓을 수 없는 자리면 끌기 전 자리로 돌려놓고, 다른 자리에서 돌아왔으면 "cannot-place"를 돌려준다(화면이 알린다). */
   pointerUp(): EditNotice {
     const press = this.press;
     const drag = this.drag;
@@ -326,10 +326,13 @@ export class LobbyEditor {
         if (this.red === drag.piece) this.red = null;
         return null;
       }
+      // 끌기 전 자리에서 움직이지 않았으면(칸·벽 자리가 그대로면) 알리지 않는다
+      const moved = !this.atDragStart(drag);
       this.revert(drag);
-      return "cannot-place";
+      return moved ? "cannot-place" : null;
     }
-    if (press) this.selected = press.piece;
+    // 고른 가구를 다시 톡하면 고르기를 푼다(뜬 가구가 내려앉는다). 다른 가구나 빈 곳은 그것을 고른다(빈 곳이면 풀림)
+    if (press) this.selected = press.piece !== null && press.piece === this.selected ? null : press.piece;
     return null;
   }
 
@@ -338,6 +341,16 @@ export class LobbyEditor {
     this.press = null;
     this.drag = null;
     if (drag) this.revert(drag);
+  }
+
+  /** 끄는 가구가 끌기 전 자리 그대로인지. */
+  private atDragStart(drag: Drag): boolean {
+    if (drag.kind === "wall") {
+      const now = this.layout.wall[drag.piece];
+      return now.wall === drag.from.wall && now.along === drag.from.along;
+    }
+    const now = this.layout.floor[drag.piece];
+    return now.x === drag.from.x && now.z === drag.from.z && now.facing === drag.from.facing;
   }
 
   private revert(drag: Drag): void {

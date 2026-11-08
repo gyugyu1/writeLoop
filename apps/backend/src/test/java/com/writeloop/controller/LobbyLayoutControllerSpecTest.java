@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.writeloop.support.IntegrationTestSupport;
 import java.net.URI;
@@ -32,6 +33,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * 모양이 틀리면 400, 방 안의 기준은 경계 포함, 목록에 없는 이상한 값도 거절)을 실제 서버로 확인한다.
  * 로그인은 모바일과 같은 토큰 로그인(Bearer)으로 하고, 쿠키 저장소가 없는 JDK HttpClient로 보낸다.
  * 테스트마다 새 이메일 사용자를 만들고 자기 데이터만 확인한다.
+ *
+ * <p>작업 066 ①(02-카탈로그-배치v2-공통규칙 명세 "고칠 기존 테스트")에서 배치 데이터 모양만 v2(version 2, 가구 인스턴스 목록
+ * items, 바닥형·덮개형은 floor, 벽 부착형은 wall)로 고쳤다. 확인하는 뜻과 기대 동작은 그대로다. 다만 v2에서 바뀐 규칙에 맞춰
+ * 다음 두 거절 사례의 대상을 바꿨다: S12-3(빠진 가구)은 v2에서 꼭 있어야 하는 장소 가구인 책장으로, D2(모르는 버전)는 옛 버전 1로.
+ * v2에서 새로 생긴 규칙은 {@link LobbyLayoutControllerV2SpecTest}가 확인한다.
  */
 class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
 
@@ -119,10 +125,10 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         JsonNode saved = JSON.readTree(save.body());
         JsonNode loaded = JSON.readTree(load.body());
         for (JsonNode node : List.of(saved, loaded)) {
-            assertThat(node.at("/floor/rug/x").asDouble()).as("S6 rug x").isEqualTo(4.6);
-            assertThat(node.at("/floor/rug/z").asDouble()).as("S6 rug z").isEqualTo(7.2);
-            assertThat(node.at("/wall/board/along").asDouble()).as("S6 board along").isEqualTo(1.8);
-            assertThat(node.at("/wall/window/along").asDouble()).as("S6 window along").isEqualTo(4.8);
+            assertThat(itemById(node, "rug").at("/floor/x").asDouble()).as("S6 rug x").isEqualTo(4.6);
+            assertThat(itemById(node, "rug").at("/floor/z").asDouble()).as("S6 rug z").isEqualTo(7.2);
+            assertThat(itemById(node, "board").at("/wall/along").asDouble()).as("S6 board along").isEqualTo(1.8);
+            assertThat(itemById(node, "window").at("/wall/along").asDouble()).as("S6 window along").isEqualTo(4.8);
         }
         assertSameLayout(p0(), saved, "S6 save");
         assertSameLayout(p0(), loaded, "S6 load");
@@ -198,7 +204,7 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
     void s12_0_rejectedLayoutIsNotSavedForAnAccountWithoutLayout() throws Exception {
         TestUser user = newUser("s120");
         ObjectNode layout = p0();
-        floorGroup(layout).set("lamp", floorValue(4.5, 4.5, 0));
+        items(layout).add(floorItem("lamp", "lamp", 4.5, 4.5, 0));
 
         HttpResponse<String> save = put(user.token(), layout);
         HttpResponse<String> load = get(user.token());
@@ -211,11 +217,12 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
     static Stream<Arguments> rejectedLayouts() {
         List<Arguments> cases = new ArrayList<>();
         // 02-qa-scenarios.md S12-1~S12-16
-        cases.add(rejected("S12-1 unknown floor piece lamp", l -> floorGroup(l).set("lamp", floorValue(4.5, 4.5, 0))));
-        cases.add(rejected("S12-2 unknown wall piece clock", l -> wallGroup(l).set("clock", wallValue("back", 6.5))));
-        cases.add(rejected("S12-3 wardrobe missing", l -> floorGroup(l).remove("wardrobe")));
-        cases.add(rejected("S12-4 window missing", l -> wallGroup(l).remove("window")));
-        cases.add(rejected("S12-5 floor group missing", l -> l.remove("floor")));
+        cases.add(rejected("S12-1 unknown floor piece lamp", l -> items(l).add(floorItem("lamp", "lamp", 4.5, 4.5, 0))));
+        cases.add(rejected("S12-2 unknown wall piece clock", l -> items(l).add(wallItem("clock", "clock", "back", 6.5))));
+        // 066 ①: v2에서는 장소 가구만 꼭 있어야 하므로(명세 4), 빠진 가구를 옷장 대신 장소 가구인 책장으로 한다.
+        cases.add(rejected("S12-3 bookcase missing", l -> removeItem(l, "bookcase")));
+        cases.add(rejected("S12-4 window missing", l -> removeItem(l, "window")));
+        cases.add(rejected("S12-5 items missing", l -> l.remove("items")));
         cases.add(rejected("S12-6 desk x -1", l -> floorPiece(l, "desk").put("x", -1.0)));
         cases.add(rejected("S12-7 rug x 9", l -> floorPiece(l, "rug").put("x", 9.0)));
         cases.add(rejected("S12-8 bookcase z 12", l -> floorPiece(l, "bookcase").put("z", 12.0)));
@@ -229,8 +236,9 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         cases.add(rejected("S12-16 window wall ceiling", l -> wallPiece(l, "window").put("wall", "ceiling")));
         // 결정 04-1: 버전이 빠졌거나 모르는 버전이면 거절
         cases.add(rejected("D1 version missing", l -> l.remove("version")));
-        cases.add(rejected("D2 version 2", l -> l.put("version", 2)));
-        cases.add(rejected("D3 version string \"1\"", l -> l.put("version", "1")));
+        // 066 ①: v2는 version 2만 받으므로(명세 4), 모르는 버전을 옛 버전 1로 한다.
+        cases.add(rejected("D2 version 1", l -> l.put("version", 1)));
+        cases.add(rejected("D3 version string \"2\"", l -> l.put("version", "2")));
         // 결정 04-1: 바닥 0~8·0~11, 뒷벽 along 0~8, 옆벽 along 0~11 밖
         cases.add(rejected("D4 board back along 8.5 (inside only for side walls)", l -> wallPiece(l, "board").put("along", 8.5)));
         cases.add(rejected("D5 desk z 11.5", l -> floorPiece(l, "desk").put("z", 11.5)));
@@ -246,8 +254,12 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         cases.add(rejected("D14 window along null", l -> wallPiece(l, "window").putNull("along")));
         cases.add(rejected("D15 unknown key in desk", l -> floorPiece(l, "desk").put("y", 0)));
         cases.add(rejected("D16 unknown top-level key", l -> l.put("theme", "wood")));
-        cases.add(rejected("D17 wall piece board in floor group", l -> floorGroup(l).set("board", floorValue(4.5, 4.5, 0))));
-        cases.add(rejected("D18 floor group null", l -> l.putNull("floor")));
+        cases.add(rejected("D17 wall piece board placed on the floor", l -> {
+            ObjectNode board = item(l, "board");
+            board.remove("wall");
+            board.set("floor", floorValue(4.5, 4.5, 0));
+        }));
+        cases.add(rejected("D18 items null", l -> l.putNull("items")));
         cases.add(rejected("D19 unknown key in board", l -> wallPiece(l, "board").put("height", 1.75)));
         return cases.stream();
     }
@@ -364,34 +376,48 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
 
     // ---------- 배치 값 ----------
 
-    /** 처음 배치 P0(02-배치-데이터 결정 03)에 version 1. */
+    /** 처음 배치 P0(02-배치-데이터 결정 03)을 v2 모양으로. 인스턴스 id는 종류 id와 같다(066 ① 명세 2). */
     static ObjectNode p0() {
         ObjectNode layout = JSON.createObjectNode();
-        layout.put("version", 1);
-        ObjectNode floor = layout.putObject("floor");
-        floor.set("desk", floorValue(1.5, 5.5, 0));
-        floor.set("bookcase", floorValue(0.5, 2.5, 1));
-        floor.set("wardrobe", floorValue(7.5, 3.5, 3));
-        floor.set("rug", floorValue(4.6, 7.2, 0));
-        ObjectNode wall = layout.putObject("wall");
-        wall.set("board", wallValue("back", 1.8));
-        wall.set("window", wallValue("back", 4.8));
+        layout.put("version", 2);
+        ArrayNode items = layout.putArray("items");
+        items.add(floorItem("desk", "desk", 1.5, 5.5, 0));
+        items.add(floorItem("bookcase", "bookcase", 0.5, 2.5, 1));
+        items.add(floorItem("wardrobe", "wardrobe", 7.5, 3.5, 3));
+        items.add(floorItem("rug", "rug", 4.6, 7.2, 0));
+        items.add(wallItem("board", "board", "back", 1.8));
+        items.add(wallItem("window", "window", "back", 4.8));
         return layout;
     }
 
-    /** 다른 배치 P1(02-qa-scenarios.md). 모든 가구가 P0과 다르고, 게시판은 왼벽, 창문은 오른벽. */
+    /** 다른 배치 P1(02-qa-scenarios.md)을 v2 모양으로. 모든 가구가 P0과 다르고, 게시판은 왼벽, 창문은 오른벽. */
     static ObjectNode p1() {
         ObjectNode layout = JSON.createObjectNode();
-        layout.put("version", 1);
-        ObjectNode floor = layout.putObject("floor");
-        floor.set("desk", floorValue(5.5, 8.5, 2));
-        floor.set("bookcase", floorValue(6.5, 1.5, 3));
-        floor.set("wardrobe", floorValue(1.5, 1.5, 1));
-        floor.set("rug", floorValue(3.0, 4.0, 1));
-        ObjectNode wall = layout.putObject("wall");
-        wall.set("board", wallValue("left", 3.5));
-        wall.set("window", wallValue("right", 6.2));
+        layout.put("version", 2);
+        ArrayNode items = layout.putArray("items");
+        items.add(floorItem("desk", "desk", 5.5, 8.5, 2));
+        items.add(floorItem("bookcase", "bookcase", 6.5, 1.5, 3));
+        items.add(floorItem("wardrobe", "wardrobe", 1.5, 1.5, 1));
+        items.add(floorItem("rug", "rug", 3.0, 4.0, 1));
+        items.add(wallItem("board", "board", "left", 3.5));
+        items.add(wallItem("window", "window", "right", 6.2));
         return layout;
+    }
+
+    static ObjectNode floorItem(String id, String type, double x, double z, int facing) {
+        ObjectNode node = JSON.createObjectNode();
+        node.put("id", id);
+        node.put("type", type);
+        node.set("floor", floorValue(x, z, facing));
+        return node;
+    }
+
+    static ObjectNode wallItem(String id, String type, String wall, double along) {
+        ObjectNode node = JSON.createObjectNode();
+        node.put("id", id);
+        node.put("type", type);
+        node.set("wall", wallValue(wall, along));
+        return node;
     }
 
     static ObjectNode floorValue(double x, double z, int facing) {
@@ -409,59 +435,108 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         return node;
     }
 
-    static ObjectNode floorGroup(ObjectNode layout) {
-        return (ObjectNode) layout.get("floor");
+    static ArrayNode items(ObjectNode layout) {
+        return (ArrayNode) layout.get("items");
     }
 
-    static ObjectNode wallGroup(ObjectNode layout) {
-        return (ObjectNode) layout.get("wall");
+    /** 요청 배치에서 인스턴스 id가 id인 항목. */
+    static ObjectNode item(ObjectNode layout, String id) {
+        return (ObjectNode) itemById(layout, id);
     }
 
-    static ObjectNode floorPiece(ObjectNode layout, String piece) {
-        return (ObjectNode) floorGroup(layout).get(piece);
+    static void removeItem(ObjectNode layout, String id) {
+        ArrayNode items = items(layout);
+        for (int i = 0; i < items.size(); i++) {
+            if (id.equals(items.get(i).path("id").asText())) {
+                items.remove(i);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("no item " + id);
     }
 
-    static ObjectNode wallPiece(ObjectNode layout, String piece) {
-        return (ObjectNode) wallGroup(layout).get(piece);
+    /** 인스턴스 id가 id인 가구의 바닥 자리(floor). */
+    static ObjectNode floorPiece(ObjectNode layout, String id) {
+        return (ObjectNode) item(layout, id).get("floor");
+    }
+
+    /** 인스턴스 id가 id인 가구의 벽 자리(wall). */
+    static ObjectNode wallPiece(ObjectNode layout, String id) {
+        return (ObjectNode) item(layout, id).get("wall");
+    }
+
+    /** 배치(요청이나 응답)의 items에서 id가 같은 항목 하나. 없거나 둘 이상이면 실패한다. */
+    static JsonNode itemById(JsonNode layout, String id) {
+        JsonNode found = null;
+        int count = 0;
+        for (JsonNode item : layout.path("items")) {
+            if (item.path("id").isTextual() && id.equals(item.path("id").asText())) {
+                found = item;
+                count++;
+            }
+        }
+        assertThat(count).as("items with id %s in %s", id, layout).isEqualTo(1);
+        return found;
     }
 
     private static Arguments rejected(String name, Consumer<ObjectNode> change) {
         return Arguments.of(name, change);
     }
 
-    /** 결정 04-1: 응답은 요청과 같은 모양(version, floor 넷, wall 둘)이고 값이 그대로다. */
-    private static void assertSameLayout(JsonNode expected, JsonNode actual, String label) {
-        assertThat(names(actual)).as("%s top-level keys of %s", label, actual).isEqualTo(Set.of("floor", "version", "wall"));
+    /**
+     * 결정 04-1: 응답은 요청과 같은 모양이고 값이 그대로다. 066 ① v2에서는 version 2와 items이고,
+     * 항목마다 id·type과 종류에 맞는 자리 하나(바닥형·덮개형은 floor만, 벽 부착형은 wall만)다.
+     * 목록 순서는 명세에 없어 id로 맞춰 본다.
+     */
+    static void assertSameLayout(JsonNode expected, JsonNode actual, String label) {
+        assertThat(names(actual)).as("%s top-level keys of %s", label, actual).isEqualTo(Set.of("items", "version"));
         assertThat(actual.get("version").isIntegralNumber()).as("%s version is an integer: %s", label, actual).isTrue();
         assertThat(actual.get("version").asInt()).as("%s version", label).isEqualTo(expected.get("version").asInt());
 
-        assertThat(names(actual.get("floor"))).as("%s floor keys", label)
-                .isEqualTo(Set.of("bookcase", "desk", "rug", "wardrobe"));
-        for (String piece : List.of("desk", "bookcase", "wardrobe", "rug")) {
-            JsonNode e = expected.at("/floor/" + piece);
-            JsonNode a = actual.at("/floor/" + piece);
-            assertThat(names(a)).as("%s floor.%s keys", label, piece).isEqualTo(Set.of("facing", "x", "z"));
-            assertThat(a.get("x").isNumber()).as("%s floor.%s.x is a number: %s", label, piece, a).isTrue();
-            assertThat(a.get("z").isNumber()).as("%s floor.%s.z is a number: %s", label, piece, a).isTrue();
-            assertThat(a.get("facing").isIntegralNumber()).as("%s floor.%s.facing is an integer: %s", label, piece, a).isTrue();
-            assertThat(a.get("x").asDouble()).as("%s floor.%s.x", label, piece).isEqualTo(e.get("x").asDouble());
-            assertThat(a.get("z").asDouble()).as("%s floor.%s.z", label, piece).isEqualTo(e.get("z").asDouble());
-            assertThat(a.get("facing").asInt()).as("%s floor.%s.facing", label, piece).isEqualTo(e.get("facing").asInt());
+        assertThat(actual.get("items").isArray()).as("%s items is an array: %s", label, actual).isTrue();
+        assertThat(actual.get("items").size()).as("%s items count of %s", label, actual)
+                .isEqualTo(expected.get("items").size());
+        Set<String> actualIds = new TreeSet<>();
+        for (JsonNode a : actual.get("items")) {
+            assertThat(a.path("id").isTextual()).as("%s item id is text: %s", label, a).isTrue();
+            actualIds.add(a.get("id").asText());
         }
+        Set<String> expectedIds = new TreeSet<>();
+        expected.get("items").forEach(e -> expectedIds.add(e.get("id").asText()));
+        assertThat(actualIds).as("%s item ids", label).isEqualTo(expectedIds);
 
-        assertThat(names(actual.get("wall"))).as("%s wall keys", label).isEqualTo(Set.of("board", "window"));
-        for (String piece : List.of("board", "window")) {
-            JsonNode e = expected.at("/wall/" + piece);
-            JsonNode a = actual.at("/wall/" + piece);
-            assertThat(names(a)).as("%s wall.%s keys", label, piece).isEqualTo(Set.of("along", "wall"));
-            assertThat(a.get("wall").isTextual()).as("%s wall.%s.wall is text: %s", label, piece, a).isTrue();
-            assertThat(a.get("along").isNumber()).as("%s wall.%s.along is a number: %s", label, piece, a).isTrue();
-            assertThat(a.get("wall").asText()).as("%s wall.%s.wall", label, piece).isEqualTo(e.get("wall").asText());
-            assertThat(a.get("along").asDouble()).as("%s wall.%s.along", label, piece).isEqualTo(e.get("along").asDouble());
+        for (JsonNode e : expected.get("items")) {
+            String id = e.get("id").asText();
+            JsonNode a = itemById(actual, id);
+            assertThat(names(a)).as("%s item %s keys", label, id).isEqualTo(names(e));
+            assertThat(a.get("type").isTextual()).as("%s item %s type is text: %s", label, id, a).isTrue();
+            assertThat(a.get("type").asText()).as("%s item %s type", label, id).isEqualTo(e.get("type").asText());
+            if (e.has("floor")) {
+                JsonNode ef = e.get("floor");
+                JsonNode af = a.get("floor");
+                assertThat(names(af)).as("%s item %s floor keys", label, id).isEqualTo(Set.of("facing", "x", "z"));
+                assertThat(af.get("x").isNumber()).as("%s item %s floor.x is a number: %s", label, id, af).isTrue();
+                assertThat(af.get("z").isNumber()).as("%s item %s floor.z is a number: %s", label, id, af).isTrue();
+                assertThat(af.get("facing").isIntegralNumber())
+                        .as("%s item %s floor.facing is an integer: %s", label, id, af).isTrue();
+                assertThat(af.get("x").asDouble()).as("%s item %s floor.x", label, id).isEqualTo(ef.get("x").asDouble());
+                assertThat(af.get("z").asDouble()).as("%s item %s floor.z", label, id).isEqualTo(ef.get("z").asDouble());
+                assertThat(af.get("facing").asInt()).as("%s item %s floor.facing", label, id)
+                        .isEqualTo(ef.get("facing").asInt());
+            } else {
+                JsonNode ew = e.get("wall");
+                JsonNode aw = a.get("wall");
+                assertThat(names(aw)).as("%s item %s wall keys", label, id).isEqualTo(Set.of("along", "wall"));
+                assertThat(aw.get("wall").isTextual()).as("%s item %s wall.wall is text: %s", label, id, aw).isTrue();
+                assertThat(aw.get("along").isNumber()).as("%s item %s wall.along is a number: %s", label, id, aw).isTrue();
+                assertThat(aw.get("wall").asText()).as("%s item %s wall.wall", label, id).isEqualTo(ew.get("wall").asText());
+                assertThat(aw.get("along").asDouble()).as("%s item %s wall.along", label, id)
+                        .isEqualTo(ew.get("along").asDouble());
+            }
         }
     }
 
-    private static Set<String> names(JsonNode node) {
+    static Set<String> names(JsonNode node) {
         Set<String> names = new TreeSet<>();
         if (node != null) {
             node.fieldNames().forEachRemaining(names::add);

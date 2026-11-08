@@ -42,6 +42,8 @@ export function isWallPiece(id: EditPieceId): id is WallPieceId {
 
 type Bounds = ReturnType<typeof floorPieceBounds>;
 
+const insideBounds = (b: Bounds, p: FloorPoint) => p.x >= b.minX - EPS && p.x <= b.maxX + EPS && p.z >= b.minZ - EPS && p.z <= b.maxZ + EPS;
+
 const overlaps = (a: Bounds, b: Bounds) => a.minX < b.maxX - EPS && b.minX < a.maxX - EPS && a.minZ < b.maxZ - EPS && b.minZ < a.maxZ - EPS;
 
 /** 벽 가구 바로 아래 칸: 그 벽에 붙은 첫 줄 칸 중 벽 가구 폭에 걸친 칸의 범위. */
@@ -239,9 +241,14 @@ export class LobbyEditor {
   pointerDown(hit: PointerHit, screenX: number, screenY: number): EditNotice {
     this.press = null;
     this.drag = null;
+    // 고른 바닥 가구는 떠 있어 모양을 맞히기 어렵다. 그 칸 안을 눌렀으면(깔개가 아닌 다른 가구를 직접 맞히지 않았으면) 그 가구다
+    const kept = this.selected && !isWallPiece(this.selected) ? this.selected : null;
+    const onKept =
+      kept !== null && hit.point !== null && (!hit.piece || hit.piece === "rug" || hit.piece === kept) && insideBounds(floorPieceBounds(kept, this.layout.floor[kept]), hit.point);
+    const hitPiece = onKept ? kept : hit.piece ?? null;
     // 가구를 맞히지 않았어도 벽 가구 앞 바닥 띠를 눌렀으면 그 벽 가구다
-    const fromStrip = !hit.piece && hit.point ? wallPieceInFront(this.layout, hit.point) : null;
-    const piece = hit.piece ?? fromStrip;
+    const fromStrip = !hitPiece && hit.point ? wallPieceInFront(this.layout, hit.point) : null;
+    const piece = hitPiece ?? fromStrip;
     if (piece && this.red && piece !== this.red) return "red-first";
     // 띠로 골랐으면 누른 벽 자리는 그 가구가 걸린 벽 기준이다(모서리에서 가장 가까운 벽이 다른 벽이어도 끌 때 거리를 지킨다)
     let wall = wallPointOf(hit);

@@ -619,11 +619,17 @@ function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[], 
 }
 
 /** 띄운 가구를 띄우고 출렁이게 한다. 바닥 가구는 위로, 벽 가구는 방 안쪽(앞면이 보는 쪽)으로 내민다. 의자의 x·z는 매 프레임 의자 빼기가 정한다. */
-function liftObjects(list: LiftedObject[], seconds: number) {
+function liftObjects(list: LiftedObject[], seconds: number, windowLift: { x: number; y: number; z: number }) {
   const bob = Math.sin((seconds / BOB_SECONDS) * Math.PI * 2) * BOB_AMPLITUDE;
+  windowLift.x = 0;
+  windowLift.y = 0;
+  windowLift.z = 0;
   for (const { object, base, wall } of list) {
     const out = wall ? LIFT_OUT : 0;
-    object.position.set(base.x + Math.sin(base.rotY) * out, base.y + (wall ? 0 : LIFT_HEIGHT) + bob, base.z + Math.cos(base.rotY) * out);
+    const offset = { x: Math.sin(base.rotY) * out, y: (wall ? 0 : LIFT_HEIGHT) + bob, z: Math.cos(base.rotY) * out };
+    object.position.set(base.x + offset.x, base.y + offset.y, base.z + offset.z);
+    // 창문이 뜨면 창밖 장면도 같은 만큼 옮긴다(lobby3d-furniture)
+    if (object.userData.furnitureOf === "window") Object.assign(windowLift, offset);
   }
 }
 
@@ -880,6 +886,8 @@ function Scene({
 
   // 창밖 장면·창문 빛이 따를 배치: 편집 중이면 놓인 배치(끄는 동안은 끌기 전 배치), 아니면 지금 배치
   const lightLayout = useRef<LobbyLayout>(activeLobbyLayout());
+  // 고른 창문이 떠 있는 만큼(창밖 장면도 함께 옮긴다)
+  const windowLift = useRef({ x: 0, y: 0, z: 0 });
 
   useFrame((_, delta) => {
     const nowMs = Date.now();
@@ -896,7 +904,7 @@ function Scene({
       const raised = poseFurniture(scene, furniturePlacements(want ?? activeLobbyLayout()), lifted);
       posed.current = { layout: want, lifted, at: nowMs, raised };
     }
-    liftObjects(posed.current.raised, nowMs / 1000);
+    liftObjects(posed.current.raised, nowMs / 1000, windowLift.current);
     if (!editing) lightLayout.current = activeLobbyLayout();
     else if (!editing.dragging) lightLayout.current = editing.layout;
     if (character.current) character.current.group.visible = !editing;
@@ -988,7 +996,13 @@ function Scene({
       />
       <BakedFurnitureErrorBoundary>
         <Suspense fallback={null}>
-          <BakedFurniture key={`furniture-${layoutKey}`} fallback={world.furniture} daylight={daylightState} lightLayout={lightLayout} />
+          <BakedFurniture
+            key={`furniture-${layoutKey}`}
+            fallback={world.furniture}
+            daylight={daylightState}
+            lightLayout={lightLayout}
+            windowLift={windowLift}
+          />
         </Suspense>
       </BakedFurnitureErrorBoundary>
       <BakedRoomErrorBoundary>

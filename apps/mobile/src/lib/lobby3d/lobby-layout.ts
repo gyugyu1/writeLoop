@@ -47,6 +47,19 @@ export const DEFAULT_LOBBY_LAYOUT: LobbyLayout = {
   }
 };
 
+/** 두 배치의 가구 자리·방향·벽이 모두 같은지. */
+export function sameLobbyLayout(a: LobbyLayout, b: LobbyLayout): boolean {
+  const floorSame = (Object.keys(a.floor) as FloorPieceId[]).every((id) => {
+    const p = a.floor[id];
+    const q = b.floor[id];
+    return p.x === q.x && p.z === q.z && p.facing === q.facing;
+  });
+  const wallSame = (Object.keys(a.wall) as WallPieceId[]).every(
+    (id) => a.wall[id].wall === b.wall[id].wall && a.wall[id].along === b.wall[id].along
+  );
+  return floorSame && wallSame;
+}
+
 /** 방향마다의 회전(rotY)과 그 cos·sin. 정확한 값을 써서 처음 배치의 좌표가 소수 오차 없이 나오게 한다. */
 const FACING_ROT: Record<Facing, { rotY: number; cos: number; sin: number }> = {
   0: { rotY: 0, cos: 1, sin: 0 },

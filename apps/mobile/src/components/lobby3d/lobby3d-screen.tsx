@@ -19,7 +19,7 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { daylightAt } from "@/lib/lobby3d/daylight";
-import type { LobbyLayout } from "@/lib/lobby3d/lobby-layout";
+import { sameLobbyLayout, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import { useLobbyClock, type ClockOverride } from "@/lib/lobby3d/use-lobby-clock";
 import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/lib/lobby3d/view-storage";
 
@@ -165,10 +165,11 @@ export default function Lobby3dScreen({
     setView((prev) => (sameView(prev, next) ? prev : next));
   }, [sim]);
 
-  // 가구 배치가 바뀌면 방에 적용하고, 라이트루프를 멈춰 막히지 않은 자리에 세운 뒤 3D를 다시 그린다
+  // 가구 배치가 바뀌면 방에 적용하고, 라이트루프를 멈춰 막히지 않은 자리에 세운 뒤 3D를 다시 그린다.
+  // 같은 배치를 다시 받았으면(홈에 들어올 때마다 불러온다) 아무것도 하지 않는다.
   const [layoutKey, setLayoutKey] = useState(0);
   useEffect(() => {
-    if (!layout || layout === activeLobbyLayout()) return;
+    if (!layout || sameLobbyLayout(layout, activeLobbyLayout())) return;
     applyLobbyLayout(layout);
     sim.relayout(Date.now());
     syncView();

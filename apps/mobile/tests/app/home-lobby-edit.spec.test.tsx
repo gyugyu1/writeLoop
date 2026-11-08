@@ -8,6 +8,7 @@
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다(02 가정 A6).
 // 064-④ 결정 11의 1(책상도 게시판·창문 바로 아래 칸에 놓을 수 없음)에 맞춰 M10(책상 → 창문 아래)을 "돌아간다"로 옮기고,
 // R10은 창문을 왼쪽 벽에 건 배치 LW에서 시작하게 고쳤다(K-right 칸 5~7,0이 창문 아래가 되어서).
+// 065 결정 19(고른 가구를 다시 톡하면 고르기가 풀림)에 맞춰 R5에서 아직 골라진 책장을 다시 톡하던 조작을 뺐다(확인하는 뜻은 그대로).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -993,7 +994,7 @@ describe("돌리기와 빨간 가구", () => {
     expect(screen.getByText(RED_FIRST)).toBeTruthy();
     expect(editLayout().floor.wardrobe).toEqual({ x: 7.5, z: 3.5, facing: 3 });
 
-    await selectAt("bookcase");
+    // 책장은 아직 골라져 있다(빨간 가구 안내로 고르기가 바뀌지 않음). 다시 톡하면 고르기가 풀리므로(065 결정 19) 바로 돌린다
     await rotate(3);
     await finishExpectNoSave();
   });

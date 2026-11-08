@@ -5,8 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -14,7 +12,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
-/** 모바일 홈 로비의 가구 배치. 계정마다 하나다. */
+/** 모바일 홈 로비의 가구 배치. 계정마다 하나다. 저장은 LobbyLayoutRepository.upsert로 한다. */
 @Entity
 @Table(name = "lobby_layouts")
 @Getter
@@ -39,27 +37,4 @@ public class LobbyLayoutEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-    public LobbyLayoutEntity(Long userId, Integer shapeVersion, String layoutJson) {
-        this.userId = userId;
-        this.shapeVersion = shapeVersion;
-        this.layoutJson = layoutJson;
-    }
-
-    @PrePersist
-    void onCreate() {
-        Instant now = Instant.now();
-        createdAt = now;
-        updatedAt = now;
-    }
-
-    @PreUpdate
-    void onUpdate() {
-        updatedAt = Instant.now();
-    }
-
-    public void replace(Integer shapeVersion, String layoutJson) {
-        this.shapeVersion = shapeVersion;
-        this.layoutJson = layoutJson;
-    }
 }

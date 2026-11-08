@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,13 +55,8 @@ public class LobbyLayoutService {
     public LobbyLayoutDto saveLayout(Long userId, JsonNode request) {
         LobbyLayoutDto layout = parse(request);
         String layoutJson = writeJson(new StoredLayout(layout.floor(), layout.wall()));
-        LobbyLayoutEntity entity = lobbyLayoutRepository.findByUserId(userId)
-                .map(existing -> {
-                    existing.replace(layout.version(), layoutJson);
-                    return existing;
-                })
-                .orElseGet(() -> new LobbyLayoutEntity(userId, layout.version(), layoutJson));
-        return toDto(lobbyLayoutRepository.save(entity));
+        lobbyLayoutRepository.upsert(userId, layout.version(), layoutJson, Instant.now());
+        return layout;
     }
 
     private LobbyLayoutDto parse(JsonNode request) {

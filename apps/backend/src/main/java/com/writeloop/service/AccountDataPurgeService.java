@@ -14,6 +14,8 @@ import com.writeloop.persistence.FeedbackDiagnosisLogEntity;
 import com.writeloop.persistence.FeedbackDiagnosisLogRepository;
 import com.writeloop.persistence.FeedbackTimingLogEntity;
 import com.writeloop.persistence.FeedbackTimingLogRepository;
+import com.writeloop.persistence.LobbyLayoutEntity;
+import com.writeloop.persistence.LobbyLayoutRepository;
 import com.writeloop.persistence.NowInEnglishEntryEntity;
 import com.writeloop.persistence.NowInEnglishEntryRepository;
 import com.writeloop.persistence.NowInEnglishReflectionEntity;
@@ -52,6 +54,7 @@ public class AccountDataPurgeService {
             EmailVerificationTokenEntity.class,
             FeedbackDiagnosisLogEntity.class,
             FeedbackTimingLogEntity.class,
+            LobbyLayoutEntity.class,
             NowInEnglishEntryEntity.class,
             NowInEnglishReflectionEntity.class,
             PasswordResetTokenEntity.class,
@@ -70,6 +73,7 @@ public class AccountDataPurgeService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final FeedbackDiagnosisLogRepository feedbackDiagnosisLogRepository;
     private final FeedbackTimingLogRepository feedbackTimingLogRepository;
+    private final LobbyLayoutRepository lobbyLayoutRepository;
     private final NowInEnglishEntryRepository nowInEnglishEntryRepository;
     private final NowInEnglishReflectionRepository nowInEnglishReflectionRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -93,6 +97,7 @@ public class AccountDataPurgeService {
 
         coachInteractionRepository.deleteAllByUserId(userId);
         savedExpressionRepository.deleteAllByUserId(userId);
+        lobbyLayoutRepository.deleteAllByUserId(userId);
         userFeedbackRepository.purgeByUserId(userId);
 
         feedbackDiagnosisLogRepository.purgeByUserId(userId);

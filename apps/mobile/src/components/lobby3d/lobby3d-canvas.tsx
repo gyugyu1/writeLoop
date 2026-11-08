@@ -43,7 +43,7 @@ export interface LobbyCanvasEdit {
   marks: EditMark[];
   /** 벽에 칠할 자리(고른 벽 가구). */
   wallMarks: EditWallMark[];
-  /** 고른 가구에 딸린 장소의 구역과 서는 자리. 바닥에 노랑으로 보인다. */
+  /** 고른 가구에 딸린 장소의 구역과 서는 자리. 바닥에는 서는 자리만 노랑 점으로 보인다. */
   zone: EditZone | null;
   /** 가구를 끄는 중인지. 끄는 동안은 창밖 장면·창문 빛을 끌기 전 배치로 둔다. */
   dragging: boolean;
@@ -51,7 +51,7 @@ export interface LobbyCanvasEdit {
   lifted: FloorPieceId | WallPieceId | null;
   /** 카메라가 따라갈 점. 없으면 지금 자리에 둔다. */
   focus: FloorPoint | null;
-  /** 돌리기 버튼을 띄울 가구. 없으면 숨긴다. */
+  /** 돌리기 버튼(화면 아래)을 보일 가구. 없으면 숨긴다. */
   handle: FloorPieceId | null;
 }
 
@@ -83,8 +83,6 @@ export interface Lobby3dCanvasProps {
    * 다시 그리기를 기다리지 않고 가구·칸 칠·카메라가 바로 따라가게 한다.
    */
   editLive?: MutableRefObject<LobbyCanvasEdit | null>;
-  /** 편집 모드에서 매 프레임 돌리기 버튼이 설 화면 좌표(고른 가구 위). 띄울 가구가 없으면 null. */
-  onEditHandleFrame?: (point: { x: number; y: number } | null) => void;
 }
 
 const LINE = 0x3d1b0f;
@@ -677,7 +675,7 @@ function zoneGeometry(from: FloorPoint, to: FloorPoint | null, r: number): THREE
 }
 
 /**
- * 편집 모드 격자. 바닥은 칸 경계를 흰 실선, 칸 가운데를 옅은 점선으로 긋고,
+ * 편집 모드 격자. 바닥은 칸 경계를 흰 실선으로 긋고,
  * 뒷벽·양옆 벽은 벽 가구를 맞추는 반 칸 간격으로 옅게 긋는다.
  */
 function buildEditGrid(): THREE.Group {
@@ -685,22 +683,19 @@ function buildEditGrid(): THREE.Group {
   const D = ROOM.depth;
   const H = ROOM.wallHeight;
   const group = new THREE.Group();
-  const lines = (points: number[], material: THREE.LineBasicMaterial | THREE.LineDashedMaterial) => {
+  const lines = (points: number[], material: THREE.LineBasicMaterial) => {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
     const segments = new THREE.LineSegments(geometry, material);
-    if (material instanceof THREE.LineDashedMaterial) segments.computeLineDistances();
     segments.raycast = () => {};
     segments.renderOrder = 1;
     group.add(segments);
   };
   const y = 0.012;
-  const solid: number[] = [];
-  const dashed: number[] = [];
-  for (let x = 0; x <= W; x += 0.5) (x % 1 === 0 ? solid : dashed).push(x, y, 0, x, y, D);
-  for (let z = 0; z <= D; z += 0.5) (z % 1 === 0 ? solid : dashed).push(0, y, z, W, y, z);
-  lines(solid, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false }));
-  lines(dashed, new THREE.LineDashedMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, dashSize: 0.12, gapSize: 0.1, depthWrite: false }));
+  const floor: number[] = [];
+  for (let x = 0; x <= W; x += 1) floor.push(x, y, 0, x, y, D);
+  for (let z = 0; z <= D; z += 1) floor.push(0, y, z, W, y, z);
+  lines(floor, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false }));
   const wall: number[] = [];
   const off = 0.008;
   for (let x = 0; x <= W; x += 0.5) wall.push(x, 0, off, x, H, off);
@@ -710,6 +705,9 @@ function buildEditGrid(): THREE.Group {
   group.visible = false;
   return group;
 }
+
+/** 바닥 칸 칠의 높이(칸). 깔개 윗면(약 0.03칸)보다 높아야 깔개에 가려지지 않는다. */
+const MARK_LIFT = 0.045;
 
 /** 칠한 칸 모서리 반지름과 장소 구역·서는 자리 색(칸). */
 const MARK_CORNER = 0.16;
@@ -738,8 +736,6 @@ function wallUnderRay(ray: THREE.Ray): { wall: WallSide; along: number } | null 
   return best ? { wall: best.wall, along: best.along } : null;
 }
 
-/** 돌리기 버튼을 띄울 높이(가구 위). */
-const HANDLE_HEIGHT: Record<FloorPieceId, number> = { desk: 1.8, bookcase: 2.8, wardrobe: 2.8, rug: 0.5 };
 
 // ---------- 장면 ----------
 
@@ -754,7 +750,6 @@ function Scene({
   layoutKey = 0,
   edit = null,
   editLive,
-  onEditHandleFrame,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   // buildWorld는 지금 배치를 읽는다. 배치가 바뀌면(layoutKey) 다시 만든다.
@@ -882,7 +877,8 @@ function Scene({
         new THREE.MeshBasicMaterial({ color: mark.ok ? 0x8fe3b0 : 0xff4a3d, transparent: true, opacity: 0.55, depthWrite: false })
       );
       m.rotation.x = -Math.PI / 2;
-      m.position.set((mark.minX + mark.maxX) / 2, 0.02, (mark.minZ + mark.maxZ) / 2);
+      // 깔개 윗면(약 0.03칸)보다 위에 깐다(깔개 위의 가구 칸이 깔개에 가려지지 않게)
+      m.position.set((mark.minX + mark.maxX) / 2, MARK_LIFT, (mark.minZ + mark.maxZ) / 2);
       m.raycast = () => {};
       m.renderOrder = 2;
       markGroup.add(m);
@@ -915,7 +911,7 @@ function Scene({
           new THREE.MeshBasicMaterial({ color: ZONE_COLOR, transparent: true, opacity: 0.9, depthWrite: false })
         );
         dot.rotation.x = -Math.PI / 2;
-        dot.position.y = 0.024;
+        dot.position.y = MARK_LIFT + 0.006;
         dot.raycast = () => {};
         dot.renderOrder = 3;
         markGroup.add(dot);
@@ -998,11 +994,6 @@ function Scene({
       labels[id] = toScreen(world.labelPoints[id]);
     });
     onOverlayFrame?.(bubble, labels);
-    if (onEditHandleFrame) {
-      const handle = editing?.handle;
-      const at = handle ? editing.layout.floor[handle] : null;
-      onEditHandleFrame(handle && at ? toScreen(new THREE.Vector3(at.x, HANDLE_HEIGHT[handle], at.z)) : null);
-    }
 
     // 초당 프레임 수, 말풍선·이름표 위치(초당 약 15번 보낸다)
     const f = fps.current;

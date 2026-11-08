@@ -172,7 +172,7 @@ export interface EditWallMark {
   ok: boolean;
 }
 
-/** 바닥에 보일 장소 구역: 라이트루프가 멈추면 그 장소 안내가 뜨는 곳과 서는 자리. */
+/** 고른 장소 가구의 장소 구역(라이트루프가 멈추면 그 장소 안내가 뜨는 곳)과 서는 자리. 바닥에는 서는 자리만 보인다. */
 export interface EditZone {
   place: "board" | "window" | "desk" | "bookcase";
   /** 서는 자리들의 가운데(원의 중심). */
@@ -187,7 +187,7 @@ export interface EditZone {
 const PLACE_PIECES: ReadonlySet<EditPieceId> = new Set<EditPieceId>(["board", "window", "desk", "bookcase"]);
 
 /** 누른 결과. 화면이 안내를 띄운다. */
-export type EditNotice = "red-first" | null;
+export type EditNotice = "red-first" | "cannot-place" | null;
 
 interface Press {
   piece: EditPieceId | null;
@@ -312,7 +312,8 @@ export class LobbyEditor {
     return true;
   }
 
-  pointerUp(): void {
+  /** 손을 뗀다. 끈 가구를 놓을 수 없는 자리면 끌기 전 자리로 돌려놓고 "cannot-place"를 돌려준다(화면이 알린다). */
+  pointerUp(): EditNotice {
     const press = this.press;
     const drag = this.drag;
     this.press = null;
@@ -320,12 +321,13 @@ export class LobbyEditor {
     if (drag) {
       if (isPlaceableLayout(this.layout)) {
         if (this.red === drag.piece) this.red = null;
-      } else {
-        this.revert(drag);
+        return null;
       }
-      return;
+      this.revert(drag);
+      return "cannot-place";
     }
     if (press) this.selected = press.piece;
+    return null;
   }
 
   pointerCancel(): void {

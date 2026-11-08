@@ -53,14 +53,15 @@ const EDIT_GUIDE = "가구를 눌러 고르고, 끌어서 옮겨요";
 const EDIT_RED_FIRST = "빨간 가구부터 옮겨 주세요";
 const EDIT_RED_FINISH = "빨간 가구를 놓을 수 있는 자리로 옮기거나 돌려 주세요";
 const EDIT_SAVE_FAILED = "배치를 저장하지 못했어요. 다시 눌러 주세요";
+const EDIT_CANNOT_PLACE = "여기에는 놓을 수 없어요. 원래 자리로 돌려놓았어요";
 
 /** 편집 모드에서 그릴 것과 '완료'를 누를 수 있는지. */
 interface EditView extends LobbyCanvasEdit {
   canFinish: boolean;
 }
 
-/** 편집 모드의 돌리기 버튼 크기. */
-const HANDLE_SIZE = 44;
+/** 편집 모드 아래 버튼 줄의 돌리기 아이콘 버튼 크기. */
+const ROTATE_SIZE = 56;
 
 export type LobbyMenuId = "question" | "diary" | "thought" | "records";
 
@@ -438,7 +439,9 @@ export default function Lobby3dScreen({
           setCameraOpen(false);
           if (editor.pointerDown(hit ?? EMPTY_HIT, x, y) === "red-first") showToast(EDIT_RED_FIRST);
         } else if (phase === "move") editor.pointerMove(hit ?? EMPTY_HIT, x, y);
-        else if (phase === "up") editor.pointerUp();
+        else if (phase === "up") {
+          if (editor.pointerUp() === "cannot-place") showToast(EDIT_CANNOT_PLACE);
+        }
         else editor.pointerCancel();
         refreshEdit();
         return;
@@ -552,42 +555,6 @@ export default function Lobby3dScreen({
     editingSent.current = editing;
     onEditingChangeRef.current?.(editing);
   }, [editing]);
-  // 돌리기 버튼 자리. 말풍선처럼 매 프레임 값만 바꾼다
-  const handleLeft = useRef(new Animated.Value(0, { useNativeDriver: true })).current;
-  const handleTop = useRef(new Animated.Value(0, { useNativeDriver: true })).current;
-  // 보임도 매 프레임 바로 바꾼다(끌기 시작하면 다시 그리기를 기다리지 않고 숨는다)
-  const handleOpacity = useRef(new Animated.Value(1, { useNativeDriver: true })).current;
-  // 네이티브 쪽 값은 그림만 옮기고 누르는 자리는 그대로 둔다(말풍선 버튼과 같다). 버튼이 멈추면 한 번 다시 그려
-  // 누르는 자리를 실제 자리에 맞춘다(안 그러면 누른 뒤 손이 조금만 움직여도 자리 밖으로 보고 눌림이 취소된다).
-  const [, setHandleSettled] = useState(0);
-  const handleSettleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleSettledAt = useRef({ left: Number.NaN, top: Number.NaN });
-  useEffect(
-    () => () => {
-      if (handleSettleTimer.current) clearTimeout(handleSettleTimer.current);
-    },
-    []
-  );
-  const onEditHandleFrame = useCallback(
-    (point: { x: number; y: number } | null) => {
-      send(handleOpacity, point ? 1 : 0, 0);
-      if (!point) return;
-      const left = point.x - HANDLE_SIZE / 2;
-      const top = point.y - HANDLE_SIZE;
-      const movedLeft = send(handleLeft, left, 0.5);
-      const movedTop = send(handleTop, top, 0.5);
-      const moved = movedLeft || movedTop;
-      const settled = handleSettledAt.current;
-      if (moved && !(Math.abs(left - settled.left) <= 4 && Math.abs(top - settled.top) <= 4)) {
-        if (handleSettleTimer.current) clearTimeout(handleSettleTimer.current);
-        handleSettleTimer.current = setTimeout(() => {
-          handleSettledAt.current = { left: lastSent.get(handleLeft) ?? left, top: lastSent.get(handleTop) ?? top };
-          setHandleSettled((n) => n + 1);
-        }, 150);
-      }
-    },
-    [send, handleLeft, handleTop, handleOpacity, lastSent]
-  );
   // 슬라이더는 왼쪽이 멀리(넓게 보임), 오른쪽이 가까이다.
   const closeness = VIEW_WIDTH_MAX + VIEW_WIDTH_MIN - viewWidth;
   const closenessPercent = Math.round(((closeness - VIEW_WIDTH_MIN) / (VIEW_WIDTH_MAX - VIEW_WIDTH_MIN)) * 100);
@@ -624,7 +591,6 @@ export default function Lobby3dScreen({
         layoutKey={layoutKey}
         edit={editView}
         editLive={editLive}
-        onEditHandleFrame={onEditHandleFrame}
       />
 
       {/* 편집 모드에서는 이름표·장소 안내·말풍선을 숨긴다 */}
@@ -725,24 +691,6 @@ export default function Lobby3dScreen({
             ) : null}
           </View>
           <View style={styles.bubbleTail} pointerEvents="none" />
-        </Animated.View>
-      ) : null}
-
-      {editing && editView?.handle ? (
-        <Animated.View
-          pointerEvents="box-none"
-          style={[styles.handleWrap, { opacity: handleOpacity, transform: [{ translateX: handleLeft }, { translateY: handleTop }] }]}
-        >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="돌리기"
-            accessibilityState={{ disabled: saving }}
-            disabled={saving}
-            style={styles.handleButton}
-            onPress={rotateEdit}
-          >
-            <Text style={styles.handleText}>↻</Text>
-          </Pressable>
         </Animated.View>
       ) : null}
 
@@ -936,6 +884,21 @@ export default function Lobby3dScreen({
             >
               <Text style={styles.editButtonText}>처음 배치로</Text>
             </Pressable>
+            {/* 돌리기는 화면 아래에 고정한다. 바닥 가구를 고른 동안만 보이고, 아니면 자리만 비워 둔다(다른 버튼이 움직이지 않게) */}
+            {editView?.handle ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="돌리기"
+                accessibilityState={{ disabled: saving }}
+                disabled={saving}
+                style={[styles.rotateButton, saving && styles.editButtonBusy]}
+                onPress={rotateEdit}
+              >
+                <Text style={styles.rotateText}>↻</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.rotateSlot} />
+            )}
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ disabled: saving }}
@@ -1041,18 +1004,18 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   editGuideText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
-  handleWrap: { position: "absolute", left: 0, top: 0 },
-  handleButton: {
-    width: HANDLE_SIZE,
-    height: HANDLE_SIZE,
-    borderRadius: HANDLE_SIZE / 2,
+  rotateSlot: { width: ROTATE_SIZE, height: ROTATE_SIZE },
+  rotateButton: {
+    width: ROTATE_SIZE,
+    height: ROTATE_SIZE,
+    borderRadius: ROTATE_SIZE / 2,
     borderWidth: 2,
     borderColor: LINE,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center"
   },
-  handleText: { fontSize: 22, color: LINE, fontWeight: "700" },
+  rotateText: { fontSize: 26, color: LINE, fontWeight: "700" },
   editButton: {
     flex: 1,
     height: 56,

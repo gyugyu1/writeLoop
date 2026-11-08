@@ -6,6 +6,8 @@
 // 라우터, 포커스, 3D 그리기). 3D 그리기는 가짜라서, 어느 가구를 눌렀는지(의자 → 책상, 깔개 위 가구, 벽 가구는 ④부터 골라짐)는
 // 3D 그리기가 판정한 값(piece)을 누르기 결과로 그대로 넣어 보낸다. 그 판정 자체는 이 테스트로 보지 못한다(보고에 적음).
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다(02 가정 A6).
+// 064-④ 결정 11의 1(책상도 게시판·창문 바로 아래 칸에 놓을 수 없음)에 맞춰 M10(책상 → 창문 아래)을 "돌아간다"로 옮기고,
+// R10은 창문을 왼쪽 벽에 건 배치 LW에서 시작하게 고쳤다(K-right 칸 5~7,0이 창문 아래가 되어서).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -162,7 +164,6 @@ const B3 = withFloor(P0, "bookcase", 1.5, 3.5, 2);
 const W_CENTER = withFloor(P0, "wardrobe", 4.5, 6.5, 3);
 const W_FAR = withFloor(P0, "wardrobe", 7.5, 0.5, 3);
 const W_ON_RUG = withFloor(P0, "wardrobe", 4.5, 7.5, 3);
-const K_WINDOW = withFloor(P0, "desk", 4.5, 0.5, 0);
 const K_FAR = withFloor(P0, "desk", 5.5, 8.5, 0);
 const LW: LobbyLayout = { floor: P0.floor, wall: { board: P0.wall.board, window: { wall: "left", along: 8.5 } } };
 /** 04: 불러온 배치 자체가 놓을 수 없는 배치(옷장이 책상과 칸 1,5에서 겹침). */
@@ -844,6 +845,7 @@ describe("끌기", () => {
     ["M5 책장 → 방 밖(11)", "bookcase" as FloorPieceId, AT.bookcase, { x: -0.5, z: 2.5 }],
     ["M7 책장 → 게시판 아래 칸 1,0(13)", "bookcase" as FloorPieceId, AT.bookcase, { x: 1.5, z: 0.5 }],
     ["M8 옷장 → 창문 아래 칸 4,0(13)", "wardrobe" as FloorPieceId, AT.wardrobe, { x: 4.5, z: 0.5 }],
+    ["M10 책상 → 창문 아래 칸 3~5,0(④ 결정 11의 1: 책상도 안 됨)", "desk" as FloorPieceId, AT.desk, { x: 4.5, z: 0.5 }],
     ["M11 옷장 → 입구 발판 앞 칸 4,10(14)", "wardrobe" as FloorPieceId, AT.wardrobe, { x: 4.5, z: 10.5 }],
     ["M12 옷장 → 게시판 앞 칸 1,1(14)", "wardrobe" as FloorPieceId, AT.wardrobe, { x: 1.5, z: 1.5 }],
     ["M13 옷장 → 책장 앞 칸 1,2(14)", "wardrobe" as FloorPieceId, AT.wardrobe, { x: 1.5, z: 2.5 }]
@@ -860,8 +862,7 @@ describe("끌기", () => {
 
   test.each([
     ["M6 옷장 → 깔개 위 칸 4,7(12 깔개는 겹쳐도 됨)", "wardrobe" as FloorPieceId, AT.wardrobe, { x: 4.5, z: 7.5 }, W_ON_RUG],
-    ["M9 옷장 → 칸 7,0(벽 가구 아래 아님)", "wardrobe" as FloorPieceId, AT.wardrobe, { x: 7.5, z: 0.5 }, W_FAR],
-    ["M10 책상 → 창문 아래 칸 3~5,0(13 책상은 됨)", "desk" as FloorPieceId, AT.desk, { x: 4.5, z: 0.5 }, K_WINDOW]
+    ["M9 옷장 → 칸 7,0(벽 가구 아래 아님)", "wardrobe" as FloorPieceId, AT.wardrobe, { x: 7.5, z: 0.5 }, W_FAR]
   ])("[spec] %s: 놓이고 그 배치로 저장된다", async (_label, piece, from, to, expected) => {
     await renderHome();
     await enterEdit();
@@ -1036,15 +1037,16 @@ describe("돌리기와 빨간 가구", () => {
     expect(activeLobbyLayout()).toEqual(P0);
   });
 
-  test("[spec] R10 책상을 K-right로 옮겨 한 번 돌리면(방 밖으로 나감) 돌고 빨간 가구라 '완료'가 막힌다", async () => {
+  test("[spec] R10 (배치 LW에서) 책상을 K-right로 옮겨 한 번 돌리면(방 밖으로 나감) 돌고 빨간 가구라 '완료'가 막힌다", async () => {
+    jest.mocked(getLobbyLayout).mockResolvedValue(LW);
     await renderHome();
     await enterEdit();
     await drag("desk", AT.desk, { x: 6.5, z: 0.5 });
-    expect(editLayout()).toEqual(withFloor(P0, "desk", 6.5, 0.5, 0));
+    expect(editLayout()).toEqual(withFloor(LW, "desk", 6.5, 0.5, 0));
 
     await rotate();
 
-    expect(editLayout()).toEqual(withFloor(P0, "desk", 6.5, 0.5, 1));
+    expect(editLayout()).toEqual(withFloor(LW, "desk", 6.5, 0.5, 1));
     await finishExpectRedBlocked();
   });
 });

@@ -52,6 +52,8 @@ export interface Lobby3dCanvasProps {
   paused?: boolean;
   /** 지금 시각의 햇빛·하루의 때·계절(daylightAt). 바뀌면 방 색감·창문 빛·천장 조명·창밖이 부드럽게 따라간다. */
   daylight: Daylight;
+  /** 가구 배치를 바꿀 때마다(applyLobbyLayout) 바뀌는 수. 바뀌면 가구·이름표·창문 빛을 지금 배치로 다시 만든다. */
+  layoutKey?: number;
 }
 
 const LINE = 0x3d1b0f;
@@ -526,9 +528,11 @@ function Scene({
   onProject,
   onOverlayFrame,
   daylight,
+  layoutKey = 0,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
-  const world = useMemo(buildWorld, []);
+  // buildWorld는 지금 배치를 읽는다. 배치가 바뀌면(layoutKey) 다시 만든다.
+  const world = useMemo(buildWorld, [layoutKey]);
   // 시각에 따른 빛: 지금 보이는 색감(부드럽게 넘어가는 중인 값)과 구운 방에 곱하는 색
   const daylightState = useMemo(() => createDaylightState(daylight), []); // eslint-disable-line react-hooks/exhaustive-deps
   const roomTint = useMemo(() => new THREE.Color(0xffffff), []);
@@ -589,6 +593,9 @@ function Scene({
 
   // 일기 책상 의자(대체 모양과 가구 묶음). 가구 묶음은 나중에 불러와지므로 가끔 다시 찾는다.
   const chairs = useRef<{ list: THREE.Object3D[]; scannedAt: number }>({ list: [], scannedAt: -Infinity });
+  useEffect(() => {
+    chairs.current = { list: [], scannedAt: -Infinity };
+  }, [world]);
 
   useFrame((_, delta) => {
     const nowMs = Date.now();
@@ -662,10 +669,10 @@ function Scene({
       {/* react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다. */}
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={world.root} />
-      <DaylightRig state={daylightState} daylight={daylight} ambient={world.ambient} sun={world.sun} roomTint={roomTint} />
+      <DaylightRig key={`daylight-${layoutKey}`} state={daylightState} daylight={daylight} ambient={world.ambient} sun={world.sun} roomTint={roomTint} />
       <BakedFurnitureErrorBoundary>
         <Suspense fallback={null}>
-          <BakedFurniture fallback={world.furniture} daylight={daylightState} />
+          <BakedFurniture key={`furniture-${layoutKey}`} fallback={world.furniture} daylight={daylightState} />
         </Suspense>
       </BakedFurnitureErrorBoundary>
       <BakedRoomErrorBoundary>

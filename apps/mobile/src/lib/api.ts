@@ -3,6 +3,8 @@ import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import { apiBaseUrl } from "./env";
 import { getExistingGuestId } from "./guest-id";
+import type { LobbyLayout } from "./lobby3d/lobby-layout";
+import { parseLobbyLayoutPayload, toLobbyLayoutPayload } from "./lobby3d/lobby-layout-payload";
 import { normalizeDailyDifficulty } from "./practice";
 import type {
   AdminPrompt,
@@ -1527,6 +1529,42 @@ export async function deleteWritingDraft(promptId: string, draftType: WritingDra
   if (!response.ok) {
     throw await parseApiError(response, "임시저장을 지우지 못했어요.");
   }
+}
+
+/** 계정에 저장한 홈 가구 배치. 저장한 적이 없거나(로그인 전 포함) 모양이 맞지 않으면 null이다. */
+export async function getLobbyLayout(): Promise<LobbyLayout | null> {
+  const response = await apiFetch("/api/lobby-layout");
+
+  if (response.status === 401 || response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "가구 배치를 불러오지 못했어요.");
+  }
+
+  return parseLobbyLayoutPayload(await response.json());
+}
+
+/** 홈 가구 배치를 계정에 저장(덮어쓰기)하고, 서버가 저장한 배치를 돌려준다. */
+export async function saveLobbyLayout(layout: LobbyLayout): Promise<LobbyLayout> {
+  const response = await apiFetch("/api/lobby-layout", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(toLobbyLayoutPayload(layout))
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "가구 배치를 저장하지 못했어요.");
+  }
+
+  const saved = parseLobbyLayoutPayload(await response.json());
+  if (!saved) {
+    throw new Error("가구 배치를 저장하지 못했어요.");
+  }
+  return saved;
 }
 
 export async function getTodayWritingStatus(): Promise<TodayWritingStatus | null> {

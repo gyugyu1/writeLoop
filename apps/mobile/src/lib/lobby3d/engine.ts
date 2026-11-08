@@ -238,6 +238,20 @@ export function findPath(from: FloorPoint, goals: FloorPoint[]): FloorPoint[] | 
   return points;
 }
 
+/**
+ * from에서 가장 가까운, 설 수 있고 입구까지 걸어갈 수 있는 칸 가운데. 입구까지 갈 수 있는 칸이 없으면 설 수 있는 가장 가까운 칸, 그것도 없으면 null.
+ */
+export function nearestOpenSpot(from: FloorPoint): FloorPoint | null {
+  const spots: FloorPoint[] = [];
+  for (let c = 0; c < ROOM.width; c += 1) {
+    for (let r = 0; r < ROOM.depth; r += 1) {
+      if (isFree(c + 0.5, r + 0.5)) spots.push({ x: c + 0.5, z: r + 0.5 });
+    }
+  }
+  spots.sort((a, b) => Math.hypot(a.x - from.x, a.z - from.z) - Math.hypot(b.x - from.x, b.z - from.z));
+  return spots.find((spot) => findPath(spot, MARKS.door.approach) !== null) ?? spots[0] ?? null;
+}
+
 /** from에서 to를 바라보는 방향(라디안). 0 = 화면 앞(+z)을 봄. */
 export function headingTo(from: FloorPoint, to: FloorPoint): number {
   return Math.atan2(to.x - from.x, to.z - from.z);
@@ -632,6 +646,41 @@ export class LobbySim {
     this.vz = 0;
     this.goalHeading = headingTo({ x: this.x, z: this.z }, MARKS[mark].faceTo);
     this.greetAfterSceneEnds();
+  }
+
+  /**
+   * 가구 배치가 바뀐 뒤(applyLobbyLayout): 걷기·끌기·들어가기 동작·앉기를 멈춘다.
+   * 서 있는 자리가 막혔으면 가장 가까운, 입구로 걸어갈 수 있는 칸 가운데로 옮긴다.
+   */
+  relayout(nowMs: number): void {
+    if (this.scene && this.sceneFrom) {
+      this.x = this.sceneFrom.x;
+      this.z = this.sceneFrom.z;
+    }
+    this.scene = null;
+    this.sceneFrom = null;
+    this.sceneEntered = null;
+    this.greetAfterScene = null;
+    this.path = [];
+    this.target = null;
+    this.arrived = null;
+    this.goalHeading = null;
+    this.action = null;
+    this.posture = null;
+    this.down = null;
+    this.dragging = false;
+    this.dragPoint = null;
+    this.vx = 0;
+    this.vz = 0;
+    this.idleSinceMs = nowMs;
+    if (!isFree(this.x, this.z)) {
+      const spot = nearestOpenSpot({ x: this.x, z: this.z });
+      if (spot) {
+        this.x = spot.x;
+        this.z = spot.z;
+      }
+    }
+    this.checkZoneWhenStopped = true;
   }
 
   /** 들어가기 동작 중에 왔던 인사를 한다(앞을 보고 동작한다). */

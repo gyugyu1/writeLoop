@@ -33,6 +33,7 @@ import {
 import { useHomeData } from "@/components/home/use-home-data";
 import { useHomeMonthCalendar } from "@/components/home/use-home-month-calendar";
 import { useLobbyGreeting } from "@/components/home/use-lobby-greeting";
+import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
 import { trackDailyPromptClick } from "@/lib/api";
 import { getDifficultyMeta } from "@/lib/difficulty";
@@ -71,6 +72,8 @@ export default function HomeScreen() {
     refreshSession
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // 계정에 저장한 가구 배치(홈에 들어올 때마다 불러온다)
+  const lobbyLayout = useLobbyLayout(currentUser?.id ?? null);
   // 로비 위로 올라오는 판(질문·일기·생각). 한 번에 하나만 연다.
   const [openSheet, setOpenSheet] = useState<LobbyMenuId | null>(null);
   // 다른 화면이 홈 위에 있는 동안은 3D를 멈추고 판도 숨긴다(iOS에서 판이 새 화면을 덮지 않게).
@@ -389,6 +392,7 @@ export default function HomeScreen() {
           onProjection={handleProjection}
           bottomInset={lobbyBottomInset}
           paused={!isFocused}
+          layout={lobbyLayout}
         />
       </View>
       <MobileNavBar activeTab="home" />

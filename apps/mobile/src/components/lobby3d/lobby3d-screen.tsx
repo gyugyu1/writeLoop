@@ -10,6 +10,8 @@ import {
   VIEW_WIDTH_DEFAULT,
   VIEW_WIDTH_MAX,
   VIEW_WIDTH_MIN,
+  activeLobbyLayout,
+  applyLobbyLayout,
   clampViewWidth,
   type ActionType,
   type LobbySnapshot,
@@ -17,6 +19,7 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { daylightAt } from "@/lib/lobby3d/daylight";
+import type { LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import { useLobbyClock, type ClockOverride } from "@/lib/lobby3d/use-lobby-clock";
 import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/lib/lobby3d/view-storage";
 
@@ -101,6 +104,8 @@ export interface Lobby3dScreenProps {
   bottomInset?: number;
   /** 다른 화면 아래에 깔려 있는 동안 3D 그리기를 멈춘다(그 화면이 무거워지지 않게). */
   paused?: boolean;
+  /** 가구 배치. 바뀌면 방에 적용하고 다시 그린다. 없으면 지금 배치(activeLobbyLayout) 그대로다(개발 화면). */
+  layout?: LobbyLayout;
 }
 
 export default function Lobby3dScreen({
@@ -115,7 +120,8 @@ export default function Lobby3dScreen({
   inputBlocked = false,
   onProjection,
   bottomInset,
-  paused = false
+  paused = false,
+  layout
 }: Lobby3dScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const bottomPad = bottomInset ?? insets.bottom;
@@ -158,6 +164,16 @@ export default function Lobby3dScreen({
     };
     setView((prev) => (sameView(prev, next) ? prev : next));
   }, [sim]);
+
+  // 가구 배치가 바뀌면 방에 적용하고, 라이트루프를 멈춰 막히지 않은 자리에 세운 뒤 3D를 다시 그린다
+  const [layoutKey, setLayoutKey] = useState(0);
+  useEffect(() => {
+    if (!layout || layout === activeLobbyLayout()) return;
+    applyLobbyLayout(layout);
+    sim.relayout(Date.now());
+    syncView();
+    setLayoutKey((key) => key + 1);
+  }, [layout, sim, syncView]);
 
   // 로비 인사: 홈이 새 인사를 줄 때마다(key) 한 번 한다
   const greetingKey = greeting?.key;
@@ -397,6 +413,7 @@ export default function Lobby3dScreen({
         onOverlayFrame={onOverlayFrame}
         paused={paused}
         daylight={daylight}
+        layoutKey={layoutKey}
       />
 
       {(Object.keys(MARKS) as MarkId[]).map((id) => (

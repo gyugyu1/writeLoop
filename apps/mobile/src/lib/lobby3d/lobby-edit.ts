@@ -132,7 +132,7 @@ function wallPointOf(hit: PointerHit): { wall: WallSide; along: number } | null 
   return hit.point && nearRoom(hit.point) ? nearestWall(hit.point) : null;
 }
 
-/** 끄는 손가락이 방에서 이만큼(칸) 넘게 벗어나면 가구를 옮기지 않는다(마지막 자리에 멈춘다). */
+/** 끄는 가구가 옮겨 갈 자리(벽 가구는 손가락 바닥 점)가 방에서 이만큼(칸) 넘게 벗어나면 옮기지 않는다(마지막 자리에 멈춘다). */
 const DRAG_REACH = 1.5;
 
 /**
@@ -285,9 +285,12 @@ export class LobbyEditor {
       this.layout = withWallPiece(this.layout, drag.piece, { wall: at.wall, along });
       return;
     }
-    if (!hit.point || !nearRoom(hit.point)) return;
+    if (!hit.point) return;
+    // 가구가 옮겨 갈 자리로 본다(키 큰 가구 위쪽을 잡으면 손가락 바닥 점은 벽 너머로 떨어져도 갈 자리는 방 안일 수 있다)
+    const target = { x: hit.point.x + drag.offset.x, z: hit.point.z + drag.offset.z };
+    if (!nearRoom(target)) return;
     const facing = this.layout.floor[drag.piece].facing;
-    const at = snapPiece(drag.piece, facing, { x: hit.point.x + drag.offset.x, z: hit.point.z + drag.offset.z });
+    const at = snapPiece(drag.piece, facing, target);
     const current = this.layout.floor[drag.piece];
     if (current.x === at.x && current.z === at.z) return;
     this.layout = withPiece(this.layout, drag.piece, { x: at.x, z: at.z, facing });

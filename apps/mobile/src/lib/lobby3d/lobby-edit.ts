@@ -226,9 +226,16 @@ export class LobbyEditor {
     this.press = null;
     this.drag = null;
     // 가구를 맞히지 않았어도 벽 가구 앞 바닥 띠를 눌렀으면 그 벽 가구다
-    const piece = hit.piece ?? (hit.point ? wallPieceInFront(this.layout, hit.point) : null);
+    const fromStrip = !hit.piece && hit.point ? wallPieceInFront(this.layout, hit.point) : null;
+    const piece = hit.piece ?? fromStrip;
     if (piece && this.red && piece !== this.red) return "red-first";
-    this.press = { piece, x: screenX, y: screenY, point: hit.point, wall: wallPointOf(hit) };
+    // 띠로 골랐으면 누른 벽 자리는 그 가구가 걸린 벽 기준이다(모서리에서 가장 가까운 벽이 다른 벽이어도 끌 때 거리를 지킨다)
+    let wall = wallPointOf(hit);
+    if (fromStrip && hit.point) {
+      const hung = this.layout.wall[fromStrip].wall;
+      wall = { wall: hung, along: hung === "back" ? hit.point.x : hit.point.z };
+    }
+    this.press = { piece, x: screenX, y: screenY, point: hit.point, wall };
     return null;
   }
 

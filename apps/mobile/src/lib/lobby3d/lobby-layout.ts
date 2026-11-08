@@ -90,6 +90,17 @@ function wallPose(data: WallPlacementData, roomWidth: number): Pose {
   return { x: roomWidth, z: data.along, facing: 3 };
 }
 
+/** 벽 가구가 걸린 벽 면 위의 기준 자리(벽을 따라간 자리)와 방 안쪽을 보는 방향(rotY). 창밖 장면·창문 빛이 쓴다. */
+export function wallPiecePose(data: WallPlacementData, roomWidth: number): { x: number; z: number; rotY: number } {
+  const pose = wallPose(data, roomWidth);
+  return { x: pose.x, z: pose.z, rotY: FACING_ROT[pose.facing].rotY };
+}
+
+/** 벽을 따라간 자리의 범위(벽 길이). 뒷벽은 방 폭, 옆벽은 방 깊이다. */
+export function wallLength(wall: WallSide, roomWidth: number, roomDepth: number): number {
+  return wall === "back" ? roomWidth : roomDepth;
+}
+
 /**
  * 바닥 가구가 차지하는 칸 모양(가구 기준, 앞면 +z: 가로 칸 × 깊이 칸)과, 그 안에서 그림을 놓는 자리(칸 모양 가운데에서 옮긴 만큼).
  * 막는 가구는 칸 모양의 칸을 막는다. 돌리면 칸 모양이 가운데를 중심으로 돈다.

@@ -1,4 +1,4 @@
-import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type FloorPieceId, type LobbyLayout } from "./lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type FloorPieceId, type LobbyLayout, type WallPieceId, type WallSide } from "./lobby-layout";
 
 // 3D 로비(라이트루프의 방)의 동작 규칙. 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 // 좌표: 바닥 한 칸 = 1. x는 왼쪽→오른쪽(0..width), z는 뒷벽→앞(0..depth). 높이는 y.
@@ -19,8 +19,10 @@ export interface PointerHit {
   mark: MarkId | null;
   /** 라이트루프를 눌렀는지. */
   onCharacter: boolean;
-  /** 누른 곳에 있는 바닥 가구(의자는 일기 책상). 편집 모드에서 쓴다. */
-  piece?: FloorPieceId | null;
+  /** 누른 곳에 있는 가구(의자는 일기 책상). 편집 모드에서 쓴다. */
+  piece?: FloorPieceId | WallPieceId | null;
+  /** 누른 곳이 벽 위면 그 벽과 벽을 따라간 자리. 편집 모드에서 벽 가구를 끌 때 쓴다(없으면 바닥 점에서 가장 가까운 벽으로 본다). */
+  wall?: { wall: WallSide; along: number } | null;
 }
 
 export const ROOM = {

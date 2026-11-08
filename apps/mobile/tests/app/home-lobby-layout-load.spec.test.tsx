@@ -763,7 +763,8 @@ describe("F. 홈에서 저장하지 않는다", () => {
     ["L1을 받음", () => jest.mocked(getLobbyLayout).mockResolvedValue(L1)],
     ["불러오기 실패", () => jest.mocked(getLobbyLayout).mockRejectedValue(new Error("실패"))],
     ["없음", () => jest.mocked(getLobbyLayout).mockResolvedValue(null)]
-  ])("[spec] S19 %s: 홈을 열고 장소를 누르고 떠났다 돌아와도 저장 함수를 부르지 않고, '꾸미기' 버튼이 없다", async (_label, arrange) => {
+  ])("[spec] S19 %s: 홈을 열고 장소를 누르고 떠났다 돌아와도 저장 함수를 부르지 않는다", async (_label, arrange) => {
+    // 064-③ 결정 03의 6: ③에서 '꾸미기'를 넣어 "'꾸미기' 버튼이 없다" 확인만 뺐다
     arrange();
 
     await renderHome();
@@ -772,8 +773,6 @@ describe("F. 홈에서 저장하지 않는다", () => {
     await leaveAndReturnHome();
 
     expect(saveLobbyLayout).not.toHaveBeenCalled();
-    expect(screen.queryByText("꾸미기")).toBeNull();
-    expect(screen.queryByRole("button", { name: "꾸미기" })).toBeNull();
   });
 });
 

@@ -52,6 +52,8 @@ export interface FurnitureType {
     box: { width: number; height: number; depth: number };
     /** 칸 모양 가운데에서 모델을 옆으로 치우쳐 놓는 거리(가구 기준 x). 맞춘 모델이 칸 밖으로 나가지 않게 줄여 쓴다. */
     offsetX?: number;
+    /** 모델 가로가 칸 폭보다 작아도 칸 폭에 맞춰 늘리는지(칸을 꽉 채우는 가구). */
+    fillWidth?: boolean;
     /** 모델을 놓는 높이. 벽 가구는 모델 가운데 높이다. */
     y: number;
     /** 벽 가구가 벽 면에서 나온 거리. */
@@ -61,7 +63,7 @@ export interface FurnitureType {
   };
 }
 
-/** 칸에 맞춘 모델: 줄인 비율(가로 x·깊이 z, 높이는 줄이지 않는다), 줄인 크기, 칸 모양 가운데에서 놓는 자리, 줄인 그림자. */
+/** 칸에 맞춘 모델: 바꾼 비율(가로 x·깊이 z, 높이는 바꾸지 않는다), 바꾼 크기, 칸 모양 가운데에서 놓는 자리, 바꾼 그림자. */
 export interface FittedModel {
   scale: { x: number; z: number };
   box: { width: number; height: number; depth: number };
@@ -77,8 +79,8 @@ const CATALOG: FurnitureType[] = [
     size: { width: 3, depth: 1 },
     height: { bottom: 0, top: 1.292 },
     blocksWalk: true,
-    // 의자 바로 뒤에 서서 책상(그림 가운데)을 본다(장소 구역도 서는 자리를 가운데로 한다)
-    place: { id: "desk", approach: [{ x: 0, z: 1.25 }], faceTo: { x: -0.25, z: 0 }, label: { x: -0.25, y: 2.1, z: 0 } },
+    // 의자 바로 뒤에 서서 책상 가운데를 본다(장소 구역도 서는 자리를 가운데로 한다)
+    place: { id: "desk", approach: [{ x: 0, z: 1.25 }], faceTo: { x: 0, z: 0 }, label: { x: 0, y: 2.1, z: 0 } },
     chair: {
       piece: "chair",
       at: { x: 0, z: 0.45 },
@@ -90,8 +92,8 @@ const CATALOG: FurnitureType[] = [
       shadow: [0.75, 0.75, 0.42]
     },
     removable: false,
-    // 그림이 칸보다 좁아 왼쪽으로 조금 치우쳐 놓는다(의자가 그림 가운데보다 오른쪽에 온다)
-    model: { piece: "desk", box: { width: 2.468, height: 1.292, depth: 1.318 }, offsetX: -0.25, y: 0, shadow: { floor: [2.8, 1.65, 0.5] } }
+    // 그림이 칸보다 좁아 가로를 3칸에 꽉 차게 늘린다
+    model: { piece: "desk", box: { width: 2.468, height: 1.292, depth: 1.318 }, fillWidth: true, y: 0, shadow: { floor: [2.8, 1.65, 0.5] } }
   },
   {
     id: "bookcase",
@@ -173,14 +175,15 @@ const round = (v: number) => Math.round(v * 1e6) / 1e6;
 
 /**
  * 모델을 차지하는 칸 안에 맞춘다(모든 가구에 같은 규칙).
- * - 모델 가로가 칸 폭(벽 가구는 벽을 따라 차지하는 폭)보다 크면 칸 폭에 맞게 줄인다. 바닥 가구·덮개는 깊이도 같다. 높이는 줄이지 않는다.
+ * - 모델 가로가 칸 폭(벽 가구는 벽을 따라 차지하는 폭)보다 크면 칸 폭에 맞게 줄인다. fillWidth면 작아도 칸 폭에 맞게 늘린다.
+ *   바닥 가구·덮개는 깊이도 넘치면 줄인다. 높이는 바꾸지 않는다.
  * - 바닥 가구는 모델 뒷면을 칸 뒤 끝에 맞춘다(뒷면을 벽에 대면 딱 붙는다). 덮개는 칸 가운데다.
  * - 옆 자리는 offsetX를 따르되 모델이 칸 밖으로 나가지 않게 한다.
- * - 그림자는 줄인 방향만 같은 비율로 줄인다.
+ * - 그림자는 줄이거나 늘린 방향만 같은 비율로 바꾼다.
  */
 export function fittedModel(type: FurnitureType): FittedModel {
   const { box } = type.model;
-  const x = Math.min(1, type.size.width / box.width);
+  const x = type.model.fillWidth ? type.size.width / box.width : Math.min(1, type.size.width / box.width);
   const z = type.mount === "wall" ? 1 : Math.min(1, type.size.depth / box.depth);
   const width = round(box.width * x);
   const depth = round(box.depth * z);

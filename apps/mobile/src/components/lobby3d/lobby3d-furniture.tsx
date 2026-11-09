@@ -87,7 +87,7 @@ export function BakedFurniture({ fallback, daylight, lightLayout, windowLift }: 
       const piece = source.clone(true);
       piece.position.set(place.x, place.y, place.z);
       piece.rotation.set(0, place.rotY, 0);
-      // 칸보다 큰 모델은 칸에 맞게 줄인다(가로·깊이만, 카탈로그의 공통 규칙)
+      // 모델을 칸에 맞게 줄이거나 늘린다(가로·깊이만, 카탈로그의 공통 규칙)
       if (place.scale) piece.scale.set(place.scale.x, 1, place.scale.z);
       // 일기 책상 의자는 '들어가기' 때 뒤로 뺀다(3D 화면이 이 자리에서 옮긴다)
       if (place.companion) piece.userData.chairBase = { x: place.x, z: place.z };

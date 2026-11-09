@@ -19,9 +19,9 @@ export interface FurniturePlacement {
   mount: FurnitureMount;
   /** 칸에 맞춘 모델 크기(대체 모양 상자, 누르기 판정). 입구 발판은 없다. */
   box?: { width: number; height: number; depth: number };
-  /** 칸에 맞추려고 모델을 줄인 비율(가로 x·깊이 z). 입구 발판은 없다. */
+  /** 칸에 맞추려고 모델을 줄이거나 늘린 비율(가로 x·깊이 z). 입구 발판은 없다. */
   scale?: { x: number; z: number };
-  /** 옅은 그림자(카탈로그 값을 모델과 같은 비율로 줄인 것). */
+  /** 옅은 그림자(카탈로그 값을 모델과 같은 비율로 바꾼 것). */
   shadow?: { floor?: [number, number, number]; wall?: [number, number, number] };
   /** 창밖 장면과 창문 빛을 내는 창문인지. */
   view?: boolean;

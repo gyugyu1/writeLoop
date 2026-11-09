@@ -65,14 +65,21 @@ public class LobbyLayoutService {
     private record FurnitureKind(Mount mount, boolean place, int slots) {
     }
 
-    private static final Map<String, FurnitureKind> KINDS = Map.of(
-            "desk", new FurnitureKind(Mount.FLOOR, true, 3),
-            "bookcase", new FurnitureKind(Mount.FLOOR, true, 0),
-            "wardrobe", new FurnitureKind(Mount.FLOOR, false, 0),
-            "rug", new FurnitureKind(Mount.FLOOR, false, 0),
-            "lamp", new FurnitureKind(Mount.TABLETOP, false, 0),
-            "board", new FurnitureKind(Mount.WALL, true, 0),
-            "window", new FurnitureKind(Mount.WALL, true, 0)
+    private static final Map<String, FurnitureKind> KINDS = Map.ofEntries(
+            Map.entry("desk", new FurnitureKind(Mount.FLOOR, true, 3)),
+            Map.entry("bookcase", new FurnitureKind(Mount.FLOOR, true, 0)),
+            Map.entry("wardrobe", new FurnitureKind(Mount.FLOOR, false, 0)),
+            Map.entry("rug", new FurnitureKind(Mount.FLOOR, false, 0)),
+            Map.entry("lamp", new FurnitureKind(Mount.TABLETOP, false, 0)),
+            Map.entry("bed", new FurnitureKind(Mount.FLOOR, false, 0)),
+            Map.entry("nightstand", new FurnitureKind(Mount.FLOOR, false, 1)),
+            Map.entry("floorLamp", new FurnitureKind(Mount.FLOOR, false, 0)),
+            Map.entry("plant", new FurnitureKind(Mount.FLOOR, false, 0)),
+            Map.entry("smallPlant", new FurnitureKind(Mount.TABLETOP, false, 0)),
+            Map.entry("books", new FurnitureKind(Mount.TABLETOP, false, 0)),
+            Map.entry("board", new FurnitureKind(Mount.WALL, true, 0)),
+            Map.entry("window", new FurnitureKind(Mount.WALL, true, 0)),
+            Map.entry("frame", new FurnitureKind(Mount.WALL, false, 0))
     );
 
     private final LobbyLayoutRepository lobbyLayoutRepository;

@@ -1,5 +1,6 @@
 package com.writeloop.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,7 +25,8 @@ import java.util.regex.Pattern;
 
 /**
  * 모바일 홈 로비의 가구 배치를 계정마다 하나 저장하고 돌려준다.
- * 서버는 배치의 모양(아는 종류인지, 종류에 맞는 자리가 방 안인지, 방향·벽 값, id가 겹치지 않는지, 장소 가구가 하나씩 있는지)만 검사한다.
+ * 서버는 배치의 모양(아는 종류인지, 종류에 맞는 자리가 방 안인지, 방향·벽 값, id가 겹치지 않는지, 장소 가구가 하나씩 있는지,
+ * 보관함에 치울 수 있는 종류만 있는지)만 검사한다.
  * 가구끼리 겹치는지와 장소로 가는 길이 막히는지는 앱의 편집 화면이 막는다.
  */
 @Service
@@ -38,11 +40,13 @@ public class LobbyLayoutService {
     static final double ROOM_WIDTH = 8;
     static final double ROOM_DEPTH = 11;
 
-    /** 한 배치에 둘 수 있는 가구 수. */
+    /** 한 배치에 둘 수 있는 가구 수(방과 보관함을 합친 수). */
     static final int MAX_ITEMS = 40;
 
     private static final Pattern ITEM_ID = Pattern.compile("[A-Za-z0-9_-]{1,40}");
     private static final List<String> LAYOUT_KEYS = List.of("version", "items");
+    private static final List<String> LAYOUT_KEYS_WITH_STORED = List.of("version", "items", "stored");
+    private static final List<String> STORED_ITEM_KEYS = List.of("id", "type");
     private static final List<String> FLOOR_ITEM_KEYS = List.of("id", "type", "floor");
     private static final List<String> WALL_ITEM_KEYS = List.of("id", "type", "wall");
     private static final List<String> FLOOR_SPOT_KEYS = List.of("x", "z", "facing");
@@ -77,13 +81,14 @@ public class LobbyLayoutService {
     @Transactional
     public LobbyLayoutDto saveLayout(Long userId, JsonNode request) {
         LobbyLayoutDto layout = parse(request);
-        String layoutJson = writeJson(new StoredLayout(layout.items()));
+        String layoutJson = writeJson(new StoredLayout(layout.items(), layout.stored()));
         lobbyLayoutRepository.upsert(userId, layout.version(), layoutJson, Instant.now());
         return layout;
     }
 
     private LobbyLayoutDto parse(JsonNode request) {
-        requireObjectWithKeys(request, LAYOUT_KEYS);
+        // 보관함(stored)은 없어도 된다
+        requireObjectWithKeys(request, request != null && request.has("stored") ? LAYOUT_KEYS_WITH_STORED : LAYOUT_KEYS);
         JsonNode version = request.get("version");
         if (!version.isIntegralNumber() || !version.canConvertToInt() || version.intValue() != SHAPE_VERSION) {
             throw invalid("모르는 배치 모양 버전이에요.");
@@ -105,13 +110,41 @@ public class LobbyLayoutService {
             }
             parsed.add(next);
         }
+        List<LobbyLayoutDto.StoredItem> stored = request.has("stored") ? parseStored(request.get("stored"), ids, items.size()) : null;
         // 장소가 딸린 가구는 종류마다 정확히 하나다
         for (Map.Entry<String, FurnitureKind> kind : KINDS.entrySet()) {
             if (kind.getValue().place() && placeCounts.getOrDefault(kind.getKey(), 0) != 1) {
                 throw invalid("장소가 딸린 가구는 하나씩 있어야 해요.");
             }
         }
-        return new LobbyLayoutDto(SHAPE_VERSION, List.copyOf(parsed));
+        return new LobbyLayoutDto(SHAPE_VERSION, List.copyOf(parsed), stored);
+    }
+
+    /** 보관함: 치울 수 있는(장소가 없는) 종류만, id는 방의 가구와도 겹치지 않고, 방과 합쳐 MAX_ITEMS개까지다. */
+    private List<LobbyLayoutDto.StoredItem> parseStored(JsonNode stored, Set<String> ids, int placedCount) {
+        if (!stored.isArray() || placedCount + stored.size() > MAX_ITEMS) {
+            throw invalid("보관함 목록이 맞지 않아요.");
+        }
+        List<LobbyLayoutDto.StoredItem> parsed = new ArrayList<>();
+        for (JsonNode item : stored) {
+            requireObjectWithKeys(item, STORED_ITEM_KEYS);
+            JsonNode id = item.get("id");
+            JsonNode type = item.get("type");
+            if (!id.isTextual() || !ITEM_ID.matcher(id.textValue()).matches()) {
+                throw invalid("가구 id가 맞지 않아요.");
+            }
+            if (!type.isTextual() || !KINDS.containsKey(type.textValue())) {
+                throw invalid("모르는 가구예요.");
+            }
+            if (KINDS.get(type.textValue()).place()) {
+                throw invalid("장소가 딸린 가구는 보관함에 넣을 수 없어요.");
+            }
+            if (!ids.add(id.textValue())) {
+                throw invalid("가구 id가 겹쳐요.");
+            }
+            parsed.add(new LobbyLayoutDto.StoredItem(id.textValue(), type.textValue()));
+        }
+        return List.copyOf(parsed);
     }
 
     private LobbyLayoutDto.Item parseItem(JsonNode item) {
@@ -178,7 +211,7 @@ public class LobbyLayoutService {
     private LobbyLayoutDto toDto(LobbyLayoutEntity entity) {
         try {
             StoredLayout stored = objectMapper.readValue(entity.getLayoutJson(), StoredLayout.class);
-            return new LobbyLayoutDto(entity.getShapeVersion(), stored.items());
+            return new LobbyLayoutDto(entity.getShapeVersion(), stored.items(), stored.stored());
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("저장된 가구 배치를 읽지 못했어요.", exception);
         }
@@ -196,7 +229,8 @@ public class LobbyLayoutService {
         return new ApiException(HttpStatus.BAD_REQUEST, "INVALID_LOBBY_LAYOUT", message);
     }
 
-    /** DB에 두는 배치. 모양 버전은 열로 따로 둔다. */
-    record StoredLayout(List<LobbyLayoutDto.Item> items) {
+    /** DB에 두는 배치. 모양 버전은 열로 따로 둔다. 보관함은 저장할 때 보냈을 때만 있다. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    record StoredLayout(List<LobbyLayoutDto.Item> items, List<LobbyLayoutDto.StoredItem> stored) {
     }
 }

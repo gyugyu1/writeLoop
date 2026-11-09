@@ -41,7 +41,7 @@ interface WallSpot {
 }
 /** 066-① 명세 2의 배치 데이터 v2(앱 안의 값은 API 본문에서 version을 뺀 모양). */
 interface LobbyLayout {
-  items: { id: string; type: string; floor?: FloorSpot; wall?: WallSpot }[];
+  items: { id: string; type: string; floor?: FloorSpot; wall?: WallSpot; on?: { parent: string; slot: number; facing: Facing } }[];
 }
 /** 064 때 적던 배치 묶음. 테스트 안에서만 쓰고 v2 목록으로 바꿔 넘긴다. */
 interface LayoutParts {
@@ -153,6 +153,12 @@ function toV2(parts: LayoutParts): LobbyLayout {
 /** 처음 배치(결정 03의 1·2). */
 function defaultLayout(): LobbyLayout {
   return toV2(defaultParts());
+}
+
+/** 066-④ 결정 2: 처음 배치(DEFAULT_LOBBY_LAYOUT)에 스탠드(책상 왼쪽 자리)가 더해졌다. T0-1·T0-2·R1은 처음 배치와 견주므로 이것과 견준다. */
+function newDefaultLayout(): LobbyLayout {
+  const layout = defaultLayout();
+  return { items: [...layout.items, { id: "lamp", type: "lamp", on: { parent: "desk", slot: 0, facing: 0 } }] };
 }
 
 function layoutWith(change: (layout: LayoutParts) => void): LobbyLayout {
@@ -271,11 +277,11 @@ const DEFAULT_CHAIR = {
 
 describe("[spec] 064-① 범위 3 T0: 처음 배치를 데이터로 넣으면 지금과 같은 값이 나온다", () => {
   it("T0-1: DEFAULT_LOBBY_LAYOUT은 결정 03의 처음 배치(책상 (1.5, 5.5) 앞, 책장 (0.5, 2.5) 오른쪽, 옷장 (7.5, 3.5) 왼쪽, 깔개 (4.6, 7.2), 게시판 뒷벽 1.8, 창문 뒷벽 4.8)다", () => {
-    expect(sortedItems(current.defaultLayout())).toEqual(sortedItems(defaultLayout()));
+    expect(sortedItems(current.defaultLayout())).toEqual(sortedItems(newDefaultLayout()));
   });
 
   it("T0-2: 처음 지금 배치(activeLobbyLayout)는 처음 배치다", () => {
-    expect(sortedItems(current.active())).toEqual(sortedItems(defaultLayout()));
+    expect(sortedItems(current.active())).toEqual(sortedItems(newDefaultLayout()));
   });
 
   it("T0-3: layoutGeometry(처음 배치)의 3D 가구 자리·막힌 칸·장소(서는 자리·바라볼 지점·이름표)·의자가 지금 값과 같다", () => {
@@ -586,7 +592,7 @@ describe("[spec] 064-① 범위 3: 처음 배치로 되돌리기", () => {
   it("R1: 바꾼 배치를 넣은 뒤 처음 배치를 넣으면 막힌 칸·장소·의자가 처음 값으로 돌아온다", () => {
     current.apply(layoutWith((l) => (l.floor.desk = { x: 1.5, z: 5.5, facing: 1 })));
     current.apply(current.defaultLayout());
-    expect(sortedItems(current.active())).toEqual(sortedItems(defaultLayout()));
+    expect(sortedItems(current.active())).toEqual(sortedItems(newDefaultLayout()));
     expect(sortedTiles(current.solidTiles())).toEqual(DEFAULT_SOLID);
     expect(marksOf().desk).toEqual({ approach: [[1.5, 6.75]], faceTo: [1.5, 5.5] });
     expect(pt(current.chair().seat)).toEqual([1.5, 6.45]);

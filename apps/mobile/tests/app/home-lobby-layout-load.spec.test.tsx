@@ -165,7 +165,8 @@ const P0_FLOOR: Record<string, FloorSpot> = {
   rug: { x: 4.6, z: 7.2, facing: 0 }
 };
 const P0_WALL: Record<string, WallSpot> = { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } };
-const P0: LobbyLayout = v2(P0_FLOOR, P0_WALL);
+// 066-④ 결정 2: 처음 배치에 스탠드(책상 왼쪽 자리)가 더해져, 처음 배치 P0에 스탠드를 넣는다(그 밖의 값은 그대로).
+const P0: LobbyLayout = { items: [...v2(P0_FLOOR, P0_WALL).items, { id: "lamp", type: "lamp", on: { parent: "desk", slot: 0, facing: 0 } } as LayoutItem] };
 const P0_SOLID = ["0,2", "0,5", "1,5", "2,5", "7,3"];
 const P0_PLACES: PlaceValues = {
   board: { approach: [{ x: 1.6, z: 1.3 }, { x: 2.2, z: 1.3 }], faceTo: { x: 1.8, z: 0 } },

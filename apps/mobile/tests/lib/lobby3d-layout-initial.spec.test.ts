@@ -35,6 +35,7 @@ import { FURNITURE_LAYOUT, WINDOW_OPENING } from "@/lib/lobby3d/furniture-layout
 // ---------- 지금 코드를 부르는 곳(처음 배치) ----------
 
 interface Placement {
+  item: string;
   piece: string;
   x: number;
   y: number;
@@ -120,8 +121,11 @@ function gridMap(cell: (x: number, z: number) => string): string[] {
 // ---------- 3D 가구 자리 ----------
 
 describe("[spec] 064-① 처음 배치: 3D에 놓는 가구 자리·방향(그대로 둘 동작)", () => {
-  it("L1: 가구 목록은 여덟 개(게시판·창문·일기 책상·의자·책장·옷장·깔개·입구 발판의 누르는 곳)이고 자리·높이·방향·장소·막는 가구 표시가 지금과 같다", () => {
-    const list = current.placements();
+  it("L1: 가구 목록은 아홉 개(게시판·창문·일기 책상·의자·책장·옷장·깔개·입구 발판의 누르는 곳, 066-④의 스탠드)이고 스탠드 밖의 자리·높이·방향·장소·막는 가구 표시가 지금과 같다", () => {
+    // 066-④ 결정 2: 처음 배치에 스탠드(item "lamp")가 더해져 목록이 하나 늘었다. 스탠드의 값은 066-④ qa 테스트가 본다. 나머지 여덟 개의 기대값은 그대로다.
+    const all = current.placements();
+    expect(all.length).toBe(9);
+    const list = all.filter((p) => p.item !== "lamp");
     expect(list.length).toBe(8);
     const byPiece = Object.fromEntries(
       list.map((p) => [

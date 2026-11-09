@@ -155,10 +155,18 @@ const DEF_WARDROBE_STORED = layoutOf(
 );
 /** DEF_WARDROBE_STORED와 방의 가구는 같고 보관함이 빈 배치(옷장이 아예 없다). */
 const ROOM_ONLY = layoutOf(DEF_ITEMS.filter((item) => item.id !== "wardrobe"));
-/** DEF에 처음 배치에 없는 옷장 wardrobe2를 (3.5, 5.5)에 더한 배치(066 시나리오의 L1). */
-const L1 = layoutOf([...DEF_ITEMS, floor("wardrobe2", "wardrobe", 3.5, 5.5, 0)]);
 /** 깔개가 방에도 보관함에도 없는 배치. '처음 배치로'를 누르면 깔개가 나오는데 편집 전 배치에 없던 가구다(명세 고칠 동작 3의 예). */
 const NO_RUG = layoutOf(DEF_ITEMS.filter((item) => item.id !== "rug"));
+// 066-④ 결정 2: 처음 배치에 스탠드(책상 왼쪽 자리)가 더해졌다. R4·R5는 '처음 배치로'로 미리 만든 가구만 나오고 들어가는 경우를 보므로,
+// 시작 배치에도 스탠드를 넣는다(스탠드가 없던 배치에서 '처음 배치로'로 스탠드가 새로 나오면 069 명세대로 다시 만드는 것이 맞다).
+const LAMP_ITEM: FurnitureItem = { id: "lamp", type: "lamp", on: { parent: "desk", slot: 0, facing: 0 } } as FurnitureItem;
+const DEF_LAMP_ITEMS: FurnitureItem[] = [...DEF_ITEMS, LAMP_ITEM];
+const DEF_LAMP_WARDROBE_STORED = layoutOf(
+  DEF_LAMP_ITEMS.filter((item) => item.id !== "wardrobe"),
+  [{ id: "wardrobe", type: "wardrobe" }]
+);
+/** DEF에 처음 배치에 없는 옷장 wardrobe2를 (3.5, 5.5)에 더한 배치(066 시나리오의 L1). 066-④ 결정 2로 처음 배치의 스탠드도 있다. */
+const L1 = layoutOf([...DEF_LAMP_ITEMS, floor("wardrobe2", "wardrobe", 3.5, 5.5, 0)]);
 
 const WARDROBE_AT = { x: 7.5, z: 3.5 };
 /** 보관함의 옷장을 꺼내면 놓이는 자리(066 ③ 결정 1, 068 재현 테스트 G3와 같은 값). */
@@ -589,7 +597,7 @@ describe("[spec] 069 재현: 치우기·꺼내기는 3D를 다시 만들지 않�
   test(
     "R4 (고칠 동작 3) 보관함에 옷장이 든 배치에서 '처음 배치로'를 누르면 장면의 메시가 바뀌지 않고, (7.5, 3.5)에 보이는 옷장 메시는 누르기 전부터 장면에 있던 것이다",
     async () => {
-      await renderLobby(DEF_WARDROBE_STORED);
+      await renderLobby(DEF_LAMP_WARDROBE_STORED);
       await enterEdit();
       const before = meshesInScene();
 

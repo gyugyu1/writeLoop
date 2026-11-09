@@ -903,21 +903,23 @@ describe("[spec] 066-③ 명세 4: 취소·처음 배치로·완료", () => {
     { id: "wardrobe2", type: "wardrobe" },
     { id: "rug2", type: "rug" }
   ];
+  // 066-④ 결정 2: 처음 배치에 스탠드(책상 왼쪽 자리)가 더해져, '처음 배치로' 뒤의 방은 DEF에 스탠드를 더한 것이다.
+  const DEF_ROOM_AFTER_RESET: LayoutItem[] = [...DEF_ITEMS, { id: "lamp", type: "lamp", on: { parent: "desk", slot: 0, facing: 0 } } as LayoutItem];
 
-  test("C4 '처음 배치로': 보관함에 있던 wardrobe도 처음 자리로, 처음 배치에 없는 wardrobe2·rug2는 보관함으로(개수 2, 가구 8개 그대로)", async () => {
+  test("C4 '처음 배치로': 보관함에 있던 wardrobe도 처음 자리로, 처음 배치에 없는 wardrobe2·rug2는 보관함으로(개수 2, 가구 8개에 처음 배치의 스탠드가 더해져 9개)", async () => {
     await renderHome(layout(C4_ITEMS, C4_STORED));
     await enterEdit();
 
     await pressButton("처음 배치로");
 
-    expect(roomOf(editLayout())).toEqual(byId(DEF_ITEMS));
+    expect(roomOf(editLayout())).toEqual(byId(DEF_ROOM_AFTER_RESET));
     expect(storedOf(editLayout())).toEqual(byId(C4_AFTER_STORED));
     expect(storageBadge()).toBe(2);
     const ids = [...editLayout().items.map((item) => item.id), ...storedOf(editLayout()).map((item) => item.id)].sort();
-    expect(ids).toEqual(["board", "bookcase", "desk", "rug", "rug2", "wardrobe", "wardrobe2", "window"]);
+    expect(ids).toEqual(["board", "bookcase", "desk", "lamp", "rug", "rug2", "wardrobe", "wardrobe2", "window"]);
   });
 
-  test("C5 C4 다음 '완료'하면 저장이 한 번 불리고 보낸 배치의 방이 DEF, 보관함이 wardrobe2·rug2", async () => {
+  test("C5 C4 다음 '완료'하면 저장이 한 번 불리고 보낸 배치의 방이 DEF(+ 처음 배치의 스탠드), 보관함이 wardrobe2·rug2", async () => {
     await renderHome(layout(C4_ITEMS, C4_STORED));
     await enterEdit();
     await pressButton("처음 배치로");
@@ -926,7 +928,7 @@ describe("[spec] 066-③ 명세 4: 취소·처음 배치로·완료", () => {
 
     expect(saveLobbyLayout).toHaveBeenCalledTimes(1);
     const sent = jest.mocked(saveLobbyLayout).mock.calls[0][0];
-    expect(roomOf(sent)).toEqual(byId(DEF_ITEMS));
+    expect(roomOf(sent)).toEqual(byId(DEF_ROOM_AFTER_RESET));
     expect(storedOf(sent)).toEqual(byId(C4_AFTER_STORED));
   });
 

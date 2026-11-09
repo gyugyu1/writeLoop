@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 /**
  * 모바일 홈 로비의 가구 배치를 계정마다 하나 저장하고 돌려준다.
  * 서버는 배치의 모양(아는 종류인지, 종류에 맞는 자리가 방 안인지, 방향·벽 값, id가 겹치지 않는지, 장소 가구가 하나씩 있는지,
- * 보관함에 치울 수 있는 종류만 있는지)만 검사한다.
+ * 보관함에 치울 수 있는 종류만 있는지, 탁상형 소품이 방의 받침 가구에 있는 자리에 하나씩 올라 있는지)만 검사한다.
  * 가구끼리 겹치는지와 장소로 가는 길이 막히는지는 앱의 편집 화면이 막는다.
  */
 @Service
@@ -49,21 +49,30 @@ public class LobbyLayoutService {
     private static final List<String> STORED_ITEM_KEYS = List.of("id", "type");
     private static final List<String> FLOOR_ITEM_KEYS = List.of("id", "type", "floor");
     private static final List<String> WALL_ITEM_KEYS = List.of("id", "type", "wall");
+    private static final List<String> TABLETOP_ITEM_KEYS = List.of("id", "type", "on");
     private static final List<String> FLOOR_SPOT_KEYS = List.of("x", "z", "facing");
     private static final List<String> WALL_SPOT_KEYS = List.of("wall", "along");
+    private static final List<String> TABLETOP_SPOT_KEYS = List.of("parent", "slot", "facing");
     private static final List<String> WALLS = List.of("back", "left", "right");
 
-    /** 아는 가구 종류(앱 furniture-catalog.ts): 벽에 거는지, 장소가 딸려 배치에 정확히 하나 있어야 하는지. */
-    private record FurnitureKind(boolean onWall, boolean place) {
+    /** 가구를 두는 곳: 바닥(바닥형·덮개형), 벽, 받침 가구 위(탁상형). */
+    private enum Mount { FLOOR, WALL, TABLETOP }
+
+    /**
+     * 아는 가구 종류(앱 furniture-catalog.ts): 두는 곳, 장소가 딸려 배치에 정확히 하나 있어야 하는지,
+     * 윗면의 소품 자리 수(차지한 칸 수, 윗면이 없으면 0).
+     */
+    private record FurnitureKind(Mount mount, boolean place, int slots) {
     }
 
     private static final Map<String, FurnitureKind> KINDS = Map.of(
-            "desk", new FurnitureKind(false, true),
-            "bookcase", new FurnitureKind(false, true),
-            "wardrobe", new FurnitureKind(false, false),
-            "rug", new FurnitureKind(false, false),
-            "board", new FurnitureKind(true, true),
-            "window", new FurnitureKind(true, true)
+            "desk", new FurnitureKind(Mount.FLOOR, true, 3),
+            "bookcase", new FurnitureKind(Mount.FLOOR, true, 0),
+            "wardrobe", new FurnitureKind(Mount.FLOOR, false, 0),
+            "rug", new FurnitureKind(Mount.FLOOR, false, 0),
+            "lamp", new FurnitureKind(Mount.TABLETOP, false, 0),
+            "board", new FurnitureKind(Mount.WALL, true, 0),
+            "window", new FurnitureKind(Mount.WALL, true, 0)
     );
 
     private final LobbyLayoutRepository lobbyLayoutRepository;
@@ -110,6 +119,7 @@ public class LobbyLayoutService {
             }
             parsed.add(next);
         }
+        requireTabletopsOnSlots(parsed);
         List<LobbyLayoutDto.StoredItem> stored = request.has("stored") ? parseStored(request.get("stored"), ids, items.size()) : null;
         // 장소가 딸린 가구는 종류마다 정확히 하나다
         for (Map.Entry<String, FurnitureKind> kind : KINDS.entrySet()) {
@@ -118,6 +128,27 @@ public class LobbyLayoutService {
             }
         }
         return new LobbyLayoutDto(SHAPE_VERSION, List.copyOf(parsed), stored);
+    }
+
+    /** 탁상형 소품은 방에 놓인 받침 가구(윗면이 있는 바닥 가구)의 있는 자리에 올리고, 한 자리에 하나만 둔다. */
+    private void requireTabletopsOnSlots(List<LobbyLayoutDto.Item> items) {
+        Map<String, LobbyLayoutDto.Item> byId = new HashMap<>();
+        for (LobbyLayoutDto.Item item : items) {
+            byId.put(item.id(), item);
+        }
+        Set<String> taken = new HashSet<>();
+        for (LobbyLayoutDto.Item item : items) {
+            if (item.on() == null) {
+                continue;
+            }
+            LobbyLayoutDto.Item parent = byId.get(item.on().parent());
+            if (parent == null || parent.floor() == null || item.on().slot() >= KINDS.get(parent.type()).slots()) {
+                throw invalid("소품을 올린 자리가 없어요.");
+            }
+            if (!taken.add(parent.id() + "#" + item.on().slot())) {
+                throw invalid("한 자리에 소품을 둘 이상 올릴 수 없어요.");
+            }
+        }
     }
 
     /** 보관함: 치울 수 있는(장소가 없는) 종류만, id는 방의 가구와도 겹치지 않고, 방과 합쳐 MAX_ITEMS개까지다. */
@@ -159,7 +190,12 @@ public class LobbyLayoutService {
         if (type == null || !type.isTextual() || !KINDS.containsKey(type.textValue())) {
             throw invalid("모르는 가구예요.");
         }
-        if (KINDS.get(type.textValue()).onWall()) {
+        Mount mount = KINDS.get(type.textValue()).mount();
+        if (mount == Mount.TABLETOP) {
+            requireObjectWithKeys(item, TABLETOP_ITEM_KEYS);
+            return new LobbyLayoutDto.Item(id.textValue(), type.textValue(), null, null, parseTabletopSpot(item.get("on")));
+        }
+        if (mount == Mount.WALL) {
             requireObjectWithKeys(item, WALL_ITEM_KEYS);
             return new LobbyLayoutDto.Item(id.textValue(), type.textValue(), null, parseWallSpot(item.get("wall")));
         }
@@ -176,6 +212,23 @@ public class LobbyLayoutService {
             throw invalid("가구 방향은 0~3 중 하나여야 해요.");
         }
         return new LobbyLayoutDto.FloorSpot(x, z, facing.intValue());
+    }
+
+    private LobbyLayoutDto.TabletopSpot parseTabletopSpot(JsonNode piece) {
+        requireObjectWithKeys(piece, TABLETOP_SPOT_KEYS);
+        JsonNode parent = piece.get("parent");
+        if (!parent.isTextual() || !ITEM_ID.matcher(parent.textValue()).matches()) {
+            throw invalid("소품을 올린 가구 id가 맞지 않아요.");
+        }
+        JsonNode slot = piece.get("slot");
+        if (!slot.isIntegralNumber() || !slot.canConvertToInt() || slot.intValue() < 0) {
+            throw invalid("소품 자리 번호가 맞지 않아요.");
+        }
+        JsonNode facing = piece.get("facing");
+        if (!facing.isIntegralNumber() || !facing.canConvertToInt() || facing.intValue() < 0 || facing.intValue() > 3) {
+            throw invalid("가구 방향은 0~3 중 하나여야 해요.");
+        }
+        return new LobbyLayoutDto.TabletopSpot(parent.textValue(), slot.intValue(), facing.intValue());
     }
 
     private LobbyLayoutDto.WallSpot parseWallSpot(JsonNode piece) {

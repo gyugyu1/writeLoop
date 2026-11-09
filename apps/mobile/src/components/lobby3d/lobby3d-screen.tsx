@@ -726,19 +726,8 @@ export default function Lobby3dScreen({
 
       <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
         {editing ? (
-          <View style={styles.headerLeft}>
-            <View style={styles.editGuide}>
-              <Text style={styles.editGuideText}>{EDIT_GUIDE}</Text>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: saving, expanded: storageOpen }}
-              disabled={saving}
-              style={[styles.decorButton, saving && styles.editButtonBusy]}
-              onPress={() => setStorageOpen(true)}
-            >
-              <Text style={styles.decorText}>{storedCount > 0 ? `보관함 ${storedCount}` : "보관함"}</Text>
-            </Pressable>
+          <View style={styles.editGuide}>
+            <Text style={styles.editGuideText}>{EDIT_GUIDE}</Text>
           </View>
         ) : (
           <View style={styles.headerLeft}>
@@ -758,15 +747,29 @@ export default function Lobby3dScreen({
             ) : null}
           </View>
         )}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="카메라 거리 설정"
-          accessibilityState={{ expanded: cameraOpen }}
-          style={styles.iconButton}
-          onPress={() => setCameraOpen((open) => !open)}
-        >
-          <Text style={styles.iconText}>⌕</Text>
-        </Pressable>
+        <View style={styles.headerLeft}>
+          {/* 편집 모드에서는 오른쪽 위, 카메라 거리 버튼 왼쪽에 보관함 버튼을 둔다 */}
+          {editing ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saving, expanded: storageOpen }}
+              disabled={saving}
+              style={[styles.decorButton, saving && styles.editButtonBusy]}
+              onPress={() => setStorageOpen(true)}
+            >
+              <Text style={styles.decorText}>{storedCount > 0 ? `보관함 ${storedCount}` : "보관함"}</Text>
+            </Pressable>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="카메라 거리 설정"
+            accessibilityState={{ expanded: cameraOpen }}
+            style={styles.iconButton}
+            onPress={() => setCameraOpen((open) => !open)}
+          >
+            <Text style={styles.iconText}>⌕</Text>
+          </Pressable>
+        </View>
       </View>
 
       {cameraOpen ? (

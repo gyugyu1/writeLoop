@@ -1,5 +1,5 @@
 import { ROOM, activeLobbyLayout, type MarkId } from "./engine";
-import { furnitureType, type FurnitureMount } from "./furniture-catalog";
+import { fittedModel, furnitureType, type FurnitureMount } from "./furniture-catalog";
 import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type LobbyLayout } from "./lobby-layout";
 
 // 라룹이 방의 가구를 놓는 자리. Kenney 가구 묶음(lobby3d-furniture)과 코드로 만든 대체 모양(lobby3d-canvas)이 함께 쓴다.
@@ -17,9 +17,11 @@ export interface FurniturePlacement {
   companion?: boolean;
   /** 배치 유형(입구 발판은 floor). 벽 가구는 기준점이 모델 가운데다. */
   mount: FurnitureMount;
-  /** 모델 실제 크기(대체 모양 상자). 입구 발판은 없다. */
+  /** 칸에 맞춘 모델 크기(대체 모양 상자, 누르기 판정). 입구 발판은 없다. */
   box?: { width: number; height: number; depth: number };
-  /** 옅은 그림자(카탈로그). */
+  /** 칸에 맞추려고 모델을 줄인 비율(가로 x·깊이 z). 입구 발판은 없다. */
+  scale?: { x: number; z: number };
+  /** 옅은 그림자(카탈로그 값을 모델과 같은 비율로 줄인 것). */
   shadow?: { floor?: [number, number, number]; wall?: [number, number, number] };
   /** 창밖 장면과 창문 빛을 내는 창문인지. */
   view?: boolean;
@@ -49,13 +51,15 @@ export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
     const mark = type.place?.id;
     const blocker = !mark && type.mount === "floor" && type.blocksWalk;
     const chair = p.companion ? type.chair : undefined;
+    const fit = fittedModel(type);
     return {
       item: p.item,
       piece: p.piece,
       ...(p.companion ? { companion: true } : {}),
       mount: chair ? "floor" : type.mount,
-      box: chair ? chair.box : type.model.box,
-      shadow: chair ? { floor: chair.shadow } : type.model.shadow,
+      box: chair ? chair.box : fit.box,
+      scale: chair ? { x: 1, z: 1 } : fit.scale,
+      shadow: chair ? { floor: chair.shadow } : fit.shadow,
       ...(type.view && !chair ? { view: true } : {}),
       x: p.x,
       y: p.y,

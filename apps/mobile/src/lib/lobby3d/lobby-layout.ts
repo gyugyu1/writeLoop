@@ -1,5 +1,5 @@
 import type { FloorPoint, MarkId } from "./engine";
-import { furnitureType, type FurniturePlaceId, type FurnitureType } from "./furniture-catalog";
+import { fittedModel, furnitureType, type FurniturePlaceId, type FurnitureType } from "./furniture-catalog";
 
 // 방의 가구 배치(배치 데이터)와, 거기서 계산하는 값(막힌 칸, 장소의 서는 자리·바라볼 지점·이름표, 의자, 3D 자리).
 // 배치는 가구 인스턴스 목록이고, 가구마다의 값(크기·장소·의자·모델)은 카탈로그(furniture-catalog)에서 읽는다.
@@ -189,7 +189,7 @@ export function layoutGeometry(layout: LobbyLayout, roomWidth: number): LayoutGe
       const at = toRoom(pose, { x: 0, z: type.model.wallDepth ?? 0 });
       pieces.push({ item: item.id, piece: type.model.piece, companion: false, x: at.x, y: type.model.y, z: at.z, rotY });
     } else {
-      const drawn = toRoom(pose, type.model.drawAt);
+      const drawn = toRoom(pose, fittedModel(type).drawAt);
       pieces.push({ item: item.id, piece: type.model.piece, companion: false, x: drawn.x, y: type.model.y, z: drawn.z, rotY });
     }
     if (type.chair) chair = placeChair(item.id, type, pose, pieces);

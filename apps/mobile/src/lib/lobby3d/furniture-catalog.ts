@@ -48,17 +48,25 @@ export interface FurnitureType {
   model: {
     /** 가구 묶음(lobby-furniture.glb) 안의 이름. */
     piece: string;
-    /** 모델 실제 크기(칸): 가로·높이·깊이. 대체 모양 상자와 3D 판정이 쓴다. */
+    /** 모델 실제 크기(칸): 가로·높이·깊이. 칸보다 크면 칸에 맞춰 줄여 그린다(fittedModel). */
     box: { width: number; height: number; depth: number };
-    /** 칸 모양 가운데에서 모델을 놓는 자리(가구 기준). */
-    drawAt: LocalPoint;
+    /** 칸 모양 가운데에서 모델을 옆으로 치우쳐 놓는 거리(가구 기준 x). 맞춘 모델이 칸 밖으로 나가지 않게 줄여 쓴다. */
+    offsetX?: number;
     /** 모델을 놓는 높이. 벽 가구는 모델 가운데 높이다. */
     y: number;
     /** 벽 가구가 벽 면에서 나온 거리. */
     wallDepth?: number;
-    /** 옅은 그림자(실시간 아님): floor는 바닥에 닿은 넓이(가로·깊이)와 진하기, wall은 벽에 비치는 넓이(가로·세로)와 진하기. */
+    /** 옅은 그림자(실시간 아님): floor는 바닥에 닿은 넓이(가로·깊이)와 진하기, wall은 벽에 비치는 넓이(가로·세로)와 진하기. 모델을 줄인 만큼 함께 줄인다. */
     shadow?: { floor?: [number, number, number]; wall?: [number, number, number] };
   };
+}
+
+/** 칸에 맞춘 모델: 줄인 비율(가로 x·깊이 z, 높이는 줄이지 않는다), 줄인 크기, 칸 모양 가운데에서 놓는 자리, 줄인 그림자. */
+export interface FittedModel {
+  scale: { x: number; z: number };
+  box: { width: number; height: number; depth: number };
+  drawAt: LocalPoint;
+  shadow?: { floor?: [number, number, number]; wall?: [number, number, number] };
 }
 
 const CATALOG: FurnitureType[] = [
@@ -82,8 +90,8 @@ const CATALOG: FurnitureType[] = [
       shadow: [0.75, 0.75, 0.42]
     },
     removable: false,
-    // 그림이 칸보다 커서 왼쪽으로 조금 치우쳐 놓는다
-    model: { piece: "desk", box: { width: 2.468, height: 1.292, depth: 1.318 }, drawAt: { x: -0.25, z: 0 }, y: 0, shadow: { floor: [2.8, 1.65, 0.5] } }
+    // 그림이 칸보다 좁아 왼쪽으로 조금 치우쳐 놓는다(의자가 그림 가운데보다 오른쪽에 온다)
+    model: { piece: "desk", box: { width: 2.468, height: 1.292, depth: 1.318 }, offsetX: -0.25, y: 0, shadow: { floor: [2.8, 1.65, 0.5] } }
   },
   {
     id: "bookcase",
@@ -95,8 +103,7 @@ const CATALOG: FurnitureType[] = [
     // 책장 앞에 서서 책장 뒤(벽 쪽)를 본다. 이름표는 방 쪽으로 조금 옮긴다(벽 가까이면 화면 끝에서 잘린다)
     place: { id: "bookcase", approach: [{ x: 0, z: 0.9 }], faceTo: { x: 0, z: -0.5 }, label: { x: 0, y: 2.3, z: 0.4 } },
     removable: false,
-    // 벽에 붙게 칸 안에서 뒤로 조금 민다
-    model: { piece: "bookcase", box: { width: 1.12, height: 2.464, depth: 0.876 }, drawAt: { x: 0, z: -0.06 }, y: 0, shadow: { floor: [1.4, 1.2, 0.52] } }
+    model: { piece: "bookcase", box: { width: 1.12, height: 2.464, depth: 0.876 }, y: 0, shadow: { floor: [1.4, 1.2, 0.52] } }
   },
   {
     id: "wardrobe",
@@ -106,17 +113,18 @@ const CATALOG: FurnitureType[] = [
     height: { bottom: 0, top: 2.38 },
     blocksWalk: true,
     removable: true,
-    model: { piece: "wardrobe", box: { width: 1.12, height: 2.38, depth: 0.876 }, drawAt: { x: 0, z: -0.06 }, y: 0, shadow: { floor: [1.4, 1.2, 0.52] } }
+    model: { piece: "wardrobe", box: { width: 1.12, height: 2.38, depth: 0.876 }, y: 0, shadow: { floor: [1.4, 1.2, 0.52] } }
   },
   {
     id: "rug",
     name: "깔개",
     mount: "cover",
-    size: { width: 2, depth: 2 },
+    // 모델(2.576)이 들어가게 3×3 칸을 차지한다
+    size: { width: 3, depth: 3 },
     height: { bottom: 0, top: 0.028 },
     blocksWalk: false,
     removable: true,
-    model: { piece: "rug", box: { width: 2.576, height: 0.028, depth: 2.576 }, drawAt: { x: 0, z: 0 }, y: 0.004 }
+    model: { piece: "rug", box: { width: 2.576, height: 0.028, depth: 2.576 }, y: 0.004 }
   },
   {
     id: "board",
@@ -127,7 +135,7 @@ const CATALOG: FurnitureType[] = [
     blocksWalk: false,
     place: { id: "board", approach: [{ x: -0.2, z: 1.3 }, { x: 0.4, z: 1.3 }], faceTo: { x: 0, z: 0 }, label: { x: 0, y: 2.75, z: 0.3 } },
     removable: false,
-    model: { piece: "board", box: { width: 1.792, height: 1.4, depth: 0.126 }, drawAt: { x: 0, z: 0 }, y: 1.75, wallDepth: 0.06, shadow: { wall: [2.0, 1.6, 0.3] } }
+    model: { piece: "board", box: { width: 1.792, height: 1.4, depth: 0.126 }, y: 1.75, wallDepth: 0.06, shadow: { wall: [2.0, 1.6, 0.3] } }
   },
   {
     id: "window",
@@ -140,7 +148,7 @@ const CATALOG: FurnitureType[] = [
     removable: false,
     view: true,
     // 창문은 미닫이 창 두 벌을 나란히 놓은 넓은 창이다
-    model: { piece: "window", box: { width: 2.3, height: 1.876, depth: 0.35 }, drawAt: { x: 0, z: 0 }, y: 2.05, wallDepth: 0.17, shadow: { wall: [2.55, 2.15, 0.3] } }
+    model: { piece: "window", box: { width: 2.3, height: 1.876, depth: 0.35 }, y: 2.05, wallDepth: 0.17, shadow: { wall: [2.55, 2.15, 0.3] } }
   }
 ];
 
@@ -159,6 +167,42 @@ export function furnitureType(id: string): FurnitureType {
   const type = BY_ID.get(id);
   if (!type) throw new Error(`unknown furniture type: ${id}`);
   return type;
+}
+
+const round = (v: number) => Math.round(v * 1e6) / 1e6;
+
+/**
+ * 모델을 차지하는 칸 안에 맞춘다(모든 가구에 같은 규칙).
+ * - 모델 가로가 칸 폭(벽 가구는 벽을 따라 차지하는 폭)보다 크면 칸 폭에 맞게 줄인다. 바닥 가구·덮개는 깊이도 같다. 높이는 줄이지 않는다.
+ * - 바닥 가구는 모델 뒷면을 칸 뒤 끝에 맞춘다(뒷면을 벽에 대면 딱 붙는다). 덮개는 칸 가운데다.
+ * - 옆 자리는 offsetX를 따르되 모델이 칸 밖으로 나가지 않게 한다.
+ * - 그림자는 줄인 방향만 같은 비율로 줄인다.
+ */
+export function fittedModel(type: FurnitureType): FittedModel {
+  const { box } = type.model;
+  const x = Math.min(1, type.size.width / box.width);
+  const z = type.mount === "wall" ? 1 : Math.min(1, type.size.depth / box.depth);
+  const width = round(box.width * x);
+  const depth = round(box.depth * z);
+  const sideRoom = Math.max(0, (type.size.width - width) / 2);
+  const drawAt = {
+    x: round(Math.max(-sideRoom, Math.min(sideRoom, type.model.offsetX ?? 0))),
+    z: type.mount === "floor" ? round(-(type.size.depth - depth) / 2) : 0
+  };
+  const { shadow } = type.model;
+  return {
+    scale: { x, z },
+    box: { width, height: box.height, depth },
+    drawAt,
+    ...(shadow
+      ? {
+          shadow: {
+            ...(shadow.floor ? { floor: [round(shadow.floor[0] * x), round(shadow.floor[1] * z), shadow.floor[2]] as [number, number, number] } : {}),
+            ...(shadow.wall ? { wall: [round(shadow.wall[0] * x), shadow.wall[1], shadow.wall[2]] as [number, number, number] } : {})
+          }
+        }
+      : {})
+  };
 }
 
 /** 장소가 딸려 배치에 하나씩 꼭 있어야 하는 가구 종류. */

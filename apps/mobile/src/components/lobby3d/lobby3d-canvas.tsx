@@ -481,6 +481,8 @@ function buildWorld(layout: LobbyLayout): World {
       const pick = new THREE.Mesh(new THREE.BoxGeometry(place.pickBox.width, place.pickBox.height, place.pickBox.depth), new THREE.MeshBasicMaterial());
       pick.position.y = place.pickBox.height / 2;
       pick.visible = false;
+      // 넓힌 판정은 꾸미기에서만 쓴다(꾸미기 밖에서는 모델 크기로만 누른다)
+      pick.userData.widePick = true;
       g.add(pick);
     }
     return g;
@@ -496,10 +498,10 @@ function buildWorld(layout: LobbyLayout): World {
       g.userData.view = Boolean(place.view);
       // 누르면 그 가구(딸린 의자는 책상)를 고른다
       const id = place.item;
-      const tabletop = place.mount === "tabletop";
+      const parent = place.mount === "tabletop" ? place.parent : undefined;
       g.traverse((o) => {
         o.userData.pickPiece = id;
-        if (tabletop) o.userData.tabletop = true;
+        if (parent) o.userData.tabletopOn = parent;
       });
       pieceObjects.push(g);
     }
@@ -794,15 +796,17 @@ function Scene({
         return raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), floorHit) ? { x: floorHit.x, z: floorHit.z } : null;
       };
       // 편집 모드: 가구만 누르기 판정을 받는다(라이트루프는 숨어 있다). 가장 앞에 맞은 가구를 고르되,
-      // 탁상형 소품의 넓힌 판정에 맞았으면 받침 가구보다 소품을 먼저 고른다.
+      // 탁상형 소품의 판정 앞에 맞은 것이 그 소품의 받침 가구(딸린 의자 포함)뿐이면 소품을 먼저 고른다.
       if (currentEdit()) {
         const hits = raycaster.intersectObjects(world.pieceObjects, true).filter((h) => !h.object.userData.stowed);
-        const first = (hits.find((h) => h.object.userData.tabletop) ?? hits[0])?.object.userData as { pickPiece?: string } | undefined;
+        const at = hits.findIndex((h) => h.object.userData.tabletopOn);
+        const onParent = at > 0 && hits.slice(0, at).every((h) => h.object.userData.pickPiece === hits[at].object.userData.tabletopOn);
+        const first = (onParent ? hits[at] : hits[0])?.object.userData as { pickPiece?: string } | undefined;
         return { point: floorPoint(), mark: null, onCharacter: false, piece: first?.pickPiece ?? null, wall: wallUnderRay(raycaster.ray) };
       }
       // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).
       const objects: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...world.markObjects.map((m) => m.object), ...world.blockers];
-      const hits = raycaster.intersectObjects(objects, true).filter((h) => !h.object.userData.stowed);
+      const hits = raycaster.intersectObjects(objects, true).filter((h) => !h.object.userData.stowed && !h.object.userData.widePick);
       let mark: MarkId | null = null;
       let onCharacter = false;
       const first = hits[0]?.object.userData as { mark?: MarkId; isCharacter?: boolean; blocker?: boolean } | undefined;

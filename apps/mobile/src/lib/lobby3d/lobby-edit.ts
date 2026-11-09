@@ -147,7 +147,8 @@ export function freeSpotFor(layout: LobbyLayout, item: StoredItem): FurnitureIte
   for (let x = width / 2; x <= ROOM.width - width / 2 + EPS; x += 1) {
     for (let z = depth / 2; z <= ROOM.depth - depth / 2 + EPS; z += 1) spots.push({ x, z });
   }
-  const dist = (p: FloorPoint) => Math.hypot(p.x - center.x, p.z - center.z);
+  // 곧은 거리를 제곱으로 비교한다(반 칸 단위라 정확하고, 같은 거리면 아래 순서로 정한다)
+  const dist = (p: FloorPoint) => (p.x - center.x) ** 2 + (p.z - center.z) ** 2;
   spots.sort((a, b) => dist(a) - dist(b) || a.z - b.z || a.x - b.x);
   for (const { x, z } of spots) {
     const candidate = { id: item.id, type: item.type, floor: { x, z, facing: 0 as Facing } };

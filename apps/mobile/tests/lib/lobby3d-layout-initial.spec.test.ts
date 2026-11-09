@@ -8,6 +8,8 @@
 // 창밖 장면의 창 자리, 창문 빛을 계산할 때 넘기는 창 자리)은 Jest에서 three를 돌릴 수 없어 이 파일이 보지 않는다(보고에 적음).
 // 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 바닥 가구 모델이 칸에 맞게 줄고 뒷면이 칸 뒤 끝에 붙어, 명세의 "고칠 기존 테스트"대로
 // 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
+// 067(private 작업 폴더 067/01-main-spec.md)에서 책상 모델이 칸 폭 3.0을 다 채워 칸 가운데에 놓이고 책상 장소의 바라볼 지점이 (1.25, 5.5) → (1.5, 5.5)로
+// 옮겨져, 명세의 "고칠 기존 테스트"대로 책상 그림 자리(L1)·바라볼 지점(M2)과 그 지점을 보는 방향(P2의 desk, P3, C2의 out40)의 기대값만 고쳤다.
 //
 // 구현이 이름이나 부르는 방법을 바꾸면 아래 "지금 코드를 부르는 곳"만 따라 고친다. 그 아래의 기대값·단언·입력은 고치지 않는다.
 import { windowLightPanes, type SunPosition, type WindowLightPane } from "@/lib/lobby3d/daylight";
@@ -130,7 +132,7 @@ describe("[spec] 064-① 처음 배치: 3D에 놓는 가구 자리·방향(그�
     expect(byPiece).toEqual({
       board: { x: 1.8, y: 1.75, z: 0.06, rotY: 0, mark: "board", blocker: false },
       window: { x: 4.8, y: 2.05, z: 0.17, rotY: 0, mark: "window", blocker: false },
-      desk: { x: 1.25, y: 0, z: 5.5, rotY: 0, mark: "desk", blocker: false },
+      desk: { x: 1.5, y: 0, z: 5.5, rotY: 0, mark: "desk", blocker: false },
       chair: { x: 1.5, y: 0, z: 5.95, rotY: angle(Math.PI), mark: "desk", blocker: false },
       bookcase: { x: 0.438, y: 0, z: 2.5, rotY: angle(Math.PI / 2), mark: "bookcase", blocker: false },
       wardrobe: { x: 7.562, y: 0, z: 3.5, rotY: angle(-Math.PI / 2), mark: null, blocker: true },
@@ -251,7 +253,7 @@ describe("[spec] 064-① 처음 배치: 장소 다섯의 데이터(그대로 둘
     },
     desk: {
       label: "일기 책상",
-      faceTo: [1.25, 5.5],
+      faceTo: [1.5, 5.5],
       approach: [[1.5, 6.75]],
       prompt: "일기 책상이야.\n오늘 일기를 써 볼까?",
       buttonLabel: "들어가기",
@@ -418,7 +420,7 @@ describe("[spec] 064-① 처음 배치: 장소로 가는 길(그대로 둘 동�
   it.each([
     ["board", [2.2, 1.3], Math.atan2(1.8 - 2.2, 0 - 1.3)],
     ["window", [4.5, 1.55], Math.atan2(4.8 - 4.5, 0 - 1.55)],
-    ["desk", [1.5, 6.75], Math.atan2(1.25 - 1.5, 5.5 - 6.75)],
+    ["desk", [1.5, 6.75], Math.atan2(1.5 - 1.5, 5.5 - 6.75)],
     ["door", [4, 10.5], Math.atan2(0, 11.35 - 10.5)],
     ["bookcase", [1.4, 2.5], Math.atan2(0 - 1.4, 0)]
   ] as [MarkId, [number, number], number][])("P2: 방 가운데(4.2, 6.2)에서 %s 장소를 누르면 %j 에 도착해 그 장소를 바라본다", (id, at, heading) => {
@@ -439,7 +441,7 @@ describe("[spec] 064-① 처음 배치: 장소로 가는 길(그대로 둘 동�
     expect({ at: pt(sim), arrived: sim.arrived, heading: angle(sim.heading) }).toEqual({
       at: [1.5, 6.6],
       arrived: "desk",
-      heading: angle(Math.atan2(1.25 - 1.5, 5.5 - 6.6))
+      heading: angle(Math.atan2(1.5 - 1.5, 5.5 - 6.6))
     });
   });
 });
@@ -493,7 +495,7 @@ describe("[spec] 064-① 처음 배치: 일기 책상 의자 들어가기 동작
     expect(seen.out12).toMatchObject({ at: [2.15, 6.55], pull: 1, lift: 0, phase: "out" });
     expect(seen.out16).toMatchObject({ at: [1.825, 6.65], pull: 0.5, lift: 0, phase: "out" });
     expect(seen.out20).toMatchObject({ at: [1.5, 6.75], pull: 0, lift: 0, phase: null });
-    expect(seen.out40).toEqual({ at: [1.5, 6.75], pull: 0, lift: 0, phase: null, heading: angle(Math.atan2(1.25 - 1.5, 5.5 - 6.75)) });
+    expect(seen.out40).toEqual({ at: [1.5, 6.75], pull: 0, lift: 0, phase: null, heading: angle(Math.atan2(1.5 - 1.5, 5.5 - 6.75)) });
     expect(sim.arrived).toBe("desk");
   });
 });

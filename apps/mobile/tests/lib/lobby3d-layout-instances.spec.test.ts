@@ -16,6 +16,8 @@
 // 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 깔개가 차지하는 칸이 2×2에서 3×3이 되어, 명세의 "고칠 기존 테스트"대로
 // 2×2에 기대던 것만 고쳤다: P6·P11은 3×3 칸이 방 밖이 되는 자리(1.0, 9.0)·(4.6, 1.0)를 뜻(겹치지 않음, 창문 아래)이 같은 방 안 자리 (1.5, 9.5)·(4.5, 1.5)로
 // 옮겼고, P5·P13은 결과가 같아 이름의 칸 범위만 3×3으로 고쳤다. G2는 막힌 칸만 보아 그대로 두었다.
+// 067(private 작업 폴더 067/01-main-spec.md)에서 책상 장소의 바라볼 지점이 (1.25, 5.5) → (1.5, 5.5)로 옮겨져, 명세의 "고칠 기존 테스트"대로
+// P0_PLACES의 책상 바라볼 지점만 고쳤다(이 값을 쓰는 G4·G5의 기대값이 함께 바뀐다).
 
 import { ROOM, TAP_MAX_MOVE_PX, type PointerHit } from "@/lib/lobby3d/engine";
 import { furniturePlacements } from "@/lib/lobby3d/furniture-layout";
@@ -68,7 +70,7 @@ function placesOf(l: LobbyLayout) {
 const P0_PLACES = {
   board: { approach: [[1.6, 1.3], [2.2, 1.3]], faceTo: [1.8, 0] },
   window: { approach: [[4.5, 1.55], [5.1, 1.55]], faceTo: [4.8, 0] },
-  desk: { approach: [[1.5, 6.75]], faceTo: [1.25, 5.5] },
+  desk: { approach: [[1.5, 6.75]], faceTo: [1.5, 5.5] },
   bookcase: { approach: [[1.4, 2.5]], faceTo: [0, 2.5] }
 };
 

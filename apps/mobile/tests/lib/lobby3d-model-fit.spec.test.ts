@@ -18,6 +18,9 @@
 // - 구현이 줄인 크기를 다른 이름으로 내면 아래 "지금 코드를 부르는 곳"만 따라 고친다. 그 아래의 기대값·단언·입력은 고치지 않는다.
 // 가구 묶음(Kenney 모델)을 줄여 그리는지와 그림자 판의 크기는 three를 Jest에서 그릴 수 없어 이 파일이 보지 않는다(보고에 적음).
 // 분류: 바뀔 동작(고치기 전에는 실패해야 한다) A1~A4, B1·B2, C1~C7, D1~D8, E2. 그대로 둘 동작(고치기 전에도 통과해야 한다) E1, K1~K6.
+// 067(private 작업 폴더 067/01-main-spec.md)에서 책상만 모델 가로를 칸 폭 3.0에 맞춰 늘리고 칸 가운데에 놓게 되어, 명세의 "고칠 기존 테스트"대로
+// 책상 값만 고쳤다: 모델 가로 2.468 → 3.0(FIT_BOX, A3), 그리는 가로 자리 -0.25 → 0(DRAW_X, C3·C6·C7의 책상), 그림자 가로 2.8 → 2.8 × 3.0/2.468(B2).
+// 깊이·높이·옷장·책장·깔개·게시판·창문 값과 입력은 그대로다.
 import { ROOM, TAP_MAX_MOVE_PX, type PointerHit } from "@/lib/lobby3d/engine";
 import { furniturePlacements } from "@/lib/lobby3d/furniture-layout";
 import { LobbyEditor, isPlaceableLayout, snapPiece } from "@/lib/lobby3d/lobby-edit";
@@ -165,7 +168,8 @@ function drag(editor: LobbyEditor, id: string, from: { x: number; z: number }, t
 const FIT_BOX: Record<string, Box> = {
   wardrobe: { width: 1.0, height: 2.38, depth: 0.876 },
   bookcase: { width: 1.0, height: 2.464, depth: 0.876 },
-  desk: { width: 2.468, height: 1.292, depth: 1.0 }
+  // 067: 가로는 칸 폭 3.0에 맞춰 늘린다
+  desk: { width: 3.0, height: 1.292, depth: 1.0 }
 };
 /** 칸(가로×깊이). 바닥 가구의 칸은 이번에 바뀌지 않는다. */
 const CELL: Record<string, { width: number; depth: number }> = {
@@ -173,8 +177,8 @@ const CELL: Record<string, { width: number; depth: number }> = {
   bookcase: { width: 1, depth: 1 },
   desk: { width: 3, depth: 1 }
 };
-/** 그리는 가로 자리(가구 기준 x): 책상은 왼쪽으로 치우친 -0.25, 옷장·책장은 가운데. */
-const DRAW_X: Record<string, number> = { wardrobe: 0, bookcase: 0, desk: -0.25 };
+/** 그리는 가로 자리(가구 기준 x): 모두 가운데(067: 책상도 칸 폭을 다 채워 -0.25 치우침이 없어진다). */
+const DRAW_X: Record<string, number> = { wardrobe: 0, bookcase: 0, desk: 0 };
 
 // ---------- A. 줄인 모델 크기(바뀔 동작) ----------
 
@@ -187,8 +191,8 @@ describe("[spec] 066-② A: 칸보다 큰 방향만 칸에 맞게 줄인 모델 
     expect(r4Box(drawnOf(P0(), "bookcase").box)).toEqual({ width: 1, height: 2.464, depth: 0.876 });
   });
 
-  test("A3 책상: 깊이 1.318 → 1.0, 가로 2.468·높이 1.292 그대로", () => {
-    expect(r4Box(drawnOf(P0(), "desk").box)).toEqual({ width: 2.468, height: 1.292, depth: 1 });
+  test("A3 책상: 깊이 1.318 → 1.0, 가로 2.468 → 3.0(067: 칸 폭에 맞춰 늘림), 높이 1.292 그대로", () => {
+    expect(r4Box(drawnOf(P0(), "desk").box)).toEqual({ width: 3, height: 1.292, depth: 1 });
   });
 
   test("A4 줄인 크기는 놓인 방향과 상관없다: 옷장을 앞(0)·오른쪽(1)·뒤(2)·왼쪽(3)으로 놓아도 가로 1.0·깊이 0.876", () => {
@@ -207,10 +211,10 @@ describe("[spec] 066-② B: 바닥 그림자는 줄인 방향만 모델과 같�
     expect(r4List(drawnOf(P0(), "bookcase").floorShadow)).toEqual([1.25, 1.2, 0.52]);
   });
 
-  test("B2 책상 그림자: 깊이 1.65 → 1.65 × 1.0/1.318(약 1.25), 가로 2.8·진하기 0.5 그대로", () => {
+  test("B2 책상 그림자: 깊이 1.65 → 1.65 × 1.0/1.318(약 1.25), 가로 2.8 → 2.8 × 3.0/2.468(067: 모델과 같은 비율로 늘림), 진하기 0.5 그대로", () => {
     const s = drawnOf(P0(), "desk").floorShadow!;
     expect(s).not.toBeNull();
-    expect(r4(s[0])).toBe(2.8);
+    expect(s[0]).toBeCloseTo((2.8 * 3.0) / 2.468, 4);
     expect(s[1]).toBeCloseTo((1.65 * 1.0) / 1.318, 4);
     expect(s[1]).toBeCloseTo(1.25, 2);
     expect(r4(s[2])).toBe(0.5);
@@ -232,9 +236,9 @@ describe("[spec] 066-② C: 바닥 가구는 모델 뒷면을 칸 뒤 끝에 맞
     expect(r4(modelExtent(d, 3).maxX)).toBe(ROOM.width);
   });
 
-  test("C3 처음 배치의 책상: 그린 자리는 지금처럼 (1.25, 0, 5.5)(가로 -0.25 치우침, 깊이 1.0이 칸 깊이와 같아 가운데), 모델 앞뒤가 칸 5~6 안", () => {
+  test("C3 처음 배치의 책상: 그린 자리 (1.5, 0, 5.5)(067: 칸 폭을 다 채워 칸 가운데, 깊이 1.0이 칸 깊이와 같아 가운데), 모델 앞뒤가 칸 5~6 안", () => {
     const d = drawnOf(P0(), "desk");
-    expect({ x: r4(d.x), y: r4(d.y), z: r4(d.z) }).toEqual({ x: 1.25, y: 0, z: 5.5 });
+    expect({ x: r4(d.x), y: r4(d.y), z: r4(d.z) }).toEqual({ x: 1.5, y: 0, z: 5.5 });
     const e = modelExtent(d, 0);
     expect({ minZ: r4(e.minZ), maxZ: r4(e.maxZ) }).toEqual({ minZ: 5, maxZ: 6 });
   });
@@ -252,9 +256,9 @@ describe("[spec] 066-② C: 바닥 가구는 모델 뒷면을 칸 뒤 끝에 맞
     expect(r4(modelExtent(d, 0).minZ)).toBe(0);
   });
 
-  test("C6 책상을 뒷벽에 붙여 앞을 보게 (4.5, 0.5): 모델 뒷면 z 0, 앞면 z 1(칸 앞 끝), 가로 자리 4.25", () => {
+  test("C6 책상을 뒷벽에 붙여 앞을 보게 (4.5, 0.5): 모델 뒷면 z 0, 앞면 z 1(칸 앞 끝), 가로 자리 4.5(067: 칸 가운데)", () => {
     const d = drawnOf(withFloor("desk", { x: 4.5, z: 0.5, facing: 0 }), "desk");
-    expect({ x: r4(d.x), z: r4(d.z) }).toEqual({ x: 4.25, z: 0.5 });
+    expect({ x: r4(d.x), z: r4(d.z) }).toEqual({ x: 4.5, z: 0.5 });
     const e = modelExtent(d, 0);
     expect({ minZ: r4(e.minZ), maxZ: r4(e.maxZ) }).toEqual({ minZ: 0, maxZ: 1 });
   });
@@ -263,7 +267,7 @@ describe("[spec] 066-② C: 바닥 가구는 모델 뒷면을 칸 뒤 끝에 맞
   const facings = [0, 1, 2, 3] as Facing[];
   const grid: [string, (typeof types)[number], Facing][] = types.flatMap((t) => facings.map((f) => [`${t} 방향 ${f}`, t, f] as [string, (typeof types)[number], Facing]));
 
-  test.each(grid)("C7 %s((4.5, 8.5)): 모델이 칸 안이고, 뒷면이 칸 뒤 끝이며, 가로 자리가 그리는 자리(책상 -0.25, 옷장·책장 0)다", (_label, type, facing) => {
+  test.each(grid)("C7 %s((4.5, 8.5)): 모델이 칸 안이고, 뒷면이 칸 뒤 끝이며, 가로 자리가 그리는 자리(067부터 책상·옷장·책장 모두 0)다", (_label, type, facing) => {
     const floor = { x: 4.5, z: 8.5, facing };
     const d = drawnOf(withFloor(type, floor), type);
     const cell = current.bounds(type, floor);

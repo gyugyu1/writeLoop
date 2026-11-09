@@ -14,6 +14,8 @@
 // 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 깔개가 차지하는 칸이 2×2에서 3×3이 되어, 명세의 "고칠 기존 테스트"대로
 // 2×2에 기대던 것만 고쳤다: 깔개 끌기 G1·G2·G5의 놓이는 자리를 3칸에 맞춘 자리(칸 가운데가 0.5 단위)로 고쳤다(G1 (2, 2) → (1.5, 2.5), G2 (7, 7) → (6.5, 7.5),
 // G5 (5, 7) → (4.5, 7.5)). G3·G4·G6은 결과가 같아 이름 속 맞춘 자리만 고쳤다. 끄는 입력은 그대로다.
+// 067(private 작업 폴더 067/01-main-spec.md)에서 책상 장소의 바라볼 지점이 가구 기준 (-0.25, 0) → (0, 0)으로 옮겨져, 명세의 "고칠 기존 테스트"대로
+// M2의 바라볼 지점만 (5.25, 8.5) → (5.5, 8.5)로 고쳤다. 끄는 입력과 나머지 단언은 그대로다.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
@@ -871,7 +873,7 @@ describe("끌기", () => {
     await finishExpectSaved(K_FAR);
 
     expect(MARKS.desk.approach).toEqual([{ x: 5.5, z: 9.75 }]);
-    expect(MARKS.desk.faceTo).toEqual({ x: 5.25, z: 8.5 });
+    expect(MARKS.desk.faceTo).toEqual({ x: 5.5, z: 8.5 });
     expect(sortedSolid()).toEqual(["0,2", "4,8", "5,8", "6,8", "7,3"]);
     expect(CHAIR.home).toEqual({ x: 5.5, z: 8.95 });
     expect(currentFurnitureLayout()).toEqual(furniturePlacements(K_FAR));

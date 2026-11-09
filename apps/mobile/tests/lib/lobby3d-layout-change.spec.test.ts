@@ -16,6 +16,9 @@
 // 배치는 064 때처럼 바닥 가구·벽 가구 묶음으로 적고 바꾼 뒤 v2 목록으로 만든다(layoutWith). 목록 순서는 명세가 정하지 않아 id 순으로 견준다.
 // 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 바닥 가구 모델이 칸에 맞게 줄고 뒷면이 칸 뒤 끝에 붙어, 명세의 "고칠 기존 테스트"대로
 // 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
+// 067(private 작업 폴더 067/01-main-spec.md)에서 책상 모델이 칸 폭 3.0을 다 채워 칸 가운데에 놓이고 책상 장소의 바라볼 지점·이름표가 가구 기준
+// (-0.25, 0) → (0, 0)으로 옮겨져, 명세의 "고칠 기존 테스트"대로 책상 그림·바라볼 지점·이름표의 기대값(가구 가운데에서 x -0.25 → 0)과
+// 그 바라볼 지점을 보는 방향만 고쳤다(DEFAULT_PLACES·DEFAULT_PIECES의 책상, T1-1~T1-4, T5-2·T5-4·T5-5, R1). 서는 자리·의자·막힌 칸과 입력은 그대로다.
 //
 // 기준 코드에서는 새 입구가 없어 타입 검사가 깨지지 않게, 입구는 아래 "지금 코드를 부르는 곳"에서 require로 불러오고 타입은 결정 03대로 여기서 적는다.
 // 구현이 부르는 모양을 바꾸면 그곳만 따라 고친다(결정 03의 4). 그 아래의 기대값·단언·입력은 고치지 않는다.
@@ -237,7 +240,7 @@ const sortedTiles = (tiles: Iterable<string>) => [...tiles].sort();
 const DEFAULT_PLACES = {
   board: { approach: [[1.6, 1.3], [2.2, 1.3]], faceTo: [1.8, 0], label: [1.8, 2.75, 0.3] },
   window: { approach: [[4.5, 1.55], [5.1, 1.55]], faceTo: [4.8, 0], label: [4.8, 3.05, 0.3] },
-  desk: { approach: [[1.5, 6.75]], faceTo: [1.25, 5.5], label: [1.25, 2.1, 5.5] },
+  desk: { approach: [[1.5, 6.75]], faceTo: [1.5, 5.5], label: [1.5, 2.1, 5.5] },
   bookcase: { approach: [[1.4, 2.5]], faceTo: [0, 2.5], label: [0.9, 2.3, 2.5] }
 };
 
@@ -245,7 +248,7 @@ const DEFAULT_PLACES = {
 const DEFAULT_PIECES = {
   board: { x: 1.8, y: 1.75, z: 0.06, rotY: 0 },
   window: { x: 4.8, y: 2.05, z: 0.17, rotY: 0 },
-  desk: { x: 1.25, y: 0, z: 5.5, rotY: 0 },
+  desk: { x: 1.5, y: 0, z: 5.5, rotY: 0 },
   chair: { x: 1.5, y: 0, z: 5.95, rotY: angle(Math.PI) },
   bookcase: { x: 0.438, y: 0, z: 2.5, rotY: angle(Math.PI / 2) },
   wardrobe: { x: 7.562, y: 0, z: 3.5, rotY: angle(-Math.PI / 2) },
@@ -324,15 +327,15 @@ describe("[spec] 064-① 범위 3 T0: 처음 배치를 데이터로 넣으면 �
 describe("[spec] 064-① 범위 3 T1: 일기 책상을 오른쪽으로 1칸(가운데 (2.5, 5.5)) 옮기면 딸린 것이 모두 x +1", () => {
   const layout = () => layoutWith((l) => (l.floor.desk = { x: 2.5, z: 5.5, facing: 0 }));
 
-  it("T1-1: 책상 그림 (2.25, 5.5)·의자 (2.5, 5.95), 막힌 칸 \"1,5\" \"2,5\" \"3,5\", 장소(서는 자리 (2.5, 6.75), 바라볼 지점 (2.25, 5.5), 이름표 (2.25, 2.1, 5.5)), 의자 자리가 x +1", () => {
+  it("T1-1: 책상 그림 (2.5, 5.5)·의자 (2.5, 5.95), 막힌 칸 \"1,5\" \"2,5\" \"3,5\", 장소(서는 자리 (2.5, 6.75), 바라볼 지점 (2.5, 5.5), 이름표 (2.5, 2.1, 5.5)), 의자 자리가 x +1", () => {
     const g = current.geometry(layout());
     expect(piecesByName(g.pieces)).toEqual({
       ...DEFAULT_PIECES,
-      desk: { x: 2.25, y: 0, z: 5.5, rotY: 0 },
+      desk: { x: 2.5, y: 0, z: 5.5, rotY: 0 },
       chair: { x: 2.5, y: 0, z: 5.95, rotY: angle(Math.PI) }
     });
     expect(sortedTiles(g.solidTiles)).toEqual(["0,2", "1,5", "2,5", "3,5", "7,3"]);
-    expect(placesOf(g)).toEqual({ ...DEFAULT_PLACES, desk: { approach: [[2.5, 6.75]], faceTo: [2.25, 5.5], label: [2.25, 2.1, 5.5] } });
+    expect(placesOf(g)).toEqual({ ...DEFAULT_PLACES, desk: { approach: [[2.5, 6.75]], faceTo: [2.5, 5.5], label: [2.5, 2.1, 5.5] } });
     expect(chairOf(g)).toEqual({ ...DEFAULT_CHAIR, home: [2.5, 5.95], seat: [2.5, 6.45], side: [3.15, 6.55] });
   });
 
@@ -341,15 +344,15 @@ describe("[spec] 064-① 범위 3 T1: 일기 책상을 오른쪽으로 1칸(가�
     expect(sortedItems(current.active())).toEqual(sortedItems(layout()));
     expect(sortedTiles(current.solidTiles())).toEqual(["0,2", "1,5", "2,5", "3,5", "7,3"]);
     expect({ free05: current.isBlocked(0.5, 5.5), blocked35: current.isBlocked(3.5, 5.5) }).toEqual({ free05: false, blocked35: true });
-    expect(marksOf().desk).toEqual({ approach: [[2.5, 6.75]], faceTo: [2.25, 5.5] });
+    expect(marksOf().desk).toEqual({ approach: [[2.5, 6.75]], faceTo: [2.5, 5.5] });
     expect(pt(current.chair().seat)).toEqual([2.5, 6.45]);
     expect(pt(current.chair().side)).toEqual([3.15, 6.55]);
   });
 
-  it("T1-3: 넣으면 일기 책상 구역이 새 서는 자리를 가운데로 옮겨지고, 걸어가면 (2.5, 6.75)에 서서 (2.25, 5.5)를 본다", () => {
+  it("T1-3: 넣으면 일기 책상 구역이 새 서는 자리를 가운데로 옮겨지고, 걸어가면 (2.5, 6.75)에 서서 (2.5, 5.5)를 본다", () => {
     current.apply(layout());
     expect({ at: current.markZoneAt(2.5, 6.75), old: current.markZoneAt(1.0, 6.75) }).toEqual({ at: "desk", old: null });
-    expect(walkTo("desk")).toEqual({ result: "walk", at: [2.5, 6.75], arrived: "desk", heading: angle(Math.atan2(2.25 - 2.5, 5.5 - 6.75)) });
+    expect(walkTo("desk")).toEqual({ result: "walk", at: [2.5, 6.75], arrived: "desk", heading: angle(Math.atan2(2.5 - 2.5, 5.5 - 6.75)) });
   });
 
   it("T1-4: 넣으면 들어가기 동작이 (3.15, 6.55)로 비켜섰다가 (2.5, 6.45)에 앉고, 판을 연 동안 책상(뒤)을 본다", () => {
@@ -361,7 +364,7 @@ describe("[spec] 064-① 범위 3 T1: 일기 책상을 오른쪽으로 1칸(가�
       hold: { phase: "hold", heading: angle(Math.PI) },
       back: [2.5, 6.75],
       arrived: "desk",
-      heading: angle(Math.atan2(2.25 - 2.5, 5.5 - 6.75))
+      heading: angle(Math.atan2(2.5 - 2.5, 5.5 - 6.75))
     });
   });
 });
@@ -477,7 +480,7 @@ describe("[spec] 064-① 범위 3 T4: 옷장·깔개를 옮기면 막힌 칸만 
 // ---------- T5 일기 책상을 90도 돌림 ----------
 
 describe("[spec] 064-① 범위 3 T5: 일기 책상을 가운데 (1.5, 5.5)에서 오른쪽(facing 1, rotY π/2)으로 돌리면 딸린 것이 가운데를 중심으로 돈다", () => {
-  // 처음 배치에서 책상 가운데 (1.5, 5.5)로부터의 차이: 그림·바라볼 지점·이름표 (−0.25, 0), 의자 (0, 0.45), 서는 자리 (0, 1.25),
+  // 처음 배치에서 책상 가운데 (1.5, 5.5)로부터의 차이: 그림·바라볼 지점·이름표 (0, 0)(067), 의자 (0, 0.45), 서는 자리 (0, 1.25),
   // 앉는 자리 (0, 0.95), 비켜서는 자리 (0.65, 1.05), 의자를 빼는 방향 (0, 1). rotY π/2로 돌리면 (a, b) → (b, −a).
   const layout = () => layoutWith((l) => (l.floor.desk = { x: 1.5, z: 5.5, facing: 1 }));
 
@@ -485,14 +488,14 @@ describe("[spec] 064-① 범위 3 T5: 일기 책상을 가운데 (1.5, 5.5)에�
     expect(sortedTiles(current.geometry(layout()).solidTiles)).toEqual(["0,2", "1,4", "1,5", "1,6", "7,3"]);
   });
 
-  it("T5-2: 책상 그림 (1.5, 5.75) rotY π/2, 의자 (1.95, 5.5) rotY 3π/2, 장소(서는 자리 (2.75, 5.5), 바라볼 지점 (1.5, 5.75), 이름표 (1.5, 2.1, 5.75))", () => {
+  it("T5-2: 책상 그림 (1.5, 5.5) rotY π/2, 의자 (1.95, 5.5) rotY 3π/2, 장소(서는 자리 (2.75, 5.5), 바라볼 지점 (1.5, 5.5), 이름표 (1.5, 2.1, 5.5))", () => {
     const g = current.geometry(layout());
     expect(piecesByName(g.pieces)).toEqual({
       ...DEFAULT_PIECES,
-      desk: { x: 1.5, y: 0, z: 5.75, rotY: angle(Math.PI / 2) },
+      desk: { x: 1.5, y: 0, z: 5.5, rotY: angle(Math.PI / 2) },
       chair: { x: 1.95, y: 0, z: 5.5, rotY: angle((3 * Math.PI) / 2) }
     });
-    expect(placesOf(g)).toEqual({ ...DEFAULT_PLACES, desk: { approach: [[2.75, 5.5]], faceTo: [1.5, 5.75], label: [1.5, 2.1, 5.75] } });
+    expect(placesOf(g)).toEqual({ ...DEFAULT_PLACES, desk: { approach: [[2.75, 5.5]], faceTo: [1.5, 5.5], label: [1.5, 2.1, 5.5] } });
   });
 
   it("T5-3: 의자 자리: 처음 (1.95, 5.5), 빼는 방향 (1, 0), 앉는 자리 (2.45, 5.5), 비켜서는 자리 (2.55, 4.85), 판을 연 동안 방향 3π/2(−x, 책상 쪽)", () => {
@@ -507,7 +510,7 @@ describe("[spec] 064-① 범위 3 T5: 일기 책상을 가운데 (1.5, 5.5)에�
     });
   });
 
-  it("T5-4: 넣으면 칸 \"1,4\"·\"1,6\"이 막히고 \"0,5\"·\"2,5\"는 지나갈 수 있으며, 걸어가면 (2.75, 5.5)에 서서 (1.5, 5.75)를 본다", () => {
+  it("T5-4: 넣으면 칸 \"1,4\"·\"1,6\"이 막히고 \"0,5\"·\"2,5\"는 지나갈 수 있으며, 걸어가면 (2.75, 5.5)에 서서 (1.5, 5.5)를 본다", () => {
     current.apply(layout());
     expect({
       t14: current.isBlocked(1.5, 4.5),
@@ -515,9 +518,9 @@ describe("[spec] 064-① 범위 3 T5: 일기 책상을 가운데 (1.5, 5.5)에�
       t05: current.isBlocked(0.5, 5.5),
       t25: current.isBlocked(2.5, 5.5)
     }).toEqual({ t14: true, t16: true, t05: false, t25: false });
-    expect(marksOf().desk).toEqual({ approach: [[2.75, 5.5]], faceTo: [1.5, 5.75] });
+    expect(marksOf().desk).toEqual({ approach: [[2.75, 5.5]], faceTo: [1.5, 5.5] });
     expect({ at: current.markZoneAt(2.75, 5.5), old: current.markZoneAt(1.5, 6.75) }).toEqual({ at: "desk", old: null });
-    expect(walkTo("desk")).toEqual({ result: "walk", at: [2.75, 5.5], arrived: "desk", heading: angle(Math.atan2(1.5 - 2.75, 5.75 - 5.5)) });
+    expect(walkTo("desk")).toEqual({ result: "walk", at: [2.75, 5.5], arrived: "desk", heading: angle(Math.atan2(1.5 - 2.75, 5.5 - 5.5)) });
   });
 
   it("T5-5: 넣으면 들어가기 동작이 (2.55, 4.85)로 비켜섰다가 (2.45, 5.5)에 앉고, 판을 연 동안 책상 쪽(3π/2)을 본다", () => {
@@ -529,7 +532,7 @@ describe("[spec] 064-① 범위 3 T5: 일기 책상을 가운데 (1.5, 5.5)에�
       hold: { phase: "hold", heading: angle((3 * Math.PI) / 2) },
       back: [2.75, 5.5],
       arrived: "desk",
-      heading: angle(Math.atan2(1.5 - 2.75, 5.75 - 5.5))
+      heading: angle(Math.atan2(1.5 - 2.75, 5.5 - 5.5))
     });
   });
 });
@@ -585,7 +588,7 @@ describe("[spec] 064-① 범위 3: 처음 배치로 되돌리기", () => {
     current.apply(current.defaultLayout());
     expect(sortedItems(current.active())).toEqual(sortedItems(defaultLayout()));
     expect(sortedTiles(current.solidTiles())).toEqual(DEFAULT_SOLID);
-    expect(marksOf().desk).toEqual({ approach: [[1.5, 6.75]], faceTo: [1.25, 5.5] });
+    expect(marksOf().desk).toEqual({ approach: [[1.5, 6.75]], faceTo: [1.5, 5.5] });
     expect(pt(current.chair().seat)).toEqual([1.5, 6.45]);
     expect(pt(current.chair().side)).toEqual([2.15, 6.55]);
   });

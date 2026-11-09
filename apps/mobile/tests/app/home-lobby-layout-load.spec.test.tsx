@@ -11,6 +11,8 @@
 // S8-16(옛 모양 v1 본문은 처음 배치)은 066-① 명세 4·5로 더했다.
 // 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 바닥 가구 모델이 칸에 맞게 줄고 뒷면이 칸 뒤 끝에 붙어, 명세의 "고칠 기존 테스트"대로
 // 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
+// 067(private 작업 폴더 067/01-main-spec.md)에서 책상 장소의 바라볼 지점이 (1.25, 5.5) → (1.5, 5.5)로 옮겨져, 명세의 "고칠 기존 테스트"대로
+// 처음 배치 장소 값(P0_PLACES)의 책상 바라볼 지점만 고쳤다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, render, screen } from "@testing-library/react-native";
 import HomeScreen from "@/app/index";
@@ -168,7 +170,7 @@ const P0_SOLID = ["0,2", "0,5", "1,5", "2,5", "7,3"];
 const P0_PLACES: PlaceValues = {
   board: { approach: [{ x: 1.6, z: 1.3 }, { x: 2.2, z: 1.3 }], faceTo: { x: 1.8, z: 0 } },
   window: { approach: [{ x: 4.5, z: 1.55 }, { x: 5.1, z: 1.55 }], faceTo: { x: 4.8, z: 0 } },
-  desk: { approach: [{ x: 1.5, z: 6.75 }], faceTo: { x: 1.25, z: 5.5 } },
+  desk: { approach: [{ x: 1.5, z: 6.75 }], faceTo: { x: 1.5, z: 5.5 } },
   bookcase: { approach: [{ x: 1.4, z: 2.5 }], faceTo: { x: 0, z: 2.5 } }
 };
 

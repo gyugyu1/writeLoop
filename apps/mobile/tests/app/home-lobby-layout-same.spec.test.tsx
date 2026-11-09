@@ -6,6 +6,8 @@
 // 가짜·도우미는 앞 qa 테스트(home-lobby-layout-decisions.spec.test.tsx)와 같다. 그 파일은 커밋됐으므로 고치지 않고 이 파일에 옮겨 적었다.
 // 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터와 저장 본문이 v2(version 2, 가구 인스턴스 목록)로 바뀌어,
 // 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
+// 067(private 작업 폴더 067/01-main-spec.md)에서 책상 장소의 바라볼 지점이 (1.25, 5.5) → (1.5, 5.5)로 옮겨져, 명세의 "고칠 기존 테스트"대로
+// 처음 배치 장소 값(P0_PLACES)의 책상 바라볼 지점만 고쳤다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -158,7 +160,7 @@ const P0: LobbyLayout = v2(
 const P0_PLACES: PlaceValues = {
   board: { approach: [{ x: 1.6, z: 1.3 }, { x: 2.2, z: 1.3 }], faceTo: { x: 1.8, z: 0 } },
   window: { approach: [{ x: 4.5, z: 1.55 }, { x: 5.1, z: 1.55 }], faceTo: { x: 4.8, z: 0 } },
-  desk: { approach: [{ x: 1.5, z: 6.75 }], faceTo: { x: 1.25, z: 5.5 } },
+  desk: { approach: [{ x: 1.5, z: 6.75 }], faceTo: { x: 1.5, z: 5.5 } },
   bookcase: { approach: [{ x: 1.4, z: 2.5 }], faceTo: { x: 0, z: 2.5 } }
 };
 

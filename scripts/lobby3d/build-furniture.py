@@ -103,12 +103,13 @@ def rotate_z(meshes, deg):
 
 
 # ---------- Kenney 가구 ----------
-# 일기 책상은 다른 가구보다 1.2배 크게, 옷장·책장은 벽에서 나온 깊이만 1.25배로 한다(두툼하게)
+# 일기 책상은 다른 가구보다 1.2배 크게, 옷장·책장은 벽에서 나온 깊이만 1.25배로 한다(두툼하게). 탁상 스탠드는 책상 위에 올린다
 for piece, name, scale, depth in [
     ("desk", "desk", SCALE * 1.2, 1.0),
     ("chair", "chair", SCALE, 1.0),
     ("wardrobe", "bookcaseClosedDoors", SCALE, 1.25),
     ("rug", "rugRound", SCALE, 1.0),
+    ("tableLamp", "lampRoundTable", SCALE, 1.0),
 ]:
     finish(piece, import_piece(name), scale=scale, depth=depth)
 

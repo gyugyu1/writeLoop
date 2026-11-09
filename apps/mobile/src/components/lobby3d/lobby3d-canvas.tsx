@@ -476,6 +476,13 @@ function buildWorld(layout: LobbyLayout): World {
     const radius = Math.min(0.04, box.width / 4, box.height / 4, box.depth / 4);
     const part = kit.part(new RoundedBoxGeometry(box.width, Math.max(0.02, box.height), box.depth, 2, radius), 0xe39a64, 0.03, g);
     part.position.y = place.mount === "wall" ? 0 : box.height / 2;
+    // 작은 소품(탁상형)은 모델보다 넓은 보이지 않는 상자로도 누른다(누르기 판정은 보이는지와 상관없다)
+    if (place.pickBox) {
+      const pick = new THREE.Mesh(new THREE.BoxGeometry(place.pickBox.width, place.pickBox.height, place.pickBox.depth), new THREE.MeshBasicMaterial());
+      pick.position.y = place.pickBox.height / 2;
+      pick.visible = false;
+      g.add(pick);
+    }
     return g;
   };
   for (const place of placements) {
@@ -489,8 +496,10 @@ function buildWorld(layout: LobbyLayout): World {
       g.userData.view = Boolean(place.view);
       // 누르면 그 가구(딸린 의자는 책상)를 고른다
       const id = place.item;
+      const tabletop = place.mount === "tabletop";
       g.traverse((o) => {
         o.userData.pickPiece = id;
+        if (tabletop) o.userData.tabletop = true;
       });
       pieceObjects.push(g);
     }
@@ -575,7 +584,8 @@ function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[], 
     if (of) {
       o.position.set(place.x, place.y, place.z);
       o.rotation.y = place.rotY;
-      if (lifted !== null && place.item === lifted) {
+      // 받침 가구를 띄우면 위의 소품도 함께 뜬다
+      if (lifted !== null && (place.item === lifted || place.parent === lifted)) {
         raised.push({ object: o, base: { x: place.x, y: place.y, z: place.z, rotY: place.rotY }, wall: place.mount === "wall" });
       }
       if (place.companion) o.userData.chairBase = { x: place.x, z: place.z };
@@ -783,9 +793,11 @@ function Scene({
         const floorHit = new THREE.Vector3();
         return raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), floorHit) ? { x: floorHit.x, z: floorHit.z } : null;
       };
-      // 편집 모드: 가구만 누르기 판정을 받는다(라이트루프는 숨어 있다). 가장 앞에 맞은 가구를 고른다.
+      // 편집 모드: 가구만 누르기 판정을 받는다(라이트루프는 숨어 있다). 가장 앞에 맞은 가구를 고르되,
+      // 탁상형 소품의 넓힌 판정에 맞았으면 받침 가구보다 소품을 먼저 고른다.
       if (currentEdit()) {
-        const first = raycaster.intersectObjects(world.pieceObjects, true).find((h) => !h.object.userData.stowed)?.object.userData as { pickPiece?: string } | undefined;
+        const hits = raycaster.intersectObjects(world.pieceObjects, true).filter((h) => !h.object.userData.stowed);
+        const first = (hits.find((h) => h.object.userData.tabletop) ?? hits[0])?.object.userData as { pickPiece?: string } | undefined;
         return { point: floorPoint(), mark: null, onCharacter: false, piece: first?.pickPiece ?? null, wall: wallUnderRay(raycaster.ray) };
       }
       // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).
@@ -858,7 +870,8 @@ function Scene({
       );
       m.rotation.x = -Math.PI / 2;
       // 깔개 윗면(약 0.03칸)보다 위에 깐다(깔개 위의 가구 칸이 깔개에 가려지지 않게)
-      m.position.set((mark.minX + mark.maxX) / 2, MARK_LIFT, (mark.minZ + mark.maxZ) / 2);
+      // 탁상형 소품의 자리는 받침 가구 윗면에 칠한다
+      m.position.set((mark.minX + mark.maxX) / 2, (mark.y ?? 0) + MARK_LIFT, (mark.minZ + mark.maxZ) / 2);
       m.raycast = () => {};
       m.renderOrder = 2;
       markGroup.add(m);

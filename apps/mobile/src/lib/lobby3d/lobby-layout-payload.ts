@@ -1,10 +1,21 @@
 import { ROOM } from "./engine";
-import { REQUIRED_FURNITURE_TYPES, findFurnitureType } from "./furniture-catalog";
-import { makeLayout, storedItems, type Facing, type FloorPlacementData, type FurnitureItem, type LobbyLayout, type StoredItem, type WallPlacementData, type WallSide } from "./lobby-layout";
+import { REQUIRED_FURNITURE_TYPES, findFurnitureType, furnitureType, surfaceSlots } from "./furniture-catalog";
+import {
+  makeLayout,
+  storedItems,
+  type Facing,
+  type FloorPlacementData,
+  type FurnitureItem,
+  type LobbyLayout,
+  type StoredItem,
+  type TabletopPlacementData,
+  type WallPlacementData,
+  type WallSide
+} from "./lobby-layout";
 
 // 계정에 저장하는 가구 배치(서버 /api/lobby-layout)의 본문: 배치 데이터(가구 인스턴스 목록)에 모양 버전을 붙인 것.
 // 서버와 같은 기준으로 모양만 본다(아는 종류인지, 종류에 맞는 자리가 방 안인지, 방향·벽 값, id가 겹치지 않는지, 장소 가구가 하나씩 있는지,
-// 보관함에 치울 수 있는 종류만 있는지). 보관함(stored)은 없어도 되고, 빈 보관함은 보내지 않는다.
+// 보관함에 치울 수 있는 종류만 있는지, 탁상형 소품이 방의 받침 가구에 있는 자리에 하나씩 올라 있는지). 보관함(stored)은 없어도 되고, 빈 보관함은 보내지 않는다.
 // 겹침·길 막힘은 보지 않는다(편집 모드가 막는다).
 
 /** 지금 앱이 아는 배치 모양 버전. */
@@ -48,6 +59,16 @@ export function parseLobbyLayoutPayload(value: unknown): LobbyLayout | null {
       stored.push(item);
     }
   }
+  // 탁상형 소품은 방에 놓인 받침 가구의 있는 자리에 올리고, 한 자리에 하나만 둔다
+  const taken = new Set<string>();
+  for (const item of items) {
+    if (!item.on) continue;
+    const parent = items.find((p) => p.id === item.on!.parent);
+    if (!parent?.floor || item.on.slot >= surfaceSlots(furnitureType(parent.type)).length) return null;
+    const key = `${parent.id}#${item.on.slot}`;
+    if (taken.has(key)) return null;
+    taken.add(key);
+  }
   // 장소 가구는 하나씩 꼭 있어야 한다
   for (const type of REQUIRED_FURNITURE_TYPES) {
     if (items.filter((item) => item.type === type).length !== 1) return null;
@@ -70,6 +91,11 @@ function parseItem(value: unknown): FurnitureItem | null {
   if (typeof id !== "string" || !ID_PATTERN.test(id) || typeof type !== "string") return null;
   const kind = findFurnitureType(type);
   if (!kind) return null;
+  if (kind.mount === "tabletop") {
+    if (!hasExactKeys(value, ["id", "type", "on"])) return null;
+    const on = parseTabletopPiece(record.on);
+    return on ? { id, type, on } : null;
+  }
   if (kind.mount === "wall") {
     if (!hasExactKeys(value, ["id", "type", "wall"])) return null;
     const wall = parseWallPiece(record.wall);
@@ -86,6 +112,15 @@ function parseFloorPiece(value: unknown): FloorPlacementData | null {
   if (!isWithin(x, ROOM.width) || !isWithin(z, ROOM.depth)) return null;
   if (facing !== 0 && facing !== 1 && facing !== 2 && facing !== 3) return null;
   return { x, z, facing: facing as Facing };
+}
+
+function parseTabletopPiece(value: unknown): TabletopPlacementData | null {
+  if (!hasExactKeys(value, ["parent", "slot", "facing"])) return null;
+  const { parent, slot, facing } = value;
+  if (typeof parent !== "string" || !ID_PATTERN.test(parent)) return null;
+  if (typeof slot !== "number" || !Number.isInteger(slot) || slot < 0) return null;
+  if (facing !== 0 && facing !== 1 && facing !== 2 && facing !== 3) return null;
+  return { parent, slot, facing: facing as Facing };
 }
 
 function parseWallPiece(value: unknown): WallPlacementData | null {

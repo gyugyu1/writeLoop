@@ -10,9 +10,9 @@ export interface LocalPoint {
 
 /**
  * 배치 유형. floor: 바닥에 놓고 길을 막을 수 있는 가구(책상·책장). cover: 바닥에 까는 덮개(깔개), 바닥 가구와 겹쳐도 된다.
- * wall: 벽에 거는 가구(게시판·창문). 탁상형(가구 위에 올리는 소품)은 뒤에 더한다.
+ * wall: 벽에 거는 가구(게시판·창문). tabletop: 윗면이 있는 가구(받침 가구) 위의 자리에 올리는 소품(스탠드).
  */
-export type FurnitureMount = "floor" | "cover" | "wall";
+export type FurnitureMount = "floor" | "cover" | "wall" | "tabletop";
 
 /** 가구에 딸린 장소(로비의 기능 입구). engine의 MarkId 중 밖으로(door)를 뺀 것이다. */
 export type FurniturePlaceId = "board" | "window" | "desk" | "bookcase";
@@ -21,9 +21,9 @@ export interface FurnitureType {
   id: string;
   name: string;
   mount: FurnitureMount;
-  /** 차지하는 칸. floor·cover는 가로(x)×깊이(z) 칸(앞면 기준), wall은 벽을 따라 차지하는 폭(width, depth는 쓰지 않는다). */
+  /** 차지하는 칸. floor·cover는 가로(x)×깊이(z) 칸(앞면 기준), wall은 벽을 따라 차지하는 폭(width, depth는 쓰지 않는다), tabletop은 자리 한 칸(1×1)이다. */
   size: { width: number; depth: number };
-  /** 높이(칸). floor·cover는 바닥(0)에서 윗면까지, wall은 걸린 높이의 아래 끝~위 끝이다. */
+  /** 높이(칸). floor·cover는 바닥(0)에서 윗면까지, wall은 걸린 높이의 아래 끝~위 끝, tabletop은 받침 가구 윗면(0)에서 위 끝까지다. */
   height: { bottom: number; top: number };
   /** 지나갈 수 없게 칸을 막는지. */
   blocksWalk: boolean;
@@ -41,6 +41,11 @@ export interface FurnitureType {
     box: { width: number; height: number; depth: number };
     shadow: [number, number, number];
   };
+  /**
+   * 소품(tabletop)을 올릴 수 있는 윗면. 자리는 차지한 칸마다 하나씩, 칸 가운데·윗면 높이(height.top)에 생긴다.
+   * cells를 적으면 그 칸(가구 기준 칸 가운데 좌표)에만 자리가 있다(윗면이 칸 전체를 덮지 않는 가구).
+   */
+  surface?: { cells?: LocalPoint[] };
   /** 보관함으로 치울 수 있는지. 장소가 딸린 가구는 치울 수 없다(사용자 결정). */
   removable: boolean;
   /** 창밖 장면과 바닥 창문 빛을 내는 창문인지. */
@@ -54,7 +59,7 @@ export interface FurnitureType {
     offsetX?: number;
     /** 모델 가로가 칸 폭보다 작아도 칸 폭에 맞춰 늘리는지(칸을 꽉 채우는 가구). */
     fillWidth?: boolean;
-    /** 모델을 놓는 높이. 벽 가구는 모델 가운데 높이다. */
+    /** 모델을 놓는 높이. 벽 가구는 모델 가운데 높이, 탁상형은 받침 가구 윗면에서 잰 높이다. */
     y: number;
     /** 벽 가구가 벽 면에서 나온 거리. */
     wallDepth?: number;
@@ -91,6 +96,8 @@ const CATALOG: FurnitureType[] = [
       box: { width: 0.56, height: 1.316, depth: 0.56 },
       shadow: [0.75, 0.75, 0.42]
     },
+    // 칸마다 소품 자리가 하나씩(왼쪽·가운데·오른쪽)
+    surface: {},
     removable: false,
     // 그림이 칸보다 좁아 가로를 3칸에 꽉 차게 늘린다
     model: { piece: "desk", box: { width: 2.468, height: 1.292, depth: 1.318 }, fillWidth: true, y: 0, shadow: { floor: [2.8, 1.65, 0.5] } }
@@ -127,6 +134,16 @@ const CATALOG: FurnitureType[] = [
     blocksWalk: false,
     removable: true,
     model: { piece: "rug", box: { width: 2.576, height: 0.028, depth: 2.576 }, y: 0.004 }
+  },
+  {
+    id: "lamp",
+    name: "스탠드",
+    mount: "tabletop",
+    size: { width: 1, depth: 1 },
+    height: { bottom: 0, top: 0.88 },
+    blocksWalk: false,
+    removable: true,
+    model: { piece: "tableLamp", box: { width: 0.418, height: 0.88, depth: 0.475 }, y: 0 }
   },
   {
     id: "board",
@@ -206,6 +223,25 @@ export function fittedModel(type: FurnitureType): FittedModel {
         }
       : {})
   };
+}
+
+/** 탁상형 소품을 누르는 판정의 가로·깊이·높이 최소값(칸). 작은 소품도 누르기 쉽게 모델보다 넓힌다. */
+export const TABLETOP_PICK_MIN = 0.8;
+
+/**
+ * 윗면이 있는 가구의 소품 자리(가구 기준 바닥 좌표). 차지한 칸마다 하나씩 칸 가운데이고(카탈로그에 cells가 있으면 그 칸만),
+ * 번호(목록 순서)는 뒤쪽 줄(z가 작은 쪽)부터, 줄 안에서는 왼쪽(x가 작은 쪽)부터다. 윗면이 없으면 빈 목록이다.
+ */
+export function surfaceSlots(type: FurnitureType): LocalPoint[] {
+  if (!type.surface) return [];
+  const cells = type.surface.cells;
+  if (cells) return [...cells].sort((a, b) => a.z - b.z || a.x - b.x);
+  const { width, depth } = type.size;
+  const slots: LocalPoint[] = [];
+  for (let r = 0; r < depth; r += 1) {
+    for (let c = 0; c < width; c += 1) slots.push({ x: round(c + 0.5 - width / 2), z: round(r + 0.5 - depth / 2) });
+  }
+  return slots;
 }
 
 /** 장소가 딸려 배치에 하나씩 꼭 있어야 하는 가구 종류. */

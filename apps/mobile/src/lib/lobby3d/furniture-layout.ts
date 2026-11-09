@@ -1,5 +1,5 @@
 import { ROOM, activeLobbyLayout, type MarkId } from "./engine";
-import { fittedModel, furnitureType, type FurnitureMount } from "./furniture-catalog";
+import { TABLETOP_PICK_MIN, fittedModel, furnitureType, surfaceSlots, type FurnitureMount } from "./furniture-catalog";
 import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, makeLayout, storedItems, type FurnitureItem, type LobbyLayout } from "./lobby-layout";
 
 // 라룹이 방의 가구를 놓는 자리. Kenney 가구 묶음(lobby3d-furniture)과 코드로 만든 대체 모양(lobby3d-canvas)이 함께 쓴다.
@@ -19,6 +19,10 @@ export interface FurniturePlacement {
   mount: FurnitureMount;
   /** 칸에 맞춘 모델 크기(대체 모양 상자, 누르기 판정). 입구 발판은 없다. */
   box?: { width: number; height: number; depth: number };
+  /** 탁상형 소품을 누르는 판정 크기(모델보다 넓힌 것). 없으면 box로 누른다. */
+  pickBox?: { width: number; height: number; depth: number };
+  /** 탁상형 소품이 올라간 받침 가구 id. 받침 가구를 띄우면 함께 뜬다. */
+  parent?: string;
   /** 칸에 맞추려고 모델을 줄이거나 늘린 비율(가로 x·깊이 z). 입구 발판은 없다. */
   scale?: { x: number; z: number };
   /** 옅은 그림자(카탈로그 값을 모델과 같은 비율로 바꾼 것). */
@@ -49,9 +53,12 @@ const D = ROOM.depth;
  */
 export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
   const list: FurniturePlacement[] = layoutGeometry(layout, W).pieces.map((p) => {
-    const type = furnitureType(layout.items.find((item) => item.id === p.item)!.type);
-    const mark = type.place?.id;
-    const blocker = !mark && type.mount === "floor" && type.blocksWalk;
+    const item = layout.items.find((it) => it.id === p.item)!;
+    const type = furnitureType(item.type);
+    // 탁상형 소품을 누르면 받침 가구를 누른 것과 같다(꾸미기 밖에서 책상 위 스탠드를 누르면 책상 장소로 간다)
+    const owner = item.on ? furnitureType(layout.items.find((it) => it.id === item.on!.parent)!.type) : type;
+    const mark = owner.place?.id;
+    const blocker = !mark && owner.mount === "floor" && owner.blocksWalk;
     const chair = p.companion ? type.chair : undefined;
     const fit = fittedModel(type);
     return {
@@ -63,6 +70,16 @@ export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
       scale: chair ? { x: 1, z: 1 } : fit.scale,
       shadow: chair ? { floor: chair.shadow } : fit.shadow,
       ...(type.view && !chair ? { view: true } : {}),
+      ...(item.on
+        ? {
+            parent: item.on.parent,
+            pickBox: {
+              width: Math.max(TABLETOP_PICK_MIN, fit.box.width),
+              height: Math.max(TABLETOP_PICK_MIN, fit.box.height),
+              depth: Math.max(TABLETOP_PICK_MIN, fit.box.depth)
+            }
+          }
+        : {}),
       x: p.x,
       y: p.y,
       z: p.z,
@@ -78,16 +95,19 @@ export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
 /**
  * 3D를 만들 가구 자리: 방에 놓인 가구와, 보관함 가구(stowed, 숨겨 둔다).
  * 꾸미기에서 치우고 꺼낼 때 3D를 다시 만들지 않고 보이기만 바꾸려고 보관함 가구도 미리 만든다.
- * 보관함 가구는 자리가 없어 방 가운데(벽 가구는 뒷벽 가운데)에 만들어 두고, 꺼내면 편집 중 자리로 옮긴다.
+ * 보관함 가구는 자리가 없어 방 가운데(벽 가구는 뒷벽 가운데, 탁상형은 첫 받침 가구의 첫 자리)에 만들어 두고, 꺼내면 편집 중 자리로 옮긴다.
+ * 방에 받침 가구가 없으면 탁상형은 만들지 않는다(꺼낼 때 3D를 다시 만든다).
  */
 export function buildPlacements(layout: LobbyLayout): FurniturePlacement[] {
   const stored = storedItems(layout);
   if (stored.length === 0) return furniturePlacements(layout);
-  const parked: FurnitureItem[] = stored.map((item) =>
-    furnitureType(item.type).mount === "wall"
-      ? { ...item, wall: { wall: "back", along: W / 2 } }
-      : { ...item, floor: { x: W / 2, z: D / 2, facing: 0 } }
-  );
+  const base = layout.items.find((item) => item.floor && surfaceSlots(furnitureType(item.type)).length > 0);
+  const parked: FurnitureItem[] = stored.flatMap((item): FurnitureItem[] => {
+    const mount = furnitureType(item.type).mount;
+    if (mount === "tabletop") return base ? [{ ...item, on: { parent: base.id, slot: 0, facing: 0 } }] : [];
+    if (mount === "wall") return [{ ...item, wall: { wall: "back", along: W / 2 } }];
+    return [{ ...item, floor: { x: W / 2, z: D / 2, facing: 0 } }];
+  });
   const stowedIds = new Set(stored.map((item) => item.id));
   return furniturePlacements(makeLayout([...layout.items, ...parked], [])).map((p) =>
     stowedIds.has(p.item) && p.mark !== "door" ? { ...p, stowed: true } : p

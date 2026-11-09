@@ -1,5 +1,5 @@
 import type { FloorPoint, MarkId } from "./engine";
-import { fittedModel, furnitureType, type FurniturePlaceId, type FurnitureType } from "./furniture-catalog";
+import { fittedModel, furnitureType, surfaceSlots, type FurniturePlaceId, type FurnitureType } from "./furniture-catalog";
 
 // 방의 가구 배치(배치 데이터)와, 거기서 계산하는 값(막힌 칸, 장소의 서는 자리·바라볼 지점·이름표, 의자, 3D 자리).
 // 배치는 가구 인스턴스 목록이고, 가구마다의 값(크기·장소·의자·모델)은 카탈로그(furniture-catalog)에서 읽는다.
@@ -24,7 +24,14 @@ export interface WallPlacementData {
   along: number;
 }
 
-/** 배치한 가구 하나. 바닥형·덮개형은 floor, 벽 부착형은 wall 자리를 갖는다. */
+/** 탁상형 소품을 올린 자리: 받침 가구(방에 놓인 가구의 id)의 몇 번 자리, 받침 가구 기준 방향(0이면 받침 가구 앞면과 같은 쪽). */
+export interface TabletopPlacementData {
+  parent: string;
+  slot: number;
+  facing: Facing;
+}
+
+/** 배치한 가구 하나. 바닥형·덮개형은 floor, 벽 부착형은 wall, 탁상형은 on 자리를 갖는다. */
 export interface FurnitureItem {
   /** 배치 안에서 겹치지 않는 id. 처음 배치의 가구는 종류 id와 같다. */
   id: string;
@@ -32,6 +39,7 @@ export interface FurnitureItem {
   type: string;
   floor?: FloorPlacementData;
   wall?: WallPlacementData;
+  on?: TabletopPlacementData;
 }
 
 /** 보관함에 넣은 가구: 자리 없이 id와 종류만 있다. */
@@ -57,7 +65,9 @@ export const DEFAULT_LOBBY_LAYOUT: LobbyLayout = {
     { id: "wardrobe", type: "wardrobe", floor: { x: 7.5, z: 3.5, facing: 3 } },
     { id: "rug", type: "rug", floor: { x: 4.6, z: 7.2, facing: 0 } },
     { id: "board", type: "board", wall: { wall: "back", along: 1.8 } },
-    { id: "window", type: "window", wall: { wall: "back", along: 4.8 } }
+    { id: "window", type: "window", wall: { wall: "back", along: 4.8 } },
+    // 책상 왼쪽 자리
+    { id: "lamp", type: "lamp", on: { parent: "desk", slot: 0, facing: 0 } }
   ]
 };
 
@@ -77,7 +87,11 @@ export function makeLayout(items: FurnitureItem[], stored: StoredItem[]): LobbyL
 }
 
 /** 그 가구의 id를 자리만 바꾼 새 배치. */
-export function withItemPlacement(layout: LobbyLayout, id: string, placement: { floor?: FloorPlacementData; wall?: WallPlacementData }): LobbyLayout {
+export function withItemPlacement(
+  layout: LobbyLayout,
+  id: string,
+  placement: { floor?: FloorPlacementData; wall?: WallPlacementData; on?: TabletopPlacementData }
+): LobbyLayout {
   return makeLayout(
     layout.items.map((item) => (item.id === id ? { ...item, ...placement } : item)),
     storedItems(layout)
@@ -105,6 +119,7 @@ export function sameLobbyLayout(a: LobbyLayout, b: LobbyLayout): boolean {
     const q = layoutItem(b, p.id);
     if (!q || q.type !== p.type) return false;
     if (p.floor || q.floor) return Boolean(p.floor && q.floor) && p.floor!.x === q.floor!.x && p.floor!.z === q.floor!.z && p.floor!.facing === q.floor!.facing;
+    if (p.on || q.on) return Boolean(p.on && q.on) && p.on!.parent === q.on!.parent && p.on!.slot === q.on!.slot && p.on!.facing === q.on!.facing;
     return Boolean(p.wall && q.wall) && p.wall!.wall === q.wall!.wall && p.wall!.along === q.wall!.along;
   });
 }
@@ -202,10 +217,48 @@ export interface LayoutGeometry {
   };
 }
 
-/** 가구 하나의 기준 자리(바닥 가구는 칸 모양 가운데, 벽 가구는 벽 면 위). */
+/** 가구 하나의 기준 자리(바닥 가구는 칸 모양 가운데, 벽 가구는 벽 면 위). 탁상형은 받침 가구에서 계산한다(tabletopPose). */
 function poseOf(item: FurnitureItem, roomWidth: number): Pose {
   if (item.floor) return item.floor;
   return wallPose(item.wall!, roomWidth);
+}
+
+/**
+ * 탁상형 소품의 자리(방 좌표의 바닥 점과 방향)와 놓인 높이(받침 가구 윗면). 받침 가구가 방에 없거나 그 자리가 없으면 null.
+ * 받침 가구를 옮기거나 돌리면 자리도 따라 옮겨지고 돈다.
+ */
+export function tabletopPose(layout: LobbyLayout, item: FurnitureItem): { x: number; z: number; facing: Facing; y: number } | null {
+  const on = item.on;
+  const parent = on ? layoutItem(layout, on.parent) : undefined;
+  if (!on || !parent?.floor) return null;
+  const parentType = furnitureType(parent.type);
+  const slot = surfaceSlots(parentType)[on.slot];
+  if (!slot) return null;
+  const at = toRoom(parent.floor, slot);
+  return { x: at.x, z: at.z, facing: ((parent.floor.facing + on.facing) % 4) as Facing, y: parentType.height.top };
+}
+
+/** 받침 가구의 소품 자리 하나(방 좌표, 1칸 범위)와 윗면 높이. 편집 모드가 끌 때 가까운 자리를 찾고 자리를 칠할 때 쓴다. */
+export interface SurfaceSlot {
+  parent: string;
+  slot: number;
+  x: number;
+  z: number;
+  y: number;
+}
+
+/** 방의 받침 가구마다의 소품 자리(배치의 가구 순서, 그 안에서 자리 번호 순서). */
+export function surfaceSlotsOf(layout: LobbyLayout): SurfaceSlot[] {
+  const list: SurfaceSlot[] = [];
+  for (const item of layout.items) {
+    if (!item.floor) continue;
+    const type = furnitureType(item.type);
+    surfaceSlots(type).forEach((local, slot) => {
+      const at = toRoom(item.floor!, local);
+      list.push({ parent: item.id, slot, x: at.x, z: at.z, y: type.height.top });
+    });
+  }
+  return list;
 }
 
 /** 배치 데이터에서 3D 자리·막힌 칸·장소·의자를 계산한다. 장소 가구는 배치에 하나씩 있다(불러올 때 검사한다). */
@@ -215,8 +268,8 @@ export function layoutGeometry(layout: LobbyLayout, roomWidth: number): LayoutGe
   const places = {} as LayoutGeometry["places"];
   let chair: LayoutGeometry["chair"] | null = null;
 
-  const typed = layout.items.map((item) => ({ item, type: furnitureType(item.type), pose: poseOf(item, roomWidth) }));
-  // 벽 가구를 먼저 놓는다(그리는 순서를 예전과 같게)
+  const typed = layout.items.filter((item) => !item.on).map((item) => ({ item, type: furnitureType(item.type), pose: poseOf(item, roomWidth) }));
+  // 벽 가구를 먼저 놓는다(그리는 순서를 예전과 같게). 탁상형 소품은 맨 뒤에 받침 가구 위에 놓는다
   const ordered = [...typed.filter((t) => t.type.mount === "wall"), ...typed.filter((t) => t.type.mount !== "wall")];
   for (const { item, type, pose } of ordered) {
     const rotY = FACING_ROT[pose.facing].rotY;
@@ -230,6 +283,13 @@ export function layoutGeometry(layout: LobbyLayout, roomWidth: number): LayoutGe
     if (type.chair) chair = placeChair(item.id, type, pose, pieces);
     if (type.blocksWalk && type.mount !== "wall") addSolid(type, pose, solidTiles);
     if (type.place) places[type.place.id as PlaceId] = placeSpot(type, pose);
+  }
+  for (const item of layout.items) {
+    const pose = item.on ? tabletopPose(layout, item) : null;
+    if (!pose) continue;
+    const type = furnitureType(item.type);
+    const drawn = toRoom(pose, fittedModel(type).drawAt);
+    pieces.push({ item: item.id, piece: type.model.piece, companion: false, x: drawn.x, y: pose.y + type.model.y, z: drawn.z, rotY: FACING_ROT[pose.facing].rotY });
   }
 
   return { pieces, solidTiles, places, chair: chair ?? NO_CHAIR };

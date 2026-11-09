@@ -9,6 +9,8 @@ import {
   makeLayout,
   sameLobbyLayout,
   storedItems,
+  surfaceSlotsOf,
+  tabletopPose,
   wallLength,
   withItemPlacement,
   type Facing,
@@ -16,12 +18,13 @@ import {
   type FurnitureItem,
   type LobbyLayout,
   type StoredItem,
+  type TabletopPlacementData,
   type WallPlacementData,
   type WallSide
 } from "./lobby-layout";
 
 // 홈 '꾸미기'(편집 모드)의 가구 옮기기·돌리기와, 가구를 놓을 수 있는 배치인지 판단.
-// 바닥 가구는 칸에 맞춰 옮기고 돌리며, 벽 가구는 뒷벽·양옆 벽을 따라 반 칸 단위로 옮긴다.
+// 바닥 가구는 칸에 맞춰 옮기고 돌리며, 벽 가구는 뒷벽·양옆 벽을 따라 반 칸 단위로 옮긴다. 탁상형 소품은 받침 가구의 자리 사이로 옮기고 돌린다.
 // 치울 수 있는 가구는 보관함에 넣고, 보관함에서 꺼내면 방 가운데에서 가까운 놓을 수 있는 자리에 놓는다.
 // 가구마다의 값(배치 유형·크기·높이·장소·치울 수 있는지)은 카탈로그에서 읽고, 가구 이름을 따로 다루지 않는다.
 // 3D 그리기와 버튼은 화면이 맡고, 여기서는 편집 중인 배치와 고른 가구·빨간 가구(인스턴스 id)만 다룬다.
@@ -42,6 +45,11 @@ const typeOf = (layout: LobbyLayout, id: string): FurnitureType => furnitureType
 /** 벽에 거는 가구인지. */
 export function isWallPiece(layout: LobbyLayout, id: string): boolean {
   return typeOf(layout, id).mount === "wall";
+}
+
+/** 받침 가구 위에 올리는 탁상형 소품인지. */
+export function isTabletopPiece(layout: LobbyLayout, id: string): boolean {
+  return typeOf(layout, id).mount === "tabletop";
 }
 
 type Bounds = ReturnType<typeof floorPieceBounds>;
@@ -68,11 +76,20 @@ function underWallBounds(item: FurnitureItem, type: FurnitureType): Bounds {
  * 3. 바닥 가구의 윗면이 벽 가구의 아래 끝보다 높으면 그 벽 가구 바로 아래 칸에 있지 않다.
  * 4. 벽 가구 폭이 벽 안(양 끝에서 띄워)이고, 같은 벽의 벽 가구끼리 겹치지 않는다.
  * 5. 장소마다 서는 자리 중 하나에 입구(밖으로의 서는 자리)에서 걸어갈 수 있다.
+ * 6. 탁상형 소품은 방에 놓인 받침 가구의 있는 자리에 올라 있고, 한 자리에 하나만 있다. 탁상형은 1~5에 들지 않는다.
  */
 export function isPlaceableLayout(layout: LobbyLayout): boolean {
   const typed = layout.items.map((item) => ({ item, type: furnitureType(item.type) }));
-  const grounded = typed.filter((t) => t.type.mount !== "wall").map((t) => ({ ...t, box: floorPieceBounds(t.item.type, t.item.floor!) }));
-  const walls = typed.filter((t) => t.type.mount === "wall");
+  const taken = new Set<string>();
+  for (const { item } of typed) {
+    if (!item.on) continue;
+    if (!tabletopPose(layout, item)) return false;
+    const key = `${item.on.parent}#${item.on.slot}`;
+    if (taken.has(key)) return false;
+    taken.add(key);
+  }
+  const grounded = typed.filter((t) => t.item.floor).map((t) => ({ ...t, box: floorPieceBounds(t.item.type, t.item.floor!) }));
+  const walls = typed.filter((t) => t.item.wall);
   for (const { box } of grounded) {
     if (box.minX < -EPS || box.minZ < -EPS || box.maxX > ROOM.width + EPS || box.maxZ > ROOM.depth + EPS) return false;
   }
@@ -122,11 +139,18 @@ export function snapPiece(type: string, facing: Facing, point: FloorPoint): Floo
 /**
  * 보관함에서 꺼낸 가구를 놓을 자리. 그 가구를 넣은 배치가 놓을 수 있는 배치인 자리 가운데
  * 바닥 가구는 앞을 보는 방향(0)으로 칸에 맞춘 자리 중 방 가운데에서 가장 가까운 자리,
- * 벽 가구는 뒷벽·왼벽·오른벽 차례로 벽 가운데에서 가장 가까운 자리다. 없으면 null.
+ * 벽 가구는 뒷벽·왼벽·오른벽 차례로 벽 가운데에서 가장 가까운 자리, 탁상형은 받침 가구의 빈자리 중 첫 번째(배치의 가구 순서, 자리 번호 순서)다. 없으면 null.
  */
 export function freeSpotFor(layout: LobbyLayout, item: StoredItem): FurnitureItem | null {
   const type = furnitureType(item.type);
   const fits = (candidate: FurnitureItem) => isPlaceableLayout(makeLayout([...layout.items, candidate], storedItems(layout)));
+  if (type.mount === "tabletop") {
+    for (const spot of surfaceSlotsOf(layout)) {
+      const candidate = { id: item.id, type: item.type, on: { parent: spot.parent, slot: spot.slot, facing: 0 as Facing } };
+      if (fits(candidate)) return candidate;
+    }
+    return null;
+  }
   if (type.mount === "wall") {
     const half = type.size.width / 2;
     for (const wall of ["back", "left", "right"] as WallSide[]) {
@@ -155,6 +179,16 @@ export function freeSpotFor(layout: LobbyLayout, item: StoredItem): FurnitureIte
     if (fits(candidate)) return candidate;
   }
   return null;
+}
+
+/** 바닥 점에서 가장 가까운 받침 가구의 소품 자리(같은 거리면 배치의 가구 순서, 자리 번호 순서로 앞선 것). 받침 가구가 없으면 null. */
+function nearestSlot(layout: LobbyLayout, point: FloorPoint): { parent: string; slot: number } | null {
+  let best: { parent: string; slot: number; dist: number } | null = null;
+  for (const spot of surfaceSlotsOf(layout)) {
+    const dist = (spot.x - point.x) ** 2 + (spot.z - point.z) ** 2;
+    if (!best || dist < best.dist - EPS) best = { parent: spot.parent, slot: spot.slot, dist };
+  }
+  return best ? { parent: best.parent, slot: best.slot } : null;
 }
 
 /** 바닥 점에서 가장 가까운 벽과 그 벽을 따라간 자리. */
@@ -201,7 +235,7 @@ function nearRoom(p: FloorPoint): boolean {
   return p.x >= -DRAG_REACH && p.x <= ROOM.width + DRAG_REACH && p.z >= -DRAG_REACH && p.z <= ROOM.depth + DRAG_REACH;
 }
 
-/** 바닥에 칠할 칸: 가구가 차지하는 범위와, 거기에 놓을 수 있는지(빨강이면 false). */
+/** 바닥에 칠할 칸: 가구가 차지하는 범위와, 거기에 놓을 수 있는지(빨강이면 false). 탁상형 소품은 받침 가구 윗면의 그 자리 칸이다. */
 export interface EditMark {
   piece: string;
   minX: number;
@@ -209,6 +243,8 @@ export interface EditMark {
   minZ: number;
   maxZ: number;
   ok: boolean;
+  /** 칠하는 높이(받침 가구 윗면). 없으면 바닥이다. */
+  y?: number;
 }
 
 /** 벽에 칠할 자리: 벽 가구가 걸린 벽과 그 폭(벽을 따라간 범위), 거기에 놓을 수 있는지. */
@@ -260,6 +296,13 @@ type Drag =
       /** 처음 누른 벽 자리에서 가구 가운데까지(벽을 따라). */
       offset: number;
       from: WallPlacementData;
+    }
+  | {
+      kind: "tabletop";
+      piece: string;
+      /** 처음 누른 바닥 점에서 소품 자리까지. 끄는 동안 이 거리를 그대로 둔다. */
+      offset: FloorPoint;
+      from: TabletopPlacementData;
     };
 
 /** 편집 모드 한 번. 들어갈 때의 배치에서 시작한다. */
@@ -331,7 +374,7 @@ export class LobbyEditor {
     return null;
   }
 
-  /** 돌리기 버튼을 띄울 가구: 고른 바닥 가구(끄는 동안은 없다). 벽 가구는 돌리지 않는다. */
+  /** 돌리기 버튼을 띄울 가구: 고른 바닥 가구나 탁상형 소품(끄는 동안은 없다). 벽 가구는 돌리지 않는다. */
   get handle(): string | null {
     const id = this.selected;
     return id && !isWallPiece(this.layout, id) && !this.drag ? id : null;
@@ -345,13 +388,17 @@ export class LobbyEditor {
     return layoutItem(this.layout, id)!.wall!;
   }
 
+  private onOf(id: string): TabletopPlacementData {
+    return layoutItem(this.layout, id)!.on!;
+  }
+
   pointerDown(hit: PointerHit, screenX: number, screenY: number): EditNotice {
     this.press = null;
     this.drag = null;
     // 배치에 없는 가구(3D가 아직 다시 만들어지기 전의 치운 가구)를 맞혔으면 가구를 맞히지 않은 것으로 본다
     if (hit.piece && !layoutItem(this.layout, hit.piece)) hit = { ...hit, piece: null };
     // 고른 바닥 가구는 떠 있어 모양을 맞히기 어렵다. 그 칸 안을 눌렀으면(덮개가 아닌 다른 가구를 직접 맞히지 않았으면) 그 가구다
-    const kept = this.selected && !isWallPiece(this.layout, this.selected) ? this.selected : null;
+    const kept = this.selected && layoutItem(this.layout, this.selected)!.floor ? this.selected : null;
     const hitCover = hit.piece ? typeOf(this.layout, hit.piece).mount === "cover" : false;
     const onKept =
       kept !== null &&
@@ -388,6 +435,16 @@ export class LobbyEditor {
       return;
     }
     if (!hit.point) return;
+    if (drag.kind === "tabletop") {
+      // 손가락을 따라 받침 가구들의 자리 중 가장 가까운 자리로 옮긴다(바닥에는 놓이지 않는다)
+      const target = { x: hit.point.x + drag.offset.x, z: hit.point.z + drag.offset.z };
+      if (!nearRoom(target)) return;
+      const spot = nearestSlot(this.layout, target);
+      const current = this.onOf(drag.piece);
+      if (!spot || (current.parent === spot.parent && current.slot === spot.slot)) return;
+      this.layout = withItemPlacement(this.layout, drag.piece, { on: { parent: spot.parent, slot: spot.slot, facing: current.facing } });
+      return;
+    }
     // 가구가 옮겨 갈 자리로 본다(키 큰 가구 위쪽을 잡으면 손가락 바닥 점은 벽 너머로 떨어져도 갈 자리는 방 안일 수 있다)
     const target = { x: hit.point.x + drag.offset.x, z: hit.point.z + drag.offset.z };
     if (!nearRoom(target)) return;
@@ -407,6 +464,11 @@ export class LobbyEditor {
       // 다른 벽을 눌렀다고 보이면(벽 가장자리) 거리를 두지 않는다
       const offset = press.wall.wall === from.wall ? from.along - press.wall.along : 0;
       this.drag = { kind: "wall", piece: press.piece, offset, from };
+    } else if (isTabletopPiece(this.layout, press.piece)) {
+      if (!press.point) return false;
+      const at = tabletopPose(this.layout, layoutItem(this.layout, press.piece)!);
+      if (!at) return false;
+      this.drag = { kind: "tabletop", piece: press.piece, offset: { x: at.x - press.point.x, z: at.z - press.point.z }, from: this.onOf(press.piece) };
     } else {
       if (!press.point) return false;
       const from = this.floorOf(press.piece);
@@ -450,18 +512,34 @@ export class LobbyEditor {
       const now = this.wallOf(drag.piece);
       return now.wall === drag.from.wall && now.along === drag.from.along;
     }
+    if (drag.kind === "tabletop") {
+      const now = this.onOf(drag.piece);
+      return now.parent === drag.from.parent && now.slot === drag.from.slot && now.facing === drag.from.facing;
+    }
     const now = this.floorOf(drag.piece);
     return now.x === drag.from.x && now.z === drag.from.z && now.facing === drag.from.facing;
   }
 
   private revert(drag: Drag): void {
-    this.layout = withItemPlacement(this.layout, drag.piece, drag.kind === "wall" ? { wall: drag.from } : { floor: drag.from });
+    this.layout = withItemPlacement(
+      this.layout,
+      drag.piece,
+      drag.kind === "wall" ? { wall: drag.from } : drag.kind === "tabletop" ? { on: drag.from } : { floor: drag.from }
+    );
   }
 
-  /** 고른 바닥 가구를 90도 돌린다(앞 → 오른쪽 → 뒤 → 왼쪽). 놓을 수 없는 모양이 되어도 돌리고 빨간 가구로 둔다. */
+  /**
+   * 고른 바닥 가구를 90도 돌린다(앞 → 오른쪽 → 뒤 → 왼쪽). 놓을 수 없는 모양이 되어도 돌리고 빨간 가구로 둔다.
+   * 탁상형 소품은 자리는 그대로 두고 받침 가구 기준 방향만 돌린다.
+   */
   rotate(): void {
     const id = this.selected;
     if (!id || isWallPiece(this.layout, id) || this.drag) return;
+    if (isTabletopPiece(this.layout, id)) {
+      const on = this.onOf(id);
+      this.layout = withItemPlacement(this.layout, id, { on: { ...on, facing: ((on.facing + 1) % 4) as Facing } });
+      return;
+    }
     const current = this.floorOf(id);
     const facing = ((current.facing + 1) % 4) as Facing;
     this.layout = withItemPlacement(this.layout, id, { floor: { ...current, facing } });
@@ -482,12 +560,15 @@ export class LobbyEditor {
     if (this.selected && !layoutItem(this.layout, this.selected)) this.selected = null;
   }
 
-  /** 바닥에 칠할 칸: 고른 바닥 가구와, 고르지 않았어도 빨간 가구. */
+  /** 바닥에 칠할 칸: 고른 바닥 가구와, 고르지 않았어도 빨간 가구. 고른 탁상형 소품은 받침 가구 윗면의 그 자리 칸이다. */
   marks(): EditMark[] {
     const list: EditMark[] = [];
     const id = this.selected;
     const boundsOf = (piece: string) => floorPieceBounds(layoutItem(this.layout, piece)!.type, this.floorOf(piece));
-    if (id && !isWallPiece(this.layout, id)) list.push({ piece: id, ...boundsOf(id), ok: isPlaceableLayout(this.layout) });
+    if (id && isTabletopPiece(this.layout, id)) {
+      const at = tabletopPose(this.layout, layoutItem(this.layout, id)!);
+      if (at) list.push({ piece: id, minX: at.x - 0.5, maxX: at.x + 0.5, minZ: at.z - 0.5, maxZ: at.z + 0.5, y: at.y, ok: isPlaceableLayout(this.layout) });
+    } else if (id && !isWallPiece(this.layout, id)) list.push({ piece: id, ...boundsOf(id), ok: isPlaceableLayout(this.layout) });
     if (this.red && this.red !== id) list.push({ piece: this.red, ...boundsOf(this.red), ok: false });
     return list;
   }
@@ -521,6 +602,10 @@ export class LobbyEditor {
       const { wall, along } = this.wallOf(id);
       if (wall === "back") return { x: along, z: 1 };
       return wall === "left" ? { x: 1, z: along } : { x: ROOM.width - 1, z: along };
+    }
+    if (isTabletopPiece(this.layout, id)) {
+      const at = tabletopPose(this.layout, layoutItem(this.layout, id)!);
+      return at ? { x: at.x, z: at.z } : null;
     }
     const p = this.floorOf(id);
     return { x: p.x, z: p.z };

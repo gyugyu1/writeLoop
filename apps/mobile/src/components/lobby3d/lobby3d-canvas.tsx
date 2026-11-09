@@ -707,13 +707,19 @@ function Scene({
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   // 3D 가구는 지금 배치로 만들고, 배치가 바뀌면(layoutKey) 다시 만든다.
   // 꾸미기 중에는 끌기·돌리기 때 자리만 옮기고(poseFurniture), 방의 가구 목록이 바뀌면(치우기·꺼내기·처음 배치로) 편집 중 배치로 다시 만든다.
-  const builtFrom = edit?.layout ?? activeLobbyLayout();
+  // 꾸미기 밖에서는 늘 지금 배치로 만든다(꾸미기 중에 다시 만든 뒤 가구 목록이 같아진 채 나와도 이름표 자리까지 지금 배치로 돌아온다).
+  const live = activeLobbyLayout();
+  const builtFrom = edit?.layout ?? live;
   const furnitureIds = builtFrom.items
     .map((item) => item.id)
     .sort()
     .join(",");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const furnitureLayout = useMemo(() => builtFrom, [layoutKey, furnitureIds]);
+  const built = useRef<{ layout: LobbyLayout; key: string } | null>(null);
+  const buildKey = `${layoutKey}|${furnitureIds}`;
+  if (!built.current || built.current.key !== buildKey || (!edit && built.current.layout !== live)) {
+    built.current = { layout: builtFrom, key: buildKey };
+  }
+  const furnitureLayout = built.current.layout;
   const world = useMemo(() => buildWorld(furnitureLayout), [furnitureLayout]);
   // 시각에 따른 빛: 지금 보이는 색감(부드럽게 넘어가는 중인 값)과 구운 방에 곱하는 색
   const daylightState = useMemo(() => createDaylightState(daylight), []); // eslint-disable-line react-hooks/exhaustive-deps

@@ -348,6 +348,8 @@ export class LobbyEditor {
   pointerDown(hit: PointerHit, screenX: number, screenY: number): EditNotice {
     this.press = null;
     this.drag = null;
+    // 배치에 없는 가구(3D가 아직 다시 만들어지기 전의 치운 가구)를 맞혔으면 가구를 맞히지 않은 것으로 본다
+    if (hit.piece && !layoutItem(this.layout, hit.piece)) hit = { ...hit, piece: null };
     // 고른 바닥 가구는 떠 있어 모양을 맞히기 어렵다. 그 칸 안을 눌렀으면(덮개가 아닌 다른 가구를 직접 맞히지 않았으면) 그 가구다
     const kept = this.selected && !isWallPiece(this.layout, this.selected) ? this.selected : null;
     const hitCover = hit.piece ? typeOf(this.layout, hit.piece).mount === "cover" : false;

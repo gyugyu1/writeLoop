@@ -3,7 +3,7 @@ import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } 
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ROOM, activeLobbyLayout } from "@/lib/lobby3d/engine";
-import { currentFurnitureLayout, placementKey } from "@/lib/lobby3d/furniture-layout";
+import { currentFurnitureLayout, furniturePlacements, placementKey } from "@/lib/lobby3d/furniture-layout";
 import { viewWindow, wallPiecePose, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
@@ -37,13 +37,15 @@ interface BakedFurnitureProps {
   fallback: THREE.Object3D;
   /** 지금 보이는 하루의 때 색감과 계절(창밖 풍경이 따라간다). */
   daylight: DaylightState;
+  /** 가구를 만들 배치(3D 화면이 정한다). 없으면 지금 배치다. */
+  layout?: LobbyLayout;
   /** 창밖 장면이 따를 배치(창문이 걸린 벽과 자리). 없으면 지금 배치다. 편집 모드에서는 놓인 배치다. */
   lightLayout?: MutableRefObject<LobbyLayout>;
   /** 고른 창문이 떠 있는 만큼(편집 모드). 창밖 장면도 같은 만큼 옮겨 창틀과 함께 나온다. */
   windowLift?: MutableRefObject<{ x: number; y: number; z: number }>;
 }
 
-export function BakedFurniture({ fallback, daylight, lightLayout, windowLift }: BakedFurnitureProps) {
+export function BakedFurniture({ layout, fallback, daylight, lightLayout, windowLift }: BakedFurnitureProps) {
   const gltf = useLoader(GLTFLoader, FURNITURE_ASSET as string) as GLTF;
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판.
   // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 매 프레임 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
@@ -80,7 +82,7 @@ export function BakedFurniture({ fallback, daylight, lightLayout, windowLift }: 
     // 바닥의 창문 빛도 같은 창 안쪽 크기를 따른다(창 모델 크기가 바뀌면 함께 바뀐다)
     if (viewSource) daylight.opening = { width: viewSize.x, height: viewSize.y };
     const views: { piece: THREE.Object3D; halfWidth: number; halfHeight: number }[] = [];
-    for (const place of currentFurnitureLayout()) {
+    for (const place of layout ? furniturePlacements(layout) : currentFurnitureLayout()) {
       const source = gltf.scene.getObjectByName(place.piece);
       if (!source) continue;
       // useLoader가 준 장면은 앱 전체에서 함께 쓰므로 복제해서 쓴다(창문처럼 같은 가구를 여러 번 놓기도 한다).
@@ -114,7 +116,7 @@ export function BakedFurniture({ fallback, daylight, lightLayout, windowLift }: 
       root.add(piece);
     }
     return { root, view: views[0] ?? null };
-  }, [gltf, target, daylight]);
+  }, [gltf, target, daylight, layout]);
   const group = built.root;
 
   // 창밖 그리기: 창 정면에서 창 안쪽을 화면 삼아 들여다본다(눈이 창 정면에서 비껴 있어도 창 네 모서리가 그림 네 모서리에 맞는 비스듬한 원근).

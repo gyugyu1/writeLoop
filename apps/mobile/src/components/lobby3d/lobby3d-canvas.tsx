@@ -9,7 +9,7 @@ import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type Floor
 import { layoutGeometry, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
 import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
-import { currentFurnitureLayout, furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
+import { furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
 import { DaylightRig, createDaylightState } from "./lobby3d-daylight";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
@@ -361,9 +361,9 @@ interface World {
   sun: THREE.DirectionalLight;
 }
 
-function buildWorld(): World {
-  // 가구 자리는 지금 배치에서 계산한다
-  const placements = currentFurnitureLayout();
+function buildWorld(layout: LobbyLayout): World {
+  // 가구 자리는 받은 배치(지금 배치, 꾸미기 중에는 방의 가구 목록이 바뀐 편집 중 배치)에서 계산한다
+  const placements = furniturePlacements(layout);
   const kit = new WorldKit();
   const root = new THREE.Group();
   const W = ROOM.width;
@@ -444,7 +444,7 @@ function buildWorld(): World {
 
   // 가구. Kenney 가구 묶음(lobby3d-furniture)이 뜨기 전이나 불러오지 못했을 때 보이는 간단한 모양이고,
   // 묶음이 뜬 뒤에도 보이지 않는 채로 남아 장소·가구를 누르는 판정을 맡는다(three의 누르기 판정은 보이는지와 상관없다).
-  // 자리는 지금 배치(currentFurnitureLayout)를 따르고, 크기는 Kenney 가구와 비슷하게 맞춘다.
+  // 자리는 받은 배치를 따르고, 크기는 칸에 맞춘 모델 크기다.
   const furniture = new THREE.Group();
   root.add(furniture);
   const markObjects: World["markObjects"] = [];
@@ -499,8 +499,8 @@ function buildWorld(): World {
     }
   }
 
-  // 이름표 자리는 가구를 따라간다(지금 배치에서 계산). 밖으로 가는 입구 발판은 고정이다
-  const places = layoutGeometry(activeLobbyLayout(), ROOM.width).places;
+  // 이름표 자리는 가구를 따라간다(받은 배치에서 계산). 밖으로 가는 입구 발판은 고정이다
+  const places = layoutGeometry(layout, ROOM.width).places;
   const at = (p: { x: number; y: number; z: number }) => new THREE.Vector3(p.x, p.y, p.z);
   const labelPoints: Record<MarkId, THREE.Vector3> = {
     board: at(places.board.label),
@@ -705,8 +705,16 @@ function Scene({
   editLive,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
-  // buildWorld는 지금 배치를 읽는다. 배치가 바뀌면(layoutKey) 다시 만든다.
-  const world = useMemo(buildWorld, [layoutKey]);
+  // 3D 가구는 지금 배치로 만들고, 배치가 바뀌면(layoutKey) 다시 만든다.
+  // 꾸미기 중에는 끌기·돌리기 때 자리만 옮기고(poseFurniture), 방의 가구 목록이 바뀌면(치우기·꺼내기·처음 배치로) 편집 중 배치로 다시 만든다.
+  const builtFrom = edit?.layout ?? activeLobbyLayout();
+  const furnitureIds = builtFrom.items
+    .map((item) => item.id)
+    .sort()
+    .join(",");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const furnitureLayout = useMemo(() => builtFrom, [layoutKey, furnitureIds]);
+  const world = useMemo(() => buildWorld(furnitureLayout), [furnitureLayout]);
   // 시각에 따른 빛: 지금 보이는 색감(부드럽게 넘어가는 중인 값)과 구운 방에 곱하는 색
   const daylightState = useMemo(() => createDaylightState(daylight), []); // eslint-disable-line react-hooks/exhaustive-deps
   const roomTint = useMemo(() => new THREE.Color(0xffffff), []);
@@ -985,7 +993,8 @@ function Scene({
       <BakedFurnitureErrorBoundary>
         <Suspense fallback={null}>
           <BakedFurniture
-            key={`furniture-${layoutKey}`}
+            key={`furniture-${layoutKey}-${furnitureIds}`}
+            layout={furnitureLayout}
             fallback={world.furniture}
             daylight={daylightState}
             lightLayout={lightLayout}

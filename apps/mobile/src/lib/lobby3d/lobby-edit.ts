@@ -6,20 +6,24 @@ import {
   floorPieceSize,
   layoutGeometry,
   layoutItem,
+  makeLayout,
   sameLobbyLayout,
+  storedItems,
   wallLength,
   withItemPlacement,
   type Facing,
   type FloorPlacementData,
   type FurnitureItem,
   type LobbyLayout,
+  type StoredItem,
   type WallPlacementData,
   type WallSide
 } from "./lobby-layout";
 
 // 홈 '꾸미기'(편집 모드)의 가구 옮기기·돌리기와, 가구를 놓을 수 있는 배치인지 판단.
 // 바닥 가구는 칸에 맞춰 옮기고 돌리며, 벽 가구는 뒷벽·양옆 벽을 따라 반 칸 단위로 옮긴다.
-// 가구마다의 값(배치 유형·크기·높이·장소)은 카탈로그에서 읽고, 가구 이름을 따로 다루지 않는다.
+// 치울 수 있는 가구는 보관함에 넣고, 보관함에서 꺼내면 방 가운데에서 가까운 놓을 수 있는 자리에 놓는다.
+// 가구마다의 값(배치 유형·크기·높이·장소·치울 수 있는지)은 카탈로그에서 읽고, 가구 이름을 따로 다루지 않는다.
 // 3D 그리기와 버튼은 화면이 맡고, 여기서는 편집 중인 배치와 고른 가구·빨간 가구(인스턴스 id)만 다룬다.
 
 const EPS = 1e-6;
@@ -115,6 +119,43 @@ export function snapPiece(type: string, facing: Facing, point: FloorPoint): Floo
   return { x: Math.round(point.x - width / 2) + width / 2, z: Math.round(point.z - depth / 2) + depth / 2 };
 }
 
+/**
+ * 보관함에서 꺼낸 가구를 놓을 자리. 그 가구를 넣은 배치가 놓을 수 있는 배치인 자리 가운데
+ * 바닥 가구는 앞을 보는 방향(0)으로 칸에 맞춘 자리 중 방 가운데에서 가장 가까운 자리,
+ * 벽 가구는 뒷벽·왼벽·오른벽 차례로 벽 가운데에서 가장 가까운 자리다. 없으면 null.
+ */
+export function freeSpotFor(layout: LobbyLayout, item: StoredItem): FurnitureItem | null {
+  const type = furnitureType(item.type);
+  const fits = (candidate: FurnitureItem) => isPlaceableLayout(makeLayout([...layout.items, candidate], storedItems(layout)));
+  if (type.mount === "wall") {
+    const half = type.size.width / 2;
+    for (const wall of ["back", "left", "right"] as WallSide[]) {
+      const length = wallLength(wall, ROOM.width, ROOM.depth);
+      const spots: number[] = [];
+      for (let along = Math.ceil((half + WALL_END_GAP) / WALL_STEP) * WALL_STEP; along <= length - half - WALL_END_GAP + EPS; along += WALL_STEP) spots.push(along);
+      spots.sort((a, b) => Math.abs(a - length / 2) - Math.abs(b - length / 2) || a - b);
+      for (const along of spots) {
+        const candidate = { id: item.id, type: item.type, wall: { wall, along } };
+        if (fits(candidate)) return candidate;
+      }
+    }
+    return null;
+  }
+  const { width, depth } = floorPieceSize(item.type, 0);
+  const center = { x: ROOM.width / 2, z: ROOM.depth / 2 };
+  const spots: FloorPoint[] = [];
+  for (let x = width / 2; x <= ROOM.width - width / 2 + EPS; x += 1) {
+    for (let z = depth / 2; z <= ROOM.depth - depth / 2 + EPS; z += 1) spots.push({ x, z });
+  }
+  const dist = (p: FloorPoint) => Math.hypot(p.x - center.x, p.z - center.z);
+  spots.sort((a, b) => dist(a) - dist(b) || a.z - b.z || a.x - b.x);
+  for (const { x, z } of spots) {
+    const candidate = { id: item.id, type: item.type, floor: { x, z, facing: 0 as Facing } };
+    if (fits(candidate)) return candidate;
+  }
+  return null;
+}
+
 /** 바닥 점에서 가장 가까운 벽과 그 벽을 따라간 자리. */
 export function nearestWall(point: FloorPoint): { wall: WallSide; along: number } {
   const toBack = point.z;
@@ -192,8 +233,8 @@ export interface EditZone {
   approach: FloorPoint[];
 }
 
-/** 누른 결과. 화면이 안내를 띄운다. */
-export type EditNotice = "red-first" | "cannot-place" | null;
+/** 누른 결과. 화면이 안내를 띄운다. no-room은 보관함에서 꺼낼 자리가 없을 때다. */
+export type EditNotice = "red-first" | "cannot-place" | "no-room" | null;
 
 interface Press {
   piece: string | null;
@@ -247,6 +288,46 @@ export class LobbyEditor {
   /** 저장할 수 있는지(빨간 가구가 없어야 한다). */
   get canFinish(): boolean {
     return this.red === null;
+  }
+
+  /** '치우기' 버튼을 띄울 가구: 고른, 치울 수 있는 가구(끄는 동안은 없다). */
+  get storable(): string | null {
+    const id = this.selected;
+    return id && typeOf(this.layout, id).removable && !this.drag ? id : null;
+  }
+
+  /** 보관함에 든 가구. */
+  get stored(): StoredItem[] {
+    return storedItems(this.layout);
+  }
+
+  /** 고른 가구를 보관함에 넣는다(치울 수 있는 가구만). 고르기가 풀리고, 빨간 가구였으면 빨간 상태도 풀린다. */
+  store(): void {
+    const id = this.storable;
+    if (!id) return;
+    const item = layoutItem(this.layout, id)!;
+    this.layout = makeLayout(
+      this.layout.items.filter((p) => p.id !== id),
+      [...this.stored, { id: item.id, type: item.type }]
+    );
+    this.selected = null;
+    if (this.red === id) this.red = null;
+  }
+
+  /** 보관함에서 그 종류 하나를 꺼내 놓을 수 있는 자리에 놓고 고른다. 빨간 가구가 있거나 놓을 자리가 없으면 꺼내지 않는다. */
+  takeOut(type: string): EditNotice {
+    if (this.drag) return null;
+    if (this.red) return "red-first";
+    const item = this.stored.find((p) => p.type === type);
+    if (!item) return null;
+    const placed = freeSpotFor(makeLayout(this.layout.items, this.stored.filter((p) => p !== item)), item);
+    if (!placed) return "no-room";
+    this.layout = makeLayout(
+      [...this.layout.items, placed],
+      this.stored.filter((p) => p !== item)
+    );
+    this.selected = item.id;
+    return null;
   }
 
   /** 돌리기 버튼을 띄울 가구: 고른 바닥 가구(끄는 동안은 없다). 벽 가구는 돌리지 않는다. */
@@ -385,11 +466,14 @@ export class LobbyEditor {
     else if (this.red === id) this.red = null;
   }
 
-  /** 편집 중인 배치를 처음 배치로 되돌린다. */
+  /** 편집 중인 배치를 처음 배치로 되돌린다. 처음 배치에 없는 가구(방에 있든 보관함에 있든)는 버리지 않고 보관함에 넣는다. */
   resetToDefault(): void {
     this.press = null;
     this.drag = null;
-    this.layout = DEFAULT_LOBBY_LAYOUT;
+    const extra = [...this.layout.items, ...this.stored]
+      .filter((p) => !layoutItem(DEFAULT_LOBBY_LAYOUT, p.id))
+      .map((p) => ({ id: p.id, type: p.type }));
+    this.layout = extra.length > 0 ? makeLayout(DEFAULT_LOBBY_LAYOUT.items, extra) : DEFAULT_LOBBY_LAYOUT;
     this.red = null;
     // 처음 배치에 없는 가구를 골라 두었으면 고르기를 푼다
     if (this.selected && !layoutItem(this.layout, this.selected)) this.selected = null;

@@ -34,8 +34,16 @@ export interface FurnitureItem {
   wall?: WallPlacementData;
 }
 
+/** 보관함에 넣은 가구: 자리 없이 id와 종류만 있다. */
+export interface StoredItem {
+  id: string;
+  type: string;
+}
+
 export interface LobbyLayout {
   items: FurnitureItem[];
+  /** 보관함. 없으면 빈 보관함이다(빈 목록은 두지 않는다). */
+  stored?: StoredItem[];
 }
 
 /** 처음 배치. 로비를 처음 만들 때의 자리와 같다. */
@@ -58,13 +66,40 @@ export function layoutItem(layout: LobbyLayout, id: string): FurnitureItem | und
   return layout.items.find((item) => item.id === id);
 }
 
-/** 그 가구의 id를 자리만 바꾼 새 배치. */
-export function withItemPlacement(layout: LobbyLayout, id: string, placement: { floor?: FloorPlacementData; wall?: WallPlacementData }): LobbyLayout {
-  return { items: layout.items.map((item) => (item.id === id ? { ...item, ...placement } : item)) };
+/** 배치의 보관함(없으면 빈 목록). */
+export function storedItems(layout: LobbyLayout): StoredItem[] {
+  return layout.stored ?? [];
 }
 
-/** 두 배치의 가구(id·종류)와 자리·방향·벽이 모두 같은지. 순서는 보지 않는다. */
+/** 방의 가구와 보관함으로 배치를 만든다. 빈 보관함은 두지 않는다. */
+export function makeLayout(items: FurnitureItem[], stored: StoredItem[]): LobbyLayout {
+  return stored.length > 0 ? { items, stored } : { items };
+}
+
+/** 그 가구의 id를 자리만 바꾼 새 배치. */
+export function withItemPlacement(layout: LobbyLayout, id: string, placement: { floor?: FloorPlacementData; wall?: WallPlacementData }): LobbyLayout {
+  return makeLayout(
+    layout.items.map((item) => (item.id === id ? { ...item, ...placement } : item)),
+    storedItems(layout)
+  );
+}
+
+/** 보관함의 가구를 종류마다 묶은 것(처음 나온 순서). */
+export function storedGroups(layout: LobbyLayout): { type: string; count: number }[] {
+  const groups: { type: string; count: number }[] = [];
+  for (const item of storedItems(layout)) {
+    const group = groups.find((g) => g.type === item.type);
+    if (group) group.count += 1;
+    else groups.push({ type: item.type, count: 1 });
+  }
+  return groups;
+}
+
+/** 두 배치의 가구(id·종류)와 자리·방향·벽, 보관함(id·종류)이 모두 같은지. 순서는 보지 않는다. */
 export function sameLobbyLayout(a: LobbyLayout, b: LobbyLayout): boolean {
+  const storedA = storedItems(a);
+  const storedB = storedItems(b);
+  if (storedA.length !== storedB.length || !storedA.every((p) => storedB.some((q) => q.id === p.id && q.type === p.type))) return false;
   if (a.items.length !== b.items.length) return false;
   return a.items.every((p) => {
     const q = layoutItem(b, p.id);

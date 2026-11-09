@@ -6,7 +6,7 @@ import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
-import { layoutGeometry, storedItems, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
+import { layoutGeometry, layoutItem, storedItems, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
 import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { buildPlacements, furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
@@ -498,10 +498,8 @@ function buildWorld(layout: LobbyLayout): World {
       g.userData.view = Boolean(place.view);
       // 누르면 그 가구(딸린 의자는 책상)를 고른다
       const id = place.item;
-      const parent = place.mount === "tabletop" ? place.parent : undefined;
       g.traverse((o) => {
         o.userData.pickPiece = id;
-        if (parent) o.userData.tabletopOn = parent;
       });
       pieceObjects.push(g);
     }
@@ -796,11 +794,14 @@ function Scene({
         return raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), floorHit) ? { x: floorHit.x, z: floorHit.z } : null;
       };
       // 편집 모드: 가구만 누르기 판정을 받는다(라이트루프는 숨어 있다). 가장 앞에 맞은 가구를 고르되,
-      // 탁상형 소품의 판정 앞에 맞은 것이 그 소품의 받침 가구(딸린 의자 포함)뿐이면 소품을 먼저 고른다.
-      if (currentEdit()) {
+      // 탁상형 소품의 판정 앞에 맞은 것이 그 소품이 지금 올라간 받침 가구(딸린 의자 포함)뿐이면 소품을 먼저 고른다.
+      // 받침 가구는 편집 중 배치에서 읽는다(꾸미기 중 다른 받침 가구로 옮기거나 꺼내도 3D는 다시 만들지 않는다).
+      const editing = currentEdit();
+      if (editing) {
         const hits = raycaster.intersectObjects(world.pieceObjects, true).filter((h) => !h.object.userData.stowed);
-        const at = hits.findIndex((h) => h.object.userData.tabletopOn);
-        const onParent = at > 0 && hits.slice(0, at).every((h) => h.object.userData.pickPiece === hits[at].object.userData.tabletopOn);
+        const parentOf = (piece: unknown) => (typeof piece === "string" ? layoutItem(editing.layout, piece)?.on?.parent : undefined);
+        const at = hits.findIndex((h) => parentOf(h.object.userData.pickPiece));
+        const onParent = at > 0 && hits.slice(0, at).every((h) => h.object.userData.pickPiece === parentOf(hits[at].object.userData.pickPiece));
         const first = (onParent ? hits[at] : hits[0])?.object.userData as { pickPiece?: string } | undefined;
         return { point: floorPoint(), mark: null, onCharacter: false, piece: first?.pickPiece ?? null, wall: wallUnderRay(raycaster.ray) };
       }

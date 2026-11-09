@@ -146,6 +146,68 @@ const CATALOG: FurnitureType[] = [
     model: { piece: "tableLamp", box: { width: 0.418, height: 0.88, depth: 0.475 }, y: 0 }
   },
   {
+    id: "bed",
+    name: "침대",
+    mount: "floor",
+    size: { width: 2, depth: 3 },
+    height: { bottom: 0, top: 1.05 },
+    blocksWalk: true,
+    removable: true,
+    model: { piece: "bed", box: { width: 1.599, height: 1.05, depth: 3.15 }, y: 0, shadow: { floor: [1.95, 3.35, 0.5] } }
+  },
+  {
+    id: "nightstand",
+    name: "협탁",
+    mount: "floor",
+    size: { width: 1, depth: 1 },
+    height: { bottom: 0, top: 0.74 },
+    blocksWalk: true,
+    // 위에 소품 자리 하나
+    surface: {},
+    removable: true,
+    model: { piece: "nightstand", box: { width: 0.745, height: 0.737, depth: 0.608 }, y: 0, shadow: { floor: [0.95, 0.85, 0.45] } }
+  },
+  {
+    id: "floorLamp",
+    name: "바닥 스탠드",
+    mount: "floor",
+    size: { width: 1, depth: 1 },
+    height: { bottom: 0, top: 2.41 },
+    blocksWalk: true,
+    removable: true,
+    model: { piece: "floorLamp", box: { width: 0.418, height: 2.408, depth: 0.475 }, y: 0, shadow: { floor: [0.6, 0.65, 0.45] } }
+  },
+  {
+    id: "plant",
+    name: "화분",
+    mount: "floor",
+    size: { width: 1, depth: 1 },
+    height: { bottom: 0, top: 1.83 },
+    blocksWalk: true,
+    removable: true,
+    model: { piece: "plant", box: { width: 0.486, height: 1.636, depth: 0.574 }, y: 0, shadow: { floor: [0.7, 0.75, 0.45] } }
+  },
+  {
+    id: "smallPlant",
+    name: "작은 화분",
+    mount: "tabletop",
+    size: { width: 1, depth: 1 },
+    height: { bottom: 0, top: 0.41 },
+    blocksWalk: false,
+    removable: true,
+    model: { piece: "smallPlant", box: { width: 0.25, height: 0.37, depth: 0.249 }, y: 0 }
+  },
+  {
+    id: "books",
+    name: "책",
+    mount: "tabletop",
+    size: { width: 1, depth: 1 },
+    height: { bottom: 0, top: 0.29 },
+    blocksWalk: false,
+    removable: true,
+    model: { piece: "booksStack", box: { width: 0.419, height: 0.29, depth: 0.265 }, y: 0 }
+  },
+  {
     id: "board",
     name: "오늘의 질문 게시판",
     mount: "wall",
@@ -168,6 +230,16 @@ const CATALOG: FurnitureType[] = [
     view: true,
     // 창문은 미닫이 창 두 벌을 나란히 놓은 넓은 창이다
     model: { piece: "window", box: { width: 2.3, height: 1.876, depth: 0.35 }, y: 2.05, wallDepth: 0.17, shadow: { wall: [2.55, 2.15, 0.3] } }
+  },
+  {
+    id: "frame",
+    name: "액자",
+    mount: "wall",
+    size: { width: 1, depth: 0 },
+    height: { bottom: 1.6, top: 2.4 },
+    blocksWalk: false,
+    removable: true,
+    model: { piece: "frame", box: { width: 1, height: 0.8, depth: 0.084 }, y: 2.0, wallDepth: 0.042, shadow: { wall: [1.15, 0.95, 0.3] } }
   }
 ];
 

@@ -270,8 +270,11 @@ export interface EditZone {
   approach: FloorPoint[];
 }
 
-/** 누른 결과. 화면이 안내를 띄운다. no-room은 보관함에서 꺼낼 자리가 없을 때다. */
-export type EditNotice = "red-first" | "cannot-place" | "no-room" | null;
+/** 누른 결과. 화면이 안내를 띄운다. no-room은 보관함에서 꺼내거나 더할 자리가 없을 때, limit는 가구 수가 한도라 더할 수 없을 때다. */
+export type EditNotice = "red-first" | "cannot-place" | "no-room" | "limit" | null;
+
+/** 한 배치에 둘 수 있는 가구 수(방과 보관함을 합친 수, 저장 본문 검사와 같다). */
+export const MAX_LAYOUT_ITEMS = 40;
 
 interface Press {
   piece: string | null;
@@ -345,17 +348,41 @@ export class LobbyEditor {
     return storedItems(this.layout);
   }
 
-  /** 고른 가구를 보관함에 넣는다(치울 수 있는 가구만). 고르기가 풀리고, 빨간 가구였으면 빨간 상태도 풀린다. */
+  /**
+   * 고른 가구를 보관함에 넣는다(치울 수 있는 가구만). 고르기가 풀리고, 빨간 가구였으면 빨간 상태도 풀린다.
+   * 받침 가구면 위에 올린 소품도 함께 보관함에 넣는다(받침 가구 다음에 자리 번호 순서로).
+   */
   store(): void {
     const id = this.storable;
     if (!id) return;
     const item = layoutItem(this.layout, id)!;
+    const onTop = this.layout.items.filter((p) => p.on?.parent === id).sort((a, b) => a.on!.slot - b.on!.slot);
+    const gone = new Set([id, ...onTop.map((p) => p.id)]);
     this.layout = makeLayout(
-      this.layout.items.filter((p) => p.id !== id),
-      [...this.stored, { id: item.id, type: item.type }]
+      this.layout.items.filter((p) => !gone.has(p.id)),
+      [...this.stored, ...[item, ...onTop].map((p) => ({ id: p.id, type: p.type }))]
     );
     this.selected = null;
-    if (this.red === id) this.red = null;
+    if (this.red && gone.has(this.red)) this.red = null;
+  }
+
+  /**
+   * '가구 더하기': 그 종류를 새로 하나 만들어 보관함에서 꺼낼 때와 같은 자리에 놓고 고른다.
+   * id는 `<종류>-<번호>`(방과 보관함에서 쓰지 않은 가장 작은 1 이상의 번호)다.
+   * 빨간 가구가 있거나, 가구 수가 한도이거나, 놓을 자리가 없으면 만들지 않는다.
+   */
+  addNew(type: string): EditNotice {
+    if (this.drag) return null;
+    if (this.red) return "red-first";
+    if (this.layout.items.length + this.stored.length >= MAX_LAYOUT_ITEMS) return "limit";
+    const used = new Set([...this.layout.items, ...this.stored].map((p) => p.id));
+    let n = 1;
+    while (used.has(`${type}-${n}`)) n += 1;
+    const placed = freeSpotFor(this.layout, { id: `${type}-${n}`, type });
+    if (!placed) return "no-room";
+    this.layout = makeLayout([...this.layout.items, placed], this.stored);
+    this.selected = placed.id;
+    return null;
   }
 
   /** 보관함에서 그 종류 하나를 꺼내 놓을 수 있는 자리에 놓고 고른다. 빨간 가구가 있거나 놓을 자리가 없으면 꺼내지 않는다. */

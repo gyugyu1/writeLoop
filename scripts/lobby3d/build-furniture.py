@@ -110,6 +110,12 @@ for piece, name, scale, depth in [
     ("wardrobe", "bookcaseClosedDoors", SCALE, 1.25),
     ("rug", "rugRound", SCALE, 1.0),
     ("tableLamp", "lampRoundTable", SCALE, 1.0),
+    ("bed", "bedSingle", SCALE, 1.0),
+    ("nightstand", "cabinetBedDrawerTable", SCALE, 1.0),
+    ("floorLamp", "lampRoundFloor", SCALE, 1.0),
+    ("plant", "pottedPlant", SCALE, 1.0),
+    ("smallPlant", "plantSmall1", SCALE, 1.0),
+    ("booksStack", "books", SCALE, 1.0),
 ]:
     finish(piece, import_piece(name), scale=scale, depth=depth)
 
@@ -179,6 +185,25 @@ n1.data.transform(Matrix.Translation(Vector((0.12, 0.012, 0))) @ Matrix.Rotation
 p1 = box("pin1", (0.025, 0.02, 0.025), (-0.12, -0.02, 0.06), pin)
 p2 = box("pin2", (0.025, 0.02, 0.025), (0.12, -0.02, 0.035), pin)
 finish("board", parts + [n1, n2, p1, p2], wall_mounted=True)
+
+# 액자: 게시판과 같은 나무 틀 안에 하늘·언덕·해가 있는 단순한 그림. 가로 1칸·세로 0.8칸이 되게 Kenney 단위로 만든다.
+sky_paint = material("paint_sky", (0.62, 0.82, 0.95))
+hill_paint = material("paint_hill", (0.45, 0.72, 0.42))
+far_hill = material("paint_far_hill", (0.62, 0.8, 0.55))
+sun_paint = material("paint_sun", (1.0, 0.85, 0.35))
+FW, FH, FD, FF = 1.0 / SCALE, 0.8 / SCALE, 0.03, 0.03
+inner_w, inner_h = FW - 2 * FF, FH - 2 * FF
+art = [
+    box("pframe_top", (FW, FD, FF), (0, 0, FH / 2 - FF / 2), wood),
+    box("pframe_bottom", (FW, FD, FF), (0, 0, -FH / 2 + FF / 2), wood),
+    box("pframe_left", (FF, FD, FH), (-FW / 2 + FF / 2, 0, 0), wood),
+    box("pframe_right", (FF, FD, FH), (FW / 2 - FF / 2, 0, 0), wood),
+    box("paint_sky", (inner_w, FD * 0.5, inner_h), (0, 0.004, 0), sky_paint),
+    box("paint_far_hill", (inner_w * 0.6, FD * 0.5, inner_h * 0.42), (inner_w * 0.18, -0.002, -inner_h * 0.29), far_hill),
+    box("paint_hill", (inner_w, FD * 0.5, inner_h * 0.3), (0, -0.006, -inner_h * 0.35), hill_paint),
+    box("paint_sun", (0.035, FD * 0.5, 0.035), (-inner_w * 0.28, -0.004, inner_h * 0.22), sun_paint),
+]
+finish("frame", art, wall_mounted=True)
 
 # ---------- 둥근 모서리 ----------
 # 동물의 숲 가구처럼 모서리를 둥글린다. Kenney 모델은 면마다 꼭짓점이 갈라져 있어, 먼저 같은 자리 꼭짓점을 합친 뒤

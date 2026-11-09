@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, BackHandler, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, Animated, BackHandler, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Lobby3dCanvas, {
   type LobbyCanvasEdit,
@@ -26,7 +26,7 @@ import {
 } from "@/lib/lobby3d/engine";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
-import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
+import { FURNITURE_TYPES, furnitureType } from "@/lib/lobby3d/furniture-catalog";
 import { sameLobbyLayout, storedGroups, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import { useLobbyClock, type ClockOverride } from "@/lib/lobby3d/use-lobby-clock";
 import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/lib/lobby3d/view-storage";
@@ -57,6 +57,9 @@ const EDIT_SAVE_FAILED = "배치를 저장하지 못했어요. 다시 눌러 주
 const EDIT_CANNOT_PLACE = "여기에는 놓을 수 없어요. 원래 자리로 돌려놓았어요";
 const EDIT_NO_ROOM = "놓을 자리가 없어요. 가구를 옮기거나 치운 뒤 다시 꺼내 주세요";
 const STORAGE_EMPTY = "보관함이 비었어요";
+const EDIT_LIMIT = "가구는 40개까지 둘 수 있어요";
+/** '가구 더하기'에 보이는 종류: 치울 수 있는 모든 종류(카탈로그 순서). */
+const ADDABLE_TYPES = FURNITURE_TYPES.filter((type) => type.removable);
 
 /** 편집 모드에서 그릴 것과 '완료'를 누를 수 있는지, '치우기' 버튼을 띄울지, 보관함에 든 가구(종류마다 개수). */
 interface EditView extends LobbyCanvasEdit {
@@ -534,6 +537,17 @@ export default function Lobby3dScreen({
     else if (notice === "no-room") showToast(EDIT_NO_ROOM);
     refreshEdit();
   };
+  const addEdit = (type: string) => {
+    const editor = editorRef.current;
+    if (!editor || savingRef.current) return;
+    // 꺼낼 때처럼 더했든 못 더했든 목록을 닫는다
+    setStorageOpen(false);
+    const notice = editor.addNew(type);
+    if (notice === "red-first") showToast(EDIT_RED_FIRST);
+    else if (notice === "no-room") showToast(EDIT_NO_ROOM);
+    else if (notice === "limit") showToast(EDIT_LIMIT);
+    refreshEdit();
+  };
   const rotateEdit = () => {
     const editor = editorRef.current;
     if (!editor || savingRef.current) return;
@@ -835,16 +849,32 @@ export default function Lobby3dScreen({
                 <Text style={styles.decorText}>닫기</Text>
               </Pressable>
             </View>
-            {editView && editView.stored.length > 0 ? (
-              editView.stored.map((group) => (
-                <Pressable key={group.type} accessibilityRole="button" style={styles.storageRow} onPress={() => takeOutEdit(group.type)}>
-                  <Text style={styles.storageRowText}>{furnitureType(group.type).name}</Text>
-                  {group.count > 1 ? <Text style={styles.storageCount}>{`×${group.count}`}</Text> : null}
+            {/* 보관함과 가구 더하기 목록이 길어지면 판 안에서 넘긴다 */}
+            <ScrollView style={{ maxHeight: screenHeight * 0.55 }} contentContainerStyle={styles.storageList}>
+              {editView && editView.stored.length > 0 ? (
+                editView.stored.map((group) => (
+                  <Pressable key={group.type} accessibilityRole="button" style={styles.storageRow} onPress={() => takeOutEdit(group.type)}>
+                    <Text style={styles.storageRowText}>{furnitureType(group.type).name}</Text>
+                    {group.count > 1 ? <Text style={styles.storageCount}>{`×${group.count}`}</Text> : null}
+                  </Pressable>
+                ))
+              ) : (
+                <Text style={styles.storageEmpty}>{STORAGE_EMPTY}</Text>
+              )}
+              <Text style={styles.storageTitle}>가구 더하기</Text>
+              {ADDABLE_TYPES.map((type) => (
+                <Pressable
+                  key={type.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${type.name} 더하기`}
+                  style={styles.storageRow}
+                  onPress={() => addEdit(type.id)}
+                >
+                  <Text style={styles.storageRowText}>{type.name}</Text>
+                  <Text style={styles.storageCount}>+</Text>
                 </Pressable>
-              ))
-            ) : (
-              <Text style={styles.storageEmpty}>{STORAGE_EMPTY}</Text>
-            )}
+              ))}
+            </ScrollView>
           </Pressable>
         </Pressable>
       ) : null}
@@ -1113,6 +1143,7 @@ const styles = StyleSheet.create({
   },
   storageTitle: { fontSize: 16, fontWeight: "700", color: "#2B1810" },
   storageEmpty: { fontSize: 14, color: "#7A5A48", paddingVertical: 8 },
+  storageList: { gap: 10 },
   storageRow: {
     flexDirection: "row",
     alignItems: "center",

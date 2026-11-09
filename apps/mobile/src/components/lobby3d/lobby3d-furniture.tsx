@@ -3,7 +3,7 @@ import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } 
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ROOM, activeLobbyLayout } from "@/lib/lobby3d/engine";
-import { currentFurnitureLayout, furniturePlacements, placementKey } from "@/lib/lobby3d/furniture-layout";
+import { buildPlacements, currentFurnitureLayout, placementKey } from "@/lib/lobby3d/furniture-layout";
 import { viewWindow, wallPiecePose, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
@@ -82,7 +82,8 @@ export function BakedFurniture({ layout, fallback, daylight, lightLayout, window
     // 바닥의 창문 빛도 같은 창 안쪽 크기를 따른다(창 모델 크기가 바뀌면 함께 바뀐다)
     if (viewSource) daylight.opening = { width: viewSize.x, height: viewSize.y };
     const views: { piece: THREE.Object3D; halfWidth: number; halfHeight: number }[] = [];
-    for (const place of layout ? furniturePlacements(layout) : currentFurnitureLayout()) {
+    // 보관함 가구도 만들어 숨겨 둔다(꾸미기에서 꺼내면 3D 화면이 보인다)
+    for (const place of buildPlacements(layout ?? activeLobbyLayout())) {
       const source = gltf.scene.getObjectByName(place.piece);
       if (!source) continue;
       // useLoader가 준 장면은 앱 전체에서 함께 쓰므로 복제해서 쓴다(창문처럼 같은 가구를 여러 번 놓기도 한다).
@@ -112,6 +113,10 @@ export function BakedFurniture({ layout, fallback, daylight, lightLayout, window
         view.raycast = () => {};
         piece.add(view);
         views.push({ piece, halfWidth: viewSize.x / 2, halfHeight: viewSize.y / 2 });
+      }
+      if (place.stowed) {
+        piece.visible = false;
+        piece.userData.stowed = true;
       }
       root.add(piece);
     }

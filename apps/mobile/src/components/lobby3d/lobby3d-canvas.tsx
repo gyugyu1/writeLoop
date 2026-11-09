@@ -6,10 +6,10 @@ import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
-import { layoutGeometry, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
+import { layoutGeometry, storedItems, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
 import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
-import { furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
+import { buildPlacements, furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
 import { DaylightRig, createDaylightState } from "./lobby3d-daylight";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
@@ -361,9 +361,17 @@ interface World {
   sun: THREE.DirectionalLight;
 }
 
+/** 보관함 가구의 3D 물체를 숨기거나 보인다. 숨긴 물체는 누르기 판정도 받지 않는다(userData.stowed). */
+function setStowed(object: THREE.Object3D, stowed: boolean) {
+  object.visible = !stowed;
+  object.traverse((o) => {
+    o.userData.stowed = stowed;
+  });
+}
+
 function buildWorld(layout: LobbyLayout): World {
-  // 가구 자리는 받은 배치(지금 배치, 꾸미기 중에는 방의 가구 목록이 바뀐 편집 중 배치)에서 계산한다
-  const placements = furniturePlacements(layout);
+  // 가구 자리는 받은 배치에서 계산한다. 보관함 가구도 만들어 숨겨 둔다(꾸미기에서 꺼내면 보인다)
+  const placements = buildPlacements(layout);
   const kit = new WorldKit();
   const root = new THREE.Group();
   const W = ROOM.width;
@@ -425,6 +433,7 @@ function buildWorld(layout: LobbyLayout): World {
       m.raycast = () => {};
       // 편집 모드에서 가구를 따라 옮긴다(poseFurniture)
       m.userData.shadowOf = placementKey(place);
+      if (place.stowed) setStowed(m, true);
       root.add(m);
     }
     if (shade.wall) {
@@ -438,6 +447,7 @@ function buildWorld(layout: LobbyLayout): World {
       m.raycast = () => {};
       m.userData.shadowOf = placementKey(place);
       m.userData.shadowWall = true;
+      if (place.stowed) setStowed(m, true);
       root.add(m);
     }
   }
@@ -497,6 +507,7 @@ function buildWorld(layout: LobbyLayout): World {
       });
       blockers.push(g);
     }
+    if (place.stowed) setStowed(g, true);
   }
 
   // 이름표 자리는 가구를 따라간다(받은 배치에서 계산). 밖으로 가는 입구 발판은 고정이다
@@ -553,8 +564,14 @@ function poseFurniture(scene: THREE.Object3D, placements: FurniturePlacement[], 
   scene.traverse((o) => {
     const of = o.userData.furnitureOf as string | undefined;
     const shadowOf = o.userData.shadowOf as string | undefined;
+    if (of === undefined && shadowOf === undefined) return;
     const place = byKey.get((of ?? shadowOf) as string);
-    if (!place) return;
+    // 배치에 없는 가구(보관함)는 숨기고, 다시 놓이면 보인다
+    if (!place) {
+      if (!o.userData.stowed) setStowed(o, true);
+      return;
+    }
+    if (o.userData.stowed) setStowed(o, false);
     if (of) {
       o.position.set(place.x, place.y, place.z);
       o.rotation.y = place.rotY;
@@ -705,19 +722,15 @@ function Scene({
   editLive,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
-  // 3D 가구는 지금 배치로 만들고, 배치가 바뀌면(layoutKey) 다시 만든다.
-  // 꾸미기 중에는 끌기·돌리기 때 자리만 옮기고(poseFurniture), 방의 가구 목록이 바뀌면(치우기·꺼내기·처음 배치로) 편집 중 배치로 다시 만든다.
-  // 꾸미기 밖에서는 늘 지금 배치로 만든다(꾸미기 중에 다시 만든 뒤 가구 목록이 같아진 채 나와도 이름표 자리까지 지금 배치로 돌아온다).
+  // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치가 바뀌면(layoutKey) 다시 만든다.
+  // 꾸미기 중에는 다시 만들지 않는다. 끌기·돌리기는 자리만, 치우기·꺼내기는 보이기만 바꾼다(poseFurniture).
+  // 미리 만들지 않은 가구가 방에 나오면(드물다) 편집 중 배치로 다시 만들고, 그 뒤 꾸미기에서 나오면 지금 배치로 다시 만든다.
   const live = activeLobbyLayout();
-  const builtFrom = edit?.layout ?? live;
-  const furnitureIds = builtFrom.items
-    .map((item) => item.id)
-    .sort()
-    .join(",");
-  const built = useRef<{ layout: LobbyLayout; key: string } | null>(null);
-  const buildKey = `${layoutKey}|${furnitureIds}`;
-  if (!built.current || built.current.key !== buildKey || (!edit && built.current.layout !== live)) {
-    built.current = { layout: builtFrom, key: buildKey };
+  const built = useRef<{ layout: LobbyLayout; layoutKey: number; ids: Set<string> } | null>(null);
+  const missing = edit && built.current ? edit.layout.items.some((item) => !built.current!.ids.has(item.id)) : false;
+  if (!built.current || built.current.layoutKey !== layoutKey || missing || (!edit && built.current.layout !== live)) {
+    const from = edit?.layout ?? live;
+    built.current = { layout: from, layoutKey, ids: new Set([...from.items, ...storedItems(from)].map((item) => item.id)) };
   }
   const furnitureLayout = built.current.layout;
   const world = useMemo(() => buildWorld(furnitureLayout), [furnitureLayout]);
@@ -772,12 +785,12 @@ function Scene({
       };
       // 편집 모드: 가구만 누르기 판정을 받는다(라이트루프는 숨어 있다). 가장 앞에 맞은 가구를 고른다.
       if (currentEdit()) {
-        const first = raycaster.intersectObjects(world.pieceObjects, true)[0]?.object.userData as { pickPiece?: string } | undefined;
+        const first = raycaster.intersectObjects(world.pieceObjects, true).find((h) => !h.object.userData.stowed)?.object.userData as { pickPiece?: string } | undefined;
         return { point: floorPoint(), mark: null, onCharacter: false, piece: first?.pickPiece ?? null, wall: wallUnderRay(raycaster.ray) };
       }
       // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).
       const objects: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...world.markObjects.map((m) => m.object), ...world.blockers];
-      const hits = raycaster.intersectObjects(objects, true);
+      const hits = raycaster.intersectObjects(objects, true).filter((h) => !h.object.userData.stowed);
       let mark: MarkId | null = null;
       let onCharacter = false;
       const first = hits[0]?.object.userData as { mark?: MarkId; isCharacter?: boolean; blocker?: boolean } | undefined;
@@ -999,7 +1012,7 @@ function Scene({
       <BakedFurnitureErrorBoundary>
         <Suspense fallback={null}>
           <BakedFurniture
-            key={`furniture-${layoutKey}-${furnitureIds}`}
+            key={`furniture-${layoutKey}`}
             layout={furnitureLayout}
             fallback={world.furniture}
             daylight={daylightState}

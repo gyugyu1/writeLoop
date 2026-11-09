@@ -1,6 +1,6 @@
 import { ROOM, activeLobbyLayout, type MarkId } from "./engine";
 import { fittedModel, furnitureType, type FurnitureMount } from "./furniture-catalog";
-import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type LobbyLayout } from "./lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, makeLayout, storedItems, type FurnitureItem, type LobbyLayout } from "./lobby-layout";
 
 // 라룹이 방의 가구를 놓는 자리. Kenney 가구 묶음(lobby3d-furniture)과 코드로 만든 대체 모양(lobby3d-canvas)이 함께 쓴다.
 // 자리는 배치 데이터(lobby-layout)에서, 장소·막는 가구인지는 카탈로그(furniture-catalog)에서 계산한다.
@@ -25,6 +25,8 @@ export interface FurniturePlacement {
   shadow?: { floor?: [number, number, number]; wall?: [number, number, number] };
   /** 창밖 장면과 창문 빛을 내는 창문인지. */
   view?: boolean;
+  /** 보관함 가구(3D에 미리 만들어 숨겨 둔다). */
+  stowed?: boolean;
   x: number;
   y: number;
   z: number;
@@ -71,6 +73,25 @@ export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
   });
   list.push({ item: "exit", piece: "exit", mount: "floor", x: W / 2, y: 0, z: D + ROOM.stepDepth / 2, rotY: 0, mark: "door" });
   return list;
+}
+
+/**
+ * 3D를 만들 가구 자리: 방에 놓인 가구와, 보관함 가구(stowed, 숨겨 둔다).
+ * 꾸미기에서 치우고 꺼낼 때 3D를 다시 만들지 않고 보이기만 바꾸려고 보관함 가구도 미리 만든다.
+ * 보관함 가구는 자리가 없어 방 가운데(벽 가구는 뒷벽 가운데)에 만들어 두고, 꺼내면 편집 중 자리로 옮긴다.
+ */
+export function buildPlacements(layout: LobbyLayout): FurniturePlacement[] {
+  const stored = storedItems(layout);
+  if (stored.length === 0) return furniturePlacements(layout);
+  const parked: FurnitureItem[] = stored.map((item) =>
+    furnitureType(item.type).mount === "wall"
+      ? { ...item, wall: { wall: "back", along: W / 2 } }
+      : { ...item, floor: { x: W / 2, z: D / 2, facing: 0 } }
+  );
+  const stowedIds = new Set(stored.map((item) => item.id));
+  return furniturePlacements(makeLayout([...layout.items, ...parked], [])).map((p) =>
+    stowedIds.has(p.item) && p.mark !== "door" ? { ...p, stowed: true } : p
+  );
 }
 
 /** 처음 배치의 가구 자리. */

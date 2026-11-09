@@ -6,6 +6,10 @@
 // W1·W2의 숫자는 시나리오 가정 A6(옆벽 창도 뒷벽 창과 크기·높이 2.05·벽에서 0.05가 같다)에서 나온다. 창 안쪽 크기는 WINDOW_OPENING이다.
 // 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터가 v2(가구 인스턴스 목록)로 바뀌어,
 // 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대값은 그대로 두고 배치를 만드는 layoutOf만 v2로 고쳤다(처음 배치의 인스턴스 id는 종류 id와 같다).
+// 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 깔개가 차지하는 칸이 2×2에서 3×3이 되어, 명세의 "고칠 기존 테스트"대로
+// 2×2에 기대던 것만 고쳤다: N6·N7의 깔개 자리 (4.6, 1.0)·(1.0, 1.0)은 3×3 칸이 방 밖이라, 뜻(창문·게시판 바로 아래 칸에 걸친 깔개는 됨)이 같은
+// 방 안 자리 (4.5, 1.5)·(1.5, 1.5)로 옮겼다(칸 3~6·0~3이 창문·게시판 바로 아래 칸 z 0~1에 걸친다).
+
 import { daylightAt, windowLightPanes, type SunPosition, type WindowLightPane } from "@/lib/lobby3d/daylight";
 import { ROOM } from "@/lib/lobby3d/engine";
 import { WINDOW_OPENING } from "@/lib/lobby3d/furniture-layout";
@@ -82,8 +86,8 @@ describe("[spec] 064-④ P: 벽 가구를 놓을 수 있는 배치인지(명세 
     ["N3 책상 (6.5, 0.5, 0), 창문 왼벽 8.5: 벽 가구 아래가 아님", layoutOf({ window: left(8.5) }, { desk: { x: 6.5, z: 0.5, facing: 0 } }), true],
     ["N4(결정 11) 창문 왼벽 5.0: 책상 칸 0,5 바로 위", layoutOf({ window: left(5.0) }), false],
     ["N5(결정 11) 게시판 왼벽 5.0: 책상 칸 0,5 바로 위", layoutOf({ board: left(5.0) }), false],
-    ["N6 깔개 (4.6, 1.0, 0): 창문 아래라도 깔개는 됨", layoutOf({}, { rug: { x: 4.6, z: 1.0, facing: 0 } }), true],
-    ["N7 깔개 (1.0, 1.0, 0): 게시판 아래라도 깔개는 됨", layoutOf({}, { rug: { x: 1.0, z: 1.0, facing: 0 } }), true],
+    ["N6 깔개 (4.5, 1.5, 0): 창문 아래라도 깔개는 됨", layoutOf({}, { rug: { x: 4.5, z: 1.5, facing: 0 } }), true],
+    ["N7 깔개 (1.5, 1.5, 0): 게시판 아래라도 깔개는 됨", layoutOf({}, { rug: { x: 1.5, z: 1.5, facing: 0 } }), true],
     ["P30 P0", layoutOf({}), true],
     ["P30 게시판만 왼벽 7.5", layoutOf({ board: left(7.5) }), true],
     ["P30 창문만 오른벽 8.5", layoutOf({ window: right(8.5) }), true],

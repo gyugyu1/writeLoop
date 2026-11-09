@@ -14,6 +14,8 @@
 // - 구역 경계 근처는 판정이 갈리므로 보지 않는다: 확실히 안 = 0.9칸 안, 확실히 밖 = 1.1칸 밖, 겹치는 곳은 두 거리 차이가 0.1칸 넘을 때만 본다.
 // 03 결정(2026-11-08): 명세 2에서 "이름표를 누르면"을 뺐다. 책장은 가구를 누를 때만 걸어간다(B3). 이름표가 누르기를 받지 않는 것은 화면 테스트 C2·K3가 본다.
 // 좌표(구현의 약속): 바닥 한 칸 = 1, x는 왼쪽→오른쪽(0..8), z는 뒷벽→앞(0..11). 바라보는 방향 0 = +z, atan2(dx, dz).
+// 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 바닥 가구 모델이 칸에 맞게 줄고 뒷면이 칸 뒤 끝에 붙어, 명세의 "고칠 기존 테스트"대로
+// 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
 import { FURNITURE_LAYOUT } from "@/lib/lobby3d/furniture-layout";
 import {
   LobbySim,
@@ -39,7 +41,7 @@ const BOOK_LABEL = "학습 기록";
 const BOOK_PROMPT = "지금까지 쓴 기록이 모여 있어.\n기록을 볼까?";
 const BOOK_BUTTON = "들어가기";
 /** 책장 가구 자리(지금 그대로, K2). */
-const BOOKCASE_SPOT = { x: 0.44, z: 2.5 };
+const BOOKCASE_SPOT = { x: 0.438, z: 2.5 };
 /** 지금 도착했을 때 바라보는 정도(작업 058 S23과 같은 허용치). */
 const FACE_TOLERANCE = 0.15;
 /**
@@ -549,10 +551,10 @@ describe("[spec] 작업 062 그대로 둘 동작", () => {
     expect({ count: wrong.length, first: wrong.slice(0, 8) }).toEqual({ count: 0, first: [] });
   });
 
-  it("K2: 책장 가구는 왼쪽 벽 x 0.44, z 2.5에 앞면이 방 쪽(+x)을 보게 그대로 있고, 책장 칸 \"0,2\"는 지나갈 수 없다", () => {
+  it("K2: 책장 가구는 왼쪽 벽 x 0.438, z 2.5에 앞면이 방 쪽(+x)을 보게 그대로 있고, 책장 칸 \"0,2\"는 지나갈 수 없다", () => {
     const pieces = FURNITURE_LAYOUT.filter((place) => place.piece === "bookcase");
     expect(pieces).toHaveLength(1);
-    expect({ x: pieces[0].x, y: pieces[0].y, z: pieces[0].z, rotY: pieces[0].rotY }).toEqual({ x: 0.44, y: 0, z: 2.5, rotY: Math.PI / 2 });
+    expect({ x: pieces[0].x, y: pieces[0].y, z: pieces[0].z, rotY: pieces[0].rotY }).toEqual({ x: 0.438, y: 0, z: 2.5, rotY: Math.PI / 2 });
     expect(SOLID_TILES.has("0,2")).toBe(true);
   });
 });

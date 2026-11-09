@@ -9,6 +9,8 @@
 // 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
 // S8-1의 "V+1"은 3이 되고, S8-4는 v2에서 꼭 있어야 하는 가구가 장소 가구뿐이라(066-① 명세 4) 빠뜨리는 가구를 옷장에서 책장으로 바꿨다.
 // S8-16(옛 모양 v1 본문은 처음 배치)은 066-① 명세 4·5로 더했다.
+// 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 바닥 가구 모델이 칸에 맞게 줄고 뒷면이 칸 뒤 끝에 붙어, 명세의 "고칠 기존 테스트"대로
+// 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, render, screen } from "@testing-library/react-native";
 import HomeScreen from "@/app/index";
@@ -478,8 +480,8 @@ describe("A. 홈을 열 때 불러와 적용", () => {
     expectApplied(L1, L1_SOLID, L1_PLACES);
     expect(markZoneAt(1.4, 4.5)).toBe("bookcase");
     expect(markZoneAt(1.4, 2.5)).toBeNull();
-    expectPiece("bookcase", { x: 0.44, y: 0, z: 4.5, rotY: Math.PI / 2 });
-    expectPiece("wardrobe", { x: 7.56, y: 0, z: 6.5, rotY: -Math.PI / 2 });
+    expectPiece("bookcase", { x: 0.438, y: 0, z: 4.5, rotY: Math.PI / 2 });
+    expectPiece("wardrobe", { x: 7.562, y: 0, z: 6.5, rotY: -Math.PI / 2 });
     expectPiece("rug", { x: 3.0, y: 0.004, z: 8.0, rotY: Math.PI / 2 });
     expectPiece("board", { x: 2.0, y: 1.75, z: 0.06, rotY: 0 });
     expectPiece("window", { x: 5.6, y: 2.05, z: 0.17, rotY: 0 });

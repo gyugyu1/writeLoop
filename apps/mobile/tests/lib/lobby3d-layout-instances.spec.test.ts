@@ -11,6 +11,12 @@
 // 부르는 이름(layoutGeometry, isPlaceableLayout, LobbyEditor와 그 pointerDown·pointerMove·pointerUp·rotate·selected·marks·layout,
 // furniturePlacements)은 메인 세션이 알려 준 이름 약속(지금 이름 그대로, 값 안의 배치 모양만 v2)이다.
 // 모두 바뀔 동작이다(지금 코드는 가구 종류마다 하나인 옛 모양만 읽는다).
+// 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 바닥 가구 모델이 칸에 맞게 줄고 뒷면이 칸 뒤 끝에 붙어, 명세의 "고칠 기존 테스트"대로
+// 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
+// 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 깔개가 차지하는 칸이 2×2에서 3×3이 되어, 명세의 "고칠 기존 테스트"대로
+// 2×2에 기대던 것만 고쳤다: P6·P11은 3×3 칸이 방 밖이 되는 자리(1.0, 9.0)·(4.6, 1.0)를 뜻(겹치지 않음, 창문 아래)이 같은 방 안 자리 (1.5, 9.5)·(4.5, 1.5)로
+// 옮겼고, P5·P13은 결과가 같아 이름의 칸 범위만 3×3으로 고쳤다. G2는 막힌 칸만 보아 그대로 두었다.
+
 import { ROOM, TAP_MAX_MOVE_PX, type PointerHit } from "@/lib/lobby3d/engine";
 import { furniturePlacements } from "@/lib/lobby3d/furniture-layout";
 import { LobbyEditor, isPlaceableLayout } from "@/lib/lobby3d/lobby-edit";
@@ -79,13 +85,13 @@ describe("[spec] 066-① G: 막힌 칸·장소·3D 가구가 인스턴스 목록
     expect(sortedTiles(g.solidTiles)).toEqual(P0_SOLID);
   });
 
-  test("G3 옷장을 하나 더 두면 3D 목록(furniturePlacements)에 막는 가구가 둘이고, 새 옷장 그림은 (5.5, 0, 9.44) rotY 0이다", () => {
+  test("G3 옷장을 하나 더 두면 3D 목록(furniturePlacements)에 막는 가구가 둘이고, 새 옷장 그림은 (5.5, 0, 9.438) rotY 0이다", () => {
     const list = furniturePlacements(plus("wardrobe-2", "wardrobe", { x: 5.5, z: 9.5, facing: 0 }));
     const blockers = list.filter((p) => p.blocker === true).map((p) => [r4(p.x), r4(p.y), r4(p.z), r4(p.rotY)]);
     expect(blockers.sort()).toEqual(
       [
-        [5.5, 0, 9.44, 0],
-        [7.56, 0, 3.5, r4(-Math.PI / 2)]
+        [5.5, 0, 9.438, 0],
+        [7.562, 0, 3.5, r4(-Math.PI / 2)]
       ].sort()
     );
   });
@@ -120,15 +126,15 @@ describe("[spec] 066-① P: 공통 배치 규칙이 같은 종류 여러 개에�
     ["P2 옷장 하나 더 (7.5, 3.5) 왼쪽: 처음 옷장과 칸 7,3이 겹침(3의 2)", plus("wardrobe-2", "wardrobe", { x: 7.5, z: 3.5, facing: 3 }), false],
     ["P3 옷장 하나 더 (1.5, 5.5): 책상 칸 1,5와 겹침(3의 2)", plus("wardrobe-2", "wardrobe", { x: 1.5, z: 5.5, facing: 0 }), false],
     ["P4 옷장 하나 더 (4.5, 7.5): 깔개 위(바닥형은 덮개와 겹쳐도 됨, 3의 2)", plus("wardrobe-2", "wardrobe", { x: 4.5, z: 7.5, facing: 3 }), true],
-    ["P5 깔개 하나 더 (5.0, 8.0): 처음 깔개(3.6~5.6, 6.2~8.2)와 겹침(덮개끼리는 안 됨, 3의 2)", plus("rug-2", "rug", { x: 5.0, z: 8.0, facing: 0 }), false],
-    ["P6 깔개 하나 더 (1.0, 9.0): 다른 덮개와 겹치지 않음", plus("rug-2", "rug", { x: 1.0, z: 9.0, facing: 0 }), true],
+    ["P5 깔개 하나 더 (5.0, 8.0): 처음 깔개(3.1~6.1, 5.7~8.7)와 겹침(덮개끼리는 안 됨, 3의 2)", plus("rug-2", "rug", { x: 5.0, z: 8.0, facing: 0 }), false],
+    ["P6 깔개 하나 더 (1.5, 9.5): 다른 덮개와 겹치지 않음", plus("rug-2", "rug", { x: 1.5, z: 9.5, facing: 0 }), true],
     ["P7 깔개 하나 더 (1.5, 5.5): 책상과 겹침(덮개는 바닥형과 겹쳐도 됨, 3의 2)", plus("rug-2", "rug", { x: 1.5, z: 5.5, facing: 0 }), true],
     ["P8 옷장 하나 더 (2.5, 0.5) 앞: 게시판(뒷벽 1.8, 폭 1.8) 바로 아래 칸 2,0(3의 3)", plus("wardrobe-2", "wardrobe", { x: 2.5, z: 0.5, facing: 0 }), false],
     ["P9 옷장 하나 더 (4.5, 0.5) 앞: 창문(뒷벽 4.8, 폭 2.3) 바로 아래 칸 4,0(3의 3)", plus("wardrobe-2", "wardrobe", { x: 4.5, z: 0.5, facing: 0 }), false],
     ["P10 옷장 하나 더 (7.5, 0.5) 왼쪽: 칸 7,0은 벽 가구 아래가 아님", plus("wardrobe-2", "wardrobe", { x: 7.5, z: 0.5, facing: 3 }), true],
-    ["P11 깔개 하나 더 (4.6, 1.0): 창문 아래라도 덮개는 됨(3의 3)", plus("rug-2", "rug", { x: 4.6, z: 1.0, facing: 0 }), true],
+    ["P11 깔개 하나 더 (4.5, 1.5): 창문 아래라도 덮개는 됨(3의 3)", plus("rug-2", "rug", { x: 4.5, z: 1.5, facing: 0 }), true],
     ["P12 옷장 하나 더 (8.5, 9.5): 칸이 방 밖(3의 1)", plus("wardrobe-2", "wardrobe", { x: 8.5, z: 9.5, facing: 0 }), false],
-    ["P13 깔개 하나 더 (7.6, 9.0): 2×2 칸이 오른벽 밖(3의 1)", plus("rug-2", "rug", { x: 7.6, z: 9.0, facing: 0 }), false],
+    ["P13 깔개 하나 더 (7.6, 9.0): 3×3 칸이 오른벽 밖(3의 1)", plus("rug-2", "rug", { x: 7.6, z: 9.0, facing: 0 }), false],
     ["P14 옷장 하나 더 (4.5, 10.5): 입구 발판 앞 칸을 막아 장소로 가는 길이 없음(3의 5)", plus("wardrobe-2", "wardrobe", { x: 4.5, z: 10.5, facing: 0 }), false],
     ["P15 책상 id가 my-desk(처음 자리): 처음 배치와 같이 놓을 수 있음", layout(p0Items().map((i) => (i.id === "desk" ? ({ ...i, id: "my-desk" } as LayoutItem) : i))), true],
     ["P16 책상 id가 my-desk이고 창문 바로 아래 (4.5, 0.5): 책상 윗면이 창문 아래 끝보다 높아 안 됨(3의 3)", layout(p0Items().map((i) => (i.id === "desk" ? ({ ...i, id: "my-desk", floor: { x: 4.5, z: 0.5, facing: 0 } } as LayoutItem) : i))), false]

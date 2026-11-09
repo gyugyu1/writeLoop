@@ -11,6 +11,10 @@
 // 그 벽 가구로 본다고 가정한다(띠 판정을 3D 그리기 안에서 해 piece로 넘기는 구현이면 이 가정이 맞지 않는다. 12-qa-tests.md에 적음).
 // 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터와 저장 본문이 v2(version 2, 가구 인스턴스 목록)로 바뀌어,
 // 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
+// 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 깔개가 차지하는 칸이 2×2에서 3×3이 되어, 명세의 "고칠 기존 테스트"대로
+// 2×2에 기대던 것만 고쳤다: B10의 시작 배치 RUG_UNDER의 깔개 (4.6, 1.0)은 3×3 칸이 방 밖이라 놓을 수 없는 배치가 되어, 뜻(창문 아래 깔개)이 같은
+// 방 안 자리 (4.5, 1.5)로 옮겼다. 누르는 점 (4.8, 0.5)는 깔개 칸 안이고 창문 앞 바닥 띠 안이다.
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -691,8 +695,8 @@ const LW: LobbyLayout = withWall(P0, "window", left(8.5));
 const L3: LobbyLayout = withWall(withWall(P0, "board", right(6.0)), "window", left(8.0));
 /** 게시판 뒷벽 6.5(띠 x 5.6~7.4, z < 1), 창문 오른벽 1.5(띠 x > 7, z 0.35~2.65). 뒤·오른쪽 모서리에서 두 띠가 겹친다. */
 const CORNER: LobbyLayout = withWall(withWall(P0, "board", back(6.5)), "window", right(1.5));
-/** 깔개를 창문 아래(4.6, 1.0)에 둔 배치(깔개는 벽 가구 아래도 된다). */
-const RUG_UNDER: LobbyLayout = v2({ ...P0_FLOOR, rug: { x: 4.6, z: 1.0, facing: 0 } }, P0_WALL);
+/** 깔개를 창문 아래(4.5, 1.5, 칸 3~6·0~3)에 둔 배치(깔개는 벽 가구 아래도 된다). */
+const RUG_UNDER: LobbyLayout = v2({ ...P0_FLOOR, rug: { x: 4.5, z: 1.5, facing: 0 } }, P0_WALL);
 
 async function startEditingFrom(layout: LobbyLayout) {
   jest.mocked(getLobbyLayout).mockResolvedValue(layout);

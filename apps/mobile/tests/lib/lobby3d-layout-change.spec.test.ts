@@ -14,6 +14,8 @@
 // 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터가 v2(가구 인스턴스 목록)로 바뀌어,
 // 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대값은 그대로 두고 배치 모양만 v2로 고쳤다(처음 배치의 인스턴스 id는 종류 id와 같다).
 // 배치는 064 때처럼 바닥 가구·벽 가구 묶음으로 적고 바꾼 뒤 v2 목록으로 만든다(layoutWith). 목록 순서는 명세가 정하지 않아 id 순으로 견준다.
+// 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 바닥 가구 모델이 칸에 맞게 줄고 뒷면이 칸 뒤 끝에 붙어, 명세의 "고칠 기존 테스트"대로
+// 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
 //
 // 기준 코드에서는 새 입구가 없어 타입 검사가 깨지지 않게, 입구는 아래 "지금 코드를 부르는 곳"에서 require로 불러오고 타입은 결정 03대로 여기서 적는다.
 // 구현이 부르는 모양을 바꾸면 그곳만 따라 고친다(결정 03의 4). 그 아래의 기대값·단언·입력은 고치지 않는다.
@@ -245,8 +247,8 @@ const DEFAULT_PIECES = {
   window: { x: 4.8, y: 2.05, z: 0.17, rotY: 0 },
   desk: { x: 1.25, y: 0, z: 5.5, rotY: 0 },
   chair: { x: 1.5, y: 0, z: 5.95, rotY: angle(Math.PI) },
-  bookcase: { x: 0.44, y: 0, z: 2.5, rotY: angle(Math.PI / 2) },
-  wardrobe: { x: 7.56, y: 0, z: 3.5, rotY: angle(-Math.PI / 2) },
+  bookcase: { x: 0.438, y: 0, z: 2.5, rotY: angle(Math.PI / 2) },
+  wardrobe: { x: 7.562, y: 0, z: 3.5, rotY: angle(-Math.PI / 2) },
   rug: { x: 4.6, y: 0.004, z: 7.2, rotY: 0 }
 };
 
@@ -369,9 +371,9 @@ describe("[spec] 064-① 범위 3 T1: 일기 책상을 오른쪽으로 1칸(가�
 describe("[spec] 064-① 범위 3 T2: 책장을 왼쪽 벽을 따라 z 2.5 → 8.5(가운데 (0.5, 8.5))로 옮기면 딸린 것이 z +6", () => {
   const layout = () => layoutWith((l) => (l.floor.bookcase = { x: 0.5, z: 8.5, facing: 1 }));
 
-  it("T2-1: 책장 그림 (0.44, 8.5), 막힌 칸 \"0,2\" → \"0,8\", 장소(서는 자리 (1.4, 8.5), 바라볼 지점 (0, 8.5), 이름표 (0.9, 2.3, 8.5))", () => {
+  it("T2-1: 책장 그림 (0.438, 8.5), 막힌 칸 \"0,2\" → \"0,8\", 장소(서는 자리 (1.4, 8.5), 바라볼 지점 (0, 8.5), 이름표 (0.9, 2.3, 8.5))", () => {
     const g = current.geometry(layout());
-    expect(piecesByName(g.pieces)).toEqual({ ...DEFAULT_PIECES, bookcase: { x: 0.44, y: 0, z: 8.5, rotY: angle(Math.PI / 2) } });
+    expect(piecesByName(g.pieces)).toEqual({ ...DEFAULT_PIECES, bookcase: { x: 0.438, y: 0, z: 8.5, rotY: angle(Math.PI / 2) } });
     expect(sortedTiles(g.solidTiles)).toEqual(["0,5", "0,8", "1,5", "2,5", "7,3"]);
     expect(placesOf(g)).toEqual({ ...DEFAULT_PLACES, bookcase: { approach: [[1.4, 8.5]], faceTo: [0, 8.5], label: [0.9, 2.3, 8.5] } });
     expect(chairOf(g)).toEqual(DEFAULT_CHAIR);
@@ -442,10 +444,10 @@ describe("[spec] 064-① 범위 3 T3: 창문을 뒷벽을 따라 x 4.8 → 6.3�
 // ---------- T4 옷장·깔개 ----------
 
 describe("[spec] 064-① 범위 3 T4: 옷장·깔개를 옮기면 막힌 칸만 바뀌고(깔개는 막지 않음) 장소는 그대로", () => {
-  it("T4-1: 옷장을 오른쪽 벽을 따라 (7.5, 8.5)로: 그림 (7.56, 8.5), 막힌 칸 \"7,3\" → \"7,8\", 장소·의자 그대로", () => {
+  it("T4-1: 옷장을 오른쪽 벽을 따라 (7.5, 8.5)로: 그림 (7.562, 8.5), 막힌 칸 \"7,3\" → \"7,8\", 장소·의자 그대로", () => {
     const layout = layoutWith((l) => (l.floor.wardrobe = { x: 7.5, z: 8.5, facing: 3 }));
     const g = current.geometry(layout);
-    expect(piecesByName(g.pieces)).toEqual({ ...DEFAULT_PIECES, wardrobe: { x: 7.56, y: 0, z: 8.5, rotY: angle(-Math.PI / 2) } });
+    expect(piecesByName(g.pieces)).toEqual({ ...DEFAULT_PIECES, wardrobe: { x: 7.562, y: 0, z: 8.5, rotY: angle(-Math.PI / 2) } });
     expect(sortedTiles(g.solidTiles)).toEqual(["0,2", "0,5", "1,5", "2,5", "7,8"]);
     expect(placesOf(g)).toEqual(DEFAULT_PLACES);
     expect(chairOf(g)).toEqual(DEFAULT_CHAIR);
@@ -453,10 +455,10 @@ describe("[spec] 064-① 범위 3 T4: 옷장·깔개를 옮기면 막힌 칸만 
     expect({ old: current.isBlocked(7.5, 3.5), now: current.isBlocked(7.5, 8.5) }).toEqual({ old: false, now: true });
   });
 
-  it("T4-2: 옷장을 방 가운데 (5.5, 9.5)에 앞을 보게: 그림이 칸 가운데에서 뒤로 0.06 비낀 (5.5, 9.44), rotY 0, 막힌 칸 \"5,9\"", () => {
+  it("T4-2: 옷장을 방 가운데 (5.5, 9.5)에 앞을 보게: 그림 뒷면이 칸 뒤 끝(z 9)이라 가운데가 (5.5, 9.438), rotY 0, 막힌 칸 \"5,9\"", () => {
     const layout = layoutWith((l) => (l.floor.wardrobe = { x: 5.5, z: 9.5, facing: 0 }));
     const g = current.geometry(layout);
-    expect(piecesByName(g.pieces).wardrobe).toEqual({ x: 5.5, y: 0, z: 9.44, rotY: 0 });
+    expect(piecesByName(g.pieces).wardrobe).toEqual({ x: 5.5, y: 0, z: 9.438, rotY: 0 });
     expect(sortedTiles(g.solidTiles)).toEqual(["0,2", "0,5", "1,5", "2,5", "5,9"]);
     const marked = current.placements(layout).find((p) => p.piece === "wardrobe");
     expect({ blocker: marked?.blocker ?? false, mark: marked?.mark ?? null }).toEqual({ blocker: true, mark: null });

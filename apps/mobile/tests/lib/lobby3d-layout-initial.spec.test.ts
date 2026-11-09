@@ -6,6 +6,8 @@
 // 일기 책상 의자 들어가기 동작(비켜서기·앉기·의자 빼기·돌아오기), 생각하기·책 동작의 방향, 뒷벽 창문의 바닥 창문 빛.
 // 그리기 쪽(lobby3d-canvas·lobby3d-furniture·lobby3d-daylight) 안에만 있는 값(이름표 자리, 가구 그림자, 3D 의자를 빼는 방향,
 // 창밖 장면의 창 자리, 창문 빛을 계산할 때 넘기는 창 자리)은 Jest에서 three를 돌릴 수 없어 이 파일이 보지 않는다(보고에 적음).
+// 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 바닥 가구 모델이 칸에 맞게 줄고 뒷면이 칸 뒤 끝에 붙어, 명세의 "고칠 기존 테스트"대로
+// 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
 //
 // 구현이 이름이나 부르는 방법을 바꾸면 아래 "지금 코드를 부르는 곳"만 따라 고친다. 그 아래의 기대값·단언·입력은 고치지 않는다.
 import { windowLightPanes, type SunPosition, type WindowLightPane } from "@/lib/lobby3d/daylight";
@@ -130,8 +132,8 @@ describe("[spec] 064-① 처음 배치: 3D에 놓는 가구 자리·방향(그�
       window: { x: 4.8, y: 2.05, z: 0.17, rotY: 0, mark: "window", blocker: false },
       desk: { x: 1.25, y: 0, z: 5.5, rotY: 0, mark: "desk", blocker: false },
       chair: { x: 1.5, y: 0, z: 5.95, rotY: angle(Math.PI), mark: "desk", blocker: false },
-      bookcase: { x: 0.44, y: 0, z: 2.5, rotY: angle(Math.PI / 2), mark: "bookcase", blocker: false },
-      wardrobe: { x: 7.56, y: 0, z: 3.5, rotY: angle(-Math.PI / 2), mark: null, blocker: true },
+      bookcase: { x: 0.438, y: 0, z: 2.5, rotY: angle(Math.PI / 2), mark: "bookcase", blocker: false },
+      wardrobe: { x: 7.562, y: 0, z: 3.5, rotY: angle(-Math.PI / 2), mark: null, blocker: true },
       rug: { x: 4.6, y: 0.004, z: 7.2, rotY: 0, mark: null, blocker: false },
       exit: { x: 4, y: 0, z: 11.35, rotY: 0, mark: "door", blocker: false }
     });

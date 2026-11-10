@@ -26,6 +26,9 @@
 // 071 03 결정 2(사용자: "버튼으로 꾸미기 중 확인"): C10은 저장 실패 알림 바로 뒤의 편집 모드 확인을 안내 문구 대신 버튼으로 본다.
 // 가정(071): 줄 머리 글은 버튼이 아니고, 개발 빌드의 탭 역할은 070처럼 tab이다(그래서 버튼 안의 "보관함 N" 글은 없어질 '보관함' 버튼의 글로 본다).
 // 보관함·방 목록의 순서는 명세가 정하지 않아 id 순으로 늘어놓고 견준다. 빈 보관함은 stored ?? []로 읽는다(시나리오 A1).
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
+// 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 가구를 톡하면 그 가구가 골라지지 않고 골라진 가구를 옮기려 한다.
+// 그래서 R3·R4에서 가구를 차례로 고를 때 사이에 앞 가구를 다시 톡해 확정한다(준비만 바꿈. 단언은 그대로).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -583,6 +586,9 @@ describe("[spec] 066-③ 명세 2: 치우기", () => {
 
     await selectFloor("desk", AT.desk);
     expect(storeButton()).toBeNull();
+    // 075: 다른 가구를 고르기 전에 책상을 다시 톡해 확정한다
+    await tapHit(hit(AT.desk, "desk"));
+    expect(lifted()).toBeNull();
 
     await selectFloor("bookcase", AT.bookcase);
     expect(storeButton()).toBeNull();
@@ -594,6 +600,9 @@ describe("[spec] 066-③ 명세 2: 치우기", () => {
 
     await selectWall("board", "back", 1.8, "board");
     expect(storeButton()).toBeNull();
+    // 075: 다른 가구를 고르기 전에 게시판을 다시 톡해 확정한다
+    await tapHit({ point: null, mark: "board", onCharacter: false, piece: "board", wall: { wall: "back", along: 1.8 } });
+    expect(lifted()).toBeNull();
 
     await selectWall("window", "back", 4.8, "window");
     expect(storeButton()).toBeNull();

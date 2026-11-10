@@ -14,6 +14,12 @@
 // 066-②(private 작업 폴더 066/03-모델-칸에-맞추기/01-main-spec.md)에서 깔개가 차지하는 칸이 2×2에서 3×3이 되어, 명세의 "고칠 기존 테스트"대로
 // 2×2에 기대던 것만 고쳤다: B10의 시작 배치 RUG_UNDER의 깔개 (4.6, 1.0)은 3×3 칸이 방 밖이라 놓을 수 없는 배치가 되어, 뜻(창문 아래 깔개)이 같은
 // 방 안 자리 (4.5, 1.5)로 옮겼다. 누르는 점 (4.8, 0.5)는 깔개 칸 안이고 창문 앞 바닥 띠 안이다.
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
+// 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 곳을 톡하면 그 가구를 그리로 옮기고 골라진 채 두며(자신을 톡하면 확정),
+// 둘 수 없으면 옮기지 않고 "여기에는 둘 수 없어요" 안내를 띄운다(탭한 곳의 가구는 골라지지 않는다).
+// - S3·S4·S5: 옛 동작(다른 가구가 골라짐, 빈 곳이면 풀림)을 새 동작으로 고쳤다. 기대 자리는 명세의 벽 자리 맞춤으로 손으로 셈했다.
+// - makeRedBookcase(S7·S8·B8의 준비): 빨간 책장의 고르기를 빈 바닥 톡 대신 책장을 다시 톡해 푼다(준비만 바꿈).
+// - B7: 두 띠를 차례로 볼 때 사이에 게시판 띠를 다시 톡해 고르기를 푼다(준비만 바꿈. 단언은 그대로).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
@@ -162,6 +168,8 @@ function nowSummary(): NowInEnglishSummary {
 // ---------- 시나리오의 글과 배치 ----------
 
 const RED_FIRST = "빨간 가구부터 옮겨 주세요";
+/** 075 명세: 골라진 가구를 둘 수 없는 곳을 톡했을 때의 안내(명세의 글 "여기에는 둘 수 없어요". 보고 02-qa-tests.md의 모호한 점 참고). */
+const TAP_CANNOT = "여기에는 둘 수 없어요";
 
 // ---------- 066-① 배치 데이터 v2 ----------
 // 배치는 { items: [{ id, type, floor?: { x, z, facing }, wall?: { wall, along } }] }이고 처음 배치의 인스턴스 id는 종류 id와 같다(066-① 명세 2).
@@ -405,7 +413,8 @@ async function moveBoardToLeft() {
 async function makeRedBookcase() {
   await tap({ floor: AT.bookcase }, "bookcase");
   await rotateOnce();
-  await tap({ floor: EMPTY_FLOOR });
+  // 075: 고르기는 책장을 다시 톡해 푼다(준비만 바꿈)
+  await tap({ floor: AT.bookcase }, "bookcase");
   expect(floorMarks()).toEqual([{ piece: "bookcase", ok: false }]);
 }
 
@@ -431,38 +440,52 @@ describe("[spec] 064-④ S: 벽 가구 고르기", () => {
     expect(wallMarks()).toEqual([{ piece: "window", wall: "back", from: 3.65, to: 5.95, ok: true }]);
   });
 
-  test("S3 책상을 골라 둔 뒤 창문을 톡하면 창문으로 바뀌고 돌리기 버튼이 사라진다", async () => {
+  // 075 고칠 기존 테스트: 옛 S3 "창문으로 바뀐다"를 새 동작(바닥 가구인 책상은 벽 위에 둘 수 없어 안내, 책상이 골라진 채)으로 고쳤다
+  test("S3 [075 바뀔] 책상을 골라 둔 뒤 창문(벽 위)을 톡하면 창문은 골라지지 않고, 책상은 벽 위에 둘 수 없어 옮기지 않고 안내하며 골라진 채다", async () => {
     await startEditing();
     await tap({ floor: AT.desk }, "desk");
     expect(rotateButton()).not.toBeNull();
 
     await tap(back(4.8), "window");
 
-    expect(rotateButton()).toBeNull();
-    expect(floorMarks()).toEqual([]);
-    expect(wallMarks()).toEqual([{ piece: "window", wall: "back", from: 3.65, to: 5.95, ok: true }]);
+    expect(screen.getByText(TAP_CANNOT)).toBeTruthy();
+    expect(rotateButton()).not.toBeNull();
+    expect(floorMarks()).toEqual([{ piece: "desk", ok: true }]);
+    expect(wallMarks()).toEqual([]);
+    expect(sortedItems(editLayout())).toEqual(sortedItems(P0));
   });
 
-  test("S4 게시판을 골라 둔 뒤 빈 바닥을 톡하면 고르기가 풀린다", async () => {
+  // 075 고칠 기존 테스트: 옛 S4 "고르기가 풀린다"를 새 동작(가장 가까운 오른벽 9.5로 옮겨 가 골라진 채, 게시판을 톡하면 확정)으로 고쳤다
+  test("S4 [075 바뀔] 게시판을 골라 둔 뒤 빈 바닥 (4.5, 9.5)를 톡하면 가장 가까운 오른벽 9.5로 옮겨 가 골라진 채이고, 그 게시판을 톡하면 고르기가 풀린다", async () => {
     await startEditing();
     await tap(back(1.8), "board");
 
     await tap({ floor: EMPTY_FLOOR });
 
-    expect(wallMarks()).toEqual([]);
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "board", right(9.5))));
+    expect(wallMarks()).toEqual([{ piece: "board", wall: "right", from: 8.6, to: 10.4, ok: true }]);
     expect(floorMarks()).toEqual([]);
     expect(rotateButton()).toBeNull();
+    expect(screen.queryByText(TAP_CANNOT)).toBeNull();
+
+    await tap(right(9.5), "board");
+
+    expect(wallMarks()).toEqual([]);
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "board", right(9.5))));
   });
 
-  test("S5 게시판을 골라 둔 뒤 책장을 톡하면 책장이 골라지고 돌리기 버튼이 나온다", async () => {
+  // 075 고칠 기존 테스트: 옛 S5 "책장이 골라진다"를 새 동작(가장 가까운 왼벽 2.5는 책장 바로 위라 안내, 게시판이 골라진 채)으로 고쳤다
+  test("S5 [075 바뀔] 게시판을 골라 둔 뒤 책장을 톡하면 책장은 골라지지 않고, 가장 가까운 왼벽 2.5가 책장 바로 위라 옮기지 않고 안내하며 게시판이 골라진 채다", async () => {
     await startEditing();
     await tap(back(1.8), "board");
 
     await tap({ floor: AT.bookcase }, "bookcase");
 
-    expect(rotateButton()).not.toBeNull();
-    expect(wallMarks()).toEqual([]);
-    expect(floorMarks()).toEqual([{ piece: "bookcase", ok: true }]);
+    expect(screen.getByText(TAP_CANNOT)).toBeTruthy();
+    expect(rotateButton()).toBeNull();
+    expect(wallMarks()).toEqual([{ piece: "board", wall: "back", from: 0.9, to: 2.7, ok: true }]);
+    expect(floorMarks()).toEqual([]);
+    expect(sortedItems(editLayout())).toEqual(sortedItems(P0));
   });
 
   test("S6 게시판·창문을 톡만 하고 '완료'하면 배치가 그대로이고 저장 요청이 없다", async () => {
@@ -775,6 +798,9 @@ describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
 
     await tapFloor({ x: 7.3, z: 0.5 });
     expect(wallMarks().map((m) => m.piece)).toEqual(["board"]);
+    // 075: 게시판 띠를 다시 톡해 고르기를 푼다(준비만 바꿈)
+    await tapFloor({ x: 7.3, z: 0.5 });
+    expect(wallMarks()).toEqual([]);
 
     await tapFloor({ x: 7.3, z: 0.9 });
     expect(wallMarks().map((m) => m.piece)).toEqual(["window"]);

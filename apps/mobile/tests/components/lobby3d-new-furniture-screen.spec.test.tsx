@@ -11,6 +11,10 @@
 // 고르기·끌기·치우기처럼 판정 자체를 보지 않는 조작은 3D 그리기가 화면에 넘기는 onPointer에 누르기 결과(piece)를 직접 넣어 한다.
 // 시나리오와 다르게 만든 입력(보고 07-qa-tests.md에 적음): P5는 시나리오 배치 그대로 스탠드를 꺼낸 뒤, 책상 위 소품 셋을 치워
 // 광선이 책상을 먼저 지나게 한다(책상 위 소품의 넓힌 판정이 광선 앞을 가려 "책상이 먼저"라는 시나리오의 전제를 만들 수 없어서).
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
+// 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 빈 곳을 톡하면 고르기가 풀리지 않고 골라진 가구가 그리로 옮겨 간다.
+// 그래서 고르기를 푸는 도우미(deselect)는 골라진 가구 자신을 다시 톡한다(판정은 보지 않고 누르기 결과를 화면에 직접 넣는다). 준비만 바꿨고 단언은 그대로다.
+// P5는 꺼낸 스탠드(골라짐)를 다시 톡해 확정한 뒤 책상 위 소품을 고른다(같은 까닭, 준비만 바꿈).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { useState } from "react";
@@ -174,7 +178,6 @@ const V_ALL_ITEMS: LayoutItem[] = [
 
 const DESK_TOP = 1.292;
 const NS_TOP = 0.74;
-const EMPTY_FLOOR = { x: 5.5, z: 3.5 };
 
 const NOW = new Date("2026-11-12T03:00:00.000Z");
 const SLOW_TEST_MS = 30_000;
@@ -454,8 +457,25 @@ async function enterEdit() {
   await frames();
 }
 
+/** 075: 골라진 가구 자신을 누른 결과(바닥 가구는 칸 가운데, 탁상 소품은 받침 가구 가운데에서 그 소품을 맞힘, 벽 가구는 걸린 벽 자리). */
+function selfHit(id: string): PointerHit {
+  const item = edit().layout.items.find((entry) => entry.id === id);
+  expect(item).toBeDefined();
+  if (item!.wall) return { point: null, mark: null, onCharacter: false, piece: id, wall: { wall: item!.wall.wall, along: item!.wall.along } };
+  const base = item!.floor ?? edit().layout.items.find((entry) => entry.id === item!.on?.parent)?.floor;
+  expect(base).toBeDefined();
+  return { point: { x: base!.x, z: base!.z }, mark: null, onCharacter: false, piece: id, wall: null };
+}
+
+/** 고르기를 푼다. 075: 골라진 가구 자신을 다시 톡한다. */
 async function deselect() {
-  await tapPiece(null, EMPTY_FLOOR);
+  const id = edit().lifted;
+  if (id) {
+    const h = selfHit(id);
+    await pointer("down", h, 200, 300);
+    await pointer("up", null, 200, 300);
+    await frames();
+  }
   expect(edit().lifted).toBeNull();
 }
 
@@ -597,6 +617,8 @@ describe("[spec] 066-⑤ 명세 3: 받침 가구가 여럿일 때 꾸미기 고�
       await enterEdit();
       await takeOut("스탠드");
       expect(edit().layout.items.find((item) => item.id === "lamp-1")!.on).toEqual({ parent: "nightstand-1", slot: 0, facing: 0 });
+      // 075: 꺼낸 스탠드(골라짐)를 다시 톡해 확정한 뒤 책상 위 소품을 고른다
+      await deselect();
       // 책상 위 소품(넓힌 판정이 광선 앞을 가린다)을 치워, 광선이 책상을 먼저 지나게 한다
       for (const [id, x] of [
         ["lamp", 0.5],

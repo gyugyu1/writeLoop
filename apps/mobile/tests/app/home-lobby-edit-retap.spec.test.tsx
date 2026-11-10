@@ -7,6 +7,9 @@
 // 3D 그리기는 가짜라서, "의자를 톡하면 책상" 판정은 3D 그리기가 넘기는 piece "desk"로 대신한다(이 테스트로 보지 못한다).
 // 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터와 저장 본문이 v2(version 2, 가구 인스턴스 목록)로 바뀌어,
 // 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 K5를 새 동작으로 고쳤다(private 작업 폴더
+// 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 가구를 톡하면
+// 골라진 가구를 그리로 옮기려 하고, 둘 수 없으면 옮기지 않고 "여기에는 둘 수 없어요" 안내를 띄우며 탭한 가구는 골라지지 않는다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -566,14 +569,17 @@ describe("[spec] 065 결정 19 K: 지키는 동작", () => {
     expect(rotateButton()).not.toBeNull();
   });
 
-  test("[spec] K5 책상을 고른 채 옷장을 톡하면 옷장으로 바뀐다(고르기가 풀리지 않는다)", async () => {
+  // 075 고칠 기존 테스트: 옛 K5 "옷장으로 바뀐다"를 새 동작(책상을 옷장 자리로 옮기면 방 밖이라 안내, 책상이 골라진 채)으로 고쳤다
+  test("[spec] K5 [075 바뀔] 책상을 고른 채 옷장을 톡하면 옷장은 골라지지 않고, 책상은 칸 맞춤 (7.5, 3.5)가 방 밖이라 옮기지 않고 안내하며 골라진 채다", async () => {
     await startEditing();
     await tap({ floor: AT.desk }, "desk");
 
     await tap({ floor: AT.wardrobe }, "wardrobe");
 
-    expectLifted("wardrobe");
-    expect(floorMarks()).toEqual([{ piece: "wardrobe", ok: true }]);
+    expect(screen.getByText("여기에는 둘 수 없어요")).toBeTruthy();
+    expectLifted("desk");
+    expect(floorMarks()).toEqual([{ piece: "desk", ok: true }]);
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(P0));
   });
 
   test("[spec] K6 옷장을 놓을 수 없는 책상 위로 끌어 놓으면 원래 자리로 돌아가며 알림이 뜬다", async () => {

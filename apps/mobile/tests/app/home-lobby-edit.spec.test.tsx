@@ -18,6 +18,11 @@
 // G5 (5, 7) → (4.5, 7.5)). G3·G4·G6은 결과가 같아 이름 속 맞춘 자리만 고쳤다. 끄는 입력은 그대로다.
 // 067(private 작업 폴더 067/01-main-spec.md)에서 책상 장소의 바라볼 지점이 가구 기준 (-0.25, 0) → (0, 0)으로 옮겨져, 명세의 "고칠 기존 테스트"대로
 // M2의 바라볼 지점만 (5.25, 8.5) → (5.5, 8.5)로 고쳤다. 끄는 입력과 나머지 단언은 그대로다.
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
+// 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 곳을 톡하면 그 가구를 그리로 옮기고 골라진 채 두며(자신을 톡하면 확정),
+// 둘 수 없으면 옮기지 않고 "여기에는 둘 수 없어요" 안내를 띄운다(탭한 곳의 가구는 골라지지 않는다).
+// - S5·S6: 옛 동작(빈 곳이면 풀림, 벽 가구가 골라짐)을 새 동작으로 고쳤다. 기대 자리는 명세의 칸 맞춤으로 손으로 셈했다.
+// - S3: 끈 옷장의 고르기를 빈 바닥 톡 대신 옷장을 다시 톡해 푼다(준비만 바꿈). R4·S8: 빨간 책장의 고르기를 책장을 다시 톡해 푼다(준비만 바꿈).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
@@ -145,6 +150,8 @@ const actualApi = jest.requireActual<typeof import("@/lib/api")>("@/lib/api");
 
 const GUIDE = "가구를 눌러 고르고, 끌어서 옮겨요";
 const RED_FIRST = "빨간 가구부터 옮겨 주세요";
+/** 075 명세: 골라진 가구를 둘 수 없는 곳을 톡했을 때의 안내(명세의 글 "여기에는 둘 수 없어요". 보고 02-qa-tests.md의 모호한 점 참고). */
+const TAP_CANNOT = "여기에는 둘 수 없어요";
 const RED_FINISH = "빨간 가구를 놓을 수 있는 자리로 옮기거나 돌려 주세요";
 const SAVE_FAILED = "배치를 저장하지 못했어요. 다시 눌러 주세요";
 const STREAK_CHIP = "연속 2일";
@@ -788,7 +795,9 @@ describe("고르기", () => {
     await enterEdit();
     await drag("wardrobe", AT.wardrobe, { x: 4.5, z: 7.5 });
     expect(sortedItems(editLayout())).toEqual(sortedItems(W_ON_RUG));
-    await tapAt(EMPTY_FLOOR);
+    // 075: 끈 옷장의 고르기는 옷장을 다시 톡해 푼다(준비만 바꿈)
+    await tapAt({ x: 4.5, z: 7.5 }, "wardrobe");
+    expect(rotateButton()).toBeNull();
 
     await selectAt("wardrobe", { x: 4.5, z: 7.5 });
     await rotate();
@@ -805,21 +814,30 @@ describe("고르기", () => {
     expect(rotateButton()).not.toBeNull();
   });
 
-  test("[spec] S5 책상을 골라 둔 뒤 빈 바닥을 톡하면 고르기가 풀린다", async () => {
+  // 075 고칠 기존 테스트: 옛 S5 "고르기가 풀린다"를 새 동작(책상이 (4.5, 9.5)로 옮겨 가 골라진 채, 책상을 톡하면 풀림)으로 고쳤다
+  test("[spec] S5 [075 바뀔] 책상을 골라 둔 뒤 빈 바닥 (4.5, 9.5)를 톡하면 책상이 (4.5, 9.5)로 옮겨 가 골라진 채이고, 그 책상을 톡하면 고르기가 풀리며 '완료'하면 그 배치로 저장된다", async () => {
     await renderHome();
     await enterEdit();
     await selectAt("desk");
 
     await tapAt(EMPTY_FLOOR);
 
+    expect(rotateButton()).not.toBeNull();
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withFloor(P0, "desk", 4.5, 9.5, 0)));
+    expect(screen.queryByText(TAP_CANNOT)).toBeNull();
+
+    await tapAt(EMPTY_FLOOR, "desk");
+
     expect(rotateButton()).toBeNull();
+    await finishExpectSaved(withFloor(P0, "desk", 4.5, 9.5, 0));
   });
 
   // 064-④ 결정 03의 1: ③의 옛 동작(벽 가구는 고르지 않음)을 ④ 명세 1대로 고쳤다. 벽 가구를 끄는 것은 home-lobby-wall-edit.spec.test.tsx가 본다.
+  // 075 고칠 기존 테스트: 옛 S6 "그 벽 가구가 골라진다"를 새 동작(바닥 가구인 책상은 벽 위에 둘 수 없어 안내, 책상이 골라진 채)으로 고쳤다
   test.each([
     ["게시판", "board" as const, 1.8],
     ["창문", "window" as const, 4.8]
-  ])("[spec] S6(④ 명세 1) 책상을 골라 둔 뒤 %s을 톡하면 그 벽 가구가 골라지고 돌리기 버튼이 없으며, 배치는 그대로다", async (_label, piece, along) => {
+  ])("[spec] S6 [075 바뀔] 책상을 골라 둔 뒤 %s(벽 위)을 톡하면 그 벽 가구는 골라지지 않고, 책상은 벽 위에 둘 수 없어 옮기지 않고 안내하며 골라진 채이고 배치는 그대로다", async (_label, piece, along) => {
     await renderHome();
     await enterEdit();
     await selectAt("desk");
@@ -829,9 +847,10 @@ describe("고르기", () => {
     await pointer("up", null, 200, 300);
     await flushAsync();
 
-    expect(rotateButton()).toBeNull();
-    expect(canvas().edit!.marks).toEqual([]);
-    expect(canvas().edit!.wallMarks.map((m) => m.piece)).toEqual([piece]);
+    expect(screen.getByText(TAP_CANNOT)).toBeTruthy();
+    expect(rotateButton()).not.toBeNull();
+    expect(canvas().edit!.marks.map((m) => ({ piece: m.piece, ok: m.ok }))).toEqual([{ piece: "desk", ok: true }]);
+    expect(canvas().edit!.wallMarks).toEqual([]);
     expect(sortedItems(editLayout())).toEqual(sortedItems(P0));
     await finishExpectNoSave();
   });
@@ -1025,7 +1044,8 @@ describe("돌리기와 빨간 가구", () => {
     await selectAt("bookcase");
     await rotate();
 
-    await tapAt(EMPTY_FLOOR);
+    // 075: 고르기는 책장을 다시 톡해 푼다(준비만 바꿈)
+    await tapAt(AT.bookcase, "bookcase");
     expect(rotateButton()).toBeNull();
     expect(canvas().edit!.marks).toEqual([{ piece: "bookcase", minX: 0, maxX: 1, minZ: 2, maxZ: 3, ok: false }]);
 

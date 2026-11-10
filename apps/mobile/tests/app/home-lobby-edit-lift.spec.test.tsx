@@ -16,6 +16,11 @@
 // 배치에 놓은 값, 이 작업에서 바뀌지 않는 동작)으로 손으로 셈한 값이다. 칠의 노랑, 둥근 모서리는 3D라 보지 못한다.
 // 066-①(private 작업 폴더 066/02-카탈로그-배치v2-공통규칙/01-main-spec.md)에서 배치 데이터와 저장 본문이 v2(version 2, 가구 인스턴스 목록)로 바뀌어,
 // 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
+// 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 곳을 톡하면 그 가구를 그리로 옮기고 골라진 채 두며(자신을 톡하면 확정),
+// 둘 수 없으면 옮기지 않고 "여기에는 둘 수 없어요" 안내를 띄운다(탭한 곳의 가구는 골라지지 않는다).
+// - L2·L3·L11·Z9·Z10·Z11: 옛 동작(다른 가구가 골라짐, 빈 곳이면 풀림)을 새 동작으로 고쳤다. 기대 자리는 명세의 칸 맞춤으로 손으로 셈했다.
+// - L12·Z15: 빨간 책장의 고르기를 빈 바닥 톡 대신 책장을 다시 톡해 푼다(준비만 바꿈. 고른 빨간 가구로 다른 곳을 톡하는 동작은 명세가 정하지 않아 피한다).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -165,6 +170,8 @@ function nowSummary(): NowInEnglishSummary {
 // ---------- 글과 배치(064 테스트와 같은 처음 배치 P0) ----------
 
 const RED_FIRST = "빨간 가구부터 옮겨 주세요";
+/** 075 명세: 골라진 가구를 둘 수 없는 곳을 톡했을 때의 안내(명세의 글 "여기에는 둘 수 없어요". 보고 02-qa-tests.md의 모호한 점 참고). */
+const TAP_CANNOT = "여기에는 둘 수 없어요";
 
 // ---------- 066-① 배치 데이터 v2 ----------
 // 배치는 { items: [{ id, type, floor?: { x, z, facing }, wall?: { wall, along } }] }이고 처음 배치의 인스턴스 id는 종류 id와 같다(066-① 명세 2).
@@ -422,25 +429,37 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
     expect(floorMarks()).toEqual([{ piece: "desk", ok: true }]);
   });
 
-  test("[spec] L2 책상을 골라 둔 뒤 옷장을 톡하면 책상은 내려앉고 옷장이 뜬다", async () => {
+  // 075 고칠 기존 테스트: 옛 L2 "책상은 내려앉고 옷장이 뜬다"를 새 동작(책상을 옷장 자리로 옮기면 방 밖이라 안내, 책상이 뜬 채)으로 고쳤다
+  test("[spec] L2 [075 바뀔] 책상을 골라 둔 뒤 옷장을 톡하면 책상은 칸 맞춤 (7.5, 3.5)가 방 밖이라 옮기지 않고 안내하며, 책상이 뜬 채이고 옷장은 뜨지 않는다", async () => {
     await startEditing();
     await tap({ floor: AT.desk }, "desk");
     expectLifted("desk");
 
     await tap({ floor: AT.wardrobe }, "wardrobe");
 
-    expectLifted("wardrobe");
+    expect(screen.getByText(TAP_CANNOT)).toBeTruthy();
+    expectLifted("desk");
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(P0));
   });
 
-  test("[spec] L3 고른 책상을 둔 채 빈 바닥을 톡하면 고르기가 풀려 내려앉는다", async () => {
+  // 075 고칠 기존 테스트: 옛 L3 "고르기가 풀려 내려앉는다"를 새 동작(그리로 옮겨 가 뜬 채, 그 책상을 톡하면 내려앉음)으로 고쳤다
+  test("[spec] L3 [075 바뀔] 고른 책상을 둔 채 빈 바닥 (4.5, 9.5)를 톡하면 책상이 (4.5, 9.5)로 옮겨 가 뜬 채이고, 그 책상을 톡하면 내려앉는다", async () => {
     await startEditing();
     await tap({ floor: AT.desk }, "desk");
     expectLifted("desk");
 
     await tap({ floor: EMPTY_FLOOR });
 
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withFloor(P0, "desk", 4.5, 9.5, 0)));
+    expectLifted("desk");
+    expect(floorMarks()).toEqual([{ piece: "desk", ok: true }]);
+    expect(screen.queryByText(TAP_CANNOT)).toBeNull();
+
+    await tap({ floor: EMPTY_FLOOR }, "desk");
+
     expectLifted(null);
     expect(floorMarks()).toEqual([]);
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withFloor(P0, "desk", 4.5, 9.5, 0)));
   });
 
   test("[spec] L4 옷장을 끌기 시작하면 뜨고, 칸 4,6에 놓은 뒤에도 골라진 채라 계속 떠 있다", async () => {
@@ -519,14 +538,17 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
     expectLifted("window");
   });
 
-  test("[spec] L11 게시판을 골라 둔 뒤 책상을 톡하면 게시판은 내려앉고 책상이 뜬다", async () => {
+  // 075 고칠 기존 테스트: 옛 L11 "게시판은 내려앉고 책상이 뜬다"를 새 동작(가장 가까운 왼벽 5.5는 책상 바로 위라 안내, 게시판이 뜬 채)으로 고쳤다
+  test("[spec] L11 [075 바뀔] 게시판을 골라 둔 뒤 책상 (1.5, 5.5)를 톡하면 가장 가까운 왼벽 5.5가 책상 바로 위라 옮기지 않고 안내하며, 게시판이 뜬 채이고 책상은 뜨지 않는다", async () => {
     await startEditing();
     await tap(back(1.8), "board");
     expectLifted("board");
 
     await tap({ floor: AT.desk }, "desk");
 
-    expectLifted("desk");
+    expect(screen.getByText(TAP_CANNOT)).toBeTruthy();
+    expectLifted("board");
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(P0));
   });
 
   test("[spec] L12 빨간 가구: 골라진 빨간 책장은 뜨고, 고르기가 풀린 채 남은 빨간 책장은 뜨지 않으며, 다시 고르면 뜬다", async () => {
@@ -538,7 +560,8 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
     expect(floorMarks()).toEqual([{ piece: "bookcase", ok: false }]);
     expectLifted("bookcase");
 
-    await tap({ floor: EMPTY_FLOOR });
+    // 075: 고르기는 책장을 다시 톡해 푼다(준비만 바꿈)
+    await tap({ floor: AT.bookcase }, "bookcase");
     expect(floorMarks()).toEqual([{ piece: "bookcase", ok: false }]);
     expectLifted(null);
 
@@ -617,31 +640,54 @@ describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자�
     expectZone(null);
   });
 
-  test("[spec] Z9 책상을 골라 둔 뒤 빈 바닥을 톡해 고르기가 풀리면 구역이 사라진다", async () => {
+  // 075 고칠 기존 테스트: 옛 Z9 "빈 바닥 톡으로 고르기가 풀리면 구역이 사라진다"를 새 동작(빈 바닥 톡이면 책상이 옮겨 가 구역이 따라가고, 책상을 톡해 풀면 사라짐)으로 고쳤다
+  test("[spec] Z9 [075 바뀔] 책상을 골라 둔 뒤 빈 바닥 (4.5, 9.5)를 톡하면 책상이 옮겨 가 구역이 서는 자리 (4.5, 10.75)로 따라가고, 그 책상을 톡해 고르기가 풀리면 구역이 사라진다", async () => {
     await startEditing();
     await tap({ floor: AT.desk }, "desk");
     expectZone(ZONE_DESK_P0);
 
     await tap({ floor: EMPTY_FLOOR });
 
+    // 책상 (4.5, 9.5) 앞 → 서는 자리 (4.5, 10.75), 원만
+    expectZone({ place: "desk", center: { x: 4.5, z: 10.75 }, reach: null, radius: 1, approach: [{ x: 4.5, z: 10.75 }] });
+
+    await tap({ floor: EMPTY_FLOOR }, "desk");
+
     expectZone(null);
   });
 
-  test("[spec] Z10 책상을 골라 둔 뒤 옷장을 고르면 책상 구역이 사라지고 구역이 없다", async () => {
+  // 075 고칠 기존 테스트: 옛 Z10 "옷장을 고르면 책상 구역이 사라진다"를 새 동작(옷장 톡은 안내만, 책상 구역 그대로. 책상을 톡해 확정한 뒤 옷장을 고르면 구역 없음)으로 고쳤다
+  test("[spec] Z10 [075 바뀔] 책상을 골라 둔 뒤 옷장을 톡하면 안내만 뜨고 책상 구역이 그대로이며, 책상을 톡해 확정한 뒤 옷장을 고르면 구역이 없다", async () => {
     await startEditing();
     await tap({ floor: AT.desk }, "desk");
     expectZone(ZONE_DESK_P0);
 
     await tap({ floor: AT.wardrobe }, "wardrobe");
 
+    expect(screen.getByText(TAP_CANNOT)).toBeTruthy();
+    expectZone(ZONE_DESK_P0);
+
+    await tap({ floor: AT.desk }, "desk");
+    expectZone(null);
+    await tap({ floor: AT.wardrobe }, "wardrobe");
+
+    expectLifted("wardrobe");
     expectZone(null);
   });
 
-  test("[spec] Z11 게시판을 골라 둔 뒤 책장을 고르면 책장 구역으로 바뀐다", async () => {
+  // 075 고칠 기존 테스트: 옛 Z11 "책장을 고르면 책장 구역으로 바뀐다"를 새 동작(책장 톡은 안내만, 게시판 구역 그대로. 게시판을 톡해 확정한 뒤 책장을 고르면 책장 구역)으로 고쳤다
+  test("[spec] Z11 [075 바뀔] 게시판을 골라 둔 뒤 책장을 톡하면 가장 가까운 왼벽 2.5가 책장 바로 위라 안내만 뜨고 게시판 구역이 그대로이며, 게시판을 톡해 확정한 뒤 책장을 고르면 책장 구역으로 바뀐다", async () => {
     await startEditing();
     await tap(back(1.8), "board");
     expectZone(ZONE_BOARD_P0);
 
+    await tap({ floor: AT.bookcase }, "bookcase");
+
+    expect(screen.getByText(TAP_CANNOT)).toBeTruthy();
+    expectZone(ZONE_BOARD_P0);
+
+    await tap(back(1.8), "board");
+    expectZone(null);
     await tap({ floor: AT.bookcase }, "bookcase");
 
     expectZone(ZONE_BOOKCASE_P0);
@@ -696,7 +742,8 @@ describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자�
     // 책장 (0.5, 2.5) 뒤 보기 → 서는 자리 (0.5, 1.6), 바라볼 지점 (0.5, 3.0)
     expectZone({ place: "bookcase", center: { x: 0.5, z: 1.6 }, reach: { x: 0.5, z: 3 }, radius: 1, approach: [{ x: 0.5, z: 1.6 }] });
 
-    await tap({ floor: EMPTY_FLOOR });
+    // 075: 고르기는 책장을 다시 톡해 푼다(준비만 바꿈)
+    await tap({ floor: AT.bookcase }, "bookcase");
 
     expect(floorMarks()).toEqual([{ piece: "bookcase", ok: false }]);
     expectZone(null);

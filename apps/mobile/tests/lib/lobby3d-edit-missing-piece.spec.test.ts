@@ -5,6 +5,10 @@
 // 그래서 같은 조작을 piece만 null로 바꾼 편집기와 견주고, 고른 것이 없을 때처럼 결과가 하나로 정해지는 곳은 값도 적는다.
 // 구현 코드는 부르는 방법(LobbyEditor의 생성자·pointerDown/Move/Up·store·rotate·selected·red·layout·dragging)을 알려고만 읽었다.
 // 고치기 전에는 pointerDown이 배치에 없는 id의 종류를 찾다가 TypeError("Cannot read properties of undefined (reading 'type')")로 실패한다.
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
+// 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 곳을 톡하면 그 가구를 그리로 옮기고(둘 수 없으면 옮기지 않고 안내) 골라진 채 둔다.
+// - M5: 가구 없는 같은 누르기와 같은지는 그대로 보고, 끝의 "고르기가 풀린다"를 새 동작(책상을 칸 맞춤 (7.5, 3.5)로 옮기면 방 밖이라 옮기지 않고 안내, 책상이 골라진 채)으로 고쳤다.
+// - M7: 빨간 가구를 만든 뒤 그 가구를 다시 톡해 고르기를 풀어 둔다(준비만 바꿈. 고른 빨간 가구로 다른 곳을 톡하는 동작은 명세가 정하지 않아 피한다). 단언은 그대로다.
 
 import type { FloorPoint, PointerHit } from "@/lib/lobby3d/engine";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
@@ -162,8 +166,10 @@ describe("[spec] 068 고칠 동작 2: 배치에 없는 가구가 눌린 결과�
 
     expect(up).toEqual(withNone.pointerUp());
     expect(stateOf(withGhost)).toEqual(stateOf(withNone));
-    // 가구 없는 곳을 누른 것과 같으므로 고르기가 풀린다
-    expect(withGhost.selected).toBeNull();
+    // 075 바뀔: 가구 없는 곳을 누른 것과 같으므로 골라진 책상을 그리로 옮기려 하나, 칸 맞춤 (7.5, 3.5)의 책상(3칸)은 방 밖이라 옮기지 않고 안내하며 책상이 골라진 채다
+    expect(up).not.toBeNull();
+    expect(withGhost.selected).toBe("desk");
+    expect(withGhost.layout.items.find((item) => item.id === "desk")?.floor).toEqual({ x: 1.5, z: 5.5, facing: 0 });
   });
 
   test("M6 책상을 골라 둔 채 책상 칸 안(1.5, 5.5)을 배치에 없는 id로 누르면, 가구 없는 같은 누르기와 결과가 같다", () => {
@@ -190,6 +196,10 @@ describe("[spec] 068 고칠 동작 2: 배치에 없는 가구가 눌린 결과�
       expect(editor.selected).toBe("wardrobe2");
       editor.rotate();
       // 돌린 뒤 책장과 겹쳐 빨간 가구가 된다(시작 조건)
+      expect(editor.red).toBe("wardrobe2");
+      // 075: 빨간 가구를 다시 톡해 고르기만 풀어 둔다(빨간 가구는 남는다)
+      tap(editor, hit(AT.wardrobe2, "wardrobe2"));
+      expect(editor.selected).toBeNull();
       expect(editor.red).toBe("wardrobe2");
     };
     const { withGhost, withNone, ghostDown, noneDown } = pressBoth(prepare, { x: 5.5, z: 4.5 }, "ghost", L_OVER);

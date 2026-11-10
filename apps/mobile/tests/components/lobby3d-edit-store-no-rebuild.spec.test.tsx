@@ -18,6 +18,9 @@
 // - "보인다": 조상까지 모두 visible인 메시. "누르기 판정": 3D 그리기의 터치 받는 View에 화면 좌표를 넣었을 때 3D 그리기가 화면에 넘기는 결과.
 // - 누르기 탐색(probe): 방 바닥 전체와 높이 1.2칸의 점들을 화면 좌표로 옮겨 누르기 시작(down)과 취소(cancel)를 넣는다.
 //   취소로 끝내므로 라이트루프가 걷거나 가구가 옮겨지지 않는다. 숨긴 가구가 어디 놓였는지 모르므로 방 전체를 훑는다.
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
+// 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 빈 곳을 톡하면 고르기가 풀리지 않고 골라진 가구가 그리로 옮겨 간다.
+// 그래서 고르기를 푸는 도우미(deselect)는 골라진 가구 자신을 다시 톡한다(판정은 보지 않고 누르기 결과를 화면에 직접 넣는다). 준비만 바꿨고 단언은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { useState } from "react";
@@ -180,7 +183,6 @@ const WARDROBE_AROUND = 1;
 const RUG_AROUND = 1.5;
 /** 일기 책상 이름표 높이(카탈로그의 책상 장소 label.y, 책상 가운데 위). */
 const DESK_LABEL_Y = 2.1;
-const EMPTY_FLOOR = { x: 5.5, z: 3.5 };
 
 const NOW = new Date("2026-11-12T03:00:00.000Z");
 const SLOW_TEST_MS = 30_000;
@@ -501,8 +503,29 @@ async function takeOutWardrobe() {
   await frames();
 }
 
+/** 075: 골라진 가구 자신을 누른 결과(바닥 가구는 칸 가운데, 탁상 소품은 받침 가구 가운데에서 그 소품을 맞힘, 벽 가구는 걸린 벽 자리). */
+function selfHit(id: string): PointerHit {
+  const item = edit().layout.items.find((entry) => entry.id === id);
+  expect(item).toBeDefined();
+  if (item!.wall) return { point: null, mark: null, onCharacter: false, piece: id, wall: { wall: item!.wall.wall, along: item!.wall.along } };
+  const base = item!.floor ?? edit().layout.items.find((entry) => entry.id === item!.on?.parent)?.floor;
+  expect(base).toBeDefined();
+  return { point: { x: base!.x, z: base!.z }, mark: null, onCharacter: false, piece: id, wall: null };
+}
+
+/** 고르기를 푼다. 075: 골라진 가구 자신을 다시 톡한다(누르기 결과를 화면의 onPointer에 직접 넣는다). */
 async function deselect() {
-  await tapAt(toScreen(EMPTY_FLOOR.x, 0, EMPTY_FLOOR.z));
+  const id = lifted();
+  if (id) {
+    const h = selfHit(id);
+    await act(async () => {
+      mockCanvas.props!.onPointer("down", h, 200, 300);
+    });
+    await act(async () => {
+      mockCanvas.props!.onPointer("up", null, 200, 300);
+    });
+    await flushAsync();
+  }
   await frames();
   expect(lifted()).toBeNull();
 }

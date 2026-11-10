@@ -15,6 +15,9 @@
 // 01-main-spec.md, 보고 02-qa-tests.md): 줄은 꾸미기에 들어가면 늘 보이고 아래 '보관함' 버튼이 없어져, openStorage는 누르지 않고
 // 줄 머리가 보이는지만 보며, 개수는 줄 머리의 "보관함 N"(개발 빌드는 '보관함 N' 탭 글)에서 읽는다.
 // 가정(071): 줄 머리 글은 버튼이 아니고, 개발 빌드의 탭 역할은 070처럼 tab이다.
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
+// 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 가구를 톡하면 그 가구가 골라지지 않고 골라진 가구를 옮기려 한다.
+// 그래서 K4에서 가구를 차례로 고를 때 사이에 앞 가구를 다시 톡해 확정한다(준비만 바꿈. 단언은 그대로).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { BackHandler } from "react-native";
@@ -693,6 +696,9 @@ describe("[spec] 066-⑤ 명세 5: 그대로여야 할 동작(K, 화면)", () =>
     expect(lifted()).toBe("frame-1");
     expect(screen.queryByRole("button", { name: "돌리기" })).toBeNull();
     expect(screen.queryByRole("button", { name: "치우기" })).not.toBeNull();
+    // 075: 다른 가구를 고르기 전에 액자를 다시 톡해 확정한다
+    await tapHit({ point: null, mark: null, onCharacter: false, piece: "frame-1", wall: { wall: "left", along: 7.5 } });
+    expect(lifted()).toBeNull();
 
     for (const [id, along] of [
       ["board", 1.8],
@@ -702,6 +708,9 @@ describe("[spec] 066-⑤ 명세 5: 그대로여야 할 동작(K, 화면)", () =>
       expect(lifted()).toBe(id);
       expect(screen.queryByRole("button", { name: "돌리기" })).toBeNull();
       expect(screen.queryByRole("button", { name: "치우기" })).toBeNull();
+      // 075: 다음 가구를 고르기 전에 이 가구를 다시 톡해 확정한다
+      await tapHit({ point: null, mark: null, onCharacter: false, piece: id, wall: { wall: "back", along } });
+      expect(lifted()).toBeNull();
     }
   });
 });

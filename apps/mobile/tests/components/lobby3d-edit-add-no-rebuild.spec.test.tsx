@@ -23,6 +23,9 @@
 // - '가구 더하기'는 개발 빌드(__DEV__ = true)의 보관함 줄 탭이다. 보관함 줄이 닫혀 있으면 '보관함' 버튼으로 열고, 열려 있으면 그대로 쓴다
 //   (071 작업이 보관함 줄을 늘 보이게 바꾸는 중이라 두 모습 모두에서 돌게 했다).
 // - 고르기·끌기처럼 판정 자체를 보지 않는 조작은 3D 그리기가 화면에 넘기는 onPointer에 누르기 결과(piece)를 직접 넣어 한다.
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
+// 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 빈 곳을 톡하면 고르기가 풀리지 않고 골라진 가구가 그리로 옮겨 간다.
+// 그래서 고르기를 푸는 도우미(deselect)는 골라진 가구 자신을 다시 톡한다(판정은 보지 않고 누르기 결과를 화면에 직접 넣는다). 준비만 바꿨고 단언은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { useState } from "react";
@@ -310,8 +313,25 @@ async function dragPiece(piece: string, from: FloorPoint, to: FloorPoint) {
   await frames();
 }
 
+/** 075: 골라진 가구 자신을 누른 결과(바닥 가구는 칸 가운데, 탁상 소품은 받침 가구 가운데에서 그 소품을 맞힘, 벽 가구는 걸린 벽 자리). */
+function selfHit(id: string): PointerHit {
+  const item = edit().layout.items.find((entry) => entry.id === id);
+  expect(item).toBeDefined();
+  if (item!.wall) return { point: null, mark: null, onCharacter: false, piece: id, wall: { wall: item!.wall.wall, along: item!.wall.along } };
+  const base = item!.floor ?? edit().layout.items.find((entry) => entry.id === item!.on?.parent)?.floor;
+  expect(base).toBeDefined();
+  return { point: { x: base!.x, z: base!.z }, mark: null, onCharacter: false, piece: id, wall: null };
+}
+
+/** 고르기를 푼다. 075: 골라진 가구 자신을 다시 톡한다. */
 async function deselect() {
-  await tapPiece(null, EMPTY_FLOOR);
+  const id = lifted();
+  if (id) {
+    const h = selfHit(id);
+    await pointer("down", h, 200, 300);
+    await pointer("up", null, 200, 300);
+    await frames();
+  }
   expect(lifted()).toBeNull();
 }
 

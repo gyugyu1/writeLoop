@@ -11,6 +11,9 @@
 // 시나리오 해석 바꿈(보고 07-qa-tests.md에 적음): G10은 "스탠드에 장소 표시(mark)가 없다"를 빼고 "길을 막지 않는다(blocker 아님)"만 본다.
 //   명세 5는 "그 자리를 누르면 책상(장소)을 누른 것"이라 결과만 정하고, 이 결과는 3D 테스트(B10)가 본다.
 // F1은 책상을 시나리오의 (3.5, 5.5) 대신 069 테스트에서 놓을 수 있다고 확인된 (1.5, 6.5)로 옮긴다(놓을 수 있는지가 아니라 따라가기를 보려고). 기대값은 같은 규칙으로 계산했다.
+// 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 B6·B7·B8을 새 동작으로 고쳤다(private 작업 폴더
+// 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 곳을 톡하면
+// 골라진 가구를 그리로 옮기고(소품은 가장 가까운 받침 자리) 골라진 채 두며, 둘 수 없으면 옮기지 않고 안내한다(탭한 곳의 가구는 골라지지 않는다).
 import { readFileSync } from "fs";
 import { join } from "path";
 import { TAP_MAX_MOVE_PX, type FloorPoint, type PointerHit } from "@/lib/lobby3d/engine";
@@ -250,26 +253,33 @@ describe("[spec] 066-④ 명세 6: 고르기·돌리기·치우기", () => {
     expect(editor.storable).toBe("lamp");
   });
 
-  test("B6 스탠드를 고른 뒤 책상(2.5, 5.5)을 톡하면 오류 없이 책상이 골라진다", () => {
+  // 075 고칠 기존 테스트: 옛 B6 "책상이 골라진다"를 새 동작(스탠드가 가장 가까운 자리 2로 옮겨 가고 골라진 채)으로 고쳤다
+  test("B6 [075 바뀔] 스탠드를 고른 뒤 책상(2.5, 5.5)을 톡하면 오류 없이 스탠드가 가장 가까운 자리 2로 옮겨 가고, 책상은 골라지지 않으며 스탠드가 골라진 채다", () => {
     const editor = new LobbyEditor(N0());
     tap(editor, SLOT[0], "lamp");
     expect(() => tap(editor, { x: 2.5, z: 5.5 }, "desk")).not.toThrow();
-    expect(editor.selected).toBe("desk");
+    expect(itemOf(editor.layout, "lamp")).toEqual({ id: "lamp", type: "lamp", on: { parent: "desk", slot: 2, facing: 0 } });
+    expect(editor.selected).toBe("lamp");
   });
 
-  test("B7 스탠드를 고른 뒤 빈 바닥 (5.5, 9.5)를 톡하면 오류 없이 고르기가 풀린다", () => {
+  // 075 고칠 기존 테스트: 옛 B7 "고르기가 풀린다"를 새 동작(가장 가까운 자리 2로 옮겨 가고 골라진 채)으로 고쳤다
+  test("B7 [075 바뀔] 스탠드를 고른 뒤 빈 바닥 (5.5, 9.5)를 톡하면 오류 없이 가장 가까운 책상 자리 2로 옮겨 가고 골라진 채다", () => {
     const editor = new LobbyEditor(N0());
     tap(editor, SLOT[0], "lamp");
     expect(() => tap(editor, { x: 5.5, z: 9.5 }, null)).not.toThrow();
-    expect(editor.selected).toBeNull();
+    expect(itemOf(editor.layout, "lamp")).toEqual({ id: "lamp", type: "lamp", on: { parent: "desk", slot: 2, facing: 0 } });
+    expect(editor.selected).toBe("lamp");
   });
 
-  test("B8 책상을 고른 뒤 스탠드를 톡하면 스탠드가 골라진다", () => {
+  // 075 고칠 기존 테스트: 옛 B8 "스탠드가 골라진다"를 새 동작(책상을 칸 맞춤 (0.5, 5.5)로 옮기면 방 밖이라 옮기지 않고 안내, 책상이 골라진 채)으로 고쳤다
+  test("B8 [075 바뀔] 책상을 고른 뒤 스탠드(0.5, 5.5)를 톡하면 스탠드는 골라지지 않고, 책상은 방 밖이 되어 옮기지 않으며 알림이 있고 골라진 채다", () => {
     const editor = new LobbyEditor(N0());
     tap(editor, { x: 1.5, z: 5.5 }, "desk");
     expect(editor.selected).toBe("desk");
-    tap(editor, SLOT[0], "lamp");
-    expect(editor.selected).toBe("lamp");
+    const notice = tap(editor, SLOT[0], "lamp");
+    expect(notice).not.toBeNull();
+    expect(editor.selected).toBe("desk");
+    expect(sortedById(editor.layout.items)).toEqual(sortedById(N0().items));
   });
 
   test("B9 고른 스탠드를 다시 톡하면 고르기가 풀린다", () => {

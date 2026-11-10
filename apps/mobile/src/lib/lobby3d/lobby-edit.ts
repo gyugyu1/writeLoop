@@ -1,4 +1,4 @@
-import { MARKS, MARK_ZONE_RADIUS, ROOM, TAP_MAX_MOVE_PX, findPath, isFree, zoneReachesWall, type FloorPoint, type PointerHit } from "./engine";
+import { MARK_ZONE_RADIUS, ROOM, TAP_MAX_MOVE_PX, findPath, isFree, zoneReachesWall, type FloorPoint, type PointerHit } from "./engine";
 import { furnitureType, type FurniturePlaceId, type FurnitureType } from "./furniture-catalog";
 import {
   DEFAULT_LOBBY_LAYOUT,
@@ -11,7 +11,6 @@ import {
   storedItems,
   surfaceSlotsOf,
   tabletopPose,
-  wallLength,
   withItemPlacement,
   type Facing,
   type FloorPlacementData,
@@ -22,6 +21,7 @@ import {
   type WallPlacementData,
   type WallSide
 } from "./lobby-layout";
+import { currentRoom, outsidePlace, roomWallLength, type RoomSpec } from "./room";
 
 // 홈 '꾸미기'(편집 모드)의 가구 옮기기·돌리기와, 가구를 놓을 수 있는 배치인지 판단.
 // 바닥 가구는 칸에 맞춰 옮기고 돌리며, 벽 가구는 뒷벽·양옆 벽을 따라 반 칸 단위로 옮긴다. 탁상형 소품은 받침 가구의 자리 사이로 옮기고 돌린다.
@@ -59,14 +59,14 @@ const insideBounds = (b: Bounds, p: FloorPoint) => p.x >= b.minX - EPS && p.x <=
 const overlaps = (a: Bounds, b: Bounds) => a.minX < b.maxX - EPS && b.minX < a.maxX - EPS && a.minZ < b.maxZ - EPS && b.minZ < a.maxZ - EPS;
 
 /** 벽 가구 바로 아래 칸: 그 벽에 붙은 첫 줄 칸 중 벽 가구 폭에 걸친 칸의 범위. */
-function underWallBounds(item: FurnitureItem, type: FurnitureType): Bounds {
+function underWallBounds(item: FurnitureItem, type: FurnitureType, room: RoomSpec): Bounds {
   const { wall, along } = item.wall!;
   const half = type.size.width / 2;
   const from = Math.floor(along - half + EPS);
   const to = Math.ceil(along + half - EPS);
   if (wall === "back") return { minX: from, maxX: to, minZ: 0, maxZ: 1 };
   if (wall === "left") return { minX: 0, maxX: 1, minZ: from, maxZ: to };
-  return { minX: ROOM.width - 1, maxX: ROOM.width, minZ: from, maxZ: to };
+  return { minX: room.width - 1, maxX: room.width, minZ: from, maxZ: to };
 }
 
 /**
@@ -77,8 +77,9 @@ function underWallBounds(item: FurnitureItem, type: FurnitureType): Bounds {
  * 4. 벽 가구 폭이 벽 안(양 끝에서 띄워)이고, 같은 벽의 벽 가구끼리 겹치지 않는다.
  * 5. 장소마다 서는 자리 중 하나에 입구(밖으로의 서는 자리)에서 걸어갈 수 있다.
  * 6. 탁상형 소품은 방에 놓인 받침 가구의 있는 자리에 올라 있고, 한 자리에 하나만 있다. 탁상형은 1~5에 들지 않는다.
+ * 방(크기·걸 수 있는 벽·입구)은 주지 않으면 지금 방이다. 방에 배치 맞추기는 새 방을 준다.
  */
-export function isPlaceableLayout(layout: LobbyLayout): boolean {
+export function isPlaceableLayout(layout: LobbyLayout, room: RoomSpec = currentRoom()): boolean {
   const typed = layout.items.map((item) => ({ item, type: furnitureType(item.type) }));
   const taken = new Set<string>();
   for (const { item } of typed) {
@@ -91,7 +92,7 @@ export function isPlaceableLayout(layout: LobbyLayout): boolean {
   const grounded = typed.filter((t) => t.item.floor).map((t) => ({ ...t, box: floorPieceBounds(t.item.type, t.item.floor!) }));
   const walls = typed.filter((t) => t.item.wall);
   for (const { box } of grounded) {
-    if (box.minX < -EPS || box.minZ < -EPS || box.maxX > ROOM.width + EPS || box.maxZ > ROOM.depth + EPS) return false;
+    if (box.minX < -EPS || box.minZ < -EPS || box.maxX > room.width + EPS || box.maxZ > room.depth + EPS) return false;
   }
   for (let i = 0; i < grounded.length; i += 1) {
     for (let j = i + 1; j < grounded.length; j += 1) {
@@ -104,7 +105,8 @@ export function isPlaceableLayout(layout: LobbyLayout): boolean {
   for (const { item, type } of walls) {
     const { wall, along } = item.wall!;
     const half = type.size.width / 2;
-    if (along - half < WALL_END_GAP - EPS || along + half > wallLength(wall, ROOM.width, ROOM.depth) - WALL_END_GAP + EPS) return false;
+    if (!room.hangWalls.includes(wall)) return false;
+    if (along - half < WALL_END_GAP - EPS || along + half > roomWallLength(room, wall) - WALL_END_GAP + EPS) return false;
   }
   for (let i = 0; i < walls.length; i += 1) {
     for (let j = i + 1; j < walls.length; j += 1) {
@@ -116,17 +118,17 @@ export function isPlaceableLayout(layout: LobbyLayout): boolean {
     }
   }
   for (const w of walls) {
-    const under = underWallBounds(w.item, w.type);
+    const under = underWallBounds(w.item, w.type, room);
     for (const g of grounded) {
       if (g.type.height.top > w.type.height.bottom + EPS && overlaps(g.box, under)) return false;
     }
   }
-  const geometry = layoutGeometry(layout, ROOM.width);
-  const door = MARKS.door.approach;
-  const start = door.find((p) => isFree(p.x, p.z, geometry.solidTiles));
+  const geometry = layoutGeometry(layout, room.width);
+  const door = outsidePlace(room).approach;
+  const start = door.find((p) => isFree(p.x, p.z, geometry.solidTiles, room));
   if (!start) return false;
   return (Object.keys(geometry.places) as (keyof typeof geometry.places)[]).every(
-    (id) => findPath(start, geometry.places[id].approach, geometry.solidTiles) !== null
+    (id) => findPath(start, geometry.places[id].approach, geometry.solidTiles, room) !== null
   );
 }
 
@@ -139,11 +141,12 @@ export function snapPiece(type: string, facing: Facing, point: FloorPoint): Floo
 /**
  * 보관함에서 꺼낸 가구를 놓을 자리. 그 가구를 넣은 배치가 놓을 수 있는 배치인 자리 가운데
  * 바닥 가구는 앞을 보는 방향(0)으로 칸에 맞춘 자리 중 방 가운데에서 가장 가까운 자리,
- * 벽 가구는 뒷벽·왼벽·오른벽 차례로 벽 가운데에서 가장 가까운 자리, 탁상형은 받침 가구의 빈자리 중 첫 번째(배치의 가구 순서, 자리 번호 순서)다. 없으면 null.
+ * 벽 가구는 뒷벽·왼벽·오른벽 차례로(그 방에서 걸 수 있는 벽만) 벽 가운데에서 가장 가까운 자리,
+ * 탁상형은 받침 가구의 빈자리 중 첫 번째(배치의 가구 순서, 자리 번호 순서)다. 없으면 null. 방은 주지 않으면 지금 방이다.
  */
-export function freeSpotFor(layout: LobbyLayout, item: StoredItem): FurnitureItem | null {
+export function freeSpotFor(layout: LobbyLayout, item: StoredItem, room: RoomSpec = currentRoom()): FurnitureItem | null {
   const type = furnitureType(item.type);
-  const fits = (candidate: FurnitureItem) => isPlaceableLayout(makeLayout([...layout.items, candidate], storedItems(layout)));
+  const fits = (candidate: FurnitureItem) => isPlaceableLayout(makeLayout([...layout.items, candidate], storedItems(layout)), room);
   if (type.mount === "tabletop") {
     for (const spot of surfaceSlotsOf(layout)) {
       const candidate = { id: item.id, type: item.type, on: { parent: spot.parent, slot: spot.slot, facing: 0 as Facing } };
@@ -153,8 +156,8 @@ export function freeSpotFor(layout: LobbyLayout, item: StoredItem): FurnitureIte
   }
   if (type.mount === "wall") {
     const half = type.size.width / 2;
-    for (const wall of ["back", "left", "right"] as WallSide[]) {
-      const length = wallLength(wall, ROOM.width, ROOM.depth);
+    for (const wall of (["back", "left", "right"] as WallSide[]).filter((w) => room.hangWalls.includes(w))) {
+      const length = roomWallLength(room, wall);
       const spots: number[] = [];
       for (let along = Math.ceil((half + WALL_END_GAP) / WALL_STEP) * WALL_STEP; along <= length - half - WALL_END_GAP + EPS; along += WALL_STEP) spots.push(along);
       spots.sort((a, b) => Math.abs(a - length / 2) - Math.abs(b - length / 2) || a - b);
@@ -166,10 +169,10 @@ export function freeSpotFor(layout: LobbyLayout, item: StoredItem): FurnitureIte
     return null;
   }
   const { width, depth } = floorPieceSize(item.type, 0);
-  const center = { x: ROOM.width / 2, z: ROOM.depth / 2 };
+  const center = { x: room.width / 2, z: room.depth / 2 };
   const spots: FloorPoint[] = [];
-  for (let x = width / 2; x <= ROOM.width - width / 2 + EPS; x += 1) {
-    for (let z = depth / 2; z <= ROOM.depth - depth / 2 + EPS; z += 1) spots.push({ x, z });
+  for (let x = width / 2; x <= room.width - width / 2 + EPS; x += 1) {
+    for (let z = depth / 2; z <= room.depth - depth / 2 + EPS; z += 1) spots.push({ x, z });
   }
   // 곧은 거리를 제곱으로 비교한다(반 칸 단위라 정확하고, 같은 거리면 아래 순서로 정한다)
   const dist = (p: FloorPoint) => (p.x - center.x) ** 2 + (p.z - center.z) ** 2;
@@ -179,6 +182,50 @@ export function freeSpotFor(layout: LobbyLayout, item: StoredItem): FurnitureIte
     if (fits(candidate)) return candidate;
   }
   return null;
+}
+
+/**
+ * 배치를 다른 방으로 옮긴다(집 넓히기 같은 방을 바꾸는 기능이 부른다). 결과는 늘 새 방에서 놓을 수 있는 배치다.
+ * 1. 새 방에서도 배치 전체가 놓을 수 있으면 그대로 둔다.
+ * 2. 아니면 가구를 하나씩 다시 놓는다: 장소 가구 먼저, 그다음 나머지 가구를 배치 순서대로, 탁상형 소품은 맨 뒤에.
+ *    지금 자리 그대로 넣어도 놓을 수 있으면 그 자리에 둔다. 아니면 장소 가구는 꺼낼 때와 같은 규칙으로 새 방의 놓을 수 있는 자리로 옮기고,
+ *    나머지 가구는 보관함 끝에 넣는다. 받침 가구를 보관함에 넣으면 그 위 소품도 받침 가구 다음에(자리 번호 순서로) 함께 넣는다.
+ * 3. 보관함에 있던 가구는 그대로 보관함에 둔다. 방에 남는 가구는 원래 배치 순서대로다.
+ */
+export function fitLayoutToRoom(layout: LobbyLayout, room: RoomSpec): LobbyLayout {
+  if (isPlaceableLayout(layout, room)) return layout;
+  const isPlace = (item: FurnitureItem) => Boolean(furnitureType(item.type).place);
+  const order = [
+    ...layout.items.filter((item) => isPlace(item)),
+    ...layout.items.filter((item) => !isPlace(item) && !item.on),
+    ...layout.items.filter((item) => item.on)
+  ];
+  const placed: FurnitureItem[] = [];
+  const stored: StoredItem[] = [];
+  const gone = new Set<string>();
+  for (const item of order) {
+    if (gone.has(item.id)) continue;
+    if (isPlaceableLayout(makeLayout([...placed, item], []), room)) {
+      placed.push(item);
+      continue;
+    }
+    if (isPlace(item)) {
+      const spot = freeSpotFor(makeLayout(placed, []), { id: item.id, type: item.type }, room);
+      // 방의 최소 크기(room.ts) 덕에 장소 가구는 늘 놓을 자리가 있다
+      if (!spot) throw new Error(`no spot for ${item.id} in room ${room.id}`);
+      placed.push(spot);
+      continue;
+    }
+    const onTop = layout.items.filter((p) => p.on?.parent === item.id).sort((a, b) => a.on!.slot - b.on!.slot);
+    for (const p of [item, ...onTop]) {
+      gone.add(p.id);
+      stored.push({ id: p.id, type: p.type });
+    }
+  }
+  // 방에 남는 가구는 원래 배치 순서를 지킨다(꺼낼 때 빈자리를 찾는 순서가 배치 순서다)
+  const at = new Map(layout.items.map((item, i) => [item.id, i]));
+  placed.sort((a, b) => at.get(a.id)! - at.get(b.id)!);
+  return makeLayout(placed, [...storedItems(layout), ...stored]);
 }
 
 /** 바닥 점에서 가장 가까운 받침 가구의 소품 자리(같은 거리면 배치의 가구 순서, 자리 번호 순서로 앞선 것). 받침 가구가 없으면 null. */

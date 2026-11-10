@@ -1,4 +1,4 @@
-import { ROOM } from "./engine";
+import { currentRoom, roomWallLength } from "./room";
 import { REQUIRED_FURNITURE_TYPES, findFurnitureType, furnitureType, surfaceSlots } from "./furniture-catalog";
 import {
   makeLayout,
@@ -26,8 +26,6 @@ const MAX_ITEMS = 40;
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
 
 export type LobbyLayoutPayload = LobbyLayout & { version: number };
-
-const WALLS: readonly WallSide[] = ["back", "left", "right"];
 
 export function toLobbyLayoutPayload(layout: LobbyLayout): LobbyLayoutPayload {
   const stored = storedItems(layout);
@@ -109,7 +107,8 @@ function parseItem(value: unknown): FurnitureItem | null {
 function parseFloorPiece(value: unknown): FloorPlacementData | null {
   if (!hasExactKeys(value, ["x", "z", "facing"])) return null;
   const { x, z, facing } = value;
-  if (!isWithin(x, ROOM.width) || !isWithin(z, ROOM.depth)) return null;
+  const room = currentRoom();
+  if (!isWithin(x, room.width) || !isWithin(z, room.depth)) return null;
   if (facing !== 0 && facing !== 1 && facing !== 2 && facing !== 3) return null;
   return { x, z, facing: facing as Facing };
 }
@@ -126,8 +125,8 @@ function parseTabletopPiece(value: unknown): TabletopPlacementData | null {
 function parseWallPiece(value: unknown): WallPlacementData | null {
   if (!hasExactKeys(value, ["wall", "along"])) return null;
   const { wall, along } = value;
-  if (typeof wall !== "string" || !(WALLS as readonly string[]).includes(wall)) return null;
-  if (!isWithin(along, wall === "back" ? ROOM.width : ROOM.depth)) return null;
+  if (typeof wall !== "string" || !(currentRoom().hangWalls as readonly string[]).includes(wall)) return null;
+  if (!isWithin(along, roomWallLength(currentRoom(), wall as WallSide))) return null;
   return { wall: wall as WallSide, along };
 }
 

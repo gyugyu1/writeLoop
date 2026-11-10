@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 import { layoutGeometry, layoutItem, storedItems, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
+import { currentRoom, outsideExit } from "@/lib/lobby3d/room";
 import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { buildPlacements, furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
@@ -413,7 +414,8 @@ function buildWorld(layout: LobbyLayout): World {
   kit.part(new RoundedBoxGeometry(W, 0.2, 0.06, 2, 0.02), 0xb57a45, 0, shell).position.set(W / 2, 0.1, 0.03);
   for (const bx of [0.03, W - 0.03]) kit.part(new RoundedBoxGeometry(0.06, 0.2, D, 2, 0.02), 0xb57a45, 0, shell).position.set(bx, 0.1, D / 2);
   // 앞 가운데 입구 발판(바닥보다 조금 낮다)
-  kit.part(new RoundedBoxGeometry(2.0, 0.16, ROOM.stepDepth, 2, 0.04), 0x8a5a3b, 0, shell).position.set(W / 2, -0.14, D + ROOM.stepDepth / 2);
+  const step = outsideExit(currentRoom());
+  kit.part(new RoundedBoxGeometry(step.width, 0.16, step.depth, 2, 0.04), 0x8a5a3b, 0, shell).position.set(step.x, -0.14, D + step.depth / 2);
 
   // 가구 밑과 벽에 건 것 뒤의 옅은 그림자, 라룹이 발밑 그림자
   const blob = blobTexture();
@@ -463,9 +465,10 @@ function buildWorld(layout: LobbyLayout): World {
   const makePiece = (place: FurniturePlacement): THREE.Group => {
     const g = new THREE.Group();
     if (place.piece === "exit") {
-      // 입구 발판(폭 2, 깊이 0.7, 윗면은 바닥보다 조금 낮다)만 덮는 보이지 않는 상자. 방 앞쪽 바닥은 덮지 않는다.
+      // 입구 발판(지금 방의 출입구 폭·깊이, 윗면은 바닥보다 조금 낮다)만 덮는 보이지 않는 상자. 방 앞쪽 바닥은 덮지 않는다.
       // 보이지 않아도 누르기 판정은 받는다.
-      const hit = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, ROOM.stepDepth), new THREE.MeshBasicMaterial());
+      const step = outsideExit(currentRoom());
+      const hit = new THREE.Mesh(new THREE.BoxGeometry(step.width, 0.3, step.depth), new THREE.MeshBasicMaterial());
       hit.position.y = -0.1;
       hit.visible = false;
       g.add(hit);
@@ -525,7 +528,7 @@ function buildWorld(layout: LobbyLayout): World {
   const labelPoints: Record<MarkId, THREE.Vector3> = {
     board: at(places.board.label),
     window: at(places.window.label),
-    door: new THREE.Vector3(W / 2, 0.4, D + ROOM.stepDepth / 2),
+    door: new THREE.Vector3(outsideExit(currentRoom()).x, 0.4, D + ROOM.stepDepth / 2),
     desk: at(places.desk.label),
     bookcase: at(places.bookcase.label)
   };

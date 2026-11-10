@@ -1,5 +1,6 @@
 import type { FloorPoint, MarkId } from "./engine";
 import { fittedModel, furnitureType, surfaceSlots, type FurniturePlaceId, type FurnitureType } from "./furniture-catalog";
+import type { WallSide } from "./room";
 
 // 방의 가구 배치(배치 데이터)와, 거기서 계산하는 값(막힌 칸, 장소의 서는 자리·바라볼 지점·이름표, 의자, 3D 자리).
 // 배치는 가구 인스턴스 목록이고, 가구마다의 값(크기·장소·의자·모델)은 카탈로그(furniture-catalog)에서 읽는다.
@@ -8,8 +9,8 @@ import { fittedModel, furnitureType, surfaceSlots, type FurniturePlaceId, type F
 
 /** 바닥 가구의 방향: 앞면이 보는 쪽. 0 앞(+z), 1 오른쪽(+x), 2 뒤(-z), 3 왼쪽(-x). */
 export type Facing = 0 | 1 | 2 | 3;
-/** 벽 가구를 거는 벽. 앞쪽은 열려 있어(카메라 쪽) 걸 수 없다. */
-export type WallSide = "back" | "left" | "right";
+/** 벽 가구를 거는 벽(방 데이터에서 정한다). */
+export type { WallSide };
 
 export interface FloorPlacementData {
   /** 가구가 차지하는 칸 모양의 가운데(바닥 좌표). 깔개처럼 칸에 맞지 않은 자리도 있다. */

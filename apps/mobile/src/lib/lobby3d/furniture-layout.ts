@@ -1,4 +1,5 @@
 import { ROOM, activeLobbyLayout, type MarkId } from "./engine";
+import { currentRoom, outsideExit } from "./room";
 import { TABLETOP_PICK_MIN, fittedModel, furnitureType, surfaceSlots, type FurnitureMount } from "./furniture-catalog";
 import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, makeLayout, storedItems, type FurnitureItem, type LobbyLayout } from "./lobby-layout";
 
@@ -44,15 +45,13 @@ export interface FurniturePlacement {
 /** 창 안쪽(햇빛이 지나는 곳)의 크기와 창살 굵기. 창문(미닫이 창 두 벌)의 안쪽이다. 바닥의 창문 빛이 이 크기를 따른다. */
 export const WINDOW_OPENING = { z: 0.05, width: 1.87, height: 1.66, bar: 0.08 } as const;
 
-const W = ROOM.width;
-const D = ROOM.depth;
 
 /**
  * 배치 데이터에서 가구를 놓는 자리를 만든다. 벽 가구, 바닥 가구(딸린 의자는 그 책상 바로 뒤) 순서이고 마지막에 입구 발판이다.
  * 장소가 딸린 가구(와 그 의자)를 누르면 그 장소로 가고, 장소가 없는 바닥 가구는 길을 막는 가구로 누르면 움직이지 않는다.
  */
 export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
-  const list: FurniturePlacement[] = layoutGeometry(layout, W).pieces.map((p) => {
+  const list: FurniturePlacement[] = layoutGeometry(layout, ROOM.width).pieces.map((p) => {
     const item = layout.items.find((it) => it.id === p.item)!;
     const type = furnitureType(item.type);
     // 탁상형 소품을 누르면 받침 가구를 누른 것과 같다(꾸미기 밖에서 책상 위 스탠드를 누르면 책상 장소로 간다)
@@ -88,7 +87,8 @@ export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
       ...(blocker ? { blocker: true } : {})
     };
   });
-  list.push({ item: "exit", piece: "exit", mount: "floor", x: W / 2, y: 0, z: D + ROOM.stepDepth / 2, rotY: 0, mark: "door" });
+  // 지금 방의 입구 발판 가운데
+  list.push({ item: "exit", piece: "exit", mount: "floor", x: outsideExit(currentRoom()).x, y: 0, z: ROOM.depth + ROOM.stepDepth / 2, rotY: 0, mark: "door" });
   return list;
 }
 
@@ -105,8 +105,8 @@ export function buildPlacements(layout: LobbyLayout): FurniturePlacement[] {
   const parked: FurnitureItem[] = stored.flatMap((item): FurnitureItem[] => {
     const mount = furnitureType(item.type).mount;
     if (mount === "tabletop") return base ? [{ ...item, on: { parent: base.id, slot: 0, facing: 0 } }] : [];
-    if (mount === "wall") return [{ ...item, wall: { wall: "back", along: W / 2 } }];
-    return [{ ...item, floor: { x: W / 2, z: D / 2, facing: 0 } }];
+    if (mount === "wall") return [{ ...item, wall: { wall: "back", along: ROOM.width / 2 } }];
+    return [{ ...item, floor: { x: ROOM.width / 2, z: ROOM.depth / 2, facing: 0 } }];
   });
   const stowedIds = new Set(stored.map((item) => item.id));
   return furniturePlacements(makeLayout([...layout.items, ...parked], [])).map((p) =>

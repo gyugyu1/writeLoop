@@ -1,4 +1,5 @@
 import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type LobbyLayout, type WallSide } from "./lobby-layout";
+import { currentRoom, outsideExit, outsidePlace, setCurrentRoom, type RoomSpec } from "./room";
 
 // 3D 로비(라이트루프의 방)의 동작 규칙. 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 // 좌표: 바닥 한 칸 = 1. x는 왼쪽→오른쪽(0..width), z는 뒷벽→앞(0..depth). 높이는 y.
@@ -25,19 +26,20 @@ export interface PointerHit {
   wall?: { wall: WallSide; along: number } | null;
 }
 
+/** 지금 방(room.ts의 방 데이터)의 크기·벽과, 방을 내려다보는 카메라 값. 방이 바뀌면(applyRoom) 방 값을 다시 채운다. */
 export const ROOM = {
-  width: 8,
-  depth: 11,
-  wallHeight: 3.2,
+  width: currentRoom().width,
+  depth: currentRoom().depth,
+  wallHeight: currentRoom().wallHeight,
   /** 카메라가 바닥을 내려다보는 기울기(도). */
   pitchDeg: 42,
   /** 카메라 세로 시야각(도). 원근감의 세기. */
   fovDeg: 30,
   /** 벽 두께. 벽 바깥면까지가 방이다(그 밖은 검정). */
-  wallThickness: 0.4,
-  /** 앞쪽 가운데 입구 발판이 방 앞끝에서 나온 길이. */
-  stepDepth: 0.7
-} as const;
+  wallThickness: currentRoom().wallThickness,
+  /** 앞쪽 입구 발판이 방 앞끝에서 나온 길이. */
+  stepDepth: outsideExit(currentRoom()).depth
+};
 
 export interface MarkInfo {
   id: MarkId;
@@ -82,8 +84,8 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   door: {
     id: "door",
     label: "밖으로",
-    faceTo: { x: 4.0, z: 11.35 },
-    approach: [{ x: 4.0, z: 10.5 }],
+    // 지금 방의 입구 발판에서 계산한다(기본 방은 바라볼 지점 (4.0, 11.35), 서는 자리 (4.0, 10.5))
+    ...outsidePlace(currentRoom()),
     prompt: "밖으로 나가 볼까?\n마을은 다음에 열려.",
     buttonLabel: "나가기",
     enterMessage: "마을은 다음 업데이트에서 열려요"
@@ -163,28 +165,29 @@ export const SOLID_TILES: ReadonlySet<string> = solidTiles;
 const BODY_RADIUS = 0.32;
 const tileKey = (c: number, r: number) => `${c},${r}`;
 
-// 아래 길 찾기는 막힌 칸(solid)을 받을 수 있다. 주지 않으면 지금 배치의 막힌 칸이다(편집 모드는 편집 중인 배치의 칸을 준다).
+// 아래 길 찾기는 막힌 칸(solid)과 방(room)을 받을 수 있다. 주지 않으면 지금 배치의 막힌 칸과 지금 방이다
+// (편집 모드는 편집 중인 배치의 칸을 주고, 방에 배치 맞추기는 새 방을 준다).
 
-export function isBlocked(x: number, z: number, solid: ReadonlySet<string> = SOLID_TILES): boolean {
-  if (x < 0.25 || x > ROOM.width - 0.25 || z < 0.45 || z > ROOM.depth) return true;
+export function isBlocked(x: number, z: number, solid: ReadonlySet<string> = SOLID_TILES, room: RoomSpec = currentRoom()): boolean {
+  if (x < 0.25 || x > room.width - 0.25 || z < 0.45 || z > room.depth) return true;
   return solid.has(tileKey(Math.floor(x), Math.floor(z)));
 }
 
 /** 라이트루프가 그 자리에 설 수 있는지(몸 둘레까지 본다). */
-export function isFree(x: number, z: number, solid: ReadonlySet<string> = SOLID_TILES): boolean {
+export function isFree(x: number, z: number, solid: ReadonlySet<string> = SOLID_TILES, room: RoomSpec = currentRoom()): boolean {
   return (
-    !isBlocked(x - BODY_RADIUS, z, solid) &&
-    !isBlocked(x + BODY_RADIUS, z, solid) &&
-    !isBlocked(x, z - BODY_RADIUS, solid) &&
-    !isBlocked(x, z + 0.15, solid)
+    !isBlocked(x - BODY_RADIUS, z, solid, room) &&
+    !isBlocked(x + BODY_RADIUS, z, solid, room) &&
+    !isBlocked(x, z - BODY_RADIUS, solid, room) &&
+    !isBlocked(x, z + 0.15, solid, room)
   );
 }
 
-export function isClearLine(a: FloorPoint, b: FloorPoint, solid: ReadonlySet<string> = SOLID_TILES): boolean {
+export function isClearLine(a: FloorPoint, b: FloorPoint, solid: ReadonlySet<string> = SOLID_TILES, room: RoomSpec = currentRoom()): boolean {
   const steps = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.12);
   for (let i = 1; i <= steps; i += 1) {
     const t = i / steps;
-    if (!isFree(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, solid)) return false;
+    if (!isFree(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, solid, room)) return false;
   }
   return true;
 }
@@ -194,8 +197,13 @@ export function isClearLine(a: FloorPoint, b: FloorPoint, solid: ReadonlySet<str
  * 칸 단위(대각선 포함)로 찾은 뒤, 막힘 없이 곧게 갈 수 있는 점은 건너뛰어 자연스럽게 편다.
  * 갈 수 없으면 null.
  */
-export function findPath(from: FloorPoint, goals: FloorPoint[], solid: ReadonlySet<string> = SOLID_TILES): FloorPoint[] | null {
-  const reachable = goals.filter((g) => isFree(g.x, g.z, solid));
+export function findPath(
+  from: FloorPoint,
+  goals: FloorPoint[],
+  solid: ReadonlySet<string> = SOLID_TILES,
+  room: RoomSpec = currentRoom()
+): FloorPoint[] | null {
+  const reachable = goals.filter((g) => isFree(g.x, g.z, solid, room));
   if (reachable.length === 0) return null;
   const sc = Math.floor(from.x);
   const sr = Math.floor(from.z);
@@ -215,7 +223,7 @@ export function findPath(from: FloorPoint, goals: FloorPoint[], solid: ReadonlyS
       const nc = c + dc;
       const nr = r + dr;
       const k = tileKey(nc, nr);
-      if (nc < 0 || nr < 0 || nc >= ROOM.width || nr >= ROOM.depth) continue;
+      if (nc < 0 || nr < 0 || nc >= room.width || nr >= room.depth) continue;
       if (solid.has(k) || prev.has(k)) continue;
       if (dc !== 0 && dr !== 0 && (solid.has(tileKey(c + dc, r)) || solid.has(tileKey(c, r + dr)))) continue;
       prev.set(k, tileKey(c, r));
@@ -241,7 +249,7 @@ export function findPath(from: FloorPoint, goals: FloorPoint[], solid: ReadonlyS
   let i = 0;
   while (i < tiles.length) {
     let j = tiles.length - 1;
-    while (j > i && !isClearLine(cur, tiles[j], solid)) j -= 1;
+    while (j > i && !isClearLine(cur, tiles[j], solid, room)) j -= 1;
     points.push(tiles[j]);
     cur = tiles[j];
     i = j + 1;
@@ -299,7 +307,25 @@ export const ROOM_BOUNDS = {
   maxY: ROOM.wallHeight,
   minZ: -ROOM.wallThickness,
   maxZ: ROOM.depth + ROOM.stepDepth
-} as const;
+};
+
+/**
+ * 지금 방을 바꾼다: 방 데이터와, 거기서 계산하는 방 크기(ROOM)·방 끝 상자(ROOM_BOUNDS)·밖으로 장소(MARKS.door)를 함께 바꾼다.
+ * 앱은 아직 부르지 않는다(늘 기본 방). 집 넓히기·이층집처럼 방을 바꾸는 기능이 배치를 새 방에 맞춘(fitLayoutToRoom) 뒤 부른다.
+ */
+export function applyRoom(room: RoomSpec): void {
+  setCurrentRoom(room);
+  const step = outsideExit(room);
+  Object.assign(ROOM, { width: room.width, depth: room.depth, wallHeight: room.wallHeight, wallThickness: room.wallThickness, stepDepth: step.depth });
+  Object.assign(ROOM_BOUNDS, {
+    minX: -room.wallThickness,
+    maxX: room.width + room.wallThickness,
+    maxY: room.wallHeight,
+    minZ: -room.wallThickness,
+    maxZ: room.depth + step.depth
+  });
+  Object.assign(MARKS.door, outsidePlace(room));
+}
 
 export interface CameraPose {
   position: { x: number; y: number; z: number };

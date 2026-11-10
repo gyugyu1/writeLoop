@@ -42,10 +42,14 @@ export interface RoomSpec {
 /** 방의 최소 크기(기본 방). 방은 넓어지기만 해서, 처음 배치의 장소 가구를 늘 놓을 수 있다. */
 export const MIN_ROOM_SIZE = { width: 8, depth: 11 } as const;
 
+const WALL_SIDES: readonly WallSide[] = ["back", "left", "right"];
+
 /** 방 데이터가 맞지 않는 까닭. 맞으면 null. */
 export function roomProblem(room: RoomSpec): string | null {
   if (!Number.isInteger(room.width) || !Number.isInteger(room.depth)) return "칸 수는 정수여야 한다";
   if (room.width < MIN_ROOM_SIZE.width || room.depth < MIN_ROOM_SIZE.depth) return "최소 크기보다 작다";
+  // 최소 크기 덕에 어느 벽 하나에도 장소가 딸린 벽 가구(게시판·창문)를 함께 걸 수 있다
+  if (room.hangWalls.length === 0 || !room.hangWalls.every((wall) => WALL_SIDES.includes(wall))) return "걸 수 있는 벽이 하나 이상, 아는 벽이어야 한다";
   const outside = room.exits.filter((exit): exit is OutsideExit => exit.kind === "outside");
   if (outside.length !== 1) return "밖으로 출입구는 정확히 하나여야 한다";
   const [step] = outside;

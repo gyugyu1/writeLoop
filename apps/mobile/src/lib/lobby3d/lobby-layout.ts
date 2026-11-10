@@ -161,11 +161,6 @@ export function wallPiecePose(data: WallPlacementData, roomWidth: number): { x: 
   return { x: pose.x, z: pose.z, rotY: FACING_ROT[pose.facing].rotY };
 }
 
-/** 벽을 따라간 자리의 범위(벽 길이). 뒷벽은 방 폭, 옆벽은 방 깊이다. */
-export function wallLength(wall: WallSide, roomWidth: number, roomDepth: number): number {
-  return wall === "back" ? roomWidth : roomDepth;
-}
-
 /** 바닥 가구가 차지하는 칸 모양을 놓인 방향대로 돌린 가로(x)·깊이(z) 칸 수. */
 export function floorPieceSize(type: string, facing: Facing): { width: number; depth: number } {
   const { width, depth } = furnitureType(type).size;

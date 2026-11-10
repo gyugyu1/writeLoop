@@ -310,7 +310,8 @@ export const ROOM_BOUNDS = {
 };
 
 /**
- * 지금 방을 바꾼다: 방 데이터와, 거기서 계산하는 방 크기(ROOM)·방 끝 상자(ROOM_BOUNDS)·밖으로 장소(MARKS.door)를 함께 바꾼다.
+ * 지금 방을 바꾼다: 방 데이터와, 거기서 계산하는 방 크기(ROOM)·방 끝 상자(ROOM_BOUNDS)·밖으로 장소(MARKS.door),
+ * 지금 배치에서 계산하는 값을 함께 바꾼다.
  * 앱은 아직 부르지 않는다(늘 기본 방). 집 넓히기·이층집처럼 방을 바꾸는 기능이 배치를 새 방에 맞춘(fitLayoutToRoom) 뒤 부른다.
  */
 export function applyRoom(room: RoomSpec): void {
@@ -325,6 +326,8 @@ export function applyRoom(room: RoomSpec): void {
     maxZ: room.depth + step.depth
   });
   Object.assign(MARKS.door, outsidePlace(room));
+  // 지금 배치에서 계산하는 값(장소의 서는 자리·바라볼 지점, 막힌 칸, 의자)도 새 방으로 다시 계산한다
+  applyLobbyLayout(activeLobbyLayout());
 }
 
 export interface CameraPose {

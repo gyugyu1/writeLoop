@@ -239,7 +239,7 @@ public class LobbyLayoutService {
         requireObjectWithKeys(piece, WALL_SPOT_KEYS);
         JsonNode wall = piece.get("wall");
         if (!wall.isTextual() || !room.hangWalls().contains(wall.textValue())) {
-            throw invalid("벽은 back·left·right 중 하나여야 해요.");
+            throw invalid("벽은 " + String.join("·", room.hangWalls()) + " 중 하나여야 해요.");
         }
         double along = requireWithin(piece.get("along"), room.wallLength(wall.textValue()));
         return new LobbyLayoutDto.WallSpot(wall.textValue(), along);

@@ -21,6 +21,9 @@ public record LobbyRoom(
     public static final double MIN_WIDTH = 8;
     public static final double MIN_DEPTH = 11;
 
+    /** 아는 벽 이름. 앞쪽은 카메라 쪽이라 열려 있다. */
+    public static final List<String> WALL_SIDES = List.of("back", "left", "right");
+
     /** 출입구. 밖으로 출입구는 입구 발판(가운데 x, 폭, 앞으로 나온 깊이)이고, 다른 방으로(이층집의 계단 등)는 이어지는 방 id만 둔다. */
     public sealed interface Exit permits OutsideExit, RoomLinkExit {
     }
@@ -39,6 +42,10 @@ public record LobbyRoom(
         }
         if (width < MIN_WIDTH || depth < MIN_DEPTH) {
             throw new IllegalArgumentException("방이 최소 크기보다 작아요: " + id);
+        }
+        // 최소 크기 덕에 어느 벽 하나에도 장소가 딸린 벽 가구(게시판·창문)를 함께 걸 수 있다
+        if (hangWalls.isEmpty() || !WALL_SIDES.containsAll(hangWalls)) {
+            throw new IllegalArgumentException("걸 수 있는 벽이 하나 이상, 아는 벽이어야 해요: " + id);
         }
         List<OutsideExit> outside = exits.stream().filter(OutsideExit.class::isInstance).map(OutsideExit.class::cast).toList();
         if (outside.size() != 1) {

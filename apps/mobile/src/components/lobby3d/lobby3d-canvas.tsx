@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 import { layoutGeometry, layoutItem, storedItems, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
-import { currentRoom, outsideExit } from "@/lib/lobby3d/room";
+import { BASIC_ROOM, currentRoom, outsideExit } from "@/lib/lobby3d/room";
 import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { buildPlacements, furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
@@ -1042,11 +1042,14 @@ function Scene({
           />
         </Suspense>
       </BakedFurnitureErrorBoundary>
-      <BakedRoomErrorBoundary>
-        <Suspense fallback={null}>
-          <BakedRoom fallback={world.shell} tint={roomTint} />
-        </Suspense>
-      </BakedRoomErrorBoundary>
+      {/* 구운 방 껍데기는 기본 방 전용이다(다른 방은 코드로 지은 방이 보인다. 다른 방의 껍데기는 확장 기능 때 정한다) */}
+      {currentRoom().id === BASIC_ROOM.id ? (
+        <BakedRoomErrorBoundary>
+          <Suspense fallback={null}>
+            <BakedRoom fallback={world.shell} tint={roomTint} />
+          </Suspense>
+        </BakedRoomErrorBoundary>
+      ) : null}
       <CharacterErrorBoundary>
         <Suspense fallback={null}>
           <Character kit={world.kit} outline={toon.outline} handleRef={character} />

@@ -36,9 +36,6 @@ public class LobbyLayoutService {
     /** 지금 아는 배치 모양 버전. 2: 가구 인스턴스 목록. 옛 버전(1)으로 저장된 배치는 없는 것으로 본다. */
     static final int SHAPE_VERSION = 2;
 
-    /** 방의 가로(x)·깊이(z), 칸 단위(앱 engine.ts의 ROOM). */
-    static final double ROOM_WIDTH = 8;
-    static final double ROOM_DEPTH = 11;
 
     /** 한 배치에 둘 수 있는 가구 수(방과 보관함을 합친 수). */
     static final int MAX_ITEMS = 40;
@@ -53,7 +50,6 @@ public class LobbyLayoutService {
     private static final List<String> FLOOR_SPOT_KEYS = List.of("x", "z", "facing");
     private static final List<String> WALL_SPOT_KEYS = List.of("wall", "along");
     private static final List<String> TABLETOP_SPOT_KEYS = List.of("parent", "slot", "facing");
-    private static final List<String> WALLS = List.of("back", "left", "right");
 
     /** 가구를 두는 곳: 바닥(바닥형·덮개형), 벽, 받침 가구 위(탁상형). */
     private enum Mount { FLOOR, WALL, TABLETOP }
@@ -96,13 +92,14 @@ public class LobbyLayoutService {
 
     @Transactional
     public LobbyLayoutDto saveLayout(Long userId, JsonNode request) {
-        LobbyLayoutDto layout = parse(request);
+        LobbyLayoutDto layout = parse(request, LobbyRoom.current());
         String layoutJson = writeJson(new StoredLayout(layout.items(), layout.stored()));
         lobbyLayoutRepository.upsert(userId, layout.version(), layoutJson, Instant.now());
         return layout;
     }
 
-    private LobbyLayoutDto parse(JsonNode request) {
+    /** 배치 본문을 그 방(크기·걸 수 있는 벽) 기준으로 검사해 읽는다. 저장은 지금 방으로 검사한다. */
+    LobbyLayoutDto parse(JsonNode request, LobbyRoom room) {
         // 보관함(stored)은 없어도 된다
         requireObjectWithKeys(request, request != null && request.has("stored") ? LAYOUT_KEYS_WITH_STORED : LAYOUT_KEYS);
         JsonNode version = request.get("version");
@@ -117,7 +114,7 @@ public class LobbyLayoutService {
         Set<String> ids = new HashSet<>();
         Map<String, Integer> placeCounts = new HashMap<>();
         for (JsonNode item : items) {
-            LobbyLayoutDto.Item next = parseItem(item);
+            LobbyLayoutDto.Item next = parseItem(item, room);
             if (!ids.add(next.id())) {
                 throw invalid("가구 id가 겹쳐요.");
             }
@@ -185,7 +182,7 @@ public class LobbyLayoutService {
         return List.copyOf(parsed);
     }
 
-    private LobbyLayoutDto.Item parseItem(JsonNode item) {
+    private LobbyLayoutDto.Item parseItem(JsonNode item, LobbyRoom room) {
         if (item == null || !item.isObject()) {
             throw invalid("가구 배치 모양이 맞지 않아요.");
         }
@@ -204,16 +201,16 @@ public class LobbyLayoutService {
         }
         if (mount == Mount.WALL) {
             requireObjectWithKeys(item, WALL_ITEM_KEYS);
-            return new LobbyLayoutDto.Item(id.textValue(), type.textValue(), null, parseWallSpot(item.get("wall")));
+            return new LobbyLayoutDto.Item(id.textValue(), type.textValue(), null, parseWallSpot(item.get("wall"), room));
         }
         requireObjectWithKeys(item, FLOOR_ITEM_KEYS);
-        return new LobbyLayoutDto.Item(id.textValue(), type.textValue(), parseFloorSpot(item.get("floor")), null);
+        return new LobbyLayoutDto.Item(id.textValue(), type.textValue(), parseFloorSpot(item.get("floor"), room), null);
     }
 
-    private LobbyLayoutDto.FloorSpot parseFloorSpot(JsonNode piece) {
+    private LobbyLayoutDto.FloorSpot parseFloorSpot(JsonNode piece, LobbyRoom room) {
         requireObjectWithKeys(piece, FLOOR_SPOT_KEYS);
-        double x = requireWithin(piece.get("x"), ROOM_WIDTH);
-        double z = requireWithin(piece.get("z"), ROOM_DEPTH);
+        double x = requireWithin(piece.get("x"), room.width());
+        double z = requireWithin(piece.get("z"), room.depth());
         JsonNode facing = piece.get("facing");
         if (!facing.isIntegralNumber() || !facing.canConvertToInt() || facing.intValue() < 0 || facing.intValue() > 3) {
             throw invalid("가구 방향은 0~3 중 하나여야 해요.");
@@ -238,13 +235,13 @@ public class LobbyLayoutService {
         return new LobbyLayoutDto.TabletopSpot(parent.textValue(), slot.intValue(), facing.intValue());
     }
 
-    private LobbyLayoutDto.WallSpot parseWallSpot(JsonNode piece) {
+    private LobbyLayoutDto.WallSpot parseWallSpot(JsonNode piece, LobbyRoom room) {
         requireObjectWithKeys(piece, WALL_SPOT_KEYS);
         JsonNode wall = piece.get("wall");
-        if (!wall.isTextual() || !WALLS.contains(wall.textValue())) {
+        if (!wall.isTextual() || !room.hangWalls().contains(wall.textValue())) {
             throw invalid("벽은 back·left·right 중 하나여야 해요.");
         }
-        double along = requireWithin(piece.get("along"), "back".equals(wall.textValue()) ? ROOM_WIDTH : ROOM_DEPTH);
+        double along = requireWithin(piece.get("along"), room.wallLength(wall.textValue()));
         return new LobbyLayoutDto.WallSpot(wall.textValue(), along);
     }
 

@@ -251,7 +251,7 @@ class FeedbackLearningContractPolicyTest {
                 assessment(satisfied("ACTION", "bad home"))
         ))
                 .isInstanceOfSatisfying(FeedbackContractException.class, exception -> {
-                    assertThat(exception.retryable()).isFalse();
+                    assertThat(exception.retryable()).isTrue();
                     assertThat(exception).hasMessageContaining("earlier step");
                 });
     }
@@ -276,7 +276,7 @@ class FeedbackLearningContractPolicyTest {
                 assessment(satisfied("ACTION", "work no"))
         ))
                 .isInstanceOfSatisfying(FeedbackContractException.class, exception -> {
-                    assertThat(exception.retryable()).isFalse();
+                    assertThat(exception.retryable()).isTrue();
                     assertThat(exception).hasMessageContaining("ordered STRUCTURE");
                 });
     }

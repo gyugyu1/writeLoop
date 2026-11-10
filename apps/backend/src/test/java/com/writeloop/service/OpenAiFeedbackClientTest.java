@@ -263,7 +263,7 @@ class OpenAiFeedbackClientTest {
     }
 
     @Test
-    void doesNotRetryAnInvalidLanguageRevisionStep() throws Exception {
+    void retriesAnInvalidLanguageRevisionStepOnce() throws Exception {
         String invalidLanguageOutput = validContractOutput().replace(
                 "\"answerAfter\": \"I go home because I am tired.\"",
                 "\"answerAfter\": \"I goes home because I am tired.\""
@@ -277,14 +277,15 @@ class OpenAiFeedbackClientTest {
             )).isInstanceOfSatisfying(ApiException.class, exception ->
                     assertThat(exception.getCode()).isEqualTo("FEEDBACK_GENERATION_UNAVAILABLE"));
 
-            assertThat(server.requestCount()).isEqualTo(1);
+            assertThat(server.requestCount()).isEqualTo(2);
             FeedbackExecutionTrace trace = client.takeLastExecutionTrace();
             assertThat(trace.contractViolationDetected()).isTrue();
-            assertThat(trace.retryAttempted()).isFalse();
+            assertThat(trace.retryAttempted()).isTrue();
+            assertThat(trace.retrySucceeded()).isFalse();
             assertThat(trace.finalErrorReason())
                     .contains("Every revision step must change");
             assertThat(trace.tokenUsage()).isEqualTo(
-                    new FeedbackTokenUsage(100L, 20L, 30L, 10L, 130L)
+                    new FeedbackTokenUsage(210L, 45L, 70L, 25L, 280L)
             );
         }
     }

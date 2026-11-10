@@ -16,6 +16,8 @@
 // - 가구 모양 그림: 칸 안의 그림 요소(source가 있는 요소). 가정: 그림은 앱 에셋 PNG를 require로 넣는다(Jest에서는 { testUri: 파일 경로 }가 된다).
 // - 개발 빌드의 탭 이름은 명세 그대로 "보관함"·"가구 더하기"이고 역할은 tab이나 button이다(가정). 처음 열면 '보관함' 쪽이 보인다(명세 2가 빌드와 관계없이
 //   "'보관함'을 누르면 보관함의 가구가 늘어선 줄이 열린다"고 하므로).
+// - 07 결정(2026-11-11 사용자): 보관함 줄의 칸은 보관함의 가구 하나마다 하나(같은 종류도 따로), 개수(×N) 없음, 순서는 보관함 순서,
+//   칸을 누르면 그 칸의 가구를 꺼낸다, 칸 이름(접근성 이름)은 가구 이름만. 명세 2의 "종류마다 한 칸, ×N"을 이것으로 바꿔 R1·R8·R11 등을 고쳤다(08-qa-tests.md).
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -454,10 +456,11 @@ function storageCells(): UiNode[] {
   return visibleCells().filter((cell) => !inAddGroup(cell));
 }
 
-function storageCell(name: string): UiNode {
+/** 그 이름의 보관함 칸 가운데 index번째(그리는 순서, 07 결정: 같은 종류도 칸이 따로다). */
+function storageCell(name: string, index = 0): UiNode {
   const found = storageCells().filter((cell) => cellName(cell) === name);
-  expect(found).toHaveLength(1);
-  return found[0];
+  expect(found.length).toBeGreaterThan(index);
+  return found[index];
 }
 
 /** 칸 안의 그림 요소(source가 있는 요소)들. */
@@ -714,16 +717,18 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     { id: "wardrobe3", type: "wardrobe" }
   ];
 
-  test("R1 [바뀔] '보관함'을 누르면 종류마다 칸 하나가 처음 나온 순서로 늘어서고(옷장, 깔개), 칸은 그림 → 이름 순이며 2개 이상이면 '×2', 칸들은 가로로 넘기는 줄 안에 있다", async () => {
+  test("R1 [바뀔] '보관함'을 누르면 가구 하나마다 칸 하나가 보관함 순서로 늘어서고(옷장, 깔개, 옷장), 칸에 개수(×N)가 없고 이름(접근성 이름)은 가구 이름만이며, 칸은 그림 → 이름 순, 칸들은 가로로 넘기는 줄 안에 있다", async () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
 
     await openStorage();
 
     const cells = storageCells();
-    expect(cells.map(cellName)).toEqual(["옷장", "깔개"]);
-    expect(countText(cells[0])).toBe("×2");
-    expect(countText(cells[1])).toBeNull();
+    expect(cells.map(cellName)).toEqual(["옷장", "깔개", "옷장"]);
+    for (const cell of cells) expect({ name: cellName(cell), count: countText(cell) }).toEqual({ name: cellName(cell), count: null });
+    // 07 결정: 칸 이름은 가구 이름만이다(같은 종류 칸이 둘이면 그 이름의 칸이 둘)
+    expect(screen.queryAllByRole(/button/, { name: "옷장" }).map((node) => cells.indexOf(node))).toEqual([0, 2]);
+    expect(screen.queryAllByRole(/button/, { name: "깔개" }).map((node) => cells.indexOf(node))).toEqual([1]);
     for (const cell of cells) {
       const images = imagesIn(cell);
       expect(images.length).toBeGreaterThan(0);
@@ -741,6 +746,7 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     await enterEdit();
     await openStorage();
     const cell = storageCell("옷장");
+    const namesBefore = storageCells().map(cellName);
     const canvasNode = (rootOf(cell) as unknown as { queryAll: (p: (n: UiNode) => boolean) => UiNode[] }).queryAll(
       (n) => n.type === "Lobby3dCanvasMock"
     )[0];
@@ -752,7 +758,7 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     for (const node of around) {
       await fireEvent.press(node);
       await flushAsync();
-      expect(storageCells().map(cellName)).toEqual(["옷장", "깔개"]);
+      expect(storageCells().map(cellName)).toEqual(namesBefore);
       expect(JSON.stringify(editLayout())).toBe(before);
     }
   });
@@ -761,6 +767,8 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
+    const namesBefore = storageCells().map(cellName);
+    expect(namesBefore.length).toBeGreaterThan(0);
 
     await tapHit(hit(WARDROBE_AT, "wardrobe"));
     expect(lifted()).toBe("wardrobe");
@@ -769,14 +777,14 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     await pressButton("돌리기");
 
     expect(itemIn(editLayout(), "wardrobe")?.floor?.facing).toBe(0);
-    expect(storageCells().map(cellName)).toEqual(["옷장", "깔개"]);
+    expect(storageCells().map(cellName)).toEqual(namesBefore);
   });
 
   test("R4 [바뀔] 줄이 열린 채 '보관함'을 다시 누르면 줄이 닫히고 배치·보관함·개수는 그대로다", async () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
-    expect(storageCells()).toHaveLength(2);
+    expect(storageCells()).toHaveLength(3);
 
     await fireEvent.press(storageButton());
     await flushAsync();
@@ -791,7 +799,7 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
-    expect(storageCells()).toHaveLength(2);
+    expect(storageCells().map(cellName)).toContain("옷장");
 
     const close = screen.getAllByRole("button", { name: /닫기/ });
     expect(close).toHaveLength(1);
@@ -807,7 +815,7 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
-    expect(storageCells()).toHaveLength(2);
+    expect(storageCells().map(cellName)).toContain("옷장");
 
     await pressHardwareBack();
 
@@ -824,7 +832,7 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
-    expect(storageCells()).toHaveLength(2);
+    expect(storageCells().map(cellName)).toContain("옷장");
 
     await pressButton("취소");
     expectNotEditing();
@@ -833,7 +841,7 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     expectRowClosed();
 
     await openStorage();
-    expect(storageCells()).toHaveLength(2);
+    expect(storageCells().map(cellName)).toContain("옷장");
     // 바꾼 것이 없어 '완료'는 저장 없이 나온다
     await fireEvent.press(doneButton());
     await flushAsync();
@@ -844,12 +852,13 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     expect(saveLobbyLayout).not.toHaveBeenCalled();
   });
 
-  test("R8 [바뀔] 칸을 누르면 그 종류 하나를 꺼내 고르고 줄은 열린 채다. 이어서 같은 칸을 눌러 하나 더 꺼낼 수 있다", async () => {
+  test("R8 [바뀔] 앞 옷장 칸을 누르면 그 칸의 가구(wardrobe2)를 꺼내 고르고 그 칸만 빠져 [깔개, 옷장]이 되며 줄은 열린 채다. 이어서 남은 옷장 칸을 눌러 wardrobe3을 꺼낼 수 있다", async () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
+    expect(storageCells().map(cellName)).toEqual(["옷장", "깔개", "옷장"]);
 
-    await fireEvent.press(storageCell("옷장"));
+    await fireEvent.press(storageCell("옷장", 0));
     await flushAsync();
 
     expect(itemIn(editLayout(), "wardrobe2")).toBeDefined();
@@ -859,11 +868,11 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
       { id: "wardrobe3", type: "wardrobe" }
     ]);
     expect(storageBadge()).toBe(2);
-    // 줄이 열린 채: 옷장 칸(이제 하나라 ×가 없다)과 깔개 칸이 그대로 보인다
-    expect(storageCells().map(cellName)).toEqual(["옷장", "깔개"]);
-    expect(countText(storageCell("옷장"))).toBeNull();
+    // 07 결정: 줄이 열린 채 누른 칸만 빠지고 남은 칸이 앞으로 당겨진다(개수 표시 없음)
+    expect(storageCells().map(cellName)).toEqual(["깔개", "옷장"]);
+    for (const cell of storageCells()) expect(countText(cell)).toBeNull();
 
-    await fireEvent.press(storageCell("옷장"));
+    await fireEvent.press(storageCell("옷장", 0));
     await flushAsync();
 
     expect(itemIn(editLayout(), "wardrobe3")).toBeDefined();
@@ -897,7 +906,7 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     expect(storageCells()).toHaveLength(0);
   });
 
-  test("R11 [그대로] 칸 순서는 보관함에 처음 나온 순서다: [깔개, 옷장, 깔개]면 깔개(×2), 옷장", async () => {
+  test("R11 [바뀔] 칸 순서는 보관함 순서다: [깔개, 옷장, 깔개]면 칸이 깔개, 옷장, 깔개이고 개수(×N)가 없다", async () => {
     await renderHome(
       layout(DEF_ITEMS, [
         { id: "rug2", type: "rug" },
@@ -910,9 +919,8 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     await openStorage();
 
     const cells = storageCells();
-    expect(cells.map(cellName)).toEqual(["깔개", "옷장"]);
-    expect(countText(cells[0])).toBe("×2");
-    expect(countText(cells[1])).toBeNull();
+    expect(cells.map(cellName)).toEqual(["깔개", "옷장", "깔개"]);
+    for (const cell of cells) expect(countText(cell)).toBeNull();
   });
 });
 

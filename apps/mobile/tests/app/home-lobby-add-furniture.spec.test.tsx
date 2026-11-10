@@ -9,6 +9,8 @@
 // 개발 빌드에서만 보이는 보관함 줄의 '가구 더하기' 탭(아이콘 칸)이 되고, 더한 뒤에도 줄이 열린 채다. 그래서 개발 빌드(__DEV__ = true)로 돌리고,
 // '가구 더하기' 칸은 그 탭을 누른 뒤 보이는 칸(가구 이름 글을 가진 버튼)으로 찾으며, 줄이 이미 열려 있으면 '보관함'을 다시 누르지 않는다(다시 누르면 닫힌다).
 // 줄을 처음 열면 '보관함' 탭 쪽이 보인다(070 02 가정, 03 결정). N4의 "판이 닫히고"는 "줄이 열린 채"로 바꿨다.
+// 070 07 결정(사용자)으로 고친 것: 보관함 쪽 칸은 가구 하나마다 하나, 개수(×N) 없음. 그래서 N3의 보관함 쪽은 [옷장, 옷장, 깔개]에 ×가 없는지 본다
+// ('가구 더하기' 탭은 종류마다 한 칸 그대로).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { BackHandler } from "react-native";
@@ -467,7 +469,7 @@ describe("[spec] 066-⑤ 명세 2: 가구 더하기(N, 화면)", () => {
     for (const row of addRows()) expect(within(row).queryAllByText(/×/)).toHaveLength(0);
   });
 
-  test("N3 보관함 [wardrobe-1, wardrobe-2, rug-1]이면 '보관함' 묶음은 '옷장 ×2'와 '깔개'(× 없음), '가구 더하기'는 N2와 같다", async () => {
+  test("N3 보관함 [wardrobe-1, wardrobe-2, rug-1]이면 '보관함' 쪽 칸은 '옷장', '옷장', '깔개'(× 없음, 070 07 결정), '가구 더하기'는 N2와 같다", async () => {
     await renderHome(
       layout(N0_ITEMS, [
         { id: "wardrobe-1", type: "wardrobe" },
@@ -478,9 +480,8 @@ describe("[spec] 066-⑤ 명세 2: 가구 더하기(N, 화면)", () => {
     await enterEdit();
     await openStorage();
 
-    expect(storageRows().map(rowName)).toEqual(["옷장", "깔개"]);
-    expect(within(storageRow("옷장")).getByText("×2")).toBeTruthy();
-    expect(within(storageRow("깔개")).queryAllByText(/×/)).toHaveLength(0);
+    expect(storageRows().map(rowName)).toEqual(["옷장", "옷장", "깔개"]);
+    for (const row of storageRows()) expect(within(row).queryAllByText(/×/)).toHaveLength(0);
     await showAddTab();
     expect(addRows().map(rowName)).toEqual(FURNITURE_TYPES.filter((type) => type.removable).map((type) => type.name));
   });

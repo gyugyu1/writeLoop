@@ -13,6 +13,9 @@
 // 아이콘 줄이 되어 가림막이 없어지고, '보관함'을 다시 누르면 닫히며, 칸을 눌러 꺼낸 뒤에도 줄이 열린 채다. 그래서
 // '보관함' 버튼은 아래 줄 버튼(이름 "보관함" 또는 "보관함 N", 개발 빌드의 '보관함' 탭과 겹치면 '완료'와 더 가까운 쪽)으로 좁히고,
 // S5는 줄의 닫기 버튼(이름에 "닫기"), S6은 가림막 대신 '보관함' 다시 누르기, S7은 "목록이 닫히고"를 "줄이 열린 채"로 바꿨다.
+// 070 07 결정(사용자)으로 고친 것: 보관함 줄의 칸은 가구 하나마다 하나(같은 종류도 따로), 개수(×N) 없음, 순서는 보관함 순서.
+// 그래서 S3은 [옷장, 옷장, 깔개] 세 칸에 ×가 없는지 보고, 같은 이름의 칸이 여럿일 수 있어 storageRow·takeOut은 그 이름의 앞 칸을,
+// storageText는 그 이름의 칸이 있는지를 본다(S9의 "목록에서 앞선 wardrobe2"는 앞 옷장 칸을 눌러 그대로 본다).
 // 가짜로 두는 것: 기존 홈 꾸미기 테스트(home-lobby-edit.spec.test.tsx)와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내 상태,
 // 라우터, 포커스, 3D 그리기). 3D 그리기는 가짜라서, 어느 가구를 눌렀는지는 누르기 결과의 piece로 그대로 넣어 보낸다(그 판정은 보지 못한다).
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다.
@@ -481,23 +484,27 @@ function isAddRow(node: UiNode): boolean {
   return false;
 }
 
-function storageRow(name: string): UiNode {
+/** 그 이름의 칸 가운데 index번째(070 07 결정: 같은 종류도 칸이 따로라 여럿일 수 있다. 기본은 앞 칸). */
+function storageRow(name: string, index = 0): UiNode {
   const rows = storageRows().filter((row) => within(row).queryByText(name) !== null);
-  expect(rows).toHaveLength(1);
-  return rows[0];
+  expect(rows.length).toBeGreaterThan(index);
+  return rows[index];
 }
 
+/** 그 이름의 앞 칸(보관함에서 앞선 가구)을 눌러 꺼낸다. */
 async function takeOut(name: string) {
   await fireEvent.press(storageRow(name));
   await flushAsync();
 }
 
-/** '보관함' 묶음 줄에 보이는 그 글(없으면 null). 066-⑤ 04 결정 1의 1로 화면 전체에서 찾던 것을 이 묶음 안으로 좁혔다. */
+/**
+ * '보관함' 묶음 줄에 보이는 그 글(없으면 null). 066-⑤ 04 결정 1의 1로 화면 전체에서 찾던 것을 이 묶음 안으로 좁혔다.
+ * 070 07 결정으로 같은 이름의 칸이 여럿일 수 있어 앞 칸의 글을 돌려준다(있는지만 본다).
+ */
 function storageText(name: string): UiNode | null {
   const found = storageRows()
     .map((row) => within(row).queryByText(name))
     .filter((node): node is UiNode => node !== null);
-  expect(found.length).toBeLessThanOrEqual(1);
   return found[0] ?? null;
 }
 
@@ -706,15 +713,15 @@ describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
     expect(storageBadge()).toBe(3);
   });
 
-  test("S3 '보관함'을 누르면 줄이 2개: '옷장'과 '×2'가 있는 줄, '깔개'가 있고 '×'가 없는 줄", async () => {
+  test("S3 '보관함'을 누르면 칸이 가구마다 3개: 보관함 순서로 '옷장', '옷장', '깔개'이고 어느 칸에도 '×'가 없다(070 07 결정)", async () => {
     await renderHome(layout(DEF_ITEMS, S2_STORED));
     await enterEdit();
 
     await openStorage();
 
-    expect(storageRows()).toHaveLength(2);
-    expect(within(storageRow("옷장")).getByText("×2")).toBeTruthy();
-    expect(within(storageRow("깔개")).queryAllByText(/×/)).toHaveLength(0);
+    expect(storageRows()).toHaveLength(3);
+    expect(storageRows().map((row) => FURNITURE_NAMES.filter((name) => within(row).queryByText(name) !== null))).toEqual([["옷장"], ["옷장"], ["깔개"]]);
+    for (const row of storageRows()) expect(within(row).queryAllByText(/×/)).toHaveLength(0);
   });
 
   test("S4 보관함이 빈 채 '보관함'을 누르면 '보관함이 비었어요'가 보이고 가구 줄이 없다", async () => {

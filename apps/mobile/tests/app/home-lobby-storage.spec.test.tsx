@@ -19,6 +19,12 @@
 // 가짜로 두는 것: 기존 홈 꾸미기 테스트(home-lobby-edit.spec.test.tsx)와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내 상태,
 // 라우터, 포커스, 3D 그리기). 3D 그리기는 가짜라서, 어느 가구를 눌렀는지는 누르기 결과의 piece로 그대로 넣어 보낸다(그 판정은 보지 못한다).
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다.
+// 071(꾸미기 보관함 늘 보이기·완료 위로) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 071-2026-11-11-꾸미기-보관함-늘-보이기-완료-위로/
+// 01-main-spec.md, 보고 02-qa-tests.md): 줄은 꾸미기에 들어가면 늘 보이고 아래 '보관함' 버튼·줄의 닫기 버튼이 없어져, openStorage는 누르지 않고
+// 줄 머리가 보이는지만 보며, 개수는 줄 머리의 "보관함 N"(이 파일은 개발 빌드라 '보관함 N' 탭 글)에서 읽는다. S1은 줄 머리로, S5는 닫기 버튼이 없는 것으로,
+// S6은 '보관함' 버튼이 없는 것으로, 결정 4는 줄이 보이는 채 뒤로 가기가 바로 취소인 것으로 바꿨다.
+// 071 03 결정 2(사용자: "버튼으로 꾸미기 중 확인"): C10은 저장 실패 알림 바로 뒤의 편집 모드 확인을 안내 문구 대신 버튼으로 본다.
+// 가정(071): 줄 머리 글은 버튼이 아니고, 개발 빌드의 탭 역할은 070처럼 tab이다(그래서 버튼 안의 "보관함 N" 글은 없어질 '보관함' 버튼의 글로 본다).
 // 보관함·방 목록의 순서는 명세가 정하지 않아 id 순으로 늘어놓고 견준다. 빈 보관함은 stored ?? []로 읽는다(시나리오 A1).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -386,8 +392,8 @@ async function storeSelected() {
   await flushAsync();
 }
 
-function expectEditing() {
-  expect(screen.getByText(GUIDE)).toBeTruthy();
+/** 편집 모드다(알림이 떠 있을 때): 세 버튼이 보이고 '꾸미기'가 없다(071 03 결정 2: 안내 문구 대신 버튼으로 본다). */
+function expectEditingByButtons() {
   for (const label of ["취소", "처음 배치로", "완료"]) expect(screen.getByRole("button", { name: label })).toBeTruthy();
   expect(screen.queryByText("꾸미기")).toBeNull();
 }
@@ -428,38 +434,32 @@ function hasRedMark() {
   return canvas().edit!.marks.some((mark) => !mark.ok);
 }
 
+/** 자신이나 조상의 역할이 button인지. */
+function insideButton(node: UiNode): boolean {
+  for (let n: UiNode | null = node; n; n = n.parent) if ((n.props as { accessibilityRole?: unknown }).accessibilityRole === "button") return true;
+  return false;
+}
+
 /**
- * 아래 줄의 '보관함' 버튼: 이름이 "보관함"이거나 "보관함 N"인 버튼(070 03 결정으로 좁힘).
- * 개발 빌드에서 줄을 열면 '보관함' 탭과 겹칠 수 있어, 둘이면 '완료' 버튼과 공통 조상이 더 가까운(깊은) 쪽이다.
+ * 071 명세 2: 줄 머리 왼쪽의 "보관함"·"보관함 N" 글(운영 빌드는 줄 머리 글, 개발 빌드는 '보관함 N' 탭의 글).
+ * 버튼 안의 글은 뺀다(071에서 없어지는 아래 '보관함' 버튼의 글). 줄이 안 보이면 없다.
  */
-function storageButton(): UiNode {
-  const found = screen.getAllByRole("button", { name: /^보관함\s*\d*$/ });
-  if (found.length === 1) return found[0];
-  const done = screen.getByRole("button", { name: /^(완료|저장 중…)$/ });
-  const depthWithDone = (node: UiNode) => {
-    let common: UiNode | null = node;
-    const holdsDone = (n: UiNode) => {
-      for (let d: UiNode | null = done; d; d = d.parent) if (d === n) return true;
-      return false;
-    };
-    while (common && !holdsDone(common)) common = common.parent;
-    let depth = 0;
-    for (let n: UiNode | null = common; n; n = n.parent) depth += 1;
-    return depth;
-  };
-  return [...found].sort((a, b) => depthWithDone(b) - depthWithDone(a))[0];
+function storageHeader(): UiNode {
+  const found = screen.queryAllByText(/^보관함(\s*\d+)?$/).filter((node) => !insideButton(node));
+  expect(found).toHaveLength(1);
+  return found[0];
 }
 
-/** '보관함' 버튼에 보이는 개수. 숫자가 없으면 null(시나리오 A3: 붙이는 모양은 보지 않고 숫자만 본다). */
+/** 줄 머리 "보관함 N"의 개수. 숫자가 없으면 null(지금 '보관함' 버튼의 규칙: 0이면 "보관함"만). */
 function storageBadge(): number | null {
-  const digits = within(storageButton()).queryAllByText(/\d/);
-  if (digits.length === 0) return null;
-  const text = ([] as unknown[]).concat(digits[0].props.children).join("");
-  return Number(text.match(/\d+/)![0]);
+  const text = ([] as unknown[]).concat(storageHeader().props.children).join("");
+  const digits = text.match(/\d+/);
+  return digits ? Number(digits[0]) : null;
 }
 
+/** 071 명세 2: 줄은 꾸미기에 들어가면 늘 보이고 여는 버튼이 없다. 누르지 않고 줄 머리가 보이는지만 본다. */
 async function openStorage() {
-  await fireEvent.press(storageButton());
+  storageHeader();
   await flushAsync();
 }
 
@@ -692,11 +692,11 @@ describe("[spec] 066-③ 명세 2: 치우기", () => {
 // ---------- 3. 보관함 열기와 꺼내 놓기 ----------
 
 describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
-  test("S1 보관함이 빈 편집 모드에서 '보관함' 버튼이 보이고 숫자가 없다", async () => {
+  test("S1 보관함이 빈 편집 모드에서 줄 머리에 '보관함'이 보이고 숫자가 없다(071)", async () => {
     await renderHome(DEF);
     await enterEdit();
 
-    expect(storageButton()).toBeTruthy();
+    expect(storageHeader()).toBeTruthy();
     expect(storageBadge()).toBeNull();
   });
 
@@ -734,34 +734,27 @@ describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
     expect(storageRows()).toHaveLength(0);
   });
 
-  test("S5 닫기 버튼을 누르면 목록이 닫히고 배치와 보관함은 그대로(개수 3)", async () => {
+  test("S5 줄에 닫기 버튼이 없고(071), 목록은 보인 채 배치와 보관함은 그대로(개수 3)", async () => {
     await renderHome(layout(DEF_ITEMS, S2_STORED));
     await enterEdit();
     await openStorage();
     expect(storageText("옷장")).not.toBeNull();
 
-    // 070 03 결정: 줄의 닫기 버튼(이름에 "닫기")
-    const close = screen.getAllByRole("button", { name: /닫기/ });
-    expect(close).toHaveLength(1);
-    await fireEvent.press(close[0]);
-    await flushAsync();
-
-    expect(storageText("옷장")).toBeNull();
+    expect(screen.queryAllByRole("button", { name: /닫기/ })).toHaveLength(0);
+    expect(storageText("옷장")).not.toBeNull();
     expect(roomOf(editLayout())).toEqual(byId(DEF_ITEMS));
     expect(storedOf(editLayout())).toEqual(byId(S2_STORED));
     expect(storageBadge()).toBe(3);
   });
 
-  test("S6 줄이 열린 채 '보관함'을 다시 누르면 줄이 닫히고 배치와 보관함은 그대로(070 03 결정: 가림막 대신)", async () => {
+  test("S6 줄을 여닫는 '보관함' 버튼이 없고(071: 이름이 '보관함…'인 버튼 없음), 목록은 보인 채 배치와 보관함은 그대로", async () => {
     await renderHome(layout(DEF_ITEMS, S2_STORED));
     await enterEdit();
     await openStorage();
     expect(storageText("옷장")).not.toBeNull();
 
-    await fireEvent.press(storageButton());
-    await flushAsync();
-
-    expect(storageText("옷장")).toBeNull();
+    expect(screen.queryAllByRole("button", { name: /^보관함/ })).toHaveLength(0);
+    expect(storageText("옷장")).not.toBeNull();
     expect(roomOf(editLayout())).toEqual(byId(DEF_ITEMS));
     expect(storedOf(editLayout())).toEqual(byId(S2_STORED));
     expect(storageBadge()).toBe(3);
@@ -934,7 +927,7 @@ describe("[spec] 066-③ 명세 4: 취소·처음 배치로·완료", () => {
     expect(saveLobbyLayout).not.toHaveBeenCalled();
   });
 
-  test("결정 4 보관함 목록이 열린 채 안드로이드 뒤로 가기는 목록만 닫고, 목록이 닫힌 뒤의 뒤로 가기는 편집 취소다", async () => {
+  test("결정 4(071로 바뀜) 보관함 목록이 보이는 채 안드로이드 뒤로 가기는 바로 편집 취소다", async () => {
     await renderHome(DEF);
     await enterEdit();
     await openStorage();
@@ -943,10 +936,6 @@ describe("[spec] 066-③ 명세 4: 취소·처음 배치로·완료", () => {
     await pressHardwareBack();
 
     expect(screen.queryByText(STORAGE_EMPTY)).toBeNull();
-    expectEditing();
-
-    await pressHardwareBack();
-
     expectNotEditing();
     expect(saveLobbyLayout).not.toHaveBeenCalled();
   });
@@ -1047,7 +1036,8 @@ describe("[spec] 066-③ 명세 4: 취소·처음 배치로·완료", () => {
     await pressButton("완료");
 
     expect(screen.getByText(SAVE_FAILED)).toBeTruthy();
-    expectEditing();
+    // 071 03 결정 2: 알림이 떠 있는 동안 안내 문구가 숨으므로 버튼으로 편집 모드인지 본다
+    expectEditingByButtons();
     expect(storageBadge()).toBe(1);
   });
 });

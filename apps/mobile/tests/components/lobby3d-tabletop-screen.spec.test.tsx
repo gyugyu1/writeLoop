@@ -444,7 +444,7 @@ function storageRowText(name: string) {
 }
 
 async function takeOutLamp() {
-  await fireEvent.press(screen.getByRole("button", { name: /보관함/ }));
+  // 071 명세 2(고칠 기존 테스트): 보관함 줄은 꾸미기에 들어가면 늘 보이고 여는 '보관함' 버튼이 없어, 누르지 않는다
   await flushAsync();
   await fireEvent.press(storageRowText("스탠드"));
   await flushAsync();

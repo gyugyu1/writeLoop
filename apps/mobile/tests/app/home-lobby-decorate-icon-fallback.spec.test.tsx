@@ -6,6 +6,10 @@
 // 가정: 화면은 그림을 종류 id(또는 카탈로그 항목)로 찾으므로, 카탈로그에만 더한 종류는 그림이 없는 종류가 된다.
 // "둥근" 모양은 보지 못한다(보고의 "사용자가 직접 볼 것"). 운영 빌드(__DEV__ = false)로 돌린다(탭이 없다).
 // 나머지 틀(가짜로 두는 것, 칸·그림 찾기)은 같은 작업의 home-lobby-decorate-icons.spec.test.tsx와 같다.
+// 071(꾸미기 보관함 늘 보이기·완료 위로) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 071-2026-11-11-꾸미기-보관함-늘-보이기-완료-위로/
+// 01-main-spec.md, 보고 02-qa-tests.md): 줄은 꾸미기에 들어가면 늘 보이고 아래 '보관함' 버튼이 없어져, openStorage는 누르지 않고
+// 줄 머리가 보이는지만 보며, 개수는 줄 머리의 "보관함 N"(개발 빌드는 '보관함 N' 탭 글)에서 읽는다.
+// 가정(071): 줄 머리 글은 버튼이 아니고, 개발 빌드의 탭 역할은 070처럼 tab이다.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -260,13 +264,25 @@ async function enterEdit() {
   await flushAsync();
 }
 
-/** 아래 줄의 '보관함' 버튼(운영 빌드라 탭이 없어 하나뿐). */
-function storageButton(): UiNode {
-  return screen.getByRole("button", { name: /^보관함\s*\d*$/ });
+/** 자신이나 조상의 역할이 button인지. */
+function insideButton(node: UiNode): boolean {
+  for (let n: UiNode | null = node; n; n = n.parent) if ((n.props as { accessibilityRole?: unknown }).accessibilityRole === "button") return true;
+  return false;
 }
 
+/**
+ * 071 명세 2: 줄 머리 왼쪽의 "보관함"·"보관함 N" 글(운영 빌드는 줄 머리 글, 개발 빌드는 '보관함 N' 탭의 글).
+ * 버튼 안의 글은 뺀다(071에서 없어지는 아래 '보관함' 버튼의 글). 줄이 안 보이면 없다.
+ */
+function storageHeader(): UiNode {
+  const found = screen.queryAllByText(/^보관함(\s*\d+)?$/).filter((node) => !insideButton(node));
+  expect(found).toHaveLength(1);
+  return found[0];
+}
+
+/** 071 명세 2: 줄은 꾸미기에 들어가면 늘 보이고 여는 버튼이 없다. 누르지 않고 줄 머리가 보이는지만 본다. */
 async function openStorage() {
-  await fireEvent.press(storageButton());
+  storageHeader();
   await flushAsync();
 }
 

@@ -7,6 +7,10 @@
 // 그리기용으로만 아무 값을 넣었다(3D 그리기는 가짜다).
 // 그 밖에 가짜로 두는 것과 부르는 방법은 home-lobby-storage.spec.test.tsx와 같다. 3D 그리기는 가짜라서 어느 벽 가구를 눌렀는지는
 // 누르기 결과의 piece·wall로 그대로 넣어 보낸다.
+// 071(꾸미기 보관함 늘 보이기·완료 위로) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 071-2026-11-11-꾸미기-보관함-늘-보이기-완료-위로/
+// 01-main-spec.md, 보고 02-qa-tests.md): 줄은 꾸미기에 들어가면 늘 보이고 아래 '보관함' 버튼이 없어져, openStorage는 누르지 않고
+// 줄 머리가 보이는지만 보며, 개수는 줄 머리의 "보관함 N"(개발 빌드는 '보관함 N' 탭 글)에서 읽는다.
+// 가정(071): 줄 머리 글은 버튼이 아니고, 개발 빌드의 탭 역할은 070처럼 tab이다.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -325,21 +329,32 @@ function itemIn(value: LobbyLayout, id: string) {
   return value.items.find((item) => item.id === id);
 }
 
-/** '보관함' 버튼(글 "보관함"을 가진 버튼, 하나뿐). */
-function storageButton(): UiNode {
-  return screen.getByRole("button", { name: /보관함/ });
+/** 자신이나 조상의 역할이 button인지. */
+function insideButton(node: UiNode): boolean {
+  for (let n: UiNode | null = node; n; n = n.parent) if ((n.props as { accessibilityRole?: unknown }).accessibilityRole === "button") return true;
+  return false;
 }
 
-/** '보관함' 버튼에 보이는 개수. 숫자가 없으면 null(시나리오 A3: 붙이는 모양은 보지 않고 숫자만 본다). */
+/**
+ * 071 명세 2: 줄 머리 왼쪽의 "보관함"·"보관함 N" 글(운영 빌드는 줄 머리 글, 개발 빌드는 '보관함 N' 탭의 글).
+ * 버튼 안의 글은 뺀다(071에서 없어지는 아래 '보관함' 버튼의 글). 줄이 안 보이면 없다.
+ */
+function storageHeader(): UiNode {
+  const found = screen.queryAllByText(/^보관함(\s*\d+)?$/).filter((node) => !insideButton(node));
+  expect(found).toHaveLength(1);
+  return found[0];
+}
+
+/** 줄 머리 "보관함 N"의 개수. 숫자가 없으면 null(지금 '보관함' 버튼의 규칙: 0이면 "보관함"만). */
 function storageBadge(): number | null {
-  const digits = within(storageButton()).queryAllByText(/\d/);
-  if (digits.length === 0) return null;
-  const text = ([] as unknown[]).concat(digits[0].props.children).join("");
-  return Number(text.match(/\d+/)![0]);
+  const text = ([] as unknown[]).concat(storageHeader().props.children).join("");
+  const digits = text.match(/\d+/);
+  return digits ? Number(digits[0]) : null;
 }
 
+/** 071 명세 2: 줄은 꾸미기에 들어가면 늘 보이고 여는 버튼이 없다. 누르지 않고 줄 머리가 보이는지만 본다. */
 async function openStorage() {
-  await fireEvent.press(storageButton());
+  storageHeader();
   await flushAsync();
 }
 

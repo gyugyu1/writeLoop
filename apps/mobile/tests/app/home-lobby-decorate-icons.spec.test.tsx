@@ -19,6 +19,15 @@
 // - 07 결정(2026-11-11 사용자): 보관함 줄의 칸은 보관함의 가구 하나마다 하나(같은 종류도 따로), 개수(×N) 없음, 순서는 보관함 순서,
 //   칸을 누르면 그 칸의 가구를 꺼낸다, 칸 이름(접근성 이름)은 가구 이름만. 명세 2의 "종류마다 한 칸, ×N"을 이것으로 바꿔 R1·R8·R11 등을 고쳤다(08-qa-tests.md).
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다.
+// 071(꾸미기 보관함 늘 보이기·완료 위로) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 071-2026-11-11-꾸미기-보관함-늘-보이기-완료-위로/
+// 01-main-spec.md, 보고 02-qa-tests.md): 줄은 꾸미기에 들어가면 늘 보이고 아래 '보관함' 버튼·줄의 닫기 버튼이 없어져, openStorage는 누르지 않고
+// 줄 머리가 보이는지만 보며, 개수는 줄 머리의 "보관함 N"(개발 빌드는 '보관함 N' 탭 글)에서 읽는다. B1·B2·B3은 새 버튼 자리
+// (위 줄: 취소·처음 배치로 … 완료·카메라, 줄 머리: 보관함 N … 돌리기·치우기)로, B5는 '보관함' 버튼 부분을 빼고 '저장 중…'의 자리를,
+// R4·R5는 여닫는 버튼이 없는 것으로, R6은 뒤로 가기가 늘 '취소'와 같은 것으로, R7은 나오면 줄이 사라지고 다시 들어가면 바로 보이는 것으로,
+// D2·D4의 탭 이름은 "보관함 1"(개수 규칙)로 바꿨다.
+// 071에서 이름을 고친 테스트의 [바뀔]·[그대로]는 071 분류이고, 이름을 고치지 않은 테스트의 표시는 070 분류 그대로다
+// (071 분류는 071 보고에 테스트마다 적었다. openStorage·storageBadge를 거치는 테스트는 071에서 모두 바뀔 동작이다).
+// 가정(071): 줄 머리 글은 버튼이 아니고, 개발 빌드의 탭 역할은 070처럼 tab이다(그래서 버튼 안의 "보관함 N" 글은 없어질 '보관함' 버튼의 글로 본다).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -141,7 +150,8 @@ const GUIDE = "가구를 눌러 고르고, 끌어서 옮겨요";
 const NO_ROOM = "놓을 자리가 없어요. 가구를 옮기거나 치운 뒤 다시 꺼내 주세요";
 const STORAGE_EMPTY = "보관함이 비었어요";
 const ADD_TAB = "가구 더하기";
-const STORAGE_TAB = "보관함";
+/** 개발 빌드의 '보관함' 탭 이름. 071 명세 2: 탭 이름에 보관함 개수 규칙을 붙인다(아래 4절의 배치는 보관함에 옷장 하나라 "보관함 1"). */
+const STORAGE_TAB = "보관함 1";
 const CAMERA = "카메라 거리 설정";
 /** 명세 3: 그림을 만들 치울 수 있는 모든 종류(옷장·깔개·스탠드·침대·협탁·바닥 스탠드·화분·작은 화분·책·액자). */
 const REMOVABLE_IDS = ["wardrobe", "rug", "lamp", "bed", "nightstand", "floorLamp", "plant", "smallPlant", "books", "frame"];
@@ -319,11 +329,6 @@ async function enterEdit() {
   await flushAsync();
 }
 
-function expectEditing() {
-  expect(screen.getByText(GUIDE)).toBeTruthy();
-  for (const label of ["취소", "처음 배치로", "완료"]) expect(screen.getByRole("button", { name: label })).toBeTruthy();
-}
-
 function expectNotEditing() {
   expect(screen.queryByText(GUIDE)).toBeNull();
   for (const label of ["취소", "처음 배치로", "완료"]) expect(screen.queryByRole("button", { name: label })).toBeNull();
@@ -396,25 +401,27 @@ function isRow(node: UiNode) {
 
 // ---------- 버튼 찾기 ----------
 
-/** 아래 줄의 '보관함' 버튼: 이름이 "보관함"이거나 "보관함 N"인 버튼. 개발 빌드의 '보관함' 탭과 겹치면 '완료'와 더 가까운 쪽이다. */
-function storageButton(): UiNode {
-  const found = screen.getAllByRole("button", { name: /^보관함\s*\d*$/ });
-  if (found.length === 1) return found[0];
-  const done = doneButton();
-  const depth = (n: UiNode) => {
-    let d = 0;
-    for (let p: UiNode | null = commonAncestor(n, done); p; p = p.parent) d += 1;
-    return d;
-  };
-  return [...found].sort((a, b) => depth(b) - depth(a))[0];
+/** 자신이나 조상의 역할이 button인지. */
+function insideButton(node: UiNode): boolean {
+  for (let n: UiNode | null = node; n; n = n.parent) if ((n.props as { accessibilityRole?: unknown }).accessibilityRole === "button") return true;
+  return false;
 }
 
-/** '보관함' 버튼에 보이는 개수. 숫자가 없으면 null(지금 규칙: 0이면 개수 없이). */
+/**
+ * 071 명세 2: 줄 머리 왼쪽의 "보관함"·"보관함 N" 글(운영 빌드는 줄 머리 글, 개발 빌드는 '보관함 N' 탭의 글).
+ * 버튼 안의 글은 뺀다(071에서 없어지는 아래 '보관함' 버튼의 글). 줄이 안 보이면 없다.
+ */
+function storageHeader(): UiNode {
+  const found = screen.queryAllByText(/^보관함(\s*\d+)?$/).filter((node) => !insideButton(node));
+  expect(found).toHaveLength(1);
+  return found[0];
+}
+
+/** 줄 머리 "보관함 N"의 개수. 숫자가 없으면 null(지금 '보관함' 버튼의 규칙: 0이면 "보관함"만). */
 function storageBadge(): number | null {
-  const digits = within(storageButton()).queryAllByText(/\d/);
-  if (digits.length === 0) return null;
-  const text = ([] as unknown[]).concat(digits[0].props.children).join("");
-  return Number(text.match(/\d+/)![0]);
+  const text = ([] as unknown[]).concat(storageHeader().props.children).join("");
+  const digits = text.match(/\d+/);
+  return digits ? Number(digits[0]) : null;
 }
 
 function doneButton(): UiNode {
@@ -425,8 +432,9 @@ function cameraButton(): UiNode {
   return screen.getByRole("button", { name: CAMERA });
 }
 
+/** 071 명세 2: 줄은 꾸미기에 들어가면 늘 보이고 여는 버튼이 없다. 누르지 않고 줄 머리가 보이는지만 본다. */
 async function openStorage() {
-  await fireEvent.press(storageButton());
+  storageHeader();
   await flushAsync();
 }
 
@@ -497,10 +505,11 @@ function countText(cell: UiNode): string | null {
   return ([] as unknown[]).concat(found[0].props.children).join("");
 }
 
-/** 줄이 닫혔다: 칸·빈 보관함 안내·닫기 버튼·'가구 더하기' 글이 없다(카메라 창은 열지 않은 상태에서 본다). */
+/** 줄이 사라졌다(꾸미기 밖): 칸·빈 보관함 안내·줄 머리 글·닫기 버튼·'가구 더하기' 글이 없다(카메라 창은 열지 않은 상태에서 본다). */
 function expectRowClosed() {
   expect(visibleCells()).toHaveLength(0);
   expect(screen.queryByText(STORAGE_EMPTY)).toBeNull();
+  expect(screen.queryAllByText(/^보관함(\s*\d+)?$/)).toHaveLength(0);
   expect(screen.queryAllByRole("button", { name: /닫기/ })).toHaveLength(0);
   expect(screen.queryByText(ADD_TAB)).toBeNull();
 }
@@ -611,66 +620,79 @@ afterEach(() => {
 // ---------- 1. 버튼 자리 ----------
 
 describe("[spec] 070 명세 1: 버튼 자리", () => {
-  test("B1 [바뀔] 위 여백: '취소'·'처음 배치로'와 카메라 버튼이 한 가로 줄에 있고 그 줄에 '보관함'·'완료'가 없으며, 왼쪽부터 취소, 처음 배치로, 카메라 순서다", async () => {
-    await renderHome(DEF);
-    await enterEdit();
-
-    const cancel = screen.getByRole("button", { name: "취소" });
-    const reset = screen.getByRole("button", { name: "처음 배치로" });
-    const camera = cameraButton();
-    const topRow = commonAncestor(cancel, reset, camera);
-
-    expect(isRow(topRow)).toBe(true);
-    expect(contains(topRow, storageButton())).toBe(false);
-    expect(contains(topRow, doneButton())).toBe(false);
-    expect(orderOf(cancel)).toBeLessThan(orderOf(reset));
-    expect(orderOf(reset)).toBeLessThan(orderOf(camera));
-  });
-
-  test("B2 [바뀔] 아래 줄: '보관함'·돌리기·치우기·'완료'가 한 가로 줄에 있고 그 줄에 '취소'·'처음 배치로'·카메라가 없으며, 왼쪽부터 보관함, 돌리기, 치우기, 완료 순서다", async () => {
-    await renderHome(DEF);
+  test("B1 [바뀔] 위 줄(071 명세 1): '취소'·'처음 배치로'·'완료'·카메라가 한 가로 줄에 있고 왼쪽부터 취소, 처음 배치로, 완료, 카메라 순서이며, 그 줄에 줄 머리·돌리기·치우기·보관함 칸이 없다", async () => {
+    await renderHome(layout(DEF_ITEMS, [{ id: "rug2", type: "rug" }]));
     await enterEdit();
     await tapHit(hit(WARDROBE_AT, "wardrobe"));
     expect(lifted()).toBe("wardrobe");
 
-    const storage = storageButton();
-    const rotate = screen.getByRole("button", { name: "돌리기" });
-    const store = screen.getByRole("button", { name: "치우기" });
+    const cancel = screen.getByRole("button", { name: "취소" });
+    const reset = screen.getByRole("button", { name: "처음 배치로" });
     const done = doneButton();
-    const bottomRow = commonAncestor(storage, rotate, store, done);
+    const camera = cameraButton();
+    const topRow = commonAncestor(cancel, reset, done, camera);
 
-    expect(isRow(bottomRow)).toBe(true);
-    expect(contains(bottomRow, screen.getByRole("button", { name: "취소" }))).toBe(false);
-    expect(contains(bottomRow, screen.getByRole("button", { name: "처음 배치로" }))).toBe(false);
-    expect(contains(bottomRow, cameraButton())).toBe(false);
-    expect(orderOf(storage)).toBeLessThan(orderOf(rotate));
-    expect(orderOf(rotate)).toBeLessThan(orderOf(store));
-    expect(orderOf(store)).toBeLessThan(orderOf(done));
+    expect(isRow(topRow)).toBe(true);
+    expect(orderOf(cancel)).toBeLessThan(orderOf(reset));
+    expect(orderOf(reset)).toBeLessThan(orderOf(done));
+    expect(orderOf(done)).toBeLessThan(orderOf(camera));
+    expect(contains(topRow, storageHeader())).toBe(false);
+    expect(contains(topRow, screen.getByRole("button", { name: "돌리기" }))).toBe(false);
+    expect(contains(topRow, screen.getByRole("button", { name: "치우기" }))).toBe(false);
+    expect(contains(topRow, storageCell("깔개"))).toBe(false);
   });
 
-  test("B3 [바뀔] 안내 문구는 위 버튼 줄 밑: 아래 줄 밖이고, '취소'·'처음 배치로'보다 뒤에 그리며, 그 버튼들과 안내를 품는 조상은 세로로 쌓는다", async () => {
-    await renderHome(DEF);
+  test("B2 [바뀔] 줄 머리(071 명세 2): 고른 옷장의 돌리기·치우기가 줄 머리의 '보관함 N' 글과 한 가로 줄에 있고 그 글보다 뒤(오른쪽)이며, 그 줄에 취소·처음 배치로·완료·카메라와 칸이 없고, 칸은 줄 머리 뒤에 세로로 쌓인다", async () => {
+    await renderHome(layout(DEF_ITEMS, [{ id: "rug2", type: "rug" }]));
+    await enterEdit();
+    await tapHit(hit(WARDROBE_AT, "wardrobe"));
+    expect(lifted()).toBe("wardrobe");
+
+    const header = storageHeader();
+    const rotate = screen.getByRole("button", { name: "돌리기" });
+    const store = screen.getByRole("button", { name: "치우기" });
+    const headRow = commonAncestor(header, rotate, store);
+    const cell = storageCell("깔개");
+
+    expect(isRow(headRow)).toBe(true);
+    expect(orderOf(header)).toBeLessThan(orderOf(rotate));
+    expect(orderOf(header)).toBeLessThan(orderOf(store));
+    for (const label of ["취소", "처음 배치로"]) expect(contains(headRow, screen.getByRole("button", { name: label }))).toBe(false);
+    expect(contains(headRow, doneButton())).toBe(false);
+    expect(contains(headRow, cameraButton())).toBe(false);
+    expect(contains(headRow, cell)).toBe(false);
+    expect(orderOf(header)).toBeLessThan(orderOf(cell));
+    const tray = commonAncestor(header, cell);
+    expect(isRow(tray)).toBe(false);
+    for (const label of ["취소", "처음 배치로"]) expect(contains(tray, screen.getByRole("button", { name: label }))).toBe(false);
+    expect(contains(tray, doneButton())).toBe(false);
+  });
+
+  test("B3 [바뀔] 안내 문구는 위 버튼 줄 밑: 보관함 줄 밖이고, '취소'·'처음 배치로'·'완료'보다 뒤에 그리며, 그 버튼들과 안내를 품는 조상은 세로로 쌓는다", async () => {
+    await renderHome(layout(DEF_ITEMS, [{ id: "rug2", type: "rug" }]));
     await enterEdit();
 
     const guide = screen.getByText(GUIDE);
     const cancel = screen.getByRole("button", { name: "취소" });
     const reset = screen.getByRole("button", { name: "처음 배치로" });
-    const bottomRow = commonAncestor(storageButton(), doneButton());
+    const done = doneButton();
+    const tray = commonAncestor(storageHeader(), storageCell("깔개"));
 
-    expect(contains(bottomRow, guide)).toBe(false);
+    expect(contains(tray, guide)).toBe(false);
     expect(orderOf(cancel)).toBeLessThan(orderOf(guide));
     expect(orderOf(reset)).toBeLessThan(orderOf(guide));
-    expect(isRow(commonAncestor(cancel, reset, guide))).toBe(false);
+    expect(orderOf(done)).toBeLessThan(orderOf(guide));
+    expect(isRow(commonAncestor(cancel, reset, done, guide))).toBe(false);
   });
 
-  test("B4a [그대로] '보관함' 버튼: 보관함이 비면 개수가 없다", async () => {
+  test("B4a [바뀔] 줄 머리: 보관함이 비면 개수 없이 '보관함'이다", async () => {
     await renderHome(DEF);
     await enterEdit();
 
     expect(storageBadge()).toBeNull();
   });
 
-  test("B4b [그대로] '보관함' 버튼: 보관함에 3개면 3이 보인다", async () => {
+  test("B4b [바뀔] 줄 머리: 보관함에 3개면 '보관함 3'이다", async () => {
     await renderHome(
       layout(DEF_ITEMS, [
         { id: "wardrobe2", type: "wardrobe" },
@@ -682,7 +704,7 @@ describe("[spec] 070 명세 1: 버튼 자리", () => {
     expect(storageBadge()).toBe(3);
   });
 
-  test("B5 [그대로] 저장하는 동안 '취소'·'처음 배치로'·'보관함'은 누를 수 없고(눌러도 줄이 열리지 않음) '완료'는 '저장 중…'이다", async () => {
+  test("B5 [바뀔] 저장하는 동안 '취소'·'처음 배치로'는 누를 수 없고 '완료'는 위 줄 그 자리(처음 배치로와 카메라 사이)에서 '저장 중…'이다", async () => {
     let resolveSave: (value: LobbyLayout) => void = () => undefined;
     jest.mocked(saveLobbyLayout).mockReset().mockReturnValue(new Promise<LobbyLayout>((resolve) => (resolveSave = resolve)));
     await renderHome(DEF);
@@ -692,13 +714,14 @@ describe("[spec] 070 명세 1: 버튼 자리", () => {
 
     await pressButton("완료");
 
-    expect(screen.getByRole("button", { name: "저장 중…" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "취소" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "처음 배치로" })).toBeDisabled();
-    expect(storageButton()).toBeDisabled();
-    await fireEvent.press(storageButton());
-    await flushAsync();
-    expect(visibleCells()).toHaveLength(0);
+    const saving = screen.getByRole("button", { name: "저장 중…" });
+    const cancel = screen.getByRole("button", { name: "취소" });
+    const reset = screen.getByRole("button", { name: "처음 배치로" });
+    expect(cancel).toBeDisabled();
+    expect(reset).toBeDisabled();
+    expect(isRow(commonAncestor(cancel, reset, saving, cameraButton()))).toBe(true);
+    expect(orderOf(reset)).toBeLessThan(orderOf(saving));
+    expect(orderOf(saving)).toBeLessThan(orderOf(cameraButton()));
 
     await act(async () => {
       resolveSave(JSON.parse(JSON.stringify(jest.mocked(saveLobbyLayout).mock.calls[0][0])));
@@ -717,7 +740,7 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     { id: "wardrobe3", type: "wardrobe" }
   ];
 
-  test("R1 [바뀔] '보관함'을 누르면 가구 하나마다 칸 하나가 보관함 순서로 늘어서고(옷장, 깔개, 옷장), 칸에 개수(×N)가 없고 이름(접근성 이름)은 가구 이름만이며, 칸은 그림 → 이름 순, 칸들은 가로로 넘기는 줄 안에 있다", async () => {
+  test("R1 [바뀔] 꾸미기에 들어가면(누르지 않아도) 가구 하나마다 칸 하나가 보관함 순서로 늘어서고(옷장, 깔개, 옷장), 칸에 개수(×N)가 없고 이름(접근성 이름)은 가구 이름만이며, 칸은 그림 → 이름 순, 칸들은 가로로 넘기는 줄 안에 있다", async () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
 
@@ -780,55 +803,46 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     expect(storageCells().map(cellName)).toEqual(namesBefore);
   });
 
-  test("R4 [바뀔] 줄이 열린 채 '보관함'을 다시 누르면 줄이 닫히고 배치·보관함·개수는 그대로다", async () => {
+  test("R4 [바뀔] 줄을 여닫는 '보관함' 버튼이 없고(이름이 '보관함…'인 버튼 없음), 줄은 칸 셋을 보인 채이며 배치·보관함·개수는 그대로다", async () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
     expect(storageCells()).toHaveLength(3);
 
-    await fireEvent.press(storageButton());
-    await flushAsync();
-
-    expectRowClosed();
+    expect(screen.queryAllByRole("button", { name: /^보관함/ })).toHaveLength(0);
+    expect(storageCells().map(cellName)).toEqual(["옷장", "깔개", "옷장"]);
     expect(editLayout().items).toEqual(layout(DEF_ITEMS).items);
     expect(storedOf(editLayout())).toEqual(S3);
     expect(storageBadge()).toBe(3);
   });
 
-  test("R5 [그대로] 줄의 닫기 버튼을 누르면 줄이 닫히고 배치·보관함은 그대로다", async () => {
+  test("R5 [바뀔] 줄에 닫기 버튼이 없고(이름에 '닫기'인 버튼 없음), 줄은 보인 채이며 배치·보관함은 그대로다", async () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
     expect(storageCells().map(cellName)).toContain("옷장");
 
-    const close = screen.getAllByRole("button", { name: /닫기/ });
-    expect(close).toHaveLength(1);
-    await fireEvent.press(close[0]);
-    await flushAsync();
-
-    expectRowClosed();
+    expect(screen.queryAllByRole("button", { name: /닫기/ })).toHaveLength(0);
+    expect(storageCells().map(cellName)).toEqual(["옷장", "깔개", "옷장"]);
     expect(storedOf(editLayout())).toEqual(S3);
     expect(storageBadge()).toBe(3);
   });
 
-  test("R6 [그대로] 줄이 열려 있으면 안드로이드 뒤로 가기는 줄만 닫고, 그다음 뒤로 가기는 꾸미기 취소다", async () => {
+  test("R6 [바뀔] 줄이 보이는 꾸미기에서 안드로이드 뒤로 가기는 바로 꾸미기 취소다(저장하지 않음)", async () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
     expect(storageCells().map(cellName)).toContain("옷장");
 
-    await pressHardwareBack();
+    const handled = await pressHardwareBack();
 
-    expectRowClosed();
-    expectEditing();
-
-    await pressHardwareBack();
-
+    expect(handled).toBe(true);
     expectNotEditing();
+    expectRowClosed();
     expect(saveLobbyLayout).not.toHaveBeenCalled();
   });
 
-  test("R7 [그대로] 줄이 열린 채 '취소'나 '완료'로 꾸미기에서 나오면 줄이 닫힌다(다시 들어가도 닫혀 있다)", async () => {
+  test("R7 [바뀔] '취소'나 '완료'로 꾸미기에서 나오면 줄이 사라지고, 다시 들어가면 누르지 않아도 줄이 바로 보인다", async () => {
     await renderHome(layout(DEF_ITEMS, S3));
     await enterEdit();
     await openStorage();
@@ -838,17 +852,16 @@ describe("[spec] 070 명세 2: 보관함 아이콘 줄", () => {
     expectNotEditing();
     expectRowClosed();
     await enterEdit();
-    expectRowClosed();
+    expect(storageCells().map(cellName)).toEqual(["옷장", "깔개", "옷장"]);
+    expect(storageBadge()).toBe(3);
 
-    await openStorage();
-    expect(storageCells().map(cellName)).toContain("옷장");
     // 바꾼 것이 없어 '완료'는 저장 없이 나온다
     await fireEvent.press(doneButton());
     await flushAsync();
     expectNotEditing();
     expectRowClosed();
     await enterEdit();
-    expectRowClosed();
+    expect(storageCells().map(cellName)).toEqual(["옷장", "깔개", "옷장"]);
     expect(saveLobbyLayout).not.toHaveBeenCalled();
   });
 
@@ -966,7 +979,7 @@ describe("[spec] 070 명세 3: 가구 모양 그림", () => {
 describe("[spec] 070 명세 4: 가구 더하기는 개발 빌드에서만", () => {
   const ONE_WARDROBE = layout(N0_ITEMS, [{ id: "wardrobe-1", type: "wardrobe" }]);
 
-  test("D1 [바뀔] 운영 빌드: 꾸미기에서 줄을 열기 전에도 연 뒤에도 '가구 더하기'(글·탭·'… 더하기' 칸)가 없고, 줄에는 보관함 칸만 있다", async () => {
+  test("D1 [바뀔] 운영 빌드: 꾸미기에서 '가구 더하기'(글·탭·'… 더하기' 칸)가 없고, 줄에는 보관함 칸만 있다", async () => {
     devGlobal.__DEV__ = false;
     await renderHome(ONE_WARDROBE);
     await enterEdit();
@@ -980,7 +993,7 @@ describe("[spec] 070 명세 4: 가구 더하기는 개발 빌드에서만", () =
     expect(visibleCells().map(cellName)).toEqual(["옷장"]);
   });
 
-  test("D2 [바뀔] 개발 빌드: 줄을 열면 칸 위에 '보관함'·'가구 더하기' 탭이 있고, 처음에는 보관함 칸이 보인다", async () => {
+  test("D2 [바뀔] 개발 빌드: 꾸미기에 들어가면 칸 위에 '보관함 1'(개수 규칙)·'가구 더하기' 탭이 있고, 처음에는 보관함 칸이 보인다", async () => {
     devGlobal.__DEV__ = true;
     await renderHome(ONE_WARDROBE);
     await enterEdit();
@@ -1021,7 +1034,7 @@ describe("[spec] 070 명세 4: 가구 더하기는 개발 빌드에서만", () =
     expect(visibleCells().map(cellName)).toEqual(REMOVABLE_NAMES);
   });
 
-  test("D4 [바뀔] 개발 빌드: '가구 더하기' 탭에서 '보관함' 탭으로 돌아오면 보관함 칸이 다시 보인다", async () => {
+  test("D4 [바뀔] 개발 빌드: '가구 더하기' 탭에서 '보관함 1' 탭으로 돌아오면 보관함 칸이 다시 보인다", async () => {
     devGlobal.__DEV__ = true;
     await renderHome(ONE_WARDROBE);
     await enterEdit();

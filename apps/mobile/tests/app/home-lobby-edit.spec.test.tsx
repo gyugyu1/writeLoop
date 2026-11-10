@@ -6,6 +6,8 @@
 // 라우터, 포커스, 3D 그리기). 3D 그리기는 가짜라서, 어느 가구를 눌렀는지(의자 → 책상, 깔개 위 가구, 벽 가구는 ④부터 골라짐)는
 // 3D 그리기가 판정한 값(piece)을 누르기 결과로 그대로 넣어 보낸다. 그 판정 자체는 이 테스트로 보지 못한다(보고에 적음).
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다(02 가정 A6).
+// 071(private 작업 폴더 071-2026-11-11-꾸미기-보관함-늘-보이기-완료-위로) 03 결정 2로 고친 것: 안내 문구가 알림이 떠 있는 동안 숨으므로,
+// 알림 바로 뒤의 편집 모드 확인(finishExpectRedBlocked, R7·R8의 '처음 배치로' 뒤, X5, X6)을 안내 대신 버튼으로 본다(expectEditingByButtons).
 // 064-④ 결정 11의 1(책상도 게시판·창문 바로 아래 칸에 놓을 수 없음)에 맞춰 M10(책상 → 창문 아래)을 "돌아간다"로 옮기고,
 // R10은 창문을 왼쪽 벽에 건 배치 LW에서 시작하게 고쳤다(K-right 칸 5~7,0이 창문 아래가 되어서).
 // 065 결정 19(고른 가구를 다시 톡하면 고르기가 풀림)에 맞춰 R5에서 아직 골라진 책장을 다시 톡하던 조작을 뺐다(확인하는 뜻은 그대로).
@@ -459,6 +461,15 @@ function expectEditing() {
   expect(screen.queryByText("꾸미기")).toBeNull();
 }
 
+/**
+ * 편집 모드다(알림이 떠 있을 때): 세 버튼이 보이고 '꾸미기'가 없다. 071 명세 3(알림이 떠 있는 동안 안내 숨김)과
+ * 071 03 결정 2(사용자: "버튼으로 꾸미기 중 확인")로, 알림 바로 뒤에는 안내 줄 대신 버튼으로 편집 모드인지 본다.
+ */
+function expectEditingByButtons() {
+  for (const label of ["취소", "처음 배치로", "완료"]) expect(screen.getByRole("button", { name: label })).toBeTruthy();
+  expect(screen.queryByText("꾸미기")).toBeNull();
+}
+
 /** 편집 모드가 아니다: 안내 줄과 세 버튼이 없고 '꾸미기'가 보인다. */
 function expectNotEditing() {
   expect(screen.queryByText(GUIDE)).toBeNull();
@@ -497,7 +508,7 @@ async function finishExpectRedBlocked() {
   await pressButton("완료");
   expect(saveLobbyLayout).not.toHaveBeenCalled();
   expect(screen.getByText(RED_FINISH)).toBeTruthy();
-  expectEditing();
+  expectEditingByButtons();
 }
 
 beforeAll(() => {
@@ -1060,7 +1071,7 @@ describe("돌리기와 빨간 가구", () => {
     await finishExpectRedBlocked();
 
     await pressButton("처음 배치로");
-    expectEditing();
+    expectEditingByButtons();
     await finishExpectNoSave();
   });
 
@@ -1161,7 +1172,7 @@ describe("나오기와 저장", () => {
     await pressButton("완료");
 
     expect(screen.getByText(SAVE_FAILED)).toBeTruthy();
-    expectEditing();
+    expectEditingByButtons();
     expect(sortedItems(editLayout())).toEqual(sortedItems(W_CENTER));
     await pressButton("완료");
 
@@ -1184,7 +1195,7 @@ describe("나오기와 저장", () => {
 
     expect(fetchMock.mock.calls.some(([url, init]) => url.includes("/api/lobby-layout") && init?.method === "PUT")).toBe(true);
     expect(screen.getByText(SAVE_FAILED)).toBeTruthy();
-    expectEditing();
+    expectEditingByButtons();
     expect(sortedItems(editLayout())).toEqual(sortedItems(W_CENTER));
   });
 

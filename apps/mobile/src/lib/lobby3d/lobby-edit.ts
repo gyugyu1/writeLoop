@@ -247,6 +247,13 @@ export function nearestWall(point: FloorPoint): { wall: WallSide; along: number 
   return toLeft <= toRight ? { wall: "left", along: point.z } : { wall: "right", along: point.z };
 }
 
+/** 바닥 점에서 그 방의 걸 수 있는 벽 가운데 가장 가까운 벽과 그 벽을 따라간 자리(탭으로 벽 가구를 옮길 때). */
+function nearestHangWall(point: FloorPoint, room: RoomSpec): { wall: WallSide; along: number } {
+  const distance: Record<WallSide, number> = { back: point.z, left: point.x, right: ROOM.width - point.x };
+  const wall = room.hangWalls.reduce((best, side) => (distance[side] < distance[best] ? side : best));
+  return { wall, along: wall === "back" ? point.x : point.z };
+}
+
 /**
  * 바닥 점이 벽 가구 앞 바닥 띠(그 벽에서 WALL_FRONT_DEPTH 안, 벽 가구 폭 안)에 있으면 그 벽 가구의 id.
  * 모서리처럼 여러 띠에 들면 벽 가구가 있는 띠 가운데 가장 가까운 벽의 가구다.
@@ -329,6 +336,8 @@ interface Press {
   y: number;
   point: FloorPoint | null;
   wall: { wall: WallSide; along: number } | null;
+  /** 벽 위를 눌렀는지(아니면 wall은 바닥 점에서 가장 가까운 벽이다). */
+  onWall: boolean;
 }
 
 type Drag =
@@ -490,7 +499,7 @@ export class LobbyEditor {
       const hung = this.wallOf(fromStrip).wall;
       wall = { wall: hung, along: hung === "back" ? hit.point.x : hit.point.z };
     }
-    this.press = { piece, x: screenX, y: screenY, point: hit.point, wall };
+    this.press = { piece, x: screenX, y: screenY, point: hit.point, wall, onWall: Boolean(hit.wall) };
     return null;
   }
 
@@ -589,7 +598,9 @@ export class LobbyEditor {
     const mount = furnitureType(item.type).mount;
     let next: LobbyLayout | null = null;
     if (mount === "wall") {
-      if (press.wall) next = withItemPlacement(this.layout, id, { wall: { wall: press.wall.wall, along: Math.round(press.wall.along / WALL_STEP) * WALL_STEP } });
+      // 바닥을 눌렀으면 그 방의 걸 수 있는 벽 가운데 가장 가까운 벽으로 보낸다
+      const at = press.onWall ? press.wall : press.point && nearRoom(press.point) ? nearestHangWall(press.point, currentRoom()) : null;
+      if (at) next = withItemPlacement(this.layout, id, { wall: { wall: at.wall, along: Math.round(at.along / WALL_STEP) * WALL_STEP } });
     } else if (press.point && nearRoom(press.point)) {
       if (mount === "tabletop") {
         const spot = nearestSlot(this.layout, press.point);

@@ -93,10 +93,10 @@ export function outsideExit(room: RoomSpec): OutsideExit {
   return room.exits.find((exit): exit is OutsideExit => exit.kind === "outside")!;
 }
 
-/** 밖으로 장소: 입구 발판 쪽을 보고(방 앞끝 너머), 방 앞끝 바로 안쪽에 선다. */
+/** 밖으로 장소: 입구 발판 가운데를 보고(방 앞끝 너머), 방 앞끝 바로 안쪽에 선다. */
 export function outsidePlace(room: RoomSpec): { faceTo: { x: number; z: number }; approach: { x: number; z: number }[] } {
   const step = outsideExit(room);
-  return { faceTo: { x: step.x, z: room.depth + 0.35 }, approach: [{ x: step.x, z: room.depth - 0.5 }] };
+  return { faceTo: { x: step.x, z: room.depth + step.depth / 2 }, approach: [{ x: step.x, z: room.depth - 0.5 }] };
 }
 
 /** 벽을 따라간 자리의 범위(벽 길이). 뒷벽은 방 폭, 옆벽은 방 깊이다. */

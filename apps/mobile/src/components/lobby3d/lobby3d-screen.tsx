@@ -69,8 +69,8 @@ interface EditView extends LobbyCanvasEdit {
   stored: StoredItem[];
 }
 
-/** 편집 모드 아래 버튼 줄의 돌리기 아이콘 버튼 크기. */
-const ROTATE_SIZE = 56;
+/** 보관함 줄 머리의 돌리기·치우기 아이콘 버튼 크기. */
+const TRAY_ACTION_SIZE = 44;
 
 export type LobbyMenuId = "question" | "diary" | "thought" | "records";
 
@@ -226,9 +226,10 @@ export default function Lobby3dScreen({
   const [editView, setEditView] = useState<EditView | null>(null);
   const editing = editView !== null;
   const storedCount = editView ? editView.stored.length : 0;
+  // 보관함 줄 머리(개발 빌드는 '보관함' 탭) 이름: 보관함 전체 개수, 0이면 개수 없이
+  const storageTitle = storedCount > 0 ? `보관함 ${storedCount}` : "보관함";
   const [saving, setSaving] = useState(false);
   // 편집 모드의 보관함 목록을 열었는지
-  const [storageOpen, setStorageOpen] = useState(false);
   const [storageTab, setStorageTab] = useState<"stored" | "add">("stored");
   const savingRef = useRef(false);
   savingRef.current = saving;
@@ -519,6 +520,8 @@ export default function Lobby3dScreen({
     sim.relayout(Date.now());
     syncView();
     setCameraOpen(false);
+    // 개발 빌드의 보관함 줄 탭은 들어올 때마다 '보관함'으로 시작한다
+    setStorageTab("stored");
     editorRef.current = new LobbyEditor(activeLobbyLayout());
     setEditViewWidth(Math.max(viewWidth, roomFitViewWidth(screenWidth / Math.max(1, screenHeight))));
     refreshEdit();
@@ -526,7 +529,6 @@ export default function Lobby3dScreen({
   /** 편집 모드에서 나온다. saved가 있으면 그 배치를 적용한다(없으면 그동안 받은 배치를 위 효과가 적용한다). */
   const finishEdit = (saved: LobbyLayout | null) => {
     editorRef.current = null;
-    setStorageOpen(false);
     setSaving(false);
     setEditViewWidth(null);
     refreshEdit();
@@ -597,14 +599,11 @@ export default function Lobby3dScreen({
   };
   const cancelEditRef = useRef(cancelEdit);
   cancelEditRef.current = cancelEdit;
-  // 안드로이드 뒤로 가기는 '취소'와 같다(저장하는 동안에는 아무 일도 하지 않는다). 보관함 목록이 열려 있으면 목록만 닫는다
-  const storageOpenRef = useRef(storageOpen);
-  storageOpenRef.current = storageOpen;
+  // 안드로이드 뒤로 가기는 '취소'와 같다(저장하는 동안에는 아무 일도 하지 않는다)
   useEffect(() => {
     if (!editing) return;
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      if (storageOpenRef.current) setStorageOpen(false);
-      else cancelEditRef.current();
+      cancelEditRef.current();
       return true;
     });
     return () => subscription.remove();
@@ -758,7 +757,7 @@ export default function Lobby3dScreen({
 
       <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
         {editing ? (
-          // 편집 모드의 위 여백: 취소·처음 배치로(안내 문구는 이 줄 바로 밑)
+          // 편집 모드의 위 여백: 왼쪽에 취소·처음 배치로, 오른쪽에 완료·카메라(안내 문구는 이 줄 바로 밑)
           <View style={styles.headerLeft}>
             <Pressable
               accessibilityRole="button"
@@ -798,6 +797,17 @@ export default function Lobby3dScreen({
           </View>
         )}
         <View style={styles.headerLeft}>
+          {editing ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saving || !editView?.canFinish }}
+              disabled={saving}
+              style={[styles.editTopButton, styles.editDone, (saving || !editView?.canFinish) && styles.editButtonBusy]}
+              onPress={() => void finishEditWithSave()}
+            >
+              <Text style={[styles.editButtonText, styles.editDoneText]}>{saving ? "저장 중…" : "완료"}</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="카메라 거리 설정"
@@ -810,7 +820,8 @@ export default function Lobby3dScreen({
         </View>
       </View>
 
-      {editing ? (
+      {/* 안내 문구는 같은 높이의 알림(토스트)이나 카메라 거리 판이 떠 있는 동안 숨긴다 */}
+      {editing && !toast && !cameraOpen ? (
         <View pointerEvents="none" style={[styles.editGuideRow, { top: insets.top + 62 }]}>
           <View style={styles.editGuide}>
             <Text style={styles.editGuideText}>{EDIT_GUIDE}</Text>
@@ -954,8 +965,8 @@ export default function Lobby3dScreen({
             <Text style={styles.panelToggleText}>{panelOpen ? "시험판 접기" : "시험판 펴기"}</Text>
           </Pressable>
         ) : null}
-        {editing && storageOpen ? (
-          // 보관함 줄: 아래 버튼 줄 바로 위. 가림막이 없어 열린 채로도 방의 가구를 다룬다
+        {editing ? (
+          // 보관함 줄: 꾸미기 동안 화면 맨 아래에 늘 보인다. 가림막이 없어 줄이 보이는 채로 방의 가구를 다룬다
           <View accessibilityLabel="보관함" style={styles.storageTray}>
             <View style={styles.rowBetween}>
               {allowAddFurniture ? (
@@ -968,16 +979,44 @@ export default function Lobby3dScreen({
                       style={[styles.storageTab, storageTab === tab && styles.storageTabOn]}
                       onPress={() => setStorageTab(tab)}
                     >
-                      <Text style={styles.storageTabText}>{tab === "stored" ? "보관함" : "가구 더하기"}</Text>
+                      <Text style={styles.storageTabText}>{tab === "stored" ? storageTitle : "가구 더하기"}</Text>
                     </Pressable>
                   ))}
                 </View>
               ) : (
-                <Text style={styles.storageTitle}>보관함</Text>
+                <Text style={styles.storageTitle}>{storageTitle}</Text>
               )}
-              <Pressable accessibilityRole="button" accessibilityLabel="보관함 닫기" style={styles.decorButton} onPress={() => setStorageOpen(false)}>
-                <Text style={styles.decorText}>닫기</Text>
-              </Pressable>
+              {/* 돌리기·치우기는 줄 머리 오른쪽에 둔다. 가구를 골랐을 때만 보이고, 아니면 자리만 비워 둔다(머리의 다른 것이 움직이지 않게) */}
+              <View style={styles.headerLeft}>
+                {editView?.handle ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="돌리기"
+                    accessibilityState={{ disabled: saving }}
+                    disabled={saving}
+                    style={[styles.trayAction, saving && styles.editButtonBusy]}
+                    onPress={rotateEdit}
+                  >
+                    <Text style={styles.rotateText}>↻</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.trayActionSlot} />
+                )}
+                {editView?.storable ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="치우기"
+                    accessibilityState={{ disabled: saving }}
+                    disabled={saving}
+                    style={[styles.trayAction, saving && styles.editButtonBusy]}
+                    onPress={storeEdit}
+                  >
+                    <Text style={styles.storeText}>📦</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.trayActionSlot} />
+                )}
+              </View>
             </View>
             {allowAddFurniture && storageTab === "add" ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storageList}>
@@ -996,58 +1035,7 @@ export default function Lobby3dScreen({
             )}
           </View>
         ) : null}
-        {editing ? (
-          <View style={styles.menu}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: saving, expanded: storageOpen }}
-              disabled={saving}
-              style={[styles.editButton, saving && styles.editButtonBusy]}
-              onPress={() => setStorageOpen((open) => !open)}
-            >
-              <Text style={styles.editButtonText}>{storedCount > 0 ? `보관함 ${storedCount}` : "보관함"}</Text>
-            </Pressable>
-            {/* 돌리기는 화면 아래에 고정한다. 바닥 가구를 고른 동안만 보이고, 아니면 자리만 비워 둔다(다른 버튼이 움직이지 않게) */}
-            {editView?.handle ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="돌리기"
-                accessibilityState={{ disabled: saving }}
-                disabled={saving}
-                style={[styles.rotateButton, saving && styles.editButtonBusy]}
-                onPress={rotateEdit}
-              >
-                <Text style={styles.rotateText}>↻</Text>
-              </Pressable>
-            ) : (
-              <View style={styles.rotateSlot} />
-            )}
-            {/* 치우기도 같은 방식이다. 치울 수 있는 가구를 고른 동안만 보인다 */}
-            {editView?.storable ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="치우기"
-                accessibilityState={{ disabled: saving }}
-                disabled={saving}
-                style={[styles.rotateButton, saving && styles.editButtonBusy]}
-                onPress={storeEdit}
-              >
-                <Text style={styles.storeText}>📦</Text>
-              </Pressable>
-            ) : (
-              <View style={styles.rotateSlot} />
-            )}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: saving }}
-              disabled={saving}
-              style={[styles.editButton, styles.editDone, (saving || !editView?.canFinish) && styles.editButtonBusy]}
-              onPress={() => void finishEditWithSave()}
-            >
-              <Text style={[styles.editButtonText, styles.editDoneText]}>{saving ? "저장 중…" : "완료"}</Text>
-            </Pressable>
-          </View>
-        ) : (
+        {editing ? null : (
         <View style={styles.menu}>
           {MENU.map((item) => {
             const lit = litMenu === item.id;
@@ -1142,11 +1130,11 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   editGuideText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
-  rotateSlot: { width: ROTATE_SIZE, height: ROTATE_SIZE },
-  rotateButton: {
-    width: ROTATE_SIZE,
-    height: ROTATE_SIZE,
-    borderRadius: ROTATE_SIZE / 2,
+  trayActionSlot: { width: TRAY_ACTION_SIZE, height: TRAY_ACTION_SIZE },
+  trayAction: {
+    width: TRAY_ACTION_SIZE,
+    height: TRAY_ACTION_SIZE,
+    borderRadius: TRAY_ACTION_SIZE / 2,
     borderWidth: 2,
     borderColor: LINE,
     backgroundColor: "#FFFFFF",
@@ -1194,16 +1182,6 @@ const styles = StyleSheet.create({
   storageTitle: { fontSize: 16, fontWeight: "700", color: "#2B1810" },
   storageEmpty: { fontSize: 14, color: "#7A5A48", paddingVertical: 8 },
   storageList: { gap: 10 },
-  editButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: LINE,
-    backgroundColor: "rgba(255,255,255,0.95)",
-    justifyContent: "center",
-    paddingHorizontal: 6
-  },
   editDone: { backgroundColor: ACCENT },
   editButtonBusy: { opacity: 0.45 },
   editButtonText: { fontSize: 14, fontWeight: "700", color: "#2B1810", textAlign: "center" },

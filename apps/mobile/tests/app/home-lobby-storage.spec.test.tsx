@@ -441,9 +441,23 @@ async function openStorage() {
 
 const FURNITURE_NAMES = FURNITURE_TYPES.map((type) => type.name);
 
-/** 보관함 목록의 줄: 가구 이름 글을 가진 버튼. */
+/**
+ * 보관함 목록의 줄: '보관함' 묶음 안의, 가구 이름 글을 가진 버튼.
+ * 066-⑤ 04 결정 1의 1: 판에 늘 보이는 '가구 더하기' 줄(접근성 이름 "<가구 이름> 더하기", 같은 폴더 결정 3)은 이 묶음이 아니라 뺀다.
+ */
 function storageRows(): UiNode[] {
-  return screen.getAllByRole("button").filter((button) => FURNITURE_NAMES.some((name) => within(button).queryByText(name) !== null));
+  return screen
+    .getAllByRole("button")
+    .filter((button) => !isAddRow(button) && FURNITURE_NAMES.some((name) => within(button).queryByText(name) !== null));
+}
+
+/** '가구 더하기' 묶음의 줄(또는 그 안)인지: 자신이나 조상의 접근성 이름이 "… 더하기"다. */
+function isAddRow(node: UiNode): boolean {
+  for (let n: UiNode | null = node; n; n = n.parent) {
+    const label = (n.props as { accessibilityLabel?: unknown }).accessibilityLabel;
+    if (typeof label === "string" && label.endsWith(" 더하기")) return true;
+  }
+  return false;
 }
 
 function storageRow(name: string): UiNode {
@@ -455,6 +469,15 @@ function storageRow(name: string): UiNode {
 async function takeOut(name: string) {
   await fireEvent.press(storageRow(name));
   await flushAsync();
+}
+
+/** '보관함' 묶음 줄에 보이는 그 글(없으면 null). 066-⑤ 04 결정 1의 1로 화면 전체에서 찾던 것을 이 묶음 안으로 좁혔다. */
+function storageText(name: string): UiNode | null {
+  const found = storageRows()
+    .map((row) => within(row).queryByText(name))
+    .filter((node): node is UiNode => node !== null);
+  expect(found.length).toBeLessThanOrEqual(1);
+  return found[0] ?? null;
 }
 
 function expectNoNotice() {
@@ -687,11 +710,11 @@ describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
     await renderHome(layout(DEF_ITEMS, S2_STORED));
     await enterEdit();
     await openStorage();
-    expect(screen.queryByText("옷장")).not.toBeNull();
+    expect(storageText("옷장")).not.toBeNull();
 
     await pressButton("닫기");
 
-    expect(screen.queryByText("옷장")).toBeNull();
+    expect(storageText("옷장")).toBeNull();
     expect(roomOf(editLayout())).toEqual(byId(DEF_ITEMS));
     expect(storedOf(editLayout())).toEqual(byId(S2_STORED));
     expect(storageBadge()).toBe(3);
@@ -701,12 +724,12 @@ describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
     await renderHome(layout(DEF_ITEMS, S2_STORED));
     await enterEdit();
     await openStorage();
-    expect(screen.queryByText("옷장")).not.toBeNull();
+    expect(storageText("옷장")).not.toBeNull();
 
     await fireEvent.press(screen.getByLabelText("보관함 닫기"));
     await flushAsync();
 
-    expect(screen.queryByText("옷장")).toBeNull();
+    expect(storageText("옷장")).toBeNull();
     expect(roomOf(editLayout())).toEqual(byId(DEF_ITEMS));
     expect(storedOf(editLayout())).toEqual(byId(S2_STORED));
     expect(storageBadge()).toBe(3);
@@ -719,7 +742,7 @@ describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
 
     await takeOut("옷장");
 
-    expect(screen.queryByText("옷장")).toBeNull();
+    expect(storageText("옷장")).toBeNull();
     expect(itemIn(editLayout(), "wardrobe3")).toEqual({ id: "wardrobe3", type: "wardrobe", floor: { x: 4.5, z: 5.5, facing: 0 } });
     expect(storedOf(editLayout())).toEqual([]);
     expect(storageBadge()).toBeNull();

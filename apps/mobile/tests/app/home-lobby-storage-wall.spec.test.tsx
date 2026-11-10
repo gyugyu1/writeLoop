@@ -345,9 +345,23 @@ async function openStorage() {
 
 const FURNITURE_NAMES = FURNITURE_TYPES.map((type) => type.name);
 
-/** 보관함 목록의 줄: 가구 이름 글을 가진 버튼. */
+/**
+ * 보관함 목록의 줄: '보관함' 묶음 안의, 가구 이름 글을 가진 버튼.
+ * 066-⑤ 04 결정 1의 1: 판에 늘 보이는 '가구 더하기' 줄(접근성 이름 "<가구 이름> 더하기", 같은 폴더 결정 3)은 이 묶음이 아니라 뺀다.
+ */
 function storageRows(): UiNode[] {
-  return screen.getAllByRole("button").filter((button) => FURNITURE_NAMES.some((name) => within(button).queryByText(name) !== null));
+  return screen
+    .getAllByRole("button")
+    .filter((button) => !isAddRow(button) && FURNITURE_NAMES.some((name) => within(button).queryByText(name) !== null));
+}
+
+/** '가구 더하기' 묶음의 줄(또는 그 안)인지: 자신이나 조상의 접근성 이름이 "… 더하기"다. */
+function isAddRow(node: UiNode): boolean {
+  for (let n: UiNode | null = node; n; n = n.parent) {
+    const label = (n.props as { accessibilityLabel?: unknown }).accessibilityLabel;
+    if (typeof label === "string" && label.endsWith(" 더하기")) return true;
+  }
+  return false;
 }
 
 function storageRow(name: string): UiNode {

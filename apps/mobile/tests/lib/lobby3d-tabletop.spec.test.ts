@@ -125,8 +125,9 @@ describe("[spec] 066-④ 명세 1·2: 카탈로그", () => {
     expect(type!.chair).toBeUndefined();
   });
 
-  test("C2 윗면이 있다고 표시한 종류는 책상뿐이다", () => {
-    expect(FURNITURE_TYPES.filter((type) => type.surface).map((type) => type.id)).toEqual(["desk"]);
+  // 066-⑤ 04 결정 1의 2: 협탁이 받침 가구가 되어(⑤ 명세 3) "책상뿐"을 "책상과 협탁"으로 고쳤다.
+  test("C2 윗면이 있다고 표시한 종류는 책상과 협탁이다", () => {
+    expect(FURNITURE_TYPES.filter((type) => type.surface).map((type) => type.id)).toEqual(["desk", "nightstand"]);
   });
 
   test("C3 장소 가구 목록은 게시판·창문·책상·책장 넷 그대로다(스탠드가 들지 않는다)", () => {

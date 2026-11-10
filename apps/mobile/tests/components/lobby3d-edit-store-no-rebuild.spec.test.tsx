@@ -476,10 +476,28 @@ async function storeSelected() {
   await frames();
 }
 
+/**
+ * 보관함 판의 '보관함' 묶음 줄에 있는 그 글. 066-⑤ 04 결정 1의 1: 판에 늘 보이는 '가구 더하기' 줄
+ * (접근성 이름 "<가구 이름> 더하기", 같은 폴더 결정 3)에도 같은 이름이 있어, 찾는 범위를 '보관함' 묶음 안으로 좁힌다.
+ */
+function storageRowText(name: string) {
+  const inAddRow = (node: ReturnType<typeof screen.getByText>) => {
+    for (let n: ReturnType<typeof screen.getByText> | null = node; n; n = n.parent) {
+      const label = (n.props as { accessibilityLabel?: unknown }).accessibilityLabel;
+      if (typeof label === "string" && label.endsWith(" 더하기")) return true;
+    }
+    return false;
+  };
+  const found = screen.getAllByText(name).filter((node) => !inAddRow(node));
+  expect(found).toHaveLength(1);
+  return found[0];
+}
+
 async function takeOutWardrobe() {
   await fireEvent.press(screen.getByRole("button", { name: /보관함/ }));
   await flushAsync();
-  await pressText("옷장");
+  await fireEvent.press(storageRowText("옷장"));
+  await flushAsync();
   await frames();
 }
 

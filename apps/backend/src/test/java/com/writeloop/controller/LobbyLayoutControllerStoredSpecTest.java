@@ -304,7 +304,7 @@ class LobbyLayoutControllerStoredSpecTest extends IntegrationTestSupport {
         cases.add(rejected("SV-R16 stored id is a number", l -> storedWardrobe(l).put("id", 7)));
         cases.add(rejected("SV-R17 stored id null", l -> storedWardrobe(l).putNull("id")));
         // 아는 종류
-        cases.add(rejected("SV-R18 stored type bed", l -> storedWardrobe(l).put("type", "bed")));
+        cases.add(rejected("SV-R18 stored type sofa", l -> storedWardrobe(l).put("type", "sofa")));
         cases.add(rejected("SV-R19 stored type Wardrobe (upper case)", l -> storedWardrobe(l).put("type", "Wardrobe")));
         cases.add(rejected("SV-R20 stored type is a number", l -> storedWardrobe(l).put("type", 3)));
         cases.add(rejected("SV-R21 stored type null", l -> storedWardrobe(l).putNull("type")));

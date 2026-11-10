@@ -209,7 +209,7 @@ class LobbyLayoutControllerV2SpecTest extends IntegrationTestSupport {
         cases.add(rejected("R20 id null", l -> item(l, "rug").putNull("id")));
         cases.add(rejected("R21 id missing", l -> item(l, "rug").remove("id")));
         // type
-        cases.add(rejected("R22 type bed (not a known type yet)", l -> items(l).add(floorItem("bed", "bed", 6.5, 9.5, 0))));
+        cases.add(rejected("R22 type sofa (not a known type)", l -> items(l).add(floorItem("sofa", "sofa", 6.5, 9.5, 0))));
         cases.add(rejected("R23 type Desk (upper case)", l -> item(l, "desk").put("type", "Desk")));
         cases.add(rejected("R24 type missing", l -> item(l, "wardrobe").remove("type")));
         cases.add(rejected("R25 type null", l -> item(l, "wardrobe").putNull("type")));

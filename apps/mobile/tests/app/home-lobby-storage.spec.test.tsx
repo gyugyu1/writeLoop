@@ -743,6 +743,9 @@ describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
     await takeOut("옷장");
 
     expect(storageText("옷장")).toBeNull();
+    // 066-⑤ 13 결정: 보관함이 비어도 판이 열려 있으면 위 단언이 통과하므로, 판이 닫혔는지('가구 더하기' 제목과 빈 보관함 안내가 없다)도 본다
+    expect(screen.queryByText("가구 더하기")).toBeNull();
+    expect(screen.queryByText(STORAGE_EMPTY)).toBeNull();
     expect(itemIn(editLayout(), "wardrobe3")).toEqual({ id: "wardrobe3", type: "wardrobe", floor: { x: 4.5, z: 5.5, facing: 0 } });
     expect(storedOf(editLayout())).toEqual([]);
     expect(storageBadge()).toBeNull();

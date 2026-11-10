@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, BackHandler, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, Animated, BackHandler, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Lobby3dCanvas, {
   type LobbyCanvasEdit,
@@ -27,7 +27,8 @@ import {
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
 import { FURNITURE_TYPES, furnitureType } from "@/lib/lobby3d/furniture-catalog";
-import { sameLobbyLayout, storedGroups, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
+import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
+import { sameLobbyLayout, storedItems, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
 import { useLobbyClock, type ClockOverride } from "@/lib/lobby3d/use-lobby-clock";
 import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/lib/lobby3d/view-storage";
 
@@ -58,14 +59,14 @@ const EDIT_CANNOT_PLACE = "여기에는 놓을 수 없어요. 원래 자리로 �
 const EDIT_NO_ROOM = "놓을 자리가 없어요. 가구를 옮기거나 치운 뒤 다시 꺼내 주세요";
 const STORAGE_EMPTY = "보관함이 비었어요";
 const EDIT_LIMIT = "가구는 40개까지 둘 수 있어요";
-/** '가구 더하기'에 보이는 종류: 치울 수 있는 모든 종류(카탈로그 순서). */
+/** 개발 빌드의 '가구 더하기' 탭에 보이는 종류: 치울 수 있는 모든 종류(카탈로그 순서). 상점이 생기면 탭과 함께 없앤다. */
 const ADDABLE_TYPES = FURNITURE_TYPES.filter((type) => type.removable);
 
-/** 편집 모드에서 그릴 것과 '완료'를 누를 수 있는지, '치우기' 버튼을 띄울지, 보관함에 든 가구(종류마다 개수). */
+/** 편집 모드에서 그릴 것과 '완료'를 누를 수 있는지, '치우기' 버튼을 띄울지, 보관함에 든 가구(치운 순서). */
 interface EditView extends LobbyCanvasEdit {
   canFinish: boolean;
   storable: string | null;
-  stored: { type: string; count: number }[];
+  stored: StoredItem[];
 }
 
 /** 편집 모드 아래 버튼 줄의 돌리기 아이콘 버튼 크기. */
@@ -113,6 +114,8 @@ function sameView(a: ViewState, b: ViewState) {
 export interface Lobby3dScreenProps {
   /** 시험판(동작 버튼·속도·명암·외곽선 조절). 기본은 켬(개발 화면). */
   devPanel?: boolean;
+  /** 꾸미기 보관함 줄에 개발용 '가구 더하기' 탭을 보일지. 기본은 개발 빌드(__DEV__)에서만이다(상점이 생기기 전까지). */
+  allowAddFurniture?: boolean;
   /** 초당 프레임·동작 표시. 기본은 시험판과 같다(홈은 개발 빌드에서만 켠다). */
   showFps?: boolean;
   /** 머리 줄 왼쪽 칩 글. 기본은 시험판의 고정 글. */
@@ -142,8 +145,25 @@ export interface Lobby3dScreenProps {
   onEditingChange?: (editing: boolean) => void;
 }
 
+/** 꾸미기 보관함 줄의 가구 한 칸: 가구 모양 그림(없으면 이름 첫 글자)과 이름. 보관함은 가구 하나마다 한 칸이다. */
+function FurnitureTile({ type, label, onPress }: { type: string; label?: string; onPress: () => void }) {
+  const { name } = furnitureType(type);
+  const icon = furnitureIcon(type);
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label ?? name} style={styles.tile} onPress={onPress}>
+      <View style={styles.tileBox}>
+        {icon ? <Image source={icon} style={styles.tileImage} resizeMode="contain" /> : <Text style={styles.tileInitial}>{name.slice(0, 1)}</Text>}
+      </View>
+      <Text style={styles.tileName} numberOfLines={1}>
+        {name}
+      </Text>
+    </Pressable>
+  );
+}
+
 export default function Lobby3dScreen({
   devPanel = true,
+  allowAddFurniture = __DEV__,
   showFps = devPanel,
   streakLabel = "연속 1일",
   onStreakPress,
@@ -205,10 +225,11 @@ export default function Lobby3dScreen({
   const editorRef = useRef<LobbyEditor | null>(null);
   const [editView, setEditView] = useState<EditView | null>(null);
   const editing = editView !== null;
-  const storedCount = editView ? editView.stored.reduce((sum, group) => sum + group.count, 0) : 0;
+  const storedCount = editView ? editView.stored.length : 0;
   const [saving, setSaving] = useState(false);
   // 편집 모드의 보관함 목록을 열었는지
   const [storageOpen, setStorageOpen] = useState(false);
+  const [storageTab, setStorageTab] = useState<"stored" | "add">("stored");
   const savingRef = useRef(false);
   savingRef.current = saving;
   // 편집 모드의 카메라 거리. 들어갈 때 방이 가로로 다 보이게 물러나고, 편집 중에 카메라 거리를 바꾸면 그 거리를 따른다.
@@ -238,7 +259,7 @@ export default function Lobby3dScreen({
       handle: editor.handle,
       canFinish: editor.canFinish,
       storable: editor.storable,
-      stored: storedGroups(editor.layout)
+      stored: storedItems(editor.layout)
     };
     editLive.current = next;
     setEditView(next);
@@ -527,12 +548,11 @@ export default function Lobby3dScreen({
     editor.store();
     refreshEdit();
   };
-  const takeOutEdit = (type: string) => {
+  const takeOutEdit = (item: StoredItem) => {
     const editor = editorRef.current;
     if (!editor || savingRef.current) return;
-    // 꺼냈든 못 꺼냈든 목록을 닫는다(꺼낸 가구를 바로 끌 수 있고, 못 꺼낸 안내가 가려지지 않게)
-    setStorageOpen(false);
-    const notice = editor.takeOut(type);
+    // 보관함 줄은 열린 채로 둔다(여러 개를 이어서 꺼낼 수 있고, 줄이 열린 채로도 꺼낸 가구를 끌 수 있다)
+    const notice = editor.takeOut(item.type, item.id);
     if (notice === "red-first") showToast(EDIT_RED_FIRST);
     else if (notice === "no-room") showToast(EDIT_NO_ROOM);
     refreshEdit();
@@ -540,8 +560,6 @@ export default function Lobby3dScreen({
   const addEdit = (type: string) => {
     const editor = editorRef.current;
     if (!editor || savingRef.current) return;
-    // 꺼낼 때처럼 더했든 못 더했든 목록을 닫는다
-    setStorageOpen(false);
     const notice = editor.addNew(type);
     if (notice === "red-first") showToast(EDIT_RED_FIRST);
     else if (notice === "no-room") showToast(EDIT_NO_ROOM);
@@ -740,8 +758,26 @@ export default function Lobby3dScreen({
 
       <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
         {editing ? (
-          <View style={styles.editGuide}>
-            <Text style={styles.editGuideText}>{EDIT_GUIDE}</Text>
+          // 편집 모드의 위 여백: 취소·처음 배치로(안내 문구는 이 줄 바로 밑)
+          <View style={styles.headerLeft}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saving }}
+              disabled={saving}
+              style={[styles.editTopButton, saving && styles.editButtonBusy]}
+              onPress={cancelEdit}
+            >
+              <Text style={styles.editButtonText}>취소</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saving }}
+              disabled={saving}
+              style={[styles.editTopButton, saving && styles.editButtonBusy]}
+              onPress={resetEdit}
+            >
+              <Text style={styles.editButtonText}>처음 배치로</Text>
+            </Pressable>
           </View>
         ) : (
           <View style={styles.headerLeft}>
@@ -762,18 +798,6 @@ export default function Lobby3dScreen({
           </View>
         )}
         <View style={styles.headerLeft}>
-          {/* 편집 모드에서는 오른쪽 위, 카메라 거리 버튼 왼쪽에 보관함 버튼을 둔다 */}
-          {editing ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: saving, expanded: storageOpen }}
-              disabled={saving}
-              style={[styles.decorButton, saving && styles.editButtonBusy]}
-              onPress={() => setStorageOpen(true)}
-            >
-              <Text style={styles.decorText}>{storedCount > 0 ? `보관함 ${storedCount}` : "보관함"}</Text>
-            </Pressable>
-          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="카메라 거리 설정"
@@ -785,6 +809,14 @@ export default function Lobby3dScreen({
           </Pressable>
         </View>
       </View>
+
+      {editing ? (
+        <View pointerEvents="none" style={[styles.editGuideRow, { top: insets.top + 62 }]}>
+          <View style={styles.editGuide}>
+            <Text style={styles.editGuideText}>{EDIT_GUIDE}</Text>
+          </View>
+        </View>
+      ) : null}
 
       {cameraOpen ? (
         <View accessibilityLabel="카메라 거리" style={[styles.popover, { top: insets.top + 62 }]}>
@@ -837,46 +869,6 @@ export default function Lobby3dScreen({
         <View accessibilityRole="alert" pointerEvents="none" style={[styles.toast, { top: insets.top + 62 }]}>
           <Text style={styles.toastText}>{toast}</Text>
         </View>
-      ) : null}
-
-      {editing && storageOpen ? (
-        <Pressable accessibilityLabel="보관함 닫기" style={styles.storageBackdrop} onPress={() => setStorageOpen(false)}>
-          {/* 목록 안을 누르면 닫히지 않는다 */}
-          <Pressable accessibilityLabel="보관함" style={[styles.storageSheet, { marginBottom: bottomPad + 12 }]} onPress={() => {}}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.storageTitle}>보관함</Text>
-              <Pressable accessibilityRole="button" style={styles.decorButton} onPress={() => setStorageOpen(false)}>
-                <Text style={styles.decorText}>닫기</Text>
-              </Pressable>
-            </View>
-            {/* 보관함과 가구 더하기 목록이 길어지면 판 안에서 넘긴다 */}
-            <ScrollView style={{ maxHeight: screenHeight * 0.55 }} contentContainerStyle={styles.storageList}>
-              {editView && editView.stored.length > 0 ? (
-                editView.stored.map((group) => (
-                  <Pressable key={group.type} accessibilityRole="button" style={styles.storageRow} onPress={() => takeOutEdit(group.type)}>
-                    <Text style={styles.storageRowText}>{furnitureType(group.type).name}</Text>
-                    {group.count > 1 ? <Text style={styles.storageCount}>{`×${group.count}`}</Text> : null}
-                  </Pressable>
-                ))
-              ) : (
-                <Text style={styles.storageEmpty}>{STORAGE_EMPTY}</Text>
-              )}
-              <Text style={styles.storageTitle}>가구 더하기</Text>
-              {ADDABLE_TYPES.map((type) => (
-                <Pressable
-                  key={type.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${type.name} 더하기`}
-                  style={styles.storageRow}
-                  onPress={() => addEdit(type.id)}
-                >
-                  <Text style={styles.storageRowText}>{type.name}</Text>
-                  <Text style={styles.storageCount}>+</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
       ) : null}
 
       <View pointerEvents="box-none" style={[styles.bottom, { bottom: bottomPad + 12 }]}>
@@ -962,25 +954,58 @@ export default function Lobby3dScreen({
             <Text style={styles.panelToggleText}>{panelOpen ? "시험판 접기" : "시험판 펴기"}</Text>
           </Pressable>
         ) : null}
+        {editing && storageOpen ? (
+          // 보관함 줄: 아래 버튼 줄 바로 위. 가림막이 없어 열린 채로도 방의 가구를 다룬다
+          <View accessibilityLabel="보관함" style={styles.storageTray}>
+            <View style={styles.rowBetween}>
+              {allowAddFurniture ? (
+                <View style={styles.headerLeft}>
+                  {(["stored", "add"] as const).map((tab) => (
+                    <Pressable
+                      key={tab}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: storageTab === tab }}
+                      style={[styles.storageTab, storageTab === tab && styles.storageTabOn]}
+                      onPress={() => setStorageTab(tab)}
+                    >
+                      <Text style={styles.storageTabText}>{tab === "stored" ? "보관함" : "가구 더하기"}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.storageTitle}>보관함</Text>
+              )}
+              <Pressable accessibilityRole="button" accessibilityLabel="보관함 닫기" style={styles.decorButton} onPress={() => setStorageOpen(false)}>
+                <Text style={styles.decorText}>닫기</Text>
+              </Pressable>
+            </View>
+            {allowAddFurniture && storageTab === "add" ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storageList}>
+                {ADDABLE_TYPES.map((type) => (
+                  <FurnitureTile key={type.id} type={type.id} label={`${type.name} 더하기`} onPress={() => addEdit(type.id)} />
+                ))}
+              </ScrollView>
+            ) : editView && editView.stored.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storageList}>
+                {editView.stored.map((item) => (
+                  <FurnitureTile key={item.id} type={item.type} onPress={() => takeOutEdit(item)} />
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={styles.storageEmpty}>{STORAGE_EMPTY}</Text>
+            )}
+          </View>
+        ) : null}
         {editing ? (
           <View style={styles.menu}>
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ disabled: saving }}
+              accessibilityState={{ disabled: saving, expanded: storageOpen }}
               disabled={saving}
               style={[styles.editButton, saving && styles.editButtonBusy]}
-              onPress={cancelEdit}
+              onPress={() => setStorageOpen((open) => !open)}
             >
-              <Text style={styles.editButtonText}>취소</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: saving }}
-              disabled={saving}
-              style={[styles.editButton, saving && styles.editButtonBusy]}
-              onPress={resetEdit}
-            >
-              <Text style={styles.editButtonText}>처음 배치로</Text>
+              <Text style={styles.editButtonText}>{storedCount > 0 ? `보관함 ${storedCount}` : "보관함"}</Text>
             </Pressable>
             {/* 돌리기는 화면 아래에 고정한다. 바닥 가구를 고른 동안만 보이고, 아니면 자리만 비워 둔다(다른 버튼이 움직이지 않게) */}
             {editView?.handle ? (
@@ -1131,32 +1156,44 @@ const styles = StyleSheet.create({
   rotateText: { fontSize: 26, color: LINE, fontWeight: "700" },
   storeText: { fontSize: 24 },
   // 아래 버튼 줄보다 위에 덮는다(목록이 열린 동안은 목록만 다룬다)
-  storageBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 20, elevation: 20, backgroundColor: "rgba(43,24,16,0.35)", justifyContent: "flex-end" },
-  storageSheet: {
-    marginHorizontal: 12,
-    padding: 16,
+  editTopButton: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: LINE,
+    backgroundColor: "#FFFFFF"
+  },
+  editGuideRow: { position: "absolute", left: 12, right: 12, alignItems: "flex-start" },
+  storageTray: {
+    padding: 12,
     borderRadius: 20,
     borderWidth: 2,
     borderColor: LINE,
     backgroundColor: "#FFFFFF",
     gap: 10
   },
+  storageTab: { minHeight: 36, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, borderWidth: 2, borderColor: LINE, backgroundColor: "#FFF7EE" },
+  storageTabOn: { backgroundColor: "#FFE2C2" },
+  storageTabText: { fontSize: 13, fontWeight: "700", color: "#2B1810" },
+  tile: { width: 76, alignItems: "center", gap: 4 },
+  tileBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: LINE,
+    backgroundColor: "#FFF7EE",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  tileImage: { width: 56, height: 56 },
+  tileInitial: { fontSize: 22, fontWeight: "800", color: "#A64B00" },
+  tileName: { fontSize: 12, fontWeight: "700", color: "#2B1810", textAlign: "center" },
   storageTitle: { fontSize: 16, fontWeight: "700", color: "#2B1810" },
   storageEmpty: { fontSize: 14, color: "#7A5A48", paddingVertical: 8 },
   storageList: { gap: 10 },
-  storageRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    minHeight: 48,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: LINE,
-    backgroundColor: "#FFF7EE"
-  },
-  storageRowText: { fontSize: 15, fontWeight: "700", color: "#2B1810" },
-  storageCount: { fontSize: 14, fontWeight: "700", color: "#A64B00" },
   editButton: {
     flex: 1,
     height: 56,

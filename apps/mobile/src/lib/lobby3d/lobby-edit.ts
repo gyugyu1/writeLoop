@@ -432,11 +432,11 @@ export class LobbyEditor {
     return null;
   }
 
-  /** 보관함에서 그 종류 하나를 꺼내 놓을 수 있는 자리에 놓고 고른다. 빨간 가구가 있거나 놓을 자리가 없으면 꺼내지 않는다. */
-  takeOut(type: string): EditNotice {
+  /** 보관함에서 그 종류 하나(id를 주면 그 가구)를 꺼내 놓을 수 있는 자리에 놓고 고른다. 빨간 가구가 있거나 놓을 자리가 없으면 꺼내지 않는다. */
+  takeOut(type: string, id?: string): EditNotice {
     if (this.drag) return null;
     if (this.red) return "red-first";
-    const item = this.stored.find((p) => p.type === type);
+    const item = this.stored.find((p) => p.type === type && (id === undefined || p.id === id));
     if (!item) return null;
     const placed = freeSpotFor(makeLayout(this.layout.items, this.stored.filter((p) => p !== item)), item);
     if (!placed) return "no-room";

@@ -99,17 +99,6 @@ export function withItemPlacement(
   );
 }
 
-/** 보관함의 가구를 종류마다 묶은 것(처음 나온 순서). */
-export function storedGroups(layout: LobbyLayout): { type: string; count: number }[] {
-  const groups: { type: string; count: number }[] = [];
-  for (const item of storedItems(layout)) {
-    const group = groups.find((g) => g.type === item.type);
-    if (group) group.count += 1;
-    else groups.push({ type: item.type, count: 1 });
-  }
-  return groups;
-}
-
 /** 두 배치의 가구(id·종류)와 자리·방향·벽, 보관함(id·종류)이 모두 같은지. 순서는 보지 않는다. */
 export function sameLobbyLayout(a: LobbyLayout, b: LobbyLayout): boolean {
   const storedA = storedItems(a);

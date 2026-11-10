@@ -44,7 +44,7 @@ export const MIN_ROOM_SIZE = { width: 8, depth: 11 } as const;
 
 const WALL_SIDES: readonly WallSide[] = ["back", "left", "right"];
 
-/** 방 데이터가 맞지 않는 까닭. 맞으면 null. */
+/** 방 데이터가 맞지 않는 까닭(정수 칸 수, 최소 크기, 걸 수 있는 벽 하나 이상·아는 벽, 밖으로 출입구 하나, 입구 발판이 앞끝 안). 맞으면 null. */
 export function roomProblem(room: RoomSpec): string | null {
   if (!Number.isInteger(room.width) || !Number.isInteger(room.depth)) return "칸 수는 정수여야 한다";
   if (room.width < MIN_ROOM_SIZE.width || room.depth < MIN_ROOM_SIZE.depth) return "최소 크기보다 작다";

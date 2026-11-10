@@ -8,7 +8,11 @@
 // - 메인 세션이 정한 것(빨간 가구가 있으면 목록은 열리고 줄을 누를 때 막음): S14에서 목록이 열리는 것까지 본다.
 // 구현 코드는 부르는 방법을 알려고만 읽었다: 3D 그리기가 받는 edit의 layout(보관함은 layout.stored)·marks·lifted, 버튼의 접근성 이름
 // ("돌리기", "치우기"), '보관함' 버튼(글 "보관함"에 개수를 붙임), 목록 줄(가구 이름 글과 "×N" 글을 가진 버튼), 닫기 버튼(글 "닫기"),
-// 목록 바깥 가림막(접근성 이름 "보관함 닫기"), 알림(글).
+// 알림(글).
+// 070(꾸미기 화면 버튼·보관함 아이콘) 03 결정으로 고친 것(찾는 방법·닫는 방법만, 단언의 뜻은 그대로): 보관함 판이 아래 버튼 줄 위의
+// 아이콘 줄이 되어 가림막이 없어지고, '보관함'을 다시 누르면 닫히며, 칸을 눌러 꺼낸 뒤에도 줄이 열린 채다. 그래서
+// '보관함' 버튼은 아래 줄 버튼(이름 "보관함" 또는 "보관함 N", 개발 빌드의 '보관함' 탭과 겹치면 '완료'와 더 가까운 쪽)으로 좁히고,
+// S5는 줄의 닫기 버튼(이름에 "닫기"), S6은 가림막 대신 '보관함' 다시 누르기, S7은 "목록이 닫히고"를 "줄이 열린 채"로 바꿨다.
 // 가짜로 두는 것: 기존 홈 꾸미기 테스트(home-lobby-edit.spec.test.tsx)와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내 상태,
 // 라우터, 포커스, 3D 그리기). 3D 그리기는 가짜라서, 어느 가구를 눌렀는지는 누르기 결과의 piece로 그대로 넣어 보낸다(그 판정은 보지 못한다).
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다.
@@ -421,9 +425,26 @@ function hasRedMark() {
   return canvas().edit!.marks.some((mark) => !mark.ok);
 }
 
-/** '보관함' 버튼(글 "보관함"을 가진 버튼, 하나뿐). */
+/**
+ * 아래 줄의 '보관함' 버튼: 이름이 "보관함"이거나 "보관함 N"인 버튼(070 03 결정으로 좁힘).
+ * 개발 빌드에서 줄을 열면 '보관함' 탭과 겹칠 수 있어, 둘이면 '완료' 버튼과 공통 조상이 더 가까운(깊은) 쪽이다.
+ */
 function storageButton(): UiNode {
-  return screen.getByRole("button", { name: /보관함/ });
+  const found = screen.getAllByRole("button", { name: /^보관함\s*\d*$/ });
+  if (found.length === 1) return found[0];
+  const done = screen.getByRole("button", { name: /^(완료|저장 중…)$/ });
+  const depthWithDone = (node: UiNode) => {
+    let common: UiNode | null = node;
+    const holdsDone = (n: UiNode) => {
+      for (let d: UiNode | null = done; d; d = d.parent) if (d === n) return true;
+      return false;
+    };
+    while (common && !holdsDone(common)) common = common.parent;
+    let depth = 0;
+    for (let n: UiNode | null = common; n; n = n.parent) depth += 1;
+    return depth;
+  };
+  return [...found].sort((a, b) => depthWithDone(b) - depthWithDone(a))[0];
 }
 
 /** '보관함' 버튼에 보이는 개수. 숫자가 없으면 null(시나리오 A3: 붙이는 모양은 보지 않고 숫자만 본다). */
@@ -712,21 +733,10 @@ describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
     await openStorage();
     expect(storageText("옷장")).not.toBeNull();
 
-    await pressButton("닫기");
-
-    expect(storageText("옷장")).toBeNull();
-    expect(roomOf(editLayout())).toEqual(byId(DEF_ITEMS));
-    expect(storedOf(editLayout())).toEqual(byId(S2_STORED));
-    expect(storageBadge()).toBe(3);
-  });
-
-  test("S6 목록 바깥(가림막)을 누르면 목록이 닫히고 배치와 보관함은 그대로", async () => {
-    await renderHome(layout(DEF_ITEMS, S2_STORED));
-    await enterEdit();
-    await openStorage();
-    expect(storageText("옷장")).not.toBeNull();
-
-    await fireEvent.press(screen.getByLabelText("보관함 닫기"));
+    // 070 03 결정: 줄의 닫기 버튼(이름에 "닫기")
+    const close = screen.getAllByRole("button", { name: /닫기/ });
+    expect(close).toHaveLength(1);
+    await fireEvent.press(close[0]);
     await flushAsync();
 
     expect(storageText("옷장")).toBeNull();
@@ -735,7 +745,22 @@ describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
     expect(storageBadge()).toBe(3);
   });
 
-  test("S7 L1 + 보관함 wardrobe3: '옷장' 줄을 누르면 목록이 닫히고 wardrobe3이 (4.5, 5.5, 0)에 놓여 골라진 상태가 되며 보관함이 빈다", async () => {
+  test("S6 줄이 열린 채 '보관함'을 다시 누르면 줄이 닫히고 배치와 보관함은 그대로(070 03 결정: 가림막 대신)", async () => {
+    await renderHome(layout(DEF_ITEMS, S2_STORED));
+    await enterEdit();
+    await openStorage();
+    expect(storageText("옷장")).not.toBeNull();
+
+    await fireEvent.press(storageButton());
+    await flushAsync();
+
+    expect(storageText("옷장")).toBeNull();
+    expect(roomOf(editLayout())).toEqual(byId(DEF_ITEMS));
+    expect(storedOf(editLayout())).toEqual(byId(S2_STORED));
+    expect(storageBadge()).toBe(3);
+  });
+
+  test("S7 L1 + 보관함 wardrobe3: '옷장' 칸을 누르면 줄이 열린 채 wardrobe3이 (4.5, 5.5, 0)에 놓여 골라진 상태가 되며 보관함이 빈다", async () => {
     await renderHome(layout(L1_ITEMS, [{ id: "wardrobe3", type: "wardrobe" }]));
     await enterEdit();
     await openStorage();
@@ -743,9 +768,8 @@ describe("[spec] 066-③ 명세 3: 보관함 열기와 꺼내 놓기", () => {
     await takeOut("옷장");
 
     expect(storageText("옷장")).toBeNull();
-    // 066-⑤ 13 결정: 보관함이 비어도 판이 열려 있으면 위 단언이 통과하므로, 판이 닫혔는지('가구 더하기' 제목과 빈 보관함 안내가 없다)도 본다
-    expect(screen.queryByText("가구 더하기")).toBeNull();
-    expect(screen.queryByText(STORAGE_EMPTY)).toBeNull();
+    // 070 03 결정: 꺼낸 뒤 줄은 열린 채다. 보관함이 비었으므로 줄에 빈 보관함 안내가 보인다
+    expect(screen.getByText(STORAGE_EMPTY)).toBeTruthy();
     expect(itemIn(editLayout(), "wardrobe3")).toEqual({ id: "wardrobe3", type: "wardrobe", floor: { x: 4.5, z: 5.5, facing: 0 } });
     expect(storedOf(editLayout())).toEqual([]);
     expect(storageBadge()).toBeNull();

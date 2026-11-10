@@ -5,6 +5,10 @@
 // 구현(24995ee)에서 읽은 것은 부르는 방법뿐이다: 판의 '가구 더하기' 제목 글, 줄 버튼, 3D 그리기가 받는 edit의 layout·lifted, 버튼 이름("돌리기", "치우기").
 // 가짜로 두는 것은 기존 보관함 테스트(home-lobby-storage.spec.test.tsx)와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내, 라우터, 포커스, 3D 그리기).
 // 3D 그리기는 가짜라서 어느 가구를 눌렀는지는 누르기 결과의 piece로 그대로 넣어 보낸다. 엔진 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다.
+// 070(꾸미기 화면 버튼·보관함 아이콘) 03 결정으로 고친 것(찾는 방법만, 단언의 뜻은 그대로): '가구 더하기'가 보관함 판의 글자 줄에서
+// 개발 빌드에서만 보이는 보관함 줄의 '가구 더하기' 탭(아이콘 칸)이 되고, 더한 뒤에도 줄이 열린 채다. 그래서 개발 빌드(__DEV__ = true)로 돌리고,
+// '가구 더하기' 칸은 그 탭을 누른 뒤 보이는 칸(가구 이름 글을 가진 버튼)으로 찾으며, 줄이 이미 열려 있으면 '보관함'을 다시 누르지 않는다(다시 누르면 닫힌다).
+// 줄을 처음 열면 '보관함' 탭 쪽이 보인다(070 02 가정, 03 결정). N4의 "판이 닫히고"는 "줄이 열린 채"로 바꿨다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { BackHandler } from "react-native";
@@ -122,7 +126,8 @@ const RED_FIRST = "빨간 가구부터 옮겨 주세요";
 const NO_ROOM = "놓을 자리가 없어요. 가구를 옮기거나 치운 뒤 다시 꺼내 주세요";
 const LIMIT = "가구는 40개까지 둘 수 있어요";
 const STORAGE_EMPTY = "보관함이 비었어요";
-const ADD_TITLE = "가구 더하기";
+/** 개발 빌드 보관함 줄의 '가구 더하기' 탭 이름(070 명세 4). */
+const ADD_TAB = "가구 더하기";
 /** 명세 2: 지금 '가구 더하기'에 보일 종류(치울 수 있는 모든 종류). */
 const ADDABLE_NAMES = ["옷장", "깔개", "스탠드", "침대", "협탁", "바닥 스탠드", "화분", "작은 화분", "책", "액자"];
 
@@ -290,8 +295,26 @@ function itemIn(value: LobbyLayout, id: string) {
   return value.items.find((item) => item.id === id);
 }
 
+/**
+ * 아래 줄의 '보관함' 버튼: 이름이 "보관함"이거나 "보관함 N"인 버튼(070 03 결정으로 좁힘).
+ * 개발 빌드에서 줄을 열면 '보관함' 탭과 겹칠 수 있어, 둘이면 '완료' 버튼과 공통 조상이 더 가까운(깊은) 쪽이다.
+ */
 function storageButton(): UiNode {
-  return screen.getByRole("button", { name: /보관함/ });
+  const found = screen.getAllByRole("button", { name: /^보관함\s*\d*$/ });
+  if (found.length === 1) return found[0];
+  const done = screen.getByRole("button", { name: /^(완료|저장 중…)$/ });
+  const depthWithDone = (node: UiNode) => {
+    let common: UiNode | null = node;
+    const holdsDone = (n: UiNode) => {
+      for (let d: UiNode | null = done; d; d = d.parent) if (d === n) return true;
+      return false;
+    };
+    while (common && !holdsDone(common)) common = common.parent;
+    let depth = 0;
+    for (let n: UiNode | null = common; n; n = n.parent) depth += 1;
+    return depth;
+  };
+  return [...found].sort((a, b) => depthWithDone(b) - depthWithDone(a))[0];
 }
 
 function storageBadge(): number | null {
@@ -314,9 +337,24 @@ function labelOf(node: UiNode): string | null {
   return typeof label === "string" ? label : null;
 }
 
-/** '가구 더하기' 묶음의 줄(접근성 이름 "<가구 이름> 더하기", 결정 3). 화면 순서대로다. */
+/**
+ * '가구 더하기' 탭의 칸: 그 탭을 누른 뒤 보이는, 가구 이름 글을 가진 버튼(070 03 결정). 화면 순서대로다.
+ * 탭을 누른 뒤에만 부른다(탭이 바뀌면 보관함 칸은 보이지 않는다).
+ */
 function addRows(): UiNode[] {
-  return screen.getAllByRole("button").filter((button) => labelOf(button)?.endsWith(" 더하기") ?? false);
+  return screen.queryAllByRole(/button/).filter((button) => FURNITURE_NAMES.some((name) => within(button).queryByText(name) !== null));
+}
+
+/** 보관함 줄의 '가구 더하기' 탭(역할 tab이나 button, 이름이 정확히 "가구 더하기"). */
+function addTabs(): UiNode[] {
+  return screen.queryAllByRole(/^(tab|button)$/, { name: ADD_TAB });
+}
+
+async function showAddTab() {
+  const tabs = addTabs();
+  expect(tabs).toHaveLength(1);
+  await fireEvent.press(tabs[0]);
+  await flushAsync();
 }
 
 /** 줄에 보이는 가구 이름. */
@@ -340,22 +378,32 @@ function storageRow(name: string): UiNode {
 }
 
 async function addFurniture(name: string) {
-  await fireEvent.press(screen.getByRole("button", { name: `${name} 더하기` }));
+  const rows = addRows().filter((row) => rowName(row) === name);
+  expect(rows).toHaveLength(1);
+  await fireEvent.press(rows[0]);
   await flushAsync();
 }
 
+/** 줄이 닫혀 있으면 열고(열려 있으면 다시 누르지 않는다), '가구 더하기' 탭을 눌러 그 종류를 더한다. */
 async function openAndAdd(name: string) {
-  await openStorage();
+  if (addTabs().length === 0) await openStorage();
+  await showAddTab();
   await addFurniture(name);
 }
 
-function expectPanelClosed() {
-  expect(screen.queryByText(ADD_TITLE)).toBeNull();
-  expect(addRows()).toHaveLength(0);
+/** 더한 뒤에도 줄이 열린 채다: '가구 더하기' 탭의 칸이 그대로 보인다(070 03 결정, 옛 expectPanelClosed를 바꿈). */
+function expectAddRowOpen() {
+  expect(addTabs()).toHaveLength(1);
+  expect(addRows().map(rowName)).toEqual(ADDABLE_NAMES);
 }
+
+const devGlobal = globalThis as unknown as { __DEV__: boolean };
+const originalDev = devGlobal.__DEV__;
 
 beforeEach(async () => {
   jest.useFakeTimers({ now: NOW });
+  // 070 03 결정: '가구 더하기'는 개발 빌드에서만 보인다
+  devGlobal.__DEV__ = true;
   await AsyncStorage.clear();
   mockFocus.focused = true;
   mockCanvas.props = null;
@@ -387,6 +435,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   applyLobbyLayout(DEFAULT_LOBBY_LAYOUT);
+  devGlobal.__DEV__ = originalDev;
   jest.restoreAllMocks();
   jest.useRealTimers();
 });
@@ -394,20 +443,22 @@ afterEach(() => {
 // ---------- N. 가구 더하기 ----------
 
 describe("[spec] 066-⑤ 명세 2: 가구 더하기(N, 화면)", () => {
-  test("N1 보관함이 빈 N0에서 판을 열면 '보관함이 비었어요'가 보이고 '가구 더하기' 줄이 10개다", async () => {
+  test("N1 보관함이 빈 N0에서 줄을 열면 '보관함이 비었어요'가 보이고 '가구 더하기' 탭의 칸이 10개다", async () => {
     await renderHome(N0);
     await enterEdit();
     await openStorage();
 
     expect(screen.getByText(STORAGE_EMPTY)).toBeTruthy();
-    expect(screen.getByText(ADD_TITLE)).toBeTruthy();
+    expect(addTabs()).toHaveLength(1);
+    await showAddTab();
     expect(addRows()).toHaveLength(10);
   });
 
-  test("N2 '가구 더하기' 줄은 치울 수 있는 열 종류를 카탈로그 순서로 보이고, 장소 가구 줄과 개수(×N)가 없다", async () => {
+  test("N2 '가구 더하기' 탭은 치울 수 있는 열 종류를 카탈로그 순서로 보이고, 장소 가구 칸과 개수(×N)가 없다", async () => {
     await renderHome(N0);
     await enterEdit();
     await openStorage();
+    await showAddTab();
 
     const names = addRows().map(rowName);
     expect([...names].sort()).toEqual([...ADDABLE_NAMES].sort());
@@ -430,16 +481,17 @@ describe("[spec] 066-⑤ 명세 2: 가구 더하기(N, 화면)", () => {
     expect(storageRows().map(rowName)).toEqual(["옷장", "깔개"]);
     expect(within(storageRow("옷장")).getByText("×2")).toBeTruthy();
     expect(within(storageRow("깔개")).queryAllByText(/×/)).toHaveLength(0);
+    await showAddTab();
     expect(addRows().map(rowName)).toEqual(FURNITURE_TYPES.filter((type) => type.removable).map((type) => type.name));
   });
 
-  test("N4 '침대'를 누르면 판이 닫히고 bed-1이 (4, 5.5, 0)에 놓여 골라지며(돌리기·치우기 보임) 보관함은 그대로다", async () => {
+  test("N4 '침대'를 누르면 줄이 열린 채 bed-1이 (4, 5.5, 0)에 놓여 골라지며(돌리기·치우기 보임) 보관함은 그대로다", async () => {
     await renderHome(N0);
     await enterEdit();
 
     await openAndAdd("침대");
 
-    expectPanelClosed();
+    expectAddRowOpen();
     expect(byId(editLayout().items)).toEqual(byId([...N0_ITEMS, floor("bed-1", "bed", 4, 5.5, 0)]));
     expect(lifted()).toBe("bed-1");
     expect(screen.queryByRole("button", { name: "돌리기" })).not.toBeNull();

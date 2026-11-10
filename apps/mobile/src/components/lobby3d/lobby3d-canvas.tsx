@@ -772,7 +772,7 @@ function Scene({
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치가 바뀌면(layoutKey) 다시 만든다.
   // 꾸미기 중에는 다시 만들지 않는다. 끌기·돌리기는 자리만, 치우기·꺼내기는 보이기만 바꾼다(poseFurniture).
-  // 미리 만들지 않은 가구가 방에 나오면(새로 더한 가구 등) 그 가구의 3D만 만들어 붙이고(added), 꾸미기에서 나오면 지금 배치로 다시 만든다.
+  // 미리 만들지 않은 가구가 방에 나오면(새로 더한 가구 등) 그 가구의 3D만 만들어 붙이고(added). 완료로 지금 배치가 바뀌면 다시 만들고, 취소하면 붙인 가구는 숨긴 채 둔다(다시 더하면 같은 id라 그 3D를 다시 쓴다).
   const live = activeLobbyLayout();
   const built = useRef<{ layout: LobbyLayout; layoutKey: number; ids: Set<string>; added: FurniturePlacement[] } | null>(null);
   if (!built.current || built.current.layoutKey !== layoutKey || (!edit && built.current.layout !== live)) {

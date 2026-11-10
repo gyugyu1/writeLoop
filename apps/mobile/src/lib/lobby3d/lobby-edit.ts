@@ -318,7 +318,7 @@ export interface EditZone {
 }
 
 /** 누른 결과. 화면이 안내를 띄운다. no-room은 보관함에서 꺼내거나 더할 자리가 없을 때, limit는 가구 수가 한도라 더할 수 없을 때다. */
-export type EditNotice = "red-first" | "cannot-place" | "no-room" | "limit" | null;
+export type EditNotice = "red-first" | "cannot-place" | "cannot-move-here" | "no-room" | "limit" | null;
 
 /** 한 배치에 둘 수 있는 가구 수(방과 보관함을 합친 수, 저장 본문 검사와 같다). */
 export const MAX_LAYOUT_ITEMS = 40;
@@ -568,8 +568,40 @@ export class LobbyEditor {
       this.revert(drag);
       return moved ? "cannot-place" : null;
     }
-    // 고른 가구를 다시 톡하면 고르기를 푼다(뜬 가구가 내려앉는다). 다른 가구나 빈 곳은 그것을 고른다(빈 곳이면 풀림)
-    if (press) this.selected = press.piece !== null && press.piece === this.selected ? null : press.piece;
+    if (!press) return null;
+    // 고른 가구가 없으면 누른 가구를 고른다(빈 곳이면 그대로). 고른 가구를 다시 톡하면 자리를 확정한다(고르기를 풀고 내려앉는다)
+    if (this.selected === null || press.piece === this.selected) {
+      this.selected = press.piece !== null && press.piece === this.selected ? null : press.piece;
+      return null;
+    }
+    // 고른 가구가 있으면 누른 곳으로 옮기고 고른 채 둔다(다른 가구를 누른 것도 그 자리로 옮기려는 것으로 본다)
+    return this.moveSelectedTo(press);
+  }
+
+  /**
+   * 고른 가구를 누른 곳으로 옮긴다. 자리는 끌기와 같게 맞춘다: 바닥 가구는 누른 바닥 점에 가운데가 오는 칸,
+   * 탁상형 소품은 누른 점에서 가장 가까운 받침 가구 위 자리, 벽 가구는 누른 벽(바닥이면 가장 가까운 벽)의 그 자리.
+   * 그 자리에 놓을 수 없으면 옮기지 않고 "cannot-move-here"를 돌려준다(화면이 알린다).
+   */
+  private moveSelectedTo(press: Press): EditNotice {
+    const id = this.selected!;
+    const item = layoutItem(this.layout, id)!;
+    const mount = furnitureType(item.type).mount;
+    let next: LobbyLayout | null = null;
+    if (mount === "wall") {
+      if (press.wall) next = withItemPlacement(this.layout, id, { wall: { wall: press.wall.wall, along: Math.round(press.wall.along / WALL_STEP) * WALL_STEP } });
+    } else if (press.point && nearRoom(press.point)) {
+      if (mount === "tabletop") {
+        const spot = nearestSlot(this.layout, press.point);
+        if (spot) next = withItemPlacement(this.layout, id, { on: { parent: spot.parent, slot: spot.slot, facing: item.on!.facing } });
+      } else {
+        const at = snapPiece(item.type, item.floor!.facing, press.point);
+        next = withItemPlacement(this.layout, id, { floor: { x: at.x, z: at.z, facing: item.floor!.facing } });
+      }
+    }
+    if (!next || !isPlaceableLayout(next)) return "cannot-move-here";
+    this.layout = next;
+    if (this.red === id) this.red = null;
     return null;
   }
 

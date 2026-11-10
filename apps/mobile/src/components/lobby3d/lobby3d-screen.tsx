@@ -56,6 +56,7 @@ const EDIT_RED_FIRST = "빨간 가구부터 옮겨 주세요";
 const EDIT_RED_FINISH = "빨간 가구를 놓을 수 있는 자리로 옮기거나 돌려 주세요";
 const EDIT_SAVE_FAILED = "배치를 저장하지 못했어요. 다시 눌러 주세요";
 const EDIT_CANNOT_PLACE = "여기에는 놓을 수 없어요. 원래 자리로 돌려놓았어요";
+const EDIT_CANNOT_MOVE_HERE = "여기에는 둘 수 없어요";
 const EDIT_NO_ROOM = "놓을 자리가 없어요. 가구를 옮기거나 치운 뒤 다시 꺼내 주세요";
 const STORAGE_EMPTY = "보관함이 비었어요";
 const EDIT_LIMIT = "가구는 40개까지 둘 수 있어요";
@@ -475,7 +476,9 @@ export default function Lobby3dScreen({
           if (editor.pointerDown(hit ?? EMPTY_HIT, x, y) === "red-first") showToast(EDIT_RED_FIRST);
         } else if (phase === "move") editor.pointerMove(hit ?? EMPTY_HIT, x, y);
         else if (phase === "up") {
-          if (editor.pointerUp() === "cannot-place") showToast(EDIT_CANNOT_PLACE);
+          const notice = editor.pointerUp();
+          if (notice === "cannot-place") showToast(EDIT_CANNOT_PLACE);
+          else if (notice === "cannot-move-here") showToast(EDIT_CANNOT_MOVE_HERE);
         }
         else editor.pointerCancel();
         refreshEdit();
@@ -882,7 +885,8 @@ export default function Lobby3dScreen({
         </View>
       ) : null}
 
-      <View pointerEvents="box-none" style={[styles.bottom, { bottom: bottomPad + 12 }]}>
+      {/* 꾸미기 중에는 아래 탭 막대가 숨으므로, 보관함 줄을 화면 아래·좌우 끝까지 붙인다 */}
+      <View pointerEvents="box-none" style={editing ? styles.bottomEdit : [styles.bottom, { bottom: bottomPad + 12 }]}>
         {devPanel && panelOpen ? (
           <View style={styles.panel}>
             <View style={styles.actionGrid}>
@@ -967,7 +971,7 @@ export default function Lobby3dScreen({
         ) : null}
         {editing ? (
           // 보관함 줄: 꾸미기 동안 화면 맨 아래에 늘 보인다. 가림막이 없어 줄이 보이는 채로 방의 가구를 다룬다
-          <View accessibilityLabel="보관함" style={styles.storageTray}>
+          <View accessibilityLabel="보관함" style={[styles.storageTray, { paddingBottom: insets.bottom + 12 }]}>
             <View style={styles.rowBetween}>
               {allowAddFurniture ? (
                 <View style={styles.headerLeft}>
@@ -1154,10 +1158,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF"
   },
   editGuideRow: { position: "absolute", left: 12, right: 12, alignItems: "flex-start" },
+  // 화면 아래·좌우 끝에 붙으므로 테두리와 둥근 모서리는 위쪽에만 둔다(아래 안전 영역은 화면이 안쪽 여백으로 비운다)
   storageTray: {
-    padding: 12,
-    borderRadius: 20,
-    borderWidth: 2,
+    paddingTop: 12,
+    paddingHorizontal: 12,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 2,
     borderColor: LINE,
     backgroundColor: "#FFFFFF",
     gap: 10
@@ -1248,6 +1255,7 @@ const styles = StyleSheet.create({
   },
   toastText: { color: "#FFFFFF", fontSize: 14, textAlign: "center" },
   bottom: { position: "absolute", left: 12, right: 12, gap: 8 },
+  bottomEdit: { position: "absolute", left: 0, right: 0, bottom: 0, gap: 8 },
   panel: {
     padding: 12,
     borderRadius: 18,

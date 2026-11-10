@@ -6,7 +6,7 @@ import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
-import { layoutGeometry, layoutItem, storedItems, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
+import { layoutGeometry, layoutItem, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
 import { BASIC_ROOM, currentRoom, outsideExit } from "@/lib/lobby3d/room";
 import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
@@ -143,6 +143,8 @@ class WorldKit {
   outlines: OutlinePart[] = [];
   outlineMaterial = new THREE.MeshBasicMaterial({ color: LINE, side: THREE.BackSide });
   gradient = gradientTexture(3);
+  /** 마지막으로 적용한 카툰 설정. 나중에 더한 부품(꾸미기 중 붙인 가구)의 테두리도 같은 두께로 맞춘다. */
+  toon: ToonSettings | null = null;
 
   /** 방과 가구는 부드러운 명암을 쓴다. 카툰 명암(toonMaterials)은 라룹이만 쓴다. */
   soft(color: number): THREE.MeshLambertMaterial {
@@ -163,23 +165,28 @@ class WorldKit {
       const shell = new THREE.Mesh(geometry, this.outlineMaterial);
       shell.raycast = () => {};
       mesh.add(shell);
-      this.outlines.push({ mesh: shell, size, thickness: outline });
+      const part = { mesh: shell, size, thickness: outline };
+      this.outlines.push(part);
+      if (this.toon) this.scaleOutline(part, this.toon);
     }
     parent?.add(mesh);
     return mesh;
   }
 
   applyToon(toon: ToonSettings) {
+    this.toon = toon;
     this.gradient.dispose();
     this.gradient = gradientTexture(toon.steps);
     this.toonMaterials.forEach((m) => {
       m.gradientMap = this.gradient;
       m.needsUpdate = true;
     });
-    this.outlines.forEach(({ mesh, size, thickness }) => {
-      const t = thickness * toon.outline;
-      mesh.scale.set(1 + (2 * t) / Math.max(size.x, 0.01), 1 + (2 * t) / Math.max(size.y, 0.01), 1 + (2 * t) / Math.max(size.z, 0.01));
-    });
+    this.outlines.forEach((part) => this.scaleOutline(part, toon));
+  }
+
+  private scaleOutline({ mesh, size, thickness }: OutlinePart, toon: ToonSettings) {
+    const t = thickness * toon.outline;
+    mesh.scale.set(1 + (2 * t) / Math.max(size.x, 0.01), 1 + (2 * t) / Math.max(size.y, 0.01), 1 + (2 * t) / Math.max(size.z, 0.01));
   }
 }
 
@@ -360,6 +367,10 @@ interface World {
   /** 방 조명. 하루의 때에 따라 색·세기가 바뀐다(lobby3d-daylight). */
   ambient: THREE.AmbientLight;
   sun: THREE.DirectionalLight;
+  /** 이미 만든 가구 자리(placementKey). 꾸미기 중 새 가구를 붙일 때 겹쳐 만들지 않게 한다. */
+  builtKeys: Set<string>;
+  /** 가구 밑·벽 그림자 그림(가구를 붙일 때도 함께 쓴다). */
+  softRect: THREE.Texture;
 }
 
 /** 보관함 가구의 3D 물체를 숨기거나 보인다. 숨긴 물체는 누르기 판정도 받지 않는다(userData.stowed). */
@@ -420,8 +431,64 @@ function buildWorld(layout: LobbyLayout): World {
   // 가구 밑과 벽에 건 것 뒤의 옅은 그림자, 라룹이 발밑 그림자
   const blob = blobTexture();
   const softRect = softRectTexture();
+  const furniture = new THREE.Group();
+  root.add(furniture);
+  // 이름표 자리는 가구를 따라간다(받은 배치에서 계산). 밖으로 가는 입구 발판은 고정이다
+  const places = layoutGeometry(layout, ROOM.width).places;
+  const at = (p: { x: number; y: number; z: number }) => new THREE.Vector3(p.x, p.y, p.z);
+  const labelPoints: Record<MarkId, THREE.Vector3> = {
+    board: at(places.board.label),
+    window: at(places.window.label),
+    door: new THREE.Vector3(outsideExit(currentRoom()).x, 0.4, D + ROOM.stepDepth / 2),
+    desk: at(places.desk.label),
+    bookcase: at(places.bookcase.label)
+  };
+
+  // 방 조명. 해는 앞쪽 왼편 위에서 가구 앞면을 비춘다(실제 해 방향은 바닥의 창문 빛이 맡는다). 색·세기는 하루의 때를 따른다.
+  const ambient = new THREE.AmbientLight(0xffffff, 1.35);
+  root.add(ambient);
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+  sun.position.set(-3, 8, 6);
+  root.add(sun);
+
+  const shadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.15 * 0.8, 1.15 * 0.8),
+    new THREE.MeshBasicMaterial({ map: blob, color: 0x2b1810, transparent: true, opacity: 0.38, depthWrite: false })
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = 0.01;
+  root.add(shadow);
+
+  const world: World = {
+    root,
+    kit,
+    shadow,
+    markObjects: [],
+    blockers: [],
+    pieceObjects: [],
+    labelPoints,
+    floor,
+    shell,
+    furniture,
+    ambient,
+    sun,
+    builtKeys: new Set(),
+    softRect
+  };
+  addWorldPieces(world, placements);
+  return world;
+}
+
+/**
+ * 가구 자리들의 대체 가구(누르기 판정 포함)와 옅은 그림자를 만들어 방에 더한다. 이미 만든 자리는 건너뛴다.
+ * 방을 지을 때 모든 가구에 쓰고, 꾸미기 중 미리 만들지 않은 가구가 나오면 그 가구만 더할 때도 쓴다(방을 다시 짓지 않는다).
+ */
+function addWorldPieces(world: World, placements: FurniturePlacement[]) {
+  const { root, kit, furniture, markObjects, blockers, pieceObjects, softRect } = world;
+  const fresh = placements.filter((place) => !world.builtKeys.has(placementKey(place)));
+  for (const place of fresh) world.builtKeys.add(placementKey(place));
   // 가구마다 까는 옅은 그림자(실시간 아님, 카탈로그 값). floor는 바닥에 닿은 넓이(가구 앞면 기준 가로·깊이), wall은 벽에 건 것 뒤 벽에 비치는 넓이(가로·세로)다.
-  for (const place of placements) {
+  for (const place of fresh) {
     const shade = place.shadow;
     if (!shade) continue;
     if (shade.floor) {
@@ -457,11 +524,6 @@ function buildWorld(layout: LobbyLayout): World {
   // 가구. Kenney 가구 묶음(lobby3d-furniture)이 뜨기 전이나 불러오지 못했을 때 보이는 간단한 모양이고,
   // 묶음이 뜬 뒤에도 보이지 않는 채로 남아 장소·가구를 누르는 판정을 맡는다(three의 누르기 판정은 보이는지와 상관없다).
   // 자리는 받은 배치를 따르고, 크기는 칸에 맞춘 모델 크기다.
-  const furniture = new THREE.Group();
-  root.add(furniture);
-  const markObjects: World["markObjects"] = [];
-  const blockers: THREE.Object3D[] = [];
-  const pieceObjects: THREE.Object3D[] = [];
   const makePiece = (place: FurniturePlacement): THREE.Group => {
     const g = new THREE.Group();
     if (place.piece === "exit") {
@@ -490,7 +552,7 @@ function buildWorld(layout: LobbyLayout): World {
     }
     return g;
   };
-  for (const place of placements) {
+  for (const place of fresh) {
     const g = makePiece(place);
     g.position.set(place.x, place.y, place.z);
     g.rotation.y = place.rotY;
@@ -521,35 +583,8 @@ function buildWorld(layout: LobbyLayout): World {
     }
     if (place.stowed) setStowed(g, true);
   }
-
-  // 이름표 자리는 가구를 따라간다(받은 배치에서 계산). 밖으로 가는 입구 발판은 고정이다
-  const places = layoutGeometry(layout, ROOM.width).places;
-  const at = (p: { x: number; y: number; z: number }) => new THREE.Vector3(p.x, p.y, p.z);
-  const labelPoints: Record<MarkId, THREE.Vector3> = {
-    board: at(places.board.label),
-    window: at(places.window.label),
-    door: new THREE.Vector3(outsideExit(currentRoom()).x, 0.4, D + ROOM.stepDepth / 2),
-    desk: at(places.desk.label),
-    bookcase: at(places.bookcase.label)
-  };
-
-  // 방 조명. 해는 앞쪽 왼편 위에서 가구 앞면을 비춘다(실제 해 방향은 바닥의 창문 빛이 맡는다). 색·세기는 하루의 때를 따른다.
-  const ambient = new THREE.AmbientLight(0xffffff, 1.35);
-  root.add(ambient);
-  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-  sun.position.set(-3, 8, 6);
-  root.add(sun);
-
-  const shadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.15 * 0.8, 1.15 * 0.8),
-    new THREE.MeshBasicMaterial({ map: blob, color: 0x2b1810, transparent: true, opacity: 0.38, depthWrite: false })
-  );
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = 0.01;
-  root.add(shadow);
-
-  return { root, kit, shadow, markObjects, blockers, pieceObjects, labelPoints, floor, shell, furniture, ambient, sun };
 }
+
 
 
 /** 고른 가구를 띄우는 높이와 벽 가구를 벽에서 내미는 거리(칸), 출렁이는 폭(칸)과 한 번 오르내리는 시간(초). */
@@ -737,16 +772,27 @@ function Scene({
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치가 바뀌면(layoutKey) 다시 만든다.
   // 꾸미기 중에는 다시 만들지 않는다. 끌기·돌리기는 자리만, 치우기·꺼내기는 보이기만 바꾼다(poseFurniture).
-  // 미리 만들지 않은 가구가 방에 나오면(드물다) 편집 중 배치로 다시 만들고, 그 뒤 꾸미기에서 나오면 지금 배치로 다시 만든다.
+  // 미리 만들지 않은 가구가 방에 나오면(새로 더한 가구 등) 그 가구의 3D만 만들어 붙이고(added), 꾸미기에서 나오면 지금 배치로 다시 만든다.
   const live = activeLobbyLayout();
-  const built = useRef<{ layout: LobbyLayout; layoutKey: number; ids: Set<string> } | null>(null);
-  const missing = edit && built.current ? edit.layout.items.some((item) => !built.current!.ids.has(item.id)) : false;
-  if (!built.current || built.current.layoutKey !== layoutKey || missing || (!edit && built.current.layout !== live)) {
+  const built = useRef<{ layout: LobbyLayout; layoutKey: number; ids: Set<string>; added: FurniturePlacement[] } | null>(null);
+  if (!built.current || built.current.layoutKey !== layoutKey || (!edit && built.current.layout !== live)) {
     const from = edit?.layout ?? live;
-    built.current = { layout: from, layoutKey, ids: new Set([...from.items, ...storedItems(from)].map((item) => item.id)) };
+    // 실제로 3D를 만든 가구만 센다(받침 가구가 없어 만들지 않은 탁상형 보관함 가구는 꺼낼 때 붙인다)
+    built.current = { layout: from, layoutKey, ids: new Set(buildPlacements(from).map((place) => place.item)), added: [] };
+  } else if (edit) {
+    const current = built.current;
+    const missing = new Set(edit.layout.items.filter((item) => !current.ids.has(item.id)).map((item) => item.id));
+    if (missing.size > 0) {
+      // 편집 중 배치에서 그 가구(딸린 의자 포함)의 자리만 골라 붙인다. 자리는 그 뒤 poseFurniture가 맞춘다
+      const fresh = buildPlacements(edit.layout).filter((place) => missing.has(place.item));
+      built.current = { ...current, ids: new Set([...current.ids, ...missing]), added: [...current.added, ...fresh] };
+    }
   }
   const furnitureLayout = built.current.layout;
+  const addedPieces = built.current.added;
   const world = useMemo(() => buildWorld(furnitureLayout), [furnitureLayout]);
+  // 붙일 가구의 대체 모양(누르기 판정)과 그림자를 방에 더한다. 이미 만든 자리는 건너뛰어 여러 번 불러도 같다
+  useMemo(() => addWorldPieces(world, addedPieces), [world, addedPieces]);
   // 시각에 따른 빛: 지금 보이는 색감(부드럽게 넘어가는 중인 값)과 구운 방에 곱하는 색
   const daylightState = useMemo(() => createDaylightState(daylight), []); // eslint-disable-line react-hooks/exhaustive-deps
   const roomTint = useMemo(() => new THREE.Color(0xffffff), []);
@@ -1035,6 +1081,7 @@ function Scene({
           <BakedFurniture
             key={`furniture-${layoutKey}`}
             layout={furnitureLayout}
+            added={addedPieces}
             fallback={world.furniture}
             daylight={daylightState}
             lightLayout={lightLayout}

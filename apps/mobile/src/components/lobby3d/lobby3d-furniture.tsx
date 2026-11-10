@@ -3,7 +3,7 @@ import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } 
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ROOM, activeLobbyLayout } from "@/lib/lobby3d/engine";
-import { buildPlacements, currentFurnitureLayout, placementKey } from "@/lib/lobby3d/furniture-layout";
+import { buildPlacements, currentFurnitureLayout, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
 import { viewWindow, wallPiecePose, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
@@ -39,13 +39,15 @@ interface BakedFurnitureProps {
   daylight: DaylightState;
   /** 가구를 만들 배치(3D 화면이 정한다). 없으면 지금 배치다. */
   layout?: LobbyLayout;
+  /** 배치 밖에서 따로 붙일 가구 자리(꾸미기 중 미리 만들지 않은 가구). 배치를 다시 만들지 않고 이 가구만 더한다. */
+  added?: FurniturePlacement[];
   /** 창밖 장면이 따를 배치(창문이 걸린 벽과 자리). 없으면 지금 배치다. 편집 모드에서는 놓인 배치다. */
   lightLayout?: MutableRefObject<LobbyLayout>;
   /** 고른 창문이 떠 있는 만큼(편집 모드). 창밖 장면도 같은 만큼 옮겨 창틀과 함께 나온다. */
   windowLift?: MutableRefObject<{ x: number; y: number; z: number }>;
 }
 
-export function BakedFurniture({ layout, fallback, daylight, lightLayout, windowLift }: BakedFurnitureProps) {
+export function BakedFurniture({ layout, added, fallback, daylight, lightLayout, windowLift }: BakedFurnitureProps) {
   const gltf = useLoader(GLTFLoader, FURNITURE_ASSET as string) as GLTF;
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판.
   // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 매 프레임 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
@@ -82,10 +84,14 @@ export function BakedFurniture({ layout, fallback, daylight, lightLayout, window
     // 바닥의 창문 빛도 같은 창 안쪽 크기를 따른다(창 모델 크기가 바뀌면 함께 바뀐다)
     if (viewSource) daylight.opening = { width: viewSize.x, height: viewSize.y };
     const views: { piece: THREE.Object3D; halfWidth: number; halfHeight: number }[] = [];
-    // 보관함 가구도 만들어 숨겨 둔다(꾸미기에서 꺼내면 3D 화면이 보인다)
-    for (const place of buildPlacements(layout ?? activeLobbyLayout())) {
+    const builtKeys = new Set<string>();
+    /** 가구 하나를 묶음에서 복제해 더한다. 이미 만든 자리는 건너뛴다. */
+    const addPiece = (place: FurniturePlacement) => {
+      const key = placementKey(place);
+      if (builtKeys.has(key)) return;
+      builtKeys.add(key);
       const source = gltf.scene.getObjectByName(place.piece);
-      if (!source) continue;
+      if (!source) return;
       // useLoader가 준 장면은 앱 전체에서 함께 쓰므로 복제해서 쓴다(창문처럼 같은 가구를 여러 번 놓기도 한다).
       const piece = source.clone(true);
       piece.position.set(place.x, place.y, place.z);
@@ -119,10 +125,14 @@ export function BakedFurniture({ layout, fallback, daylight, lightLayout, window
         piece.userData.stowed = true;
       }
       root.add(piece);
-    }
-    return { root, view: views[0] ?? null };
+    };
+    // 보관함 가구도 만들어 숨겨 둔다(꾸미기에서 꺼내면 3D 화면이 보인다)
+    for (const place of buildPlacements(layout ?? activeLobbyLayout())) addPiece(place);
+    return { root, view: views[0] ?? null, addPiece };
   }, [gltf, target, daylight, layout]);
   const group = built.root;
+  // 꾸미기 중 붙일 가구: 이미 만든 묶음에 그 가구만 더한다(여러 번 불러도 같다)
+  useMemo(() => added?.forEach(built.addPiece), [built, added]);
 
   // 창밖 그리기: 창 정면에서 창 안쪽을 화면 삼아 들여다본다(눈이 창 정면에서 비껴 있어도 창 네 모서리가 그림 네 모서리에 맞는 비스듬한 원근).
   const eye = useMemo(() => new THREE.Vector3(), []);

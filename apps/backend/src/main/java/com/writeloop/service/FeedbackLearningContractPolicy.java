@@ -609,8 +609,9 @@ final class FeedbackLearningContractPolicy {
         return advanced;
     }
 
+    // 교정 단계 위반도 다른 계약 위반처럼, 거절한 출력과 위반 내용을 넣어 한 번 다시 시도한다.
     private FeedbackContractException languageRevisionViolation(String message) {
-        return new FeedbackContractException(message, false);
+        return new FeedbackContractException(message);
     }
 
     private List<String> unresolved(List<String> slots, List<String> presentSlots) {

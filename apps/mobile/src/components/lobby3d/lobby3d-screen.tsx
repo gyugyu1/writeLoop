@@ -229,7 +229,7 @@ export default function Lobby3dScreen({
   // 보관함 줄 머리(개발 빌드는 '보관함' 탭) 이름: 보관함 전체 개수, 0이면 개수 없이
   const storageTitle = storedCount > 0 ? `보관함 ${storedCount}` : "보관함";
   const [saving, setSaving] = useState(false);
-  // 편집 모드의 보관함 목록을 열었는지
+  // 개발 빌드 보관함 줄의 고른 탭(꾸미기에 들어올 때마다 '보관함'으로 시작)
   const [storageTab, setStorageTab] = useState<"stored" | "add">("stored");
   const savingRef = useRef(false);
   savingRef.current = saving;
@@ -1143,7 +1143,7 @@ const styles = StyleSheet.create({
   },
   rotateText: { fontSize: 26, color: LINE, fontWeight: "700" },
   storeText: { fontSize: 24 },
-  // 아래 버튼 줄보다 위에 덮는다(목록이 열린 동안은 목록만 다룬다)
+  // 꾸미기 위 줄 버튼(취소·처음 배치로·완료)
   editTopButton: {
     minHeight: 40,
     paddingHorizontal: 14,

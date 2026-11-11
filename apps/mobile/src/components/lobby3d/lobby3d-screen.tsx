@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, BackHandler, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, ActivityIndicator, Animated, BackHandler, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Lobby3dCanvas, {
   type LobbyCanvasEdit,
@@ -292,6 +292,9 @@ export default function Lobby3dScreen({
   useEffect(() => {
     if (layoutReady) setRoomReady(true);
   }, [layoutReady]);
+  // 방이 처음 보였는지(3D 그림판이 알린다). 그 전에는 준비 표시를 띄우고 이름표·장소 안내·말풍선을 숨긴다. 한 번 보이면 다시 띄우지 않는다
+  const [roomShown, setRoomShown] = useState(false);
+  const showRoom = useCallback(() => setRoomShown(true), []);
 
   // 로비 인사: 홈이 새 인사를 줄 때마다(key) 한 번 한다
   const greetingKey = greeting?.key;
@@ -664,11 +667,19 @@ export default function Lobby3dScreen({
         layoutKey={layoutKey}
         edit={editView}
         editLive={editLive}
+        onRoomShown={showRoom}
       />
       ) : null}
 
-      {/* 편집 모드에서는 이름표·장소 안내·말풍선을 숨긴다 */}
-      {editing ? null : (Object.keys(MARKS) as MarkId[]).map((id) => (
+      {roomShown ? null : (
+        <View pointerEvents="none" style={styles.preparing}>
+          <ActivityIndicator color="#FFFFFF" />
+          <Text style={styles.preparingText}>방을 준비하고 있어요</Text>
+        </View>
+      )}
+
+      {/* 편집 모드와 방이 보이기 전에는 이름표·장소 안내·말풍선을 숨긴다 */}
+      {editing || !roomShown ? null : (Object.keys(MARKS) as MarkId[]).map((id) => (
         <Animated.View
           key={id}
           pointerEvents="none"
@@ -684,7 +695,7 @@ export default function Lobby3dScreen({
         </Animated.View>
       ))}
 
-      {editing ? null : (Object.keys(MARKS) as MarkId[]).map((id) => {
+      {editing || !roomShown ? null : (Object.keys(MARKS) as MarkId[]).map((id) => {
         const active = view.place === id;
         return (
           <Animated.View
@@ -731,7 +742,7 @@ export default function Lobby3dScreen({
         );
       })}
 
-      {lineText && !editing ? (
+      {lineText && !editing && roomShown ? (
         <Animated.View
           pointerEvents="box-none"
           onLayout={(e) => {
@@ -1096,6 +1107,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF"
   },
   labelText: { fontSize: 11, fontWeight: "700", color: "#2B1810" },
+  preparing: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 10 },
+  preparingText: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
   bubbleWrap: { position: "absolute", left: 0, top: 0, width: BUBBLE_WIDTH, alignItems: "center" },
   bubble: {
     maxWidth: BUBBLE_WIDTH,

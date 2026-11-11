@@ -328,7 +328,7 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
 }
 
 /** 모델을 불러오지 못하면 캐릭터 없이 방만 보이게 한다. 오류는 개발 콘솔에 남긴다. */
-export class CharacterErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+export class CharacterErrorBoundary extends Component<{ children: ReactNode; onFailed?: () => void }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -337,6 +337,7 @@ export class CharacterErrorBoundary extends Component<{ children: ReactNode }, {
 
   componentDidCatch(error: unknown) {
     console.warn("[lobby3d] 라이트루프 모델을 불러오지 못했습니다", error);
+    this.props.onFailed?.();
   }
 
   render() {

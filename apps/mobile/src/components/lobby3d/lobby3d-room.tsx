@@ -55,7 +55,7 @@ export function BakedRoom({ fallback, tint }: BakedRoomProps) {
 }
 
 /** 구운 방을 불러오지 못하면 코드로 지은 방이 그대로 보이게 한다. 오류는 개발 콘솔에 남긴다. */
-export class BakedRoomErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+export class BakedRoomErrorBoundary extends Component<{ children: ReactNode; onFailed?: () => void }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -64,6 +64,7 @@ export class BakedRoomErrorBoundary extends Component<{ children: ReactNode }, {
 
   componentDidCatch(error: unknown) {
     console.warn("[lobby3d] 구운 방을 불러오지 못했습니다", error);
+    this.props.onFailed?.();
   }
 
   render() {

@@ -1,7 +1,7 @@
 // three보다 먼저 불러와야 한다(Hermes에 없는 FinalizationRegistry 대체).
 import "@/lib/lobby3d/hermes-polyfills";
 import { Canvas, useFrame, useThree } from "@react-three/fiber/native";
-import { Suspense, useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -84,6 +84,8 @@ export interface Lobby3dCanvasProps {
    * 다시 그리기를 기다리지 않고 가구·칸 칠·카메라가 바로 따라가게 한다.
    */
   editLive?: MutableRefObject<LobbyCanvasEdit | null>;
+  /** 방이 처음 보였을 때 한 번. 방 껍데기(기본 방일 때)·가구·라이트루프가 모두 모델로 들어오거나(못 읽으면 대신 그린 채) 그 장면을 한 번 그린 뒤다. */
+  onRoomShown?: () => void;
 }
 
 const LINE = 0x3d1b0f;
@@ -768,6 +770,7 @@ function Scene({
   layoutKey = 0,
   edit = null,
   editLive,
+  onRoomShown,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치가 바뀌면(layoutKey) 다시 만든다.
@@ -973,6 +976,27 @@ function Scene({
   // 고른 창문이 떠 있는 만큼(창밖 장면도 함께 옮긴다)
   const windowLift = useRef({ x: 0, y: 0, z: 0 });
 
+  // 방이 처음 보였는지 알린다(onRoomShown). 부분마다 모델이 장면에 들어오거나 못 읽어 대신 그리게 되면 끝난 것으로 센다.
+  // 다 끝난 뒤 처음 오는 프레임에서, 그 프레임을 그린 다음(useFrame 다음에 그린다) 알린다. 그 뒤로는 방을 다시 지어도 알리지 않는다
+  const roomShown = useRef<{ settled: Set<string>; told: boolean }>({ settled: new Set(), told: false });
+  const roomSettled = useCallback(() => {
+    roomShown.current.settled.add("room");
+  }, []);
+  const furnitureSettled = useCallback(() => {
+    roomShown.current.settled.add("furniture");
+  }, []);
+  const characterSettled = useCallback(() => {
+    roomShown.current.settled.add("character");
+  }, []);
+  useFrame(() => {
+    const shown = roomShown.current;
+    if (shown.told) return;
+    const parts = currentRoom().id === BASIC_ROOM.id ? ["room", "furniture", "character"] : ["furniture", "character"];
+    if (!parts.every((part) => shown.settled.has(part))) return;
+    shown.told = true;
+    setTimeout(() => onRoomShown?.(), 0);
+  });
+
   useFrame((_, delta) => {
     const nowMs = Date.now();
     const dt = Math.min(0.05, delta);
@@ -1076,7 +1100,7 @@ function Scene({
         roomTint={roomTint}
         lightLayout={lightLayout}
       />
-      <BakedFurnitureErrorBoundary>
+      <BakedFurnitureErrorBoundary onFailed={furnitureSettled}>
         <Suspense fallback={null}>
           <BakedFurniture
             key={`furniture-${layoutKey}`}
@@ -1087,23 +1111,34 @@ function Scene({
             lightLayout={lightLayout}
             windowLift={windowLift}
           />
+          <Settled onSettled={furnitureSettled} />
         </Suspense>
       </BakedFurnitureErrorBoundary>
       {/* 구운 방 껍데기는 기본 방 전용이다(다른 방은 코드로 지은 방이 보인다. 다른 방의 껍데기는 확장 기능 때 정한다) */}
       {currentRoom().id === BASIC_ROOM.id ? (
-        <BakedRoomErrorBoundary>
+        <BakedRoomErrorBoundary onFailed={roomSettled}>
           <Suspense fallback={null}>
             <BakedRoom fallback={world.shell} tint={roomTint} />
+            <Settled onSettled={roomSettled} />
           </Suspense>
         </BakedRoomErrorBoundary>
       ) : null}
-      <CharacterErrorBoundary>
+      <CharacterErrorBoundary onFailed={characterSettled}>
         <Suspense fallback={null}>
           <Character kit={world.kit} outline={toon.outline} handleRef={character} />
+          <Settled onSettled={characterSettled} />
         </Suspense>
       </CharacterErrorBoundary>
     </>
   );
+}
+
+/** 같은 Suspense 안의 부분과 함께 장면에 들어오면(모델을 다 읽으면) 알린다. */
+function Settled({ onSettled }: { onSettled: () => void }) {
+  useEffect(() => {
+    onSettled();
+  }, [onSettled]);
+  return null;
 }
 
 const styles = StyleSheet.create({

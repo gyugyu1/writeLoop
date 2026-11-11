@@ -32,6 +32,21 @@ const OUTDOOR_DROP = 2.05;
 /** 창밖 그림판의 크기(화소). 창 안쪽 비율(가로 2 : 세로 1.78 남짓)에 맞추고, 매끄럽게 보이게 화면에 보이는 크기보다 크게 그린다. */
 const VIEW_TEXTURE = { width: 768, height: 680 };
 
+/**
+ * 창밖 그림판을 새로 그리는 간격(초). 마당 장면을 따로 한 번 더 그리는 일이 로비에서 가장 무거워(2026-11-11 측정: 매 프레임이면 FPS 43~53, 안 그리면 81),
+ * 움직임(나무·구름·새)은 초당 10번만 새로 그린다. 카메라나 창이 움직이는 동안은 창 너머가 어긋나 보이지 않게 매 프레임 그린다.
+ */
+const VIEW_REDRAW_SECONDS = 0.1;
+
+/** 카메라·창 자리가 움직였다고 볼 차이(칸·라디안). 라이트루프를 따라가는 카메라가 멈춘 뒤 아주 조금씩 다가가는 것은 움직임으로 보지 않는다. */
+const VIEW_MOVE_EPS = 1e-4;
+
+/** 두 행렬·벡터가 VIEW_MOVE_EPS 안에서 같은지. */
+const nearlySame = (a: ArrayLike<number>, b: ArrayLike<number>) => {
+  for (let i = 0; i < a.length; i += 1) if (Math.abs(a[i] - b[i]) > VIEW_MOVE_EPS) return false;
+  return true;
+};
+
 interface BakedFurnitureProps {
   /** 코드로 만든 대체 가구. 가구 묶음이 뜨는 동안 숨긴다(누르기 판정은 그대로 맡는다). */
   fallback: THREE.Object3D;
@@ -136,17 +151,30 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
 
   // 창밖 그리기: 창 정면에서 창 안쪽을 화면 삼아 들여다본다(눈이 창 정면에서 비껴 있어도 창 네 모서리가 그림 네 모서리에 맞는 비스듬한 원근).
   const eye = useMemo(() => new THREE.Vector3(), []);
-  useFrame((state, delta) => {
+  // 마지막으로 그린 때(시계 초)와 그때의 카메라·창 자리. 처음에는 바로 그린다
+  const drawn = useMemo(() => ({ at: -Infinity, camera: new THREE.Matrix4(), place: new THREE.Vector4() }), []);
+  const place = useMemo(() => new THREE.Vector4(), []);
+  useFrame((state, frameDelta) => {
     const view = built.view;
     if (!view) return;
     const hung = viewWindow(lightLayout?.current ?? activeLobbyLayout());
     if (!hung) return;
     const mount = wallPiecePose(hung, ROOM.width);
     const lift = windowLift?.current;
-    outdoor.scene.position.set(mount.x + (lift?.x ?? 0), groundY + (lift?.y ?? 0), mount.z + (lift?.z ?? 0));
-    outdoor.scene.rotation.y = mount.rotY;
+    // 창밖 장면이 놓일 자리(창 자리 + 띄운 만큼)와 방향. 카메라와 이것이 그대로이고 간격이 지나지 않았으면 앞서 그린 그림을 둔다
+    place.set(mount.x + (lift?.x ?? 0), groundY + (lift?.y ?? 0), mount.z + (lift?.z ?? 0), mount.rotY);
+    const now = state.clock.elapsedTime;
+    const moved = !nearlySame(state.camera.matrixWorld.elements, drawn.camera.elements) || !nearlySame(place.toArray(), drawn.place.toArray());
+    if (!moved && now - drawn.at < VIEW_REDRAW_SECONDS) return;
+    drawn.camera.copy(state.camera.matrixWorld);
+    drawn.place.copy(place);
+    // 움직임은 시각으로 정해져, 건너뛴 프레임이 있어도 그리는 순간의 모습이 맞다(구름처럼 흐르는 것은 지난 시간만큼 한 번에 간다)
+    const delta = drawn.at === -Infinity ? frameDelta : now - drawn.at;
+    drawn.at = now;
+    outdoor.scene.position.set(place.x, place.y, place.z);
+    outdoor.scene.rotation.y = place.w;
     outdoor.setDaylight(daylight.ambience, daylight.target.season, daylight.target.phase);
-    outdoor.update(state.clock.elapsedTime, delta);
+    outdoor.update(now, delta);
     view.piece.updateWorldMatrix(true, false);
     eye.copy(state.camera.position);
     view.piece.worldToLocal(eye);

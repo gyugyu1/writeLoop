@@ -215,7 +215,8 @@ function rgbaTexture(data: Uint8Array, width: number, height: number, srgb: bool
 }
 
 // 나무 널빤지 바닥: 가로로 긴 널빤지를 줄마다 어긋나게 깔고, 널빤지마다 색과 나뭇결을 조금씩 달리한다. 한 장 = 4칸 × 4칸.
-function floorTexture(): THREE.DataTexture {
+// width·depth는 바닥 크기(칸)로, 그림을 몇 번 반복할지 정한다.
+function floorTexture(width: number, depth: number): THREE.DataTexture {
   const size = 512;
   const rowPx = 64; // 한 줄(널빤지 폭) = 0.5칸
   const data = new Uint8Array(size * size * 4);
@@ -239,14 +240,27 @@ function floorTexture(): THREE.DataTexture {
     }
     const tints = Array.from({ length: plank + 1 }, () => 0.9 + rand() * 0.14);
     const phases = Array.from({ length: plank + 1 }, () => rand() * 100);
+    // 나뭇결 가운데 줄 안의 높이(ry)와 상관없는 부분은 x마다 한 번만 계산해 둔다(한 점마다 sin 셋을 하나로. 값은 같다)
+    const seamK = new Float64Array(size);
+    const tintOf = new Float64Array(size);
+    const phaseOf = new Float64Array(size);
+    const wave = new Float64Array(size);
+    const fine = new Float64Array(size);
+    for (let px = 0; px < size; px += 1) {
+      const pl = plankOf[px];
+      const ph = phases[pl];
+      seamK[px] = seamAt[px] ? 0.78 : 1;
+      tintOf[px] = tints[pl];
+      phaseOf[px] = ph;
+      wave[px] = Math.sin(px * 0.02 + ph) * 2.2;
+      fine[px] = 0.01 * Math.sin(px * 0.13 + ph);
+    }
     for (let y = row * rowPx; y < (row + 1) * rowPx; y += 1) {
       const ry = y - row * rowPx;
       const edge = ry < 2 ? 0.74 : ry === 2 ? 1.05 : 1;
       for (let px = 0; px < size; px += 1) {
-        const pl = plankOf[px];
-        const ph = phases[pl];
-        const grain = 1 + 0.02 * Math.sin(ry * 0.3 + Math.sin(px * 0.02 + ph) * 2.2 + ph) + 0.01 * Math.sin(px * 0.13 + ph);
-        const k = (seamAt[px] ? 0.78 : 1) * edge * tints[pl] * grain;
+        const grain = 1 + 0.02 * Math.sin(ry * 0.3 + wave[px] + phaseOf[px]) + fine[px];
+        const k = seamK[px] * edge * tintOf[px] * grain;
         const i = (y * size + px) * 4;
         data[i] = Math.min(255, Math.round(base[0] * k));
         data[i + 1] = Math.min(255, Math.round(base[1] * k));
@@ -256,7 +270,7 @@ function floorTexture(): THREE.DataTexture {
     }
   }
   const texture = rgbaTexture(data, size, size, true);
-  texture.repeat.set(ROOM.width / 4, ROOM.depth / 4);
+  texture.repeat.set(width / 4, depth / 4);
   return texture;
 }
 
@@ -360,6 +374,8 @@ interface World {
   markObjects: { id: MarkId; object: THREE.Object3D }[];
   labelPoints: Record<MarkId, THREE.Vector3>;
   floor: THREE.Mesh;
+  /** 바닥 크기(칸). 바닥 그림은 처음 그릴 때 만드니, 그림의 반복은 방을 지을 때의 크기로 정한다. */
+  floorSize: { width: number; depth: number };
   /** 코드로 지은 방 껍데기(바닥, 벽, 걸레받이, 바닥판, 입구 발판). 구운 방(lobby3d-room)이 뜨면 숨긴다. */
   shell: THREE.Group;
   /** 장소가 아닌 가구. 누르면 움직이지 않는다. */
@@ -473,6 +489,7 @@ function buildWorld(layout: LobbyLayout): World {
     pieceObjects: [],
     labelPoints,
     floor,
+    floorSize: { width: W, depth: D },
     shell,
     furniture,
     ambient,
@@ -491,7 +508,7 @@ function buildWorld(layout: LobbyLayout): World {
 function paintShownFloor(world: World) {
   const material = world.floor.material as THREE.MeshLambertMaterial;
   if (material.map || !world.shell.visible) return;
-  material.map = floorTexture();
+  material.map = floorTexture(world.floorSize.width, world.floorSize.depth);
   material.needsUpdate = true;
 }
 

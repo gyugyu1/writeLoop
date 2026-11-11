@@ -1531,11 +1531,18 @@ export async function deleteWritingDraft(promptId: string, draftType: WritingDra
   }
 }
 
-/** 계정에 저장한 홈 가구 배치. 저장한 적이 없거나(로그인 전 포함) 모양이 맞지 않으면 null이다. */
-export async function getLobbyLayout(): Promise<LobbyLayout | null> {
+/**
+ * 계정에 저장한 홈 가구 배치. 저장한 적이 없거나(로그인 전 포함) 모양이 맞지 않으면 null이다.
+ * 로그인이 끊겨(401) null을 돌려줄 때는 onUnauthorized를 먼저 부른다(홈이 그 null을 기기에 기억하지 않게).
+ */
+export async function getLobbyLayout(options: { onUnauthorized?: () => void } = {}): Promise<LobbyLayout | null> {
   const response = await apiFetch("/api/lobby-layout");
 
-  if (response.status === 401 || response.status === 404) {
+  if (response.status === 401) {
+    options.onUnauthorized?.();
+    return null;
+  }
+  if (response.status === 404) {
     return null;
   }
 

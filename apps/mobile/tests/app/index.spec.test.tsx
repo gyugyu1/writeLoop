@@ -13,6 +13,8 @@
 // 3D 그리기(lobby3d-canvas: Jest에서 돌지 않으므로 받은 속성만 잡는다).
 // 튜토리얼 컴포넌트(HomeFeatureTutorial)는 실제 컴포넌트를 그리되, 홈이 넘긴 속성을 보려고 한 겹 감싼다.
 // 날짜 계산이 오늘에 기대므로 모든 테스트를 가짜 시계로 돌린다(2026-11-12T03:00:00Z = 서울 2026-11-12(목) 12:00에서 멈춤).
+// 작업 079 03 결정(사용자 2026-11-11 "가짜 그림판이 신호를 보내게"): 방이 처음 보이기 전에는 이름표·장소 안내·말풍선을 숨기므로,
+// 가짜 3D 그림판이 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 준비만 바꿨다. 단언·기대값·입력은 그대로다.
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { readFileSync } from "node:fs";
@@ -106,13 +108,19 @@ jest.mock("@react-native-async-storage/async-storage", () =>
 );
 jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  return {
-    __esModule: true,
-    default: (props: Lobby3dCanvasProps) => {
-      mockCanvas.props = props;
-      return React.createElement("Lobby3dCanvasMock");
-    }
-  };
+  // 처음 그려진 뒤 '방이 보였다'를 한 번 알린다(작업 079 03 결정)
+  function MockLobby3dCanvas(props: Lobby3dCanvasProps) {
+    mockCanvas.props = props;
+    const onRoomShown = (props as Lobby3dCanvasProps & { onRoomShown?: () => void }).onRoomShown;
+    const roomShownSent = React.useRef(false);
+    React.useEffect(() => {
+      if (roomShownSent.current || !onRoomShown) return;
+      roomShownSent.current = true;
+      onRoomShown();
+    }, [onRoomShown]);
+    return React.createElement("Lobby3dCanvasMock");
+  }
+  return { __esModule: true, default: MockLobby3dCanvas };
 });
 jest.mock("@/components/home-feature-tutorial", () => {
   const React = jest.requireActual<typeof import("react")>("react");

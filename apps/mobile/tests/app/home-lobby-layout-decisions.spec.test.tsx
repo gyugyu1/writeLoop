@@ -6,6 +6,8 @@
 // 명세의 "고칠 기존 테스트"대로 확인하는 뜻·기대 동작은 그대로 두고 배치 모양만 v2로 고쳤다. 배치 값(자리·방향·벽)은 그대로다.
 // 067(private 작업 폴더 067/01-main-spec.md)에서 책상 장소의 바라볼 지점이 (1.25, 5.5) → (1.5, 5.5)로 옮겨져, 명세의 "고칠 기존 테스트"대로
 // 처음 배치 장소 값(P0_PLACES)의 책상 바라볼 지점만 고쳤다.
+// 작업 079 03 결정(사용자 2026-11-11 "가짜 그림판이 신호를 보내게"): 방이 처음 보이기 전에는 이름표·장소 안내·말풍선을 숨기므로,
+// 가짜 3D 그림판이 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 준비만 바꿨다. 단언·기대값·입력은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { AppState } from "react-native";
@@ -88,13 +90,19 @@ jest.mock("@react-native-async-storage/async-storage", () =>
 );
 jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  return {
-    __esModule: true,
-    default: (props: Lobby3dCanvasProps) => {
-      mockCanvas.props = props;
-      return React.createElement("Lobby3dCanvasMock");
-    }
-  };
+  // 처음 그려진 뒤 '방이 보였다'를 한 번 알린다(작업 079 03 결정)
+  function MockLobby3dCanvas(props: Lobby3dCanvasProps) {
+    mockCanvas.props = props;
+    const onRoomShown = (props as Lobby3dCanvasProps & { onRoomShown?: () => void }).onRoomShown;
+    const roomShownSent = React.useRef(false);
+    React.useEffect(() => {
+      if (roomShownSent.current || !onRoomShown) return;
+      roomShownSent.current = true;
+      onRoomShown();
+    }, [onRoomShown]);
+    return React.createElement("Lobby3dCanvasMock");
+  }
+  return { __esModule: true, default: MockLobby3dCanvas };
 });
 jest.mock("@/lib/api", () => ({
   getDiaryCalendarSummary: jest.fn(),

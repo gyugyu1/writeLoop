@@ -26,6 +26,8 @@
 // - "판이 열려 있는 동안 유지"는 25초 동안 본다(오래 두면 바닥에 앉는 20초를 넘겨도 바닥에 앉지 않고 그 자세 그대로).
 // - 03 결정 4의 "바로"는 메뉴를 누르고 한 프레임(0.05초) 안으로 본다. 03 결정 2의 인사는 이 데이터(오늘 완료)에서 '오늘도 해냈어!'와 jump다(060-10 명세 1의 표).
 // - 03 결정 3의 "그 자리"는 버튼을 누른 자리에서 0.3칸 안(걷던 속도가 줄며 조금 더 갈 수 있음)으로 본다.
+// 작업 079 03 결정(사용자 2026-11-11 "가짜 그림판이 신호를 보내게"): 방이 처음 보이기 전에는 이름표·장소 안내·말풍선을 숨기므로,
+// 가짜 3D 그림판이 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 준비만 바꿨다. 단언·기대값·입력은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -91,13 +93,19 @@ jest.mock("@react-native-async-storage/async-storage", () =>
 );
 jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  return {
-    __esModule: true,
-    default: (props: Lobby3dCanvasProps) => {
-      mockCanvas.props = props;
-      return React.createElement("Lobby3dCanvasMock");
-    }
-  };
+  // 처음 그려진 뒤 '방이 보였다'를 한 번 알린다(작업 079 03 결정)
+  function MockLobby3dCanvas(props: Lobby3dCanvasProps) {
+    mockCanvas.props = props;
+    const onRoomShown = (props as Lobby3dCanvasProps & { onRoomShown?: () => void }).onRoomShown;
+    const roomShownSent = React.useRef(false);
+    React.useEffect(() => {
+      if (roomShownSent.current || !onRoomShown) return;
+      roomShownSent.current = true;
+      onRoomShown();
+    }, [onRoomShown]);
+    return React.createElement("Lobby3dCanvasMock");
+  }
+  return { __esModule: true, default: MockLobby3dCanvas };
 });
 jest.mock("@/lib/api", () => ({
   getDiaryCalendarSummary: jest.fn(),

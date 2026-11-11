@@ -16,6 +16,8 @@
 // - 개발 화면의 짧은 안내 글은 명세에 없어 글 내용은 보지 않고, 짧은 안내(alert)가 뜨고 다른 화면으로 가지 않는 것만 본다.
 //   다만 책장의 '들어가기'는 다른 장소처럼 그 장소의 들어갈 때 안내(enterMessage)가 뜨는지 본다.
 // 작업 063 03 결정 1(사용자 2026-11-08 "고치기"): '들어가기'를 누른 뒤의 확인을 동작(약 1초)이 끝난 뒤로 옮겼다(C3·C5·C8, waitEnterMotion). 단언은 그대로다.
+// 작업 079 03 결정(사용자 2026-11-11 "가짜 그림판이 신호를 보내게"): 방이 처음 보이기 전에는 이름표·장소 안내·말풍선을 숨기므로,
+// 가짜 3D 그림판이 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 준비만 바꿨다. 단언·기대값·입력은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StyleSheet } from "react-native";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -30,13 +32,19 @@ const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
 
 jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  return {
-    __esModule: true,
-    default: (props: Lobby3dCanvasProps) => {
-      mockCanvas.props = props;
-      return React.createElement("Lobby3dCanvasMock");
-    }
-  };
+  // 처음 그려진 뒤 '방이 보였다'를 한 번 알린다(작업 079 03 결정)
+  function MockLobby3dCanvas(props: Lobby3dCanvasProps) {
+    mockCanvas.props = props;
+    const onRoomShown = (props as Lobby3dCanvasProps & { onRoomShown?: () => void }).onRoomShown;
+    const roomShownSent = React.useRef(false);
+    React.useEffect(() => {
+      if (roomShownSent.current || !onRoomShown) return;
+      roomShownSent.current = true;
+      onRoomShown();
+    }, [onRoomShown]);
+    return React.createElement("Lobby3dCanvasMock");
+  }
+  return { __esModule: true, default: MockLobby3dCanvas };
 });
 jest.mock("expo-router", () => {
   const React = jest.requireActual<typeof import("react")>("react");

@@ -11,6 +11,7 @@ import {
 } from "react";
 import { getCurrentUser, login, loginWithApple, loginWithSocial, logout } from "./api";
 import { clearIncompleteLoop } from "./incomplete-loop";
+import { forgetRememberedLayouts } from "./lobby3d/layout-storage";
 import { clearPracticeFeedbackState } from "./practice-feedback-state";
 import { setActiveStorageOwnerScope } from "./storage-owner";
 import type { AppleLoginRequest, AuthUser, LoginRequest, SocialLoginResult, SocialProvider } from "./types";
@@ -140,6 +141,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
       await logout();
     } finally {
       await clearIncompleteLoop();
+      // 이 기기에 기억해 둔 로비 배치도 지운다(서버 로그아웃이 실패해도)
+      await forgetRememberedLayouts();
       clearPracticeFeedbackState();
       applySessionUser(null);
     }

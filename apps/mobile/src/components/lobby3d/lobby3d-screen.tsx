@@ -140,6 +140,8 @@ export interface Lobby3dScreenProps {
   paused?: boolean;
   /** 가구 배치. 바뀌면 방에 적용하고 다시 그린다. 없으면 지금 배치(activeLobbyLayout) 그대로다(개발 화면). 편집 모드 동안은 나올 때 적용한다. */
   layout?: LobbyLayout;
+  /** 처음 지을 배치가 정해졌는지(홈이 기억해 둔 배치를 읽는 동안 false). false인 동안은 3D 방을 짓지 않고 기다린다. 없으면 true다. */
+  layoutReady?: boolean;
   /** 편집 모드('꾸미기')의 저장. 있으면 머리 줄에 '꾸미기' 버튼이 보인다. 저장한 배치를 돌려주고, 실패하면 던진다. */
   onSaveLayout?: (layout: LobbyLayout) => Promise<LobbyLayout>;
   /** 편집 모드에 들어가고 나올 때(홈이 아래 탭바를 숨긴다). */
@@ -177,6 +179,7 @@ export default function Lobby3dScreen({
   bottomInset,
   paused = false,
   layout,
+  layoutReady = true,
   onSaveLayout,
   onEditingChange
 }: Lobby3dScreenProps = {}) {
@@ -284,6 +287,11 @@ export default function Lobby3dScreen({
     if (!layout || editing) return;
     applyLayout(layout);
   }, [layout, editing, applyLayout]);
+  // 3D 방은 처음 지을 배치가 정해진 뒤 그린다. 정해진 배치를 먼저 적용하고(위 효과) 다음 그리기에서 짓게 해, 기본 배치로 먼저 짓지 않는다
+  const [roomReady, setRoomReady] = useState(layoutReady);
+  useEffect(() => {
+    if (layoutReady) setRoomReady(true);
+  }, [layoutReady]);
 
   // 로비 인사: 홈이 새 인사를 줄 때마다(key) 한 번 한다
   const greetingKey = greeting?.key;
@@ -642,6 +650,7 @@ export default function Lobby3dScreen({
 
   return (
     <View style={styles.root}>
+      {roomReady ? (
       <Lobby3dCanvas
         sim={sim}
         viewWidth={editing ? editViewWidth ?? viewWidth : viewWidth}
@@ -656,6 +665,7 @@ export default function Lobby3dScreen({
         edit={editView}
         editLive={editLive}
       />
+      ) : null}
 
       {/* 편집 모드에서는 이름표·장소 안내·말풍선을 숨긴다 */}
       {editing ? null : (Object.keys(MARKS) as MarkId[]).map((id) => (

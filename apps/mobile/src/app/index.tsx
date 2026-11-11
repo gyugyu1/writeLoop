@@ -73,7 +73,7 @@ export default function HomeScreen() {
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   // 계정에 저장한 가구 배치(홈에 들어올 때마다 불러온다)
-  const { layout: lobbyLayout, save: saveLobbyLayoutForHome } = useLobbyLayout(currentUser?.id ?? null);
+  const { layout: lobbyLayout, ready: lobbyLayoutReady, save: saveLobbyLayoutForHome } = useLobbyLayout(currentUser?.id ?? null);
   // 로비 편집 모드('꾸미기') 동안은 아래 탭바를 숨긴다
   const [isEditingLobby, setIsEditingLobby] = useState(false);
   // 로비 위로 올라오는 판(질문·일기·생각). 한 번에 하나만 연다.
@@ -395,6 +395,7 @@ export default function HomeScreen() {
           bottomInset={lobbyBottomInset}
           paused={!isFocused}
           layout={lobbyLayout}
+          layoutReady={lobbyLayoutReady}
           onSaveLayout={saveLobbyLayoutForHome}
           onEditingChange={setIsEditingLobby}
         />

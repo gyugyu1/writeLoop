@@ -65,7 +65,7 @@ interface BakedFurnitureProps {
 export function BakedFurniture({ layout, added, fallback, daylight, lightLayout, windowLift }: BakedFurnitureProps) {
   const gltf = useLoader(GLTFLoader, FURNITURE_ASSET as string) as GLTF;
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판.
-  // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 매 프레임 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
+  // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 그릴 때마다 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
   const outdoor = useMemo(() => createOutdoor(0, 0), []);
   // 창이 높이 걸려도 창 너머 풀밭과 덤불이 창 아래쪽에 보이게, 바깥 풀밭을 창 가운데보다 OUTDOOR_DROP 아래에 둔다
   const groundY = useMemo(() => (currentFurnitureLayout().find((p) => p.view)?.y ?? OUTDOOR_DROP) - OUTDOOR_DROP, []);
@@ -128,7 +128,7 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
         o.raycast = () => {};
       }
       if (place.view && viewSource && views.length === 0) {
-        // 창 안쪽에 창밖 그림판을 둔다. 매 프레임 창밖 장면을 들여다본 모습을 그린다(아래 useFrame).
+        // 창 안쪽에 창밖 그림판을 둔다. 창밖 장면을 들여다본 모습을 그린다(아래 useFrame. 0.1초마다, 카메라·창이 움직이는 동안은 매 프레임).
         const view = new THREE.Mesh(new THREE.PlaneGeometry(viewSize.x, viewSize.y), new THREE.MeshBasicMaterial({ map: target.texture, toneMapped: false }));
         view.position.set(0, 0, -VIEW_DEPTH);
         view.raycast = () => {};
@@ -152,7 +152,7 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
   // 창밖 그리기: 창 정면에서 창 안쪽을 화면 삼아 들여다본다(눈이 창 정면에서 비껴 있어도 창 네 모서리가 그림 네 모서리에 맞는 비스듬한 원근).
   const eye = useMemo(() => new THREE.Vector3(), []);
   // 마지막으로 그린 때(시계 초)와 그때의 카메라·창 자리. 처음에는 바로 그린다
-  const drawn = useMemo(() => ({ at: -Infinity, camera: new THREE.Matrix4(), place: new THREE.Vector4() }), []);
+  const drawn = useMemo(() => ({ at: -Infinity, camera: new THREE.Matrix4(), place: new THREE.Vector4(), piece: new THREE.Matrix4() }), []);
   const place = useMemo(() => new THREE.Vector4(), []);
   useFrame((state, frameDelta) => {
     const view = built.view;
@@ -164,10 +164,16 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
     // 창밖 장면이 놓일 자리(창 자리 + 띄운 만큼)와 방향. 카메라와 이것이 그대로이고 간격이 지나지 않았으면 앞서 그린 그림을 둔다
     place.set(mount.x + (lift?.x ?? 0), groundY + (lift?.y ?? 0), mount.z + (lift?.z ?? 0), mount.rotY);
     const now = state.clock.elapsedTime;
-    const moved = !nearlySame(state.camera.matrixWorld.elements, drawn.camera.elements) || !nearlySame(place.toArray(), drawn.place.toArray());
+    // 창문 자체의 자리도 본다. 끄는 동안은 창밖 장면이 끌기 전 자리에 머물러도(lightLayout) 창문은 손가락을 따라 움직인다
+    view.piece.updateWorldMatrix(true, false);
+    const moved =
+      !nearlySame(state.camera.matrixWorld.elements, drawn.camera.elements) ||
+      !nearlySame(place.toArray(), drawn.place.toArray()) ||
+      !nearlySame(view.piece.matrixWorld.elements, drawn.piece.elements);
     if (!moved && now - drawn.at < VIEW_REDRAW_SECONDS) return;
     drawn.camera.copy(state.camera.matrixWorld);
     drawn.place.copy(place);
+    drawn.piece.copy(view.piece.matrixWorld);
     // 움직임은 시각으로 정해져, 건너뛴 프레임이 있어도 그리는 순간의 모습이 맞다(구름처럼 흐르는 것은 지난 시간만큼 한 번에 간다)
     const delta = drawn.at === -Infinity ? frameDelta : now - drawn.at;
     drawn.at = now;
@@ -175,7 +181,6 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
     outdoor.scene.rotation.y = place.w;
     outdoor.setDaylight(daylight.ambience, daylight.target.season, daylight.target.phase);
     outdoor.update(now, delta);
-    view.piece.updateWorldMatrix(true, false);
     eye.copy(state.camera.position);
     view.piece.worldToLocal(eye);
     eye.set(THREE.MathUtils.clamp(eye.x * EYE_FOLLOW, -1.5, 1.5), EYE_HEIGHT, EYE_DISTANCE);

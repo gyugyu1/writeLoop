@@ -8,7 +8,7 @@ import type { Ambience, DayPhase, Season } from "@/lib/lobby3d/daylight";
 // 하늘·구름·먼 언덕·나무·울타리·덤불·꽃·나비·별. 멀수록 하늘빛으로 옅어지고, 나무가 바람에 흔들리고 구름이 흘러간다.
 // 하늘색·햇빛·별은 하루의 때를, 잎·풀·눈은 계절을 따른다(setDaylight).
 
-/** 바깥 장면. update는 매 프레임 부른다(t: 지난 시간 초, dt: 앞 프레임과의 차이 초). */
+/** 바깥 장면. update는 그릴 때마다 부른다(t: 지난 시간 초, dt: 앞서 그린 때와의 차이 초). */
 export interface Outdoor {
   scene: THREE.Scene;
   update(t: number, dt: number): void;

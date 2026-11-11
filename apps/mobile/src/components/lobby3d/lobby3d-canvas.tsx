@@ -403,7 +403,8 @@ function buildWorld(layout: LobbyLayout): World {
   bakeCornerShade(floorGeometry);
   const shell = new THREE.Group();
   root.add(shell);
-  const floor = new THREE.Mesh(floorGeometry, new THREE.MeshLambertMaterial({ map: floorTexture(), vertexColors: true }));
+  // 바닥 그림은 코드로 지은 방이 처음 그려질 때 만든다(paintShownFloor). 기본 방에서 구운 방 껍데기가 먼저 들어오면 만들지 않는다
+  const floor = new THREE.Mesh(floorGeometry, new THREE.MeshLambertMaterial({ vertexColors: true }));
   shell.add(floor);
   // 바닥판의 두께(앞쪽 잘린 면이 보인다). 윗면을 바닥보다 조금 낮춰, 멀리서 둘이 겹쳐 번갈아 그려지지 않게 한다.
   kit.part(new THREE.BoxGeometry(W + T * 2, 0.22, D + T), 0x8a5230, 0, shell).position.set(W / 2, -0.13, (D - T) / 2);
@@ -481,6 +482,17 @@ function buildWorld(layout: LobbyLayout): World {
   };
   addWorldPieces(world, placements);
   return world;
+}
+
+/**
+ * 코드로 지은 방이 보이면 그 프레임을 그리기 전에 바닥 그림을 만들어 붙인다(한 번만).
+ * 512×512를 JS로 계산해 0.25초쯤 걸려서, 방을 지을 때 미리 만들지 않는다.
+ */
+function paintShownFloor(world: World) {
+  const material = world.floor.material as THREE.MeshLambertMaterial;
+  if (material.map || !world.shell.visible) return;
+  material.map = floorTexture();
+  material.needsUpdate = true;
 }
 
 /**
@@ -1000,6 +1012,7 @@ function Scene({
   });
 
   useFrame((_, delta) => {
+    paintShownFloor(world);
     const nowMs = Date.now();
     const dt = Math.min(0.05, delta);
     onFrame(dt, nowMs);

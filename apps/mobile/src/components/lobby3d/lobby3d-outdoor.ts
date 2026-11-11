@@ -81,14 +81,52 @@ export function createOutdoor(centerX: number, groundY: number): Outdoor {
     return m;
   };
   const ball = geo(new THREE.IcosahedronGeometry(1, 2));
+  const ballPosition = ball.attributes.position.array;
+  const ballNormal = ball.attributes.normal.array;
+  const ballUv = ball.attributes.uv.array;
+  const ballCount = ball.attributes.position.count;
+  const matrix = new THREE.Matrix4();
+  const normalMatrix = new THREE.Matrix3();
+  const noTurn = new THREE.Quaternion();
   // 공 여러 개를 한 모양으로 합친다(그리는 횟수를 줄인다). 공마다 [x, y, z, 가로 반지름, 세로 반지름, 깊이 반지름].
+  // 공을 복제해 three의 applyMatrix4로 옮긴 뒤 mergeGeometries로 합친 것과 같은 값을, 숫자 배열에 바로 계산해 넣는다
+  // (공 수백 개를 그렇게 지으면 0.5초 넘게 JS를 막았다). 식과 계산 순서는 three의 Vector3.applyMatrix4·applyNormalMatrix와 같다.
   const balls = (parts: readonly (readonly [number, number, number, number, number, number])[]) => {
-    const pieces = parts.map(([x, y, z, rx, ry, rz]) =>
-      ball.clone().applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(rx, ry, rz)))
-    );
-    const merged = geo(mergeGeometries(pieces));
-    for (const piece of pieces) piece.dispose();
-    return merged;
+    const position = new Float32Array(parts.length * ballCount * 3);
+    const normal = new Float32Array(parts.length * ballCount * 3);
+    const uv = new Float32Array(parts.length * ballCount * 2);
+    parts.forEach(([x, y, z, rx, ry, rz], k) => {
+      matrix.compose(new THREE.Vector3(x, y, z), noTurn, new THREE.Vector3(rx, ry, rz));
+      normalMatrix.getNormalMatrix(matrix);
+      const m = matrix.elements;
+      const n = normalMatrix.elements;
+      const offset = k * ballCount * 3;
+      for (let i = 0; i < ballCount * 3; i += 3) {
+        const px = ballPosition[i];
+        const py = ballPosition[i + 1];
+        const pz = ballPosition[i + 2];
+        const w = 1 / (m[3] * px + m[7] * py + m[11] * pz + m[15]);
+        position[offset + i] = (m[0] * px + m[4] * py + m[8] * pz + m[12]) * w;
+        position[offset + i + 1] = (m[1] * px + m[5] * py + m[9] * pz + m[13]) * w;
+        position[offset + i + 2] = (m[2] * px + m[6] * py + m[10] * pz + m[14]) * w;
+        const nx0 = ballNormal[i];
+        const ny0 = ballNormal[i + 1];
+        const nz0 = ballNormal[i + 2];
+        const nx = n[0] * nx0 + n[3] * ny0 + n[6] * nz0;
+        const ny = n[1] * nx0 + n[4] * ny0 + n[7] * nz0;
+        const nz = n[2] * nx0 + n[5] * ny0 + n[8] * nz0;
+        const scale = 1 / (Math.sqrt(nx * nx + ny * ny + nz * nz) || 1);
+        normal[offset + i] = nx * scale;
+        normal[offset + i + 1] = ny * scale;
+        normal[offset + i + 2] = nz * scale;
+      }
+      uv.set(ballUv, k * ballCount * 2);
+    });
+    const merged = new THREE.BufferGeometry();
+    merged.setAttribute("position", new THREE.BufferAttribute(position, 3));
+    merged.setAttribute("normal", new THREE.BufferAttribute(normal, 3));
+    merged.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+    return geo(merged);
   };
   const rnd = seeded(7);
   const pick = <T>(items: readonly T[]) => items[Math.floor(rnd() * items.length)];

@@ -1,5 +1,7 @@
 // three보다 먼저 불러와야 한다(Hermes에 없는 FinalizationRegistry 대체).
 import "@/lib/lobby3d/hermes-polyfills";
+// 모델 파일을 바이트로 바로 읽게 r3f의 파일 읽기를 바꾼다.
+import "@/lib/lobby3d/model-file-loader";
 import { Canvas, useFrame, useThree } from "@react-three/fiber/native";
 import { Suspense, useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";

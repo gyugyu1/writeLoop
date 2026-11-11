@@ -1,4 +1,5 @@
 import "@/lib/lobby3d/hermes-polyfills";
+import "@/lib/lobby3d/model-file-loader";
 import { useLoader } from "@react-three/fiber/native";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 

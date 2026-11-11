@@ -461,10 +461,13 @@ function respond(status: number, body?: unknown) {
   };
 }
 
-/** 불러오기를 진짜 함수로 돌리고, 서버가 그 상태 코드로 답하게 한다. */
+/** 불러오기를 진짜 함수로 돌리고(홈이 넘긴 인자를 그대로 넘긴다. 13 결정), 서버가 그 상태 코드로 답하게 한다. */
 function serverRespondsWithStatus(status: number, body?: unknown) {
   fetchMock.mockReset().mockImplementation(async () => respond(status, body));
-  jest.mocked(getLobbyLayout).mockReset().mockImplementation(() => actualApi.getLobbyLayout());
+  jest
+    .mocked(getLobbyLayout)
+    .mockReset()
+    .mockImplementation((...args: Parameters<typeof actualApi.getLobbyLayout>) => actualApi.getLobbyLayout(...args));
 }
 
 async function leaveAndReturnHome() {

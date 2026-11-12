@@ -20,8 +20,8 @@ export interface Outdoor {
 const SKY_TOP = 0x76b8ea;
 const SKY_HORIZON = 0xd4ecf6;
 
-/** 계절마다 칠하는 색. 잎·언덕·덤불은 자리마다(나무마다 정한 번호) 다른 색을 쓴다. 봄은 넷 중 둘이 벚꽃이다. */
-const SEASON_COLORS: Record<Season, { leaves: number[]; pine: number; ground: number; hills: number[]; bushes: number[] }> = {
+/** 계절마다 칠하는 색. 잎·언덕·덤불은 자리마다(나무마다 정한 번호) 다른 색을 쓴다. 봄은 넷 중 둘이 벚꽃이다. 바깥 마을(lobby3d-village)도 같은 색을 쓴다. */
+export const SEASON_COLORS: Record<Season, { leaves: number[]; pine: number; ground: number; hills: number[]; bushes: number[] }> = {
   spring: {
     leaves: [0xf6b3ca, 0x93d16a, 0xf9c6d7, 0x80c65d],
     pine: 0x4a9a5a,

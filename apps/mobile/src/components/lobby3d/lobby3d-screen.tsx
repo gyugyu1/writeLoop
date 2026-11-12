@@ -12,6 +12,10 @@ import {
   LobbySim,
   MARKS,
   MENU_FOR_MARK,
+  ROOM_MARK_IDS,
+  VILLAGE_MARK_IDS,
+  applyArea,
+  markInfo,
   VIEW_WIDTH_DEFAULT,
   VIEW_WIDTH_MAX,
   VIEW_WIDTH_MIN,
@@ -21,9 +25,12 @@ import {
   roomFitViewWidth,
   type ActionType,
   type LobbySnapshot,
+  type LobbyArea,
   type MarkId,
+  type PlaceId,
   type PointerHit
 } from "@/lib/lobby3d/engine";
+import { VILLAGE_START } from "@/lib/lobby3d/village";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
@@ -51,6 +58,20 @@ export const ACTION_LABELS: Record<ActionType, string> = {
   poke: "눌렀을 때 반응"
 };
 const TEST_ACTIONS: ActionType[] = ["wave", "jump", "hop", "point", "spin", "look"];
+/** 방·마을의 장소 모두(이름표·말풍선 자리를 미리 만들어 둔다). */
+const ALL_PLACE_IDS: readonly PlaceId[] = [...ROOM_MARK_IDS, ...VILLAGE_MARK_IDS];
+/** 시험판의 구역 버튼. */
+const AREA_LABELS: Record<LobbyArea, string> = { room: "방", village: "마을" };
+
+/** 그 구역의 장소들. */
+function placesOf(area: LobbyArea): readonly PlaceId[] {
+  return area === "village" ? VILLAGE_MARK_IDS : ROOM_MARK_IDS;
+}
+
+/** 방의 장소인지(홈이 들어가기를 맡는 장소). */
+function isRoomMark(id: PlaceId): id is MarkId {
+  return (ROOM_MARK_IDS as readonly PlaceId[]).includes(id);
+}
 
 /** 편집 모드('꾸미기')의 안내와 짧은 알림. */
 const EDIT_GUIDE = "가구를 눌러 고르고, 끌어서 옮겨요";
@@ -84,7 +105,7 @@ const MENU = [
 interface ViewState {
   bubbleText: string;
   bubbleButton: string | null;
-  place: MarkId | null;
+  place: PlaceId | null;
   actionType: ActionType | null;
   idleBubble: boolean;
 }
@@ -197,8 +218,14 @@ export default function Lobby3dScreen({
   inputBlockedRef.current = inputBlocked;
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const simRef = useRef<LobbySim | null>(null);
-  if (!simRef.current) simRef.current = new LobbySim();
+  if (!simRef.current) {
+    // 로비는 늘 방에서 시작한다(앞 로비가 마을에 있다 사라졌어도)
+    applyArea("room");
+    simRef.current = new LobbySim();
+  }
   const sim = simRef.current;
+  // 지금 구역(방·마을). 개발 화면 시험판에서 바꾼다
+  const [area, setArea] = useState<LobbyArea>("room");
 
   const [view, setView] = useState<ViewState>({ bubbleText: "", bubbleButton: null, place: null, actionType: null, idleBubble: false });
   // 초당 프레임 표시. 값이 바뀔 때만 다시 그린다(이름표·말풍선 자리는 아래 Animated 값으로 옮긴다).
@@ -392,13 +419,13 @@ export default function Lobby3dScreen({
   // 손을 떼지 않고 끄는 동안에는 3D 그리기와 누르기 처리가 자바스크립트 일꾼을 차지해 화면 다시 그리기가 밀리므로(손을 떼거나
   // 몇 초 뒤에야 반영됐다), 다시 그리기를 기다리지 않고 바꿀 수 있게 한다.
   const placeOpacity = useRef(
-    Object.fromEntries((Object.keys(MARKS) as MarkId[]).map((id) => [id, nativeValue(0)])) as Record<MarkId, Animated.Value>
+    Object.fromEntries(ALL_PLACE_IDS.map((id) => [id, nativeValue(0)])) as Record<PlaceId, Animated.Value>
   ).current;
   const menuLitOpacity = useRef(
     Object.fromEntries(MENU.map((item) => [item.id, nativeValue(0)])) as Record<LobbyMenuId, Animated.Value>
   ).current;
-  const [placeHeights, setPlaceHeights] = useState<Record<MarkId, number>>(
-    () => Object.fromEntries((Object.keys(MARKS) as MarkId[]).map((id) => [id, 80])) as Record<MarkId, number>
+  const [placeHeights, setPlaceHeights] = useState<Record<PlaceId, number>>(
+    () => Object.fromEntries(ALL_PLACE_IDS.map((id) => [id, 80])) as Record<PlaceId, number>
   );
   // 화면에 그려 둔 인사·짧은 말 말풍선의 글. 다시 그리기가 밀려 글이 지금 말과 다르면 그 말풍선을 보이지 않는다.
   const renderedLine = useRef("");
@@ -430,13 +457,13 @@ export default function Lobby3dScreen({
   screenWidthRef.current = screenWidth;
   // 장소 이름표 자리도 같은 까닭으로 매 프레임 값만 바꾼다(카메라가 움직여도 화면 전체를 다시 그리지 않는다)
   const labelPos = useRef(
-    Object.fromEntries((Object.keys(MARKS) as MarkId[]).map((id) => [id, { left: nativeValue(0), top: nativeValue(0) }])) as Record<
-      MarkId,
+    Object.fromEntries(ALL_PLACE_IDS.map((id) => [id, { left: nativeValue(0), top: nativeValue(0) }])) as Record<
+      PlaceId,
       { left: Animated.Value; top: Animated.Value }
     >
   ).current;
   const onOverlayFrame = useCallback(
-    (bubble: { x: number; y: number }, labels: Record<MarkId, { x: number; y: number }>) => {
+    (bubble: { x: number; y: number }, labels: Partial<Record<PlaceId, { x: number; y: number }>>) => {
       const left = Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8));
       const top = Math.max(120, bubble.y);
       const movedLeft = send(bubbleLeft, left, 0.5);
@@ -451,9 +478,11 @@ export default function Lobby3dScreen({
           setBubbleSettled((n) => n + 1);
         }, 150);
       }
-      for (const id of Object.keys(labels) as MarkId[]) {
-        send(labelPos[id].left, labels[id].x, 0.5);
-        send(labelPos[id].top, labels[id].y, 0.5);
+      for (const id of Object.keys(labels) as PlaceId[]) {
+        const at = labels[id];
+        if (!at || !labelPos[id]) continue;
+        send(labelPos[id].left, at.x, 0.5);
+        send(labelPos[id].top, at.y, 0.5);
       }
     },
     [bubbleLeft, bubbleTop, labelPos, send, lastSent]
@@ -463,7 +492,7 @@ export default function Lobby3dScreen({
   const applyOverlay = useCallback(
     (snap: LobbySnapshot) => {
       const place = snap.place;
-      for (const id of Object.keys(MARKS) as MarkId[]) send(placeOpacity[id], place === id ? 1 : 0, 0);
+      for (const id of ALL_PLACE_IDS) send(placeOpacity[id], place === id ? 1 : 0, 0);
       const lineShown = place === null && snap.bubbleText !== "" && snap.bubbleText === renderedLine.current;
       send(bubbleOpacity, lineShown ? 1 : 0, 0);
       const lit = place ? MENU_FOR_MARK[place] ?? null : null;
@@ -474,15 +503,29 @@ export default function Lobby3dScreen({
 
   /** 장소에 들어간다(판 열기·기록 화면 등은 홈이 맡는다). 홈이 맡지 않으면(개발 화면) 들어갈 때 안내를 띄우고 false. */
   const enterPlace = useCallback(
-    (id: MarkId) => {
-      if (onEnterMark?.(id)) return true;
-      showToast(MARKS[id].enterMessage);
+    (id: PlaceId) => {
+      if (isRoomMark(id) && onEnterMark?.(id)) return true;
+      showToast(markInfo(id).enterMessage);
       return false;
     },
     [onEnterMark, showToast]
   );
   const enterPlaceRef = useRef(enterPlace);
   enterPlaceRef.current = enterPlace;
+
+  /**
+   * 구역을 바꾼다(개발 화면 시험판). 마을이면 라룹이 집 문 앞에서 카메라 쪽을 보고, 방이면 입구 발판 안쪽에서 방 안쪽을 보고 선다.
+   * 꾸미기 중에는 바꾸지 않는다.
+   */
+  const switchArea = (next: LobbyArea) => {
+    if (editorRef.current || next === area) return;
+    applyArea(next);
+    const nowMs = Date.now();
+    if (next === "village") sim.placeAt(VILLAGE_START, VILLAGE_START.heading, nowMs);
+    else sim.placeAt(MARKS.door.approach[0], Math.PI, nowMs);
+    setArea(next);
+    syncView();
+  };
 
   const onFrame = useCallback(
     (dt: number, nowMs: number) => {
@@ -712,6 +755,7 @@ export default function Lobby3dScreen({
         onRoomShown={showRoom}
         settleKey={settleKey}
         onRoomSettled={settleRoom}
+        area={area}
       />
       ) : null}
 
@@ -733,7 +777,7 @@ export default function Lobby3dScreen({
       ) : null}
 
       {/* 편집 모드, 방이 보이기 전, '완료' 뒤 로딩 표시가 떠 있는 동안에는 이름표·장소 안내·말풍선을 숨긴다 */}
-      {editing || !roomShown || returning ? null : (Object.keys(MARKS) as MarkId[]).map((id) => (
+      {editing || !roomShown || returning ? null : placesOf(area).map((id) => (
         <Animated.View
           key={id}
           pointerEvents="none"
@@ -745,11 +789,12 @@ export default function Lobby3dScreen({
             }
           ]}
         >
-          <Text style={styles.labelText}>{MARKS[id].label}</Text>
+          <Text style={styles.labelText}>{markInfo(id).label}</Text>
         </Animated.View>
       ))}
 
-      {editing || !roomShown || returning ? null : (Object.keys(MARKS) as MarkId[]).map((id) => {
+      {/* 안내 글이 없는 장소(지금은 마을의 장소)는 말풍선이 없다 */}
+      {editing || !roomShown || returning ? null : placesOf(area).filter((id) => markInfo(id).prompt).map((id) => {
         const active = view.place === id;
         return (
           <Animated.View
@@ -772,7 +817,7 @@ export default function Lobby3dScreen({
           >
             <View style={styles.bubble} pointerEvents="box-none">
               <View pointerEvents="none">
-                <Text style={styles.bubbleText}>{MARKS[id].prompt}</Text>
+                <Text style={styles.bubbleText}>{markInfo(id).prompt}</Text>
               </View>
               <Pressable
                 accessibilityRole="button"
@@ -788,7 +833,7 @@ export default function Lobby3dScreen({
                   enterPlace(id);
                 }}
               >
-                <Text style={styles.bubbleButtonText}>{MARKS[id].buttonLabel}</Text>
+                <Text style={styles.bubbleButtonText}>{markInfo(id).buttonLabel}</Text>
               </Pressable>
             </View>
             <View style={styles.bubbleTail} pointerEvents="none" />
@@ -867,7 +912,8 @@ export default function Lobby3dScreen({
                 <Text style={styles.chipText}>{streakLabel}</Text>
               </View>
             )}
-            {onSaveLayout ? (
+            {/* 꾸미기는 방에서만 한다 */}
+            {onSaveLayout && area === "room" ? (
               <Pressable accessibilityRole="button" style={styles.decorButton} onPress={startEdit}>
                 <Text style={styles.decorText}>꾸미기</Text>
               </Pressable>
@@ -991,6 +1037,20 @@ export default function Lobby3dScreen({
                   }}
                 >
                   <Text style={styles.actionText}>{ACTION_LABELS[type]}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.panelLabel}>구역</Text>
+            <View style={styles.row}>
+              {(["room", "village"] as const).map((next) => (
+                <Pressable
+                  key={next}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: area === next }}
+                  style={[styles.stepButton, area === next && styles.stepButtonOn]}
+                  onPress={() => switchArea(next)}
+                >
+                  <Text style={[styles.stepText, area === next && styles.stepTextOn]}>{AREA_LABELS[next]}</Text>
                 </Pressable>
               ))}
             </View>

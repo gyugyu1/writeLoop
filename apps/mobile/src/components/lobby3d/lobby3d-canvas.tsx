@@ -7,16 +7,31 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, type MutableRefObjec
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import {
+  CHAIR,
+  LobbySim,
+  ROOM,
+  ROOM_MARK_IDS,
+  VILLAGE_MARK_IDS,
+  activeLobbyLayout,
+  cameraPose,
+  type FloorPoint,
+  type LobbyArea,
+  type MarkId,
+  type PlaceId,
+  type PointerHit
+} from "@/lib/lobby3d/engine";
+import { VILLAGE_PLACES } from "@/lib/lobby3d/village";
 import { layoutGeometry, layoutItem, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
 import { BASIC_ROOM, currentRoom, outsideExit } from "@/lib/lobby3d/room";
 import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { buildPlacements, furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
-import { DaylightRig, createDaylightState } from "./lobby3d-daylight";
+import { DaylightRig, createDaylightState, type DaylightState } from "./lobby3d-daylight";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
 import { BakedRoom, BakedRoomErrorBoundary } from "./lobby3d-room";
+import type * as VillageModule from "./lobby3d-village";
 
 // 3D 로비 그리기. 동작 규칙은 LobbySim(화면이 가진다)에 있고, 여기서는 매 프레임 그 상태를 그림으로 옮긴다.
 // 테스트에서는 이 모듈을 가짜로 바꾼다(three·expo-gl은 Jest에서 돌지 않는다).
@@ -31,8 +46,8 @@ export interface ToonSettings {
 export interface LobbyProjection {
   /** 말풍선 꼬리가 닿을 화면 좌표(라이트루프 머리 위). */
   bubble: { x: number; y: number };
-  /** 장소 이름표 화면 좌표. */
-  labels: Record<MarkId, { x: number; y: number }>;
+  /** 장소 이름표 화면 좌표(지금 구역의 장소만). */
+  labels: Partial<Record<PlaceId, { x: number; y: number }>>;
   fps: number;
 }
 
@@ -71,7 +86,7 @@ export interface Lobby3dCanvasProps {
    * 매 프레임 말풍선 꼬리가 닿을 화면 좌표와 장소 이름표 화면 좌표. 화면이 다시 그리지 않고 옮겨,
    * 말풍선·이름표가 라이트루프와 카메라를 바로 따라간다.
    */
-  onOverlayFrame?: (bubble: { x: number; y: number }, labels: Record<MarkId, { x: number; y: number }>) => void;
+  onOverlayFrame?: (bubble: { x: number; y: number }, labels: Partial<Record<PlaceId, { x: number; y: number }>>) => void;
   /** 화면이 다른 화면 아래에 깔려 있을 때처럼 그리기를 멈출 때. */
   paused?: boolean;
   /** 지금 시각의 햇빛·하루의 때·계절(daylightAt). 바뀌면 방 색감·창문 빛·천장 조명·창밖이 부드럽게 따라간다. */
@@ -92,6 +107,8 @@ export interface Lobby3dCanvasProps {
   settleKey?: number;
   /** settleKey가 바뀐 뒤 연달아 ROOM_SMOOTH_FRAMES 프레임이 ROOM_SMOOTH_FRAME_S 안에 그려지거나 ROOM_SETTLE_LIMIT_S가 지나면 한 번. */
   onRoomSettled?: () => void;
+  /** 지금 구역(방·마을). 마을이면 방(껍데기·가구·방 조명)을 숨기고 마을을 그린다. 기본은 방. */
+  area?: LobbyArea;
 }
 
 const LINE = 0x3d1b0f;
@@ -385,6 +402,8 @@ function computeLabelPoints(layout: LobbyLayout): Record<MarkId, THREE.Vector3> 
 
 interface World {
   root: THREE.Group;
+  /** 방에만 있는 것(껍데기, 가구와 그 그림자, 방 조명). 마을에서는 통째로 숨긴다. 라룹이 발밑 그림자는 root에 따로 있다. */
+  room: THREE.Group;
   kit: WorldKit;
   /** 라이트루프 발밑 그림자. 모델은 따로 불러와 붙인다(lobby3d-character). */
   shadow: THREE.Mesh;
@@ -423,6 +442,8 @@ function buildWorld(layout: LobbyLayout): World {
   const placements = buildPlacements(layout);
   const kit = new WorldKit();
   const root = new THREE.Group();
+  const room = new THREE.Group();
+  root.add(room);
   const W = ROOM.width;
   const H = ROOM.wallHeight;
 
@@ -435,7 +456,7 @@ function buildWorld(layout: LobbyLayout): World {
   floorGeometry.translate(W / 2, 0, D / 2);
   bakeCornerShade(floorGeometry);
   const shell = new THREE.Group();
-  root.add(shell);
+  room.add(shell);
   // 바닥 그림은 코드로 지은 방이 처음 그려질 때 만든다(paintShownFloor). 기본 방에서 구운 방 껍데기가 먼저 들어오면 만들지 않는다
   const floor = new THREE.Mesh(floorGeometry, new THREE.MeshLambertMaterial({ vertexColors: true }));
   shell.add(floor);
@@ -470,16 +491,16 @@ function buildWorld(layout: LobbyLayout): World {
   const blob = blobTexture();
   const softRect = softRectTexture();
   const furniture = new THREE.Group();
-  root.add(furniture);
+  room.add(furniture);
   // 이름표 자리는 가구를 따라간다(받은 배치에서 계산). 밖으로 가는 입구 발판은 고정이다
   const labelPoints = computeLabelPoints(layout);
 
   // 방 조명. 해는 앞쪽 왼편 위에서 가구 앞면을 비춘다(실제 해 방향은 바닥의 창문 빛이 맡는다). 색·세기는 하루의 때를 따른다.
   const ambient = new THREE.AmbientLight(0xffffff, 1.35);
-  root.add(ambient);
+  room.add(ambient);
   const sun = new THREE.DirectionalLight(0xffffff, 1.6);
   sun.position.set(-3, 8, 6);
-  root.add(sun);
+  room.add(sun);
 
   const shadow = new THREE.Mesh(
     new THREE.PlaneGeometry(1.15 * 0.8, 1.15 * 0.8),
@@ -491,6 +512,7 @@ function buildWorld(layout: LobbyLayout): World {
 
   const world: World = {
     root,
+    room,
     kit,
     shadow,
     markObjects: [],
@@ -526,7 +548,7 @@ function paintShownFloor(world: World) {
  * 방을 지을 때 모든 가구에 쓰고, 꾸미기 중 미리 만들지 않은 가구가 나오면 그 가구만 더할 때도 쓴다(방을 다시 짓지 않는다).
  */
 function addWorldPieces(world: World, placements: FurniturePlacement[]) {
-  const { root, kit, furniture, markObjects, blockers, pieceObjects, softRect } = world;
+  const { room: root, kit, furniture, markObjects, blockers, pieceObjects, softRect } = world;
   const fresh = placements.filter((place) => !world.builtKeys.has(placementKey(place)));
   for (const place of fresh) world.builtKeys.add(placementKey(place));
   // 가구마다 까는 옅은 그림자(실시간 아님, 카탈로그 값). floor는 바닥에 닿은 넓이(가구 앞면 기준 가로·깊이), wall은 벽에 건 것 뒤 벽에 비치는 넓이(가로·세로)다.
@@ -813,6 +835,7 @@ function Scene({
   onRoomShown,
   settleKey = 0,
   onRoomSettled,
+  area = "room",
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치 표시 수(layoutKey)가 바뀌면 다시 만든다(서버 배치 받기 등).
@@ -856,6 +879,18 @@ function Scene({
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const editRef = useRef(edit);
   editRef.current = edit;
+  const areaRef = useRef(area);
+  areaRef.current = area;
+  // 마을에서 누르기 판정을 받는 건물·소품(마을 모델이 채운다)
+  const villagePick = useRef<THREE.Object3D[]>([]);
+  // 마을 이름표 자리(문 위)
+  const villageLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.values(VILLAGE_PLACES).map((place) => [place.id, new THREE.Vector3(place.labelPoint.x, place.labelPoint.y, place.labelPoint.z)])
+      ) as Record<PlaceId, THREE.Vector3>,
+    []
+  );
   const editLiveRef = useRef(editLive);
   editLiveRef.current = editLive;
   /** 지금 편집 모습(매 프레임 직접 읽는 곳이 있으면 그것). */
@@ -864,6 +899,11 @@ function Scene({
   useEffect(() => {
     scene.background = new THREE.Color(0x000000);
   }, [scene]);
+
+  // 구역을 바꾸면 카메라가 새 자리로 바로 옮긴다(옛 자리에서 미끄러져 오지 않게)
+  useEffect(() => {
+    target.current.set(sim.x, 0, sim.z);
+  }, [area, sim]);
 
   useEffect(() => {
     world.kit.applyToon(toon);
@@ -906,6 +946,14 @@ function Scene({
         const onParent = at > 0 && hits.slice(0, at).every((h) => h.object.userData.pickPiece === parentOf(hits[at].object.userData.pickPiece));
         const first = (onParent ? hits[at] : hits[0])?.object.userData as { pickPiece?: string } | undefined;
         return { point: floorPoint(), mark: null, onCharacter: false, piece: first?.pickPiece ?? null, wall: wallUnderRay(raycaster.ray) };
+      }
+      // 마을: 라룹이 아니면 맞은 건물·소품의 그 자리(없으면 바닥)를 누른 곳으로 본다. 걸어갈 수 없는 곳이면 sim이 가장 가까운 곳으로 간다
+      if (areaRef.current === "village") {
+        const targets: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...villagePick.current];
+        const hit = raycaster.intersectObjects(targets, true)[0];
+        if (hit && (hit.object.userData as { isCharacter?: boolean }).isCharacter) return { point: floorPoint(), mark: null, onCharacter: true };
+        if (hit) return { point: { x: hit.point.x, z: hit.point.z }, mark: null, onCharacter: false };
+        return { point: floorPoint(), mark: null, onCharacter: false };
       }
       // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).
       const objects: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...world.markObjects.map((m) => m.object), ...world.blockers];
@@ -1082,6 +1130,7 @@ function Scene({
 
   useFrame((_, delta) => {
     paintShownFloor(world);
+    world.room.visible = areaRef.current === "room";
     const nowMs = Date.now();
     const dt = Math.min(0.05, delta);
     onFrame(dt, nowMs);
@@ -1146,10 +1195,12 @@ function Scene({
       return { x: ((p.x + 1) / 2) * size.width, y: ((1 - p.y) / 2) * size.height };
     };
     const bubble = toScreen(character.current?.bubblePoint() ?? new THREE.Vector3(sim.x, BUBBLE_HEIGHT, sim.z));
-    const labels = {} as Record<MarkId, { x: number; y: number }>;
-    (Object.keys(MARKS) as MarkId[]).forEach((id) => {
-      labels[id] = toScreen(world.labelPoints[id]);
-    });
+    const labels: Partial<Record<PlaceId, { x: number; y: number }>> = {};
+    if (areaRef.current === "village") {
+      for (const id of VILLAGE_MARK_IDS) labels[id] = toScreen(villageLabels[id]);
+    } else {
+      for (const id of ROOM_MARK_IDS as readonly MarkId[]) labels[id] = toScreen(world.labelPoints[id]);
+    }
     onOverlayFrame?.(bubble, labels);
 
     // 초당 프레임 수, 말풍선·이름표 위치(초당 약 15번 보낸다)
@@ -1175,6 +1226,9 @@ function Scene({
       <primitive object={markGroup} />
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={editGrid} />
+      {/* 방에만 있는 것: 마을에서는 숨긴다(하루의 때 색감은 마을도 읽으므로 DaylightRig는 늘 돈다) */}
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <group visible={area === "room"}>
       <DaylightRig
         key={`daylight-${layoutKey}`}
         state={daylightState}
@@ -1208,6 +1262,8 @@ function Scene({
           </Suspense>
         </BakedRoomErrorBoundary>
       ) : null}
+      </group>
+      {area === "village" ? <VillageLayer sim={sim} daylight={daylightState} pickTargets={villagePick} /> : null}
       <CharacterErrorBoundary onFailed={characterSettled}>
         <Suspense fallback={null}>
           <Character kit={world.kit} outline={toon.outline} handleRef={character} />
@@ -1246,6 +1302,24 @@ function warmUpScenes(gl: THREE.WebGLRenderer, camera: THREE.Camera, scenes: (TH
     });
     for (const texture of textures) gl.initTexture(texture);
   }
+}
+
+/**
+ * 바깥 마을(풀밭·숲·하늘과 마을 모델). 마을 모듈은 마을을 처음 그릴 때 불러온다(방만 보는 동안은 마을 모델·도형 도구를 읽지 않는다).
+ */
+function VillageLayer({ sim, daylight, pickTargets }: { sim: LobbySim; daylight: DaylightState; pickTargets: MutableRefObject<THREE.Object3D[]> }) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const village = require("./lobby3d-village") as typeof VillageModule;
+  return (
+    <>
+      <village.VillageNature daylight={daylight} />
+      <village.VillageModelErrorBoundary>
+        <Suspense fallback={null}>
+          <village.VillageModel sim={sim} daylight={daylight} pickTargets={pickTargets} />
+        </Suspense>
+      </village.VillageModelErrorBoundary>
+    </>
+  );
 }
 
 /** 같은 Suspense 안의 부분과 함께 장면에 들어오면(모델을 다 읽으면) 알린다. */

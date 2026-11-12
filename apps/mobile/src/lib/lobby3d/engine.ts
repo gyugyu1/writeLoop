@@ -1,11 +1,17 @@
 import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type LobbyLayout, type WallSide } from "./lobby-layout";
 import { currentRoom, outsideExit, outsidePlace, setCurrentRoom, type RoomSpec } from "./room";
+import { VILLAGE, VILLAGE_PLACES, VILLAGE_SOLID_TILES, type VillageBuildingId } from "./village";
 
 // 3D 로비(라이트루프의 방)의 동작 규칙. 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 // 좌표: 바닥 한 칸 = 1. x는 왼쪽→오른쪽(0..width), z는 뒷벽→앞(0..depth). 높이는 y.
 // 가구에 딸린 값(장소의 서는 자리·바라볼 지점, 막힌 칸, 의자)은 지금 배치(applyLobbyLayout)에서 계산한다.
 
+/** 방의 장소 다섯. */
 export type MarkId = "board" | "window" | "desk" | "door" | "bookcase";
+/** 방의 장소 다섯과 마을의 장소 넷(건물 문 앞). 지금 구역(currentArea)의 장소만 쓴다(activePlaceIds). */
+export type PlaceId = MarkId | VillageBuildingId;
+/** 로비의 구역: 라룹이 방, 바깥 마을. */
+export type LobbyArea = "room" | "village";
 export type ActionType = "wave" | "jump" | "hop" | "point" | "spin" | "look" | "poke";
 
 export interface FloorPoint {
@@ -17,7 +23,7 @@ export interface PointerHit {
   /** 누른 곳의 바닥 좌표. 바닥 밖이면 null. */
   point: FloorPoint | null;
   /** 누른 곳에 있는 장소. 없으면 null. */
-  mark: MarkId | null;
+  mark: PlaceId | null;
   /** 라이트루프를 눌렀는지. */
   onCharacter: boolean;
   /** 누른 곳에 있는 가구(배치한 가구의 id, 딸린 의자는 그 책상). 편집 모드에서 쓴다. */
@@ -41,8 +47,8 @@ export const ROOM = {
   stepDepth: outsideExit(currentRoom()).depth
 };
 
-export interface MarkInfo {
-  id: MarkId;
+export interface MarkInfo<I extends PlaceId = MarkId> {
+  id: I;
   label: string;
   /** 바라볼 지점. 벽에 붙은 장소는 z = 0, 밖으로 가는 입구 발판은 바닥 앞끝 너머. */
   faceTo: FloorPoint;
@@ -100,6 +106,49 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   }
 };
 
+/** 마을의 장소(건물 문 앞). 지금은 이름표만 있고 말풍선·버튼이 없다(안내 글이 비어 있으면 말풍선을 띄우지 않는다). */
+export const VILLAGE_MARKS: Record<VillageBuildingId, MarkInfo<VillageBuildingId>> = Object.fromEntries(
+  Object.values(VILLAGE_PLACES).map((place) => [
+    place.id,
+    { id: place.id, label: place.label, faceTo: place.faceTo, approach: place.approach, prompt: "", buttonLabel: "", enterMessage: "" }
+  ])
+) as Record<VillageBuildingId, MarkInfo<VillageBuildingId>>;
+
+/** 장소 하나의 정보(방·마을 어느 쪽이든). */
+export function markInfo(id: PlaceId): MarkInfo<PlaceId> {
+  return id in VILLAGE_MARKS ? VILLAGE_MARKS[id as VillageBuildingId] : MARKS[id as MarkId];
+}
+
+/** 방의 장소. */
+export const ROOM_MARK_IDS: readonly MarkId[] = ["board", "window", "desk", "door", "bookcase"];
+/** 마을의 장소. */
+export const VILLAGE_MARK_IDS: readonly PlaceId[] = ["home", "furnitureShop", "cafe", "library"];
+
+let area: LobbyArea = "room";
+
+/** 지금 구역(방·마을). */
+export function currentArea(): LobbyArea {
+  return area;
+}
+
+/** 지금 구역의 장소들. */
+export function activePlaceIds(): readonly PlaceId[] {
+  return area === "village" ? VILLAGE_MARK_IDS : ROOM_MARK_IDS;
+}
+
+/** 걸어 다닐 바닥의 크기(칸). 길 찾기가 쓰는 값만 담는다. */
+export type AreaSize = Pick<RoomSpec, "width" | "depth">;
+
+/** 지금 구역의 바닥 크기: 방이면 지금 방, 마을이면 마을. */
+function activeSize(): AreaSize {
+  return area === "village" ? VILLAGE : currentRoom();
+}
+
+/** 지금 구역의 막힌 칸: 방이면 지금 배치의 가구, 마을이면 건물·소품·가장자리. */
+function activeSolid(): ReadonlySet<string> {
+  return area === "village" ? VILLAGE_SOLID_TILES : solidTiles;
+}
+
 /**
  * 장소 구역의 반지름(칸). 장소마다 서는 자리들의 가운데를 중심으로 한 원이고,
  * 벽에 붙은 장소(ZONE_REACHES_WALL)는 그 원이 바라볼 지점(벽)까지 이어진 모양이다.
@@ -107,29 +156,38 @@ export const MARKS: Record<MarkId, MarkInfo> = {
 export const MARK_ZONE_RADIUS = 1;
 
 /** 장소 구역이 서는 자리에서 바라볼 지점(벽)까지 이어지는 장소. 벽에 바짝 붙어도 구역 안이다. */
-const ZONE_REACHES_WALL: ReadonlySet<MarkId> = new Set<MarkId>(["board", "window", "bookcase"]);
+const ZONE_REACHES_WALL: ReadonlySet<PlaceId> = new Set<PlaceId>(["board", "window", "bookcase"]);
 
 /** 장소 구역이 바라볼 지점(벽)까지 이어지는 장소인지. */
-export function zoneReachesWall(id: MarkId): boolean {
+export function zoneReachesWall(id: PlaceId): boolean {
   return ZONE_REACHES_WALL.has(id);
 }
 
 /** 장소 구역의 가운데(서는 자리들의 가운데). */
-export function markZoneCenter(id: MarkId): FloorPoint {
-  const points = MARKS[id].approach;
+export function markZoneCenter(id: PlaceId): FloorPoint {
+  const points = markInfo(id).approach;
   return {
     x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
     z: points.reduce((sum, p) => sum + p.z, 0) / points.length
   };
 }
 
-/** 이 자리가 들어 있는 장소 구역. 없으면 null. 책장과 게시판처럼 구역이 겹치는 곳에서는 구역 모양까지 더 가까운 장소다. */
+/** 이 자리가 들어 있는 방의 장소 구역. 없으면 null. 책장과 게시판처럼 구역이 겹치는 곳에서는 구역 모양까지 더 가까운 장소다. */
 export function markZoneAt(x: number, z: number): MarkId | null {
-  let best: MarkId | null = null;
+  return zoneAmong(x, z, ROOM_MARK_IDS) as MarkId | null;
+}
+
+/** 이 자리가 들어 있는 지금 구역(방·마을)의 장소 구역. 없으면 null. */
+export function placeZoneAt(x: number, z: number): PlaceId | null {
+  return zoneAmong(x, z, activePlaceIds());
+}
+
+function zoneAmong(x: number, z: number, ids: readonly PlaceId[]): PlaceId | null {
+  let best: PlaceId | null = null;
   let bestDistance = Infinity;
-  for (const id of Object.keys(MARKS) as MarkId[]) {
+  for (const id of ids) {
     const c = markZoneCenter(id);
-    const end = ZONE_REACHES_WALL.has(id) ? MARKS[id].faceTo : c;
+    const end = ZONE_REACHES_WALL.has(id) ? markInfo(id).faceTo : c;
     const distance = distanceToSegment(x, z, c, end);
     if (distance <= MARK_ZONE_RADIUS && distance < bestDistance) {
       best = id;
@@ -149,7 +207,7 @@ function distanceToSegment(x: number, z: number, a: FloorPoint, b: FloorPoint): 
 }
 
 /** 아래 메뉴 버튼과 장소의 짝. 도착한 장소의 메뉴 버튼을 강조한다. */
-export const MENU_FOR_MARK: Partial<Record<MarkId, "question" | "diary" | "thought" | "records">> = {
+export const MENU_FOR_MARK: Partial<Record<PlaceId, "question" | "diary" | "thought" | "records">> = {
   board: "question",
   desk: "diary",
   window: "thought",
@@ -168,13 +226,13 @@ const tileKey = (c: number, r: number) => `${c},${r}`;
 // 아래 길 찾기는 막힌 칸(solid)과 방(room)을 받을 수 있다. 주지 않으면 지금 배치의 막힌 칸과 지금 방이다
 // (편집 모드는 편집 중인 배치의 칸을 주고, 방에 배치 맞추기는 새 방을 준다).
 
-export function isBlocked(x: number, z: number, solid: ReadonlySet<string> = SOLID_TILES, room: RoomSpec = currentRoom()): boolean {
+export function isBlocked(x: number, z: number, solid: ReadonlySet<string> = activeSolid(), room: AreaSize = activeSize()): boolean {
   if (x < 0.25 || x > room.width - 0.25 || z < 0.45 || z > room.depth) return true;
   return solid.has(tileKey(Math.floor(x), Math.floor(z)));
 }
 
 /** 라이트루프가 그 자리에 설 수 있는지(몸 둘레까지 본다). */
-export function isFree(x: number, z: number, solid: ReadonlySet<string> = SOLID_TILES, room: RoomSpec = currentRoom()): boolean {
+export function isFree(x: number, z: number, solid: ReadonlySet<string> = activeSolid(), room: AreaSize = activeSize()): boolean {
   return (
     !isBlocked(x - BODY_RADIUS, z, solid, room) &&
     !isBlocked(x + BODY_RADIUS, z, solid, room) &&
@@ -183,7 +241,7 @@ export function isFree(x: number, z: number, solid: ReadonlySet<string> = SOLID_
   );
 }
 
-export function isClearLine(a: FloorPoint, b: FloorPoint, solid: ReadonlySet<string> = SOLID_TILES, room: RoomSpec = currentRoom()): boolean {
+export function isClearLine(a: FloorPoint, b: FloorPoint, solid: ReadonlySet<string> = activeSolid(), room: AreaSize = activeSize()): boolean {
   const steps = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.12);
   for (let i = 1; i <= steps; i += 1) {
     const t = i / steps;
@@ -200,8 +258,8 @@ export function isClearLine(a: FloorPoint, b: FloorPoint, solid: ReadonlySet<str
 export function findPath(
   from: FloorPoint,
   goals: FloorPoint[],
-  solid: ReadonlySet<string> = SOLID_TILES,
-  room: RoomSpec = currentRoom()
+  solid: ReadonlySet<string> = activeSolid(),
+  room: AreaSize = activeSize()
 ): FloorPoint[] | null {
   const reachable = goals.filter((g) => isFree(g.x, g.z, solid, room));
   if (reachable.length === 0) return null;
@@ -261,14 +319,28 @@ export function findPath(
  * from에서 가장 가까운, 설 수 있고 입구까지 걸어갈 수 있는 칸 가운데. 입구까지 갈 수 있는 칸이 없으면 설 수 있는 가장 가까운 칸, 그것도 없으면 null.
  */
 export function nearestOpenSpot(from: FloorPoint): FloorPoint | null {
+  const spots = openSpotsByDistance(from);
+  // 입구: 방은 밖으로 나가는 발판 안쪽, 마을은 라룹이 집 문 앞
+  const entry = area === "village" ? VILLAGE_MARKS.home.approach : MARKS.door.approach;
+  return spots.find((spot) => findPath(spot, entry) !== null) ?? spots[0] ?? null;
+}
+
+/** 지금 구역에서 설 수 있는 칸 가운데들을 from에서 가까운 순으로. */
+function openSpotsByDistance(from: FloorPoint): FloorPoint[] {
+  const size = activeSize();
   const spots: FloorPoint[] = [];
-  for (let c = 0; c < ROOM.width; c += 1) {
-    for (let r = 0; r < ROOM.depth; r += 1) {
+  for (let c = 0; c < size.width; c += 1) {
+    for (let r = 0; r < size.depth; r += 1) {
       if (isFree(c + 0.5, r + 0.5)) spots.push({ x: c + 0.5, z: r + 0.5 });
     }
   }
   spots.sort((a, b) => Math.hypot(a.x - from.x, a.z - from.z) - Math.hypot(b.x - from.x, b.z - from.z));
-  return spots.find((spot) => findPath(spot, MARKS.door.approach) !== null) ?? spots[0] ?? null;
+  return spots;
+}
+
+/** 마을에서 걸어갈 수 없는 곳을 눌렀을 때 갈 곳: point에서 가장 가까운, from에서 걸어갈 수 있는 칸 가운데. 없으면 null. */
+export function nearestReachableSpot(from: FloorPoint, point: FloorPoint): FloorPoint | null {
+  return openSpotsByDistance(point).find((spot) => findPath(from, [spot]) !== null) ?? null;
 }
 
 /** from에서 to를 바라보는 방향(라디안). 0 = 화면 앞(+z)을 봄. */
@@ -308,6 +380,29 @@ export const ROOM_BOUNDS = {
   minZ: -ROOM.wallThickness,
   maxZ: ROOM.depth + ROOM.stepDepth
 };
+
+/** 마을 끝을 둘러싼 상자: 마을 바닥 가장자리. 위로는 뒤쪽 건물 지붕까지 보이게 넉넉하다(그 너머는 풀밭·숲이라 검지 않다). */
+export const VILLAGE_BOUNDS = {
+  minX: 0,
+  maxX: VILLAGE.width,
+  minY: -0.25,
+  maxY: 6,
+  minZ: 0,
+  maxZ: VILLAGE.depth
+};
+
+/** 지금 구역의 끝 상자(카메라가 넘지 않는다). */
+export function activeBounds(): typeof ROOM_BOUNDS {
+  return area === "village" ? VILLAGE_BOUNDS : ROOM_BOUNDS;
+}
+
+/**
+ * 구역을 바꾼다(방 ↔ 마을). 길 찾기·장소·카메라 끝이 그 구역을 따른다. 방의 값(ROOM, ROOM_BOUNDS, 지금 배치의 막힌 칸)은 그대로 둔다.
+ * 라룹이를 그 구역의 어디에 세울지는 화면이 정한다(LobbySim.placeAt).
+ */
+export function applyArea(next: LobbyArea): void {
+  area = next;
+}
 
 /**
  * 지금 방을 바꾼다: 방 데이터와, 거기서 계산하는 방 크기(ROOM)·방 끝 상자(ROOM_BOUNDS)·밖으로 장소(MARKS.door),
@@ -350,7 +445,7 @@ export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number
   const tanV = Math.tan((ROOM.fovDeg * Math.PI) / 360);
   const tanH = tanV * Math.max(aspect, 0.01);
   const dist = viewWidth / (2 * tanH);
-  const b = ROOM_BOUNDS;
+  const b = activeBounds();
   const corners: { y: number; z: number }[] = [];
   for (const y of [b.minY, b.maxY]) for (const z of [b.minZ, b.maxZ]) corners.push({ y, z });
   // 보는 점 z가 cz일 때 모서리의 카메라 앞 깊이와 화면 세로 자리(-1 아래 끝 ~ 1 위 끝)
@@ -448,7 +543,7 @@ export type PostureKind = "sitting-down" | "sitting" | "standing-up";
 
 /** 장소에서 '들어가기'를 누르면 하는 동작. 생각하기(게시판·창가), 의자에 앉기(일기 책상), 책 꺼내 펼치기(책장). */
 export type SceneKind = "think" | "chair" | "book";
-export const SCENE_FOR_MARK: Partial<Record<MarkId, SceneKind>> = { board: "think", window: "think", desk: "chair", bookcase: "book" };
+export const SCENE_FOR_MARK: Partial<Record<PlaceId, SceneKind>> = { board: "think", window: "think", desk: "chair", bookcase: "book" };
 /** 들어가기 동작 → 판을 연 동안 유지 → 판을 닫으면(기록 화면에서 돌아오면) 제자리로. */
 export type ScenePhase = "in" | "hold" | "out";
 /** 들어가기 동작 시간(초). 이만큼 지나면 판을 연다(책장은 기록 화면으로 간다). */
@@ -480,8 +575,8 @@ export function applyLobbyLayout(layout: LobbyLayout): void {
   activeLayout = layout;
   const geometry = layoutGeometry(layout, ROOM.width);
   for (const id of Object.keys(geometry.places) as (keyof typeof geometry.places)[]) {
-    MARKS[id].approach = geometry.places[id].approach;
-    MARKS[id].faceTo = geometry.places[id].faceTo;
+    markInfo(id).approach = geometry.places[id].approach;
+    markInfo(id).faceTo = geometry.places[id].faceTo;
   }
   solidTiles.clear();
   for (const key of geometry.solidTiles) solidTiles.add(key);
@@ -506,7 +601,7 @@ const BOOK_PUT_REACH = 0.35;
 
 export interface SceneState {
   kind: SceneKind;
-  mark: MarkId;
+  mark: PlaceId;
   phase: ScenePhase;
   /** 이 단계가 시작된 뒤 지난 시간(초). */
   t: number;
@@ -535,9 +630,9 @@ export interface LobbySnapshot {
   speed: number;
   moving: boolean;
   dragging: boolean;
-  arrived: MarkId | null;
+  arrived: PlaceId | null;
   /** 지금 장소 안내(글·버튼)를 보이는 장소. 도착했거나 구역 안이면 걷는 중에도 그 장소다. 아래 메뉴 강조에 쓴다. */
-  place: MarkId | null;
+  place: PlaceId | null;
   action: { type: ActionType; t: number } | null;
   posture: { kind: PostureKind; t: number } | null;
   /** 장소에서 '들어가기'를 누른 뒤의 동작. 없으면 null. */
@@ -565,7 +660,7 @@ export class LobbySim {
   settings: LobbySettings = { speed: 3.2, turn: 10 };
   reduceMotion = false;
   action: { type: ActionType; t: number } | null = null;
-  arrived: MarkId | null = null;
+  arrived: PlaceId | null = null;
   dragging = false;
   /** 앉기 자세(서 있으면 null). 앉아 있는 동안과 일어나는 동안은 걷기·동작이 기다린다. */
   posture: { kind: PostureKind; t: number } | null = null;
@@ -574,11 +669,11 @@ export class LobbySim {
   /** 들어가기 전에 서 있던 자리(돌아올 곳). */
   private sceneFrom: FloorPoint | null = null;
   /** 들어가기 동작이 끝나 판을 열 때가 된 장소. 화면이 한 번 가져간다. */
-  private sceneEntered: MarkId | null = null;
+  private sceneEntered: PlaceId | null = null;
   /** 들어가기 동작 중에 온 인사의 동작. 제자리로 돌아온 뒤 한다. */
   private greetAfterScene: ActionType | null = null;
   private path: FloorPoint[] = [];
-  private target: MarkId | null = null;
+  private target: PlaceId | null = null;
   private goalHeading: number | null = null;
   private dragPoint: FloorPoint | null = null;
   private down: PointerState | null = null;
@@ -652,7 +747,7 @@ export class LobbySim {
    * 장소에서 '들어가기'를 눌렀을 때의 동작을 시작한다. 동작이 없는 장소이거나 "동작 줄이기"면 false(바로 들어간다).
    * 동작이 끝나면 consumeSceneEntered()가 그 장소를 한 번 돌려준다.
    */
-  startScene(mark: MarkId, nowMs: number): boolean {
+  startScene(mark: PlaceId, nowMs: number): boolean {
     const kind = SCENE_FOR_MARK[mark];
     if (!kind || this.reduceMotion) return false;
     this.greeting = null;
@@ -672,12 +767,12 @@ export class LobbySim {
     this.sceneFrom = { x: this.x, z: this.z };
     this.sceneEntered = null;
     this.scene = { kind, mark, phase: "in", t: 0 };
-    this.goalHeading = kind === "chair" ? CHAIR.heading : headingTo({ x: this.x, z: this.z }, MARKS[mark].faceTo);
+    this.goalHeading = kind === "chair" ? CHAIR.heading : headingTo({ x: this.x, z: this.z }, markInfo(mark).faceTo);
     return true;
   }
 
   /** 들어가기 동작이 끝나 판을 열 장소(한 번만 돌려준다). */
-  consumeSceneEntered(): MarkId | null {
+  consumeSceneEntered(): PlaceId | null {
     const mark = this.sceneEntered;
     this.sceneEntered = null;
     return mark;
@@ -703,7 +798,7 @@ export class LobbySim {
     this.sceneEntered = null;
     this.vx = 0;
     this.vz = 0;
-    this.goalHeading = headingTo({ x: this.x, z: this.z }, MARKS[mark].faceTo);
+    this.goalHeading = headingTo({ x: this.x, z: this.z }, markInfo(mark).faceTo);
     this.greetAfterSceneEnds();
   }
 
@@ -740,6 +835,16 @@ export class LobbySim {
       }
     }
     this.checkZoneWhenStopped = true;
+  }
+
+  /** 구역을 바꿀 때: 하던 일을 모두 멈추고 point에 heading을 보고 선다(장소 도착은 없다). */
+  placeAt(point: FloorPoint, heading: number, nowMs: number): void {
+    this.relayout(nowMs);
+    this.x = point.x;
+    this.z = point.z;
+    this.heading = heading;
+    this.goalHeading = heading;
+    this.checkZoneWhenStopped = false;
   }
 
   /** 들어가기 동작 중에 왔던 인사를 한다(앞을 보고 동작한다). */
@@ -801,7 +906,7 @@ export class LobbySim {
     const s = this.scene;
     if (!s || !this.sceneFrom) return;
     s.t += step;
-    const mark = MARKS[s.mark];
+    const mark = markInfo(s.mark);
     const prevX = this.x;
     const prevZ = this.z;
     if (s.kind === "chair") {
@@ -850,12 +955,19 @@ export class LobbySim {
     }
   }
 
-  /** 바닥 점이나 장소로 걸어간다. 갈 수 없으면 false(움직이지 않는다). */
-  goTo(point: FloorPoint | null, mark: MarkId | null): boolean {
+  /**
+   * 바닥 점이나 장소로 걸어간다. 갈 수 없으면 false(움직이지 않는다).
+   * 마을에서는 걸어갈 수 없는 곳(건물·분수 등)이나 마을 밖을 눌러도, 누른 곳에서 가장 가까운 걸어갈 수 있는 곳으로 간다(방은 움직이지 않는다).
+   */
+  goTo(point: FloorPoint | null, mark: PlaceId | null): boolean {
     let goals: FloorPoint[];
-    if (mark) goals = MARKS[mark].approach;
+    if (mark) goals = markInfo(mark).approach;
     else if (point && isFree(point.x, point.z)) goals = [point];
-    else return false;
+    else if (point && area === "village") {
+      const spot = nearestReachableSpot({ x: this.x, z: this.z }, point);
+      if (!spot) return false;
+      goals = [spot];
+    } else return false;
     const path = findPath({ x: this.x, z: this.z }, goals);
     if (!path) return false;
     this.wake();
@@ -864,7 +976,7 @@ export class LobbySim {
     this.arrived = null;
     this.action = null;
     const last = path[path.length - 1] ?? { x: this.x, z: this.z };
-    this.goalHeading = mark ? headingTo(last, MARKS[mark].faceTo) : null;
+    this.goalHeading = mark ? headingTo(last, markInfo(mark).faceTo) : null;
     return true;
   }
 
@@ -928,9 +1040,9 @@ export class LobbySim {
   }
 
   /** 장소에 도착한다(그 장소를 바라본다). mark가 null이면 도착이 아니다. */
-  private arrive(mark: MarkId | null): void {
+  private arrive(mark: PlaceId | null): void {
     this.arrived = mark;
-    this.goalHeading = mark ? headingTo({ x: this.x, z: this.z }, MARKS[mark].faceTo) : null;
+    this.goalHeading = mark ? headingTo({ x: this.x, z: this.z }, markInfo(mark).faceTo) : null;
   }
 
   /** 한 프레임 진행. dt는 초. */
@@ -986,7 +1098,7 @@ export class LobbySim {
           this.vx = 0;
           this.vz = 0;
           // 장소를 눌러 왔으면 그 장소, 바닥을 눌러 왔으면 멈춘 자리의 장소 구역(없으면 도착이 아니다)
-          this.arrive(this.target ?? markZoneAt(this.x, this.z));
+          this.arrive(this.target ?? placeZoneAt(this.x, this.z));
         }
       } else if (d > (this.dragging ? 0.25 : 0)) {
         const lastLeg = !this.dragging && this.path.length === 1;
@@ -1023,7 +1135,7 @@ export class LobbySim {
     // 끌기를 마친 뒤 멈추면, 멈춘 자리가 장소 구역 안인지 본다
     if (this.checkZoneWhenStopped && !this.dragging && !this.path.length && Math.hypot(this.vx, this.vz) <= 0.05) {
       this.checkZoneWhenStopped = false;
-      this.arrive(markZoneAt(this.x, this.z));
+      this.arrive(placeZoneAt(this.x, this.z));
     }
 
     let want: number | null = null;
@@ -1053,9 +1165,9 @@ export class LobbySim {
     else if (!moving && this.greeting) {
       bubbleText = this.greeting;
       idleBubble = true;
-    } else if (place) {
-      bubbleText = MARKS[place].prompt;
-      bubbleButton = MARKS[place].buttonLabel;
+    } else if (place && markInfo(place).prompt) {
+      bubbleText = markInfo(place).prompt;
+      bubbleButton = markInfo(place).buttonLabel;
     }
     const shownPlace = bubbleButton !== null ? place : null;
     return {
@@ -1079,12 +1191,12 @@ export class LobbySim {
   /** 말풍선 버튼을 눌렀을 때 띄울 안내. 도착한 곳이 없으면 null. */
   enterMessage(): string | null {
     const place = this.currentPlace();
-    return place ? MARKS[place].enterMessage : null;
+    return place ? markInfo(place).enterMessage : null;
   }
 
   /** 지금 있는 장소: 도착한 장소, 아니면 지금 서 있거나 지나는 장소 구역. 없으면 null. */
-  currentPlace(): MarkId | null {
-    return this.arrived ?? markZoneAt(this.x, this.z);
+  currentPlace(): PlaceId | null {
+    return this.arrived ?? placeZoneAt(this.x, this.z);
   }
 
   /** 시험용으로만 쓰는 무작위(두리번 간격 등). */

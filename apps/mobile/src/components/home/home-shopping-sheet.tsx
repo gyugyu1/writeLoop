@@ -419,7 +419,8 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
               // 방송 칸 전체가 버튼이다(ON AIR 줄, 남은 시간, 라룹이 소개를 눌러도 상세창이 열린다)
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`오늘의 방송 상품 ${shopProductName(broadcastItem.type)}, ${shop.broadcast.salePrice}룹, 자세히 보기`}
+                // 칸 전체가 한 버튼이라 할인율도 이름에 넣는다(1초마다 바뀌는 남은 시간은 넣지 않는다. 계속 다시 읽힌다)
+                accessibilityLabel={`오늘의 방송 상품 ${shopProductName(broadcastItem.type)}, ${shop.broadcast.salePrice}룹, ${discountOf(broadcastItem) ?? 20}% 할인, 자세히 보기`}
                 style={styles.broadcast}
                 onPress={() => openDetail(broadcastItem.type)}
               >

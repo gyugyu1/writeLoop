@@ -26,6 +26,9 @@
 
 // 작업 079 03 결정(사용자 2026-11-11 "가짜 그림판이 신호를 보내게"): 방이 처음 보이기 전에는 이름표·장소 안내·말풍선을 숨기므로,
 // 가짜 3D 그림판이 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 준비만 바꿨다. 단언·기대값·입력은 그대로다.
+// 작업 085 03 결정 1(사용자 2026-11-12, private 작업 폴더 085-2026-11-12-로비-꾸미기-완료-빠르게): '완료'로 나오면 로딩 표시("방을 정리하고 있어요")가
+// 떠 있는 동안 이름표를 숨기므로, X3·X11은 '완료' 직후 표시가 보이고 이름표가 숨는지 본 뒤 1.5초가 지나 표시가 내려가면 이름표가 보이는지 보게 고쳤다.
+// 저장 한 번·새 배치·막힌 칸·메뉴·탭 확인은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -165,6 +168,8 @@ const SAVE_FAILED = "배치를 저장하지 못했어요. 다시 눌러 주세�
 const STREAK_CHIP = "연속 2일";
 const MENU_LABELS = ["질문에 답하기", "영어일기", "지금 생각나는대로", "학습 기록"];
 const TAB_LABELS = ["홈", "기록", "내정보"];
+/** 085: '완료'로 꾸미기에서 나온 뒤 뜨는 로딩 표시 글(085 명세 바뀌는 동작 2). */
+const DONE_LOADING = "방을 정리하고 있어요";
 const NAME_TAGS = ["오늘의 질문", "생각 창가", "일기 책상", "밖으로", "학습 기록"];
 const ALL_MARKS: MarkId[] = ["board", "window", "desk", "bookcase", "door"];
 
@@ -1158,6 +1163,18 @@ describe("나오기와 저장", () => {
     expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(W_CENTER));
     expect(sortedSolid()).toContain("4,6");
     expect(screen.getByText(STREAK_CHIP)).toBeTruthy();
+    for (const label of [...MENU_LABELS, ...TAB_LABELS]) expect(screen.queryAllByText(label).length).toBeGreaterThan(0);
+    // 085 03 결정 1: '완료' 직후에는 로딩 표시가 보이고 이름표가 숨는다("학습 기록"은 메뉴 버튼 글과 같아 이름표만인 넷을 본다)
+    expect(screen.queryAllByText(DONE_LOADING).length).toBeGreaterThan(0);
+    for (const label of NAME_TAGS.filter((tag) => !MENU_LABELS.includes(tag))) {
+      expect({ label, shown: screen.queryAllByText(label).length }).toEqual({ label, shown: 0 });
+    }
+    // 이 파일의 가짜 3D 그림판은 프레임을 그리지 않으므로, 085 03 결정 2-2(프레임이 없어도 나온 때부터 1.5초 뒤 내림)로 표시가 내려간 뒤 본다
+    await act(async () => {
+      jest.advanceTimersByTime(1600);
+    });
+    await flushAsync();
+    expect(screen.queryAllByText(DONE_LOADING)).toHaveLength(0);
     for (const label of [...MENU_LABELS, ...TAB_LABELS, ...NAME_TAGS]) expect(screen.queryAllByText(label).length).toBeGreaterThan(0);
   });
 

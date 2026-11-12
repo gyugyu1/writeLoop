@@ -90,9 +90,14 @@ function normalizeQueryParam(value?: string | string[]) {
 }
 
 export default function LoginScreen() {
-  const params = useLocalSearchParams<{ redirectTo?: string | string[]; mode?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    redirectTo?: string | string[];
+    mode?: string | string[];
+    email?: string | string[];
+    reset?: string | string[];
+  }>();
   const { currentUser, isHydrating, signIn, signInWithApple, signInWithSocial } = useSession();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => normalizeQueryParam(params.email));
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const isEmailFormOpen = false;
@@ -103,6 +108,7 @@ export default function LoginScreen() {
   const postLoginHref = useMemo(() => resolvePostLoginHref(params.redirectTo), [params.redirectTo]);
   const loginMode = useMemo(() => normalizeQueryParam(params.mode), [params.mode]);
   const redirectTo = useMemo(() => normalizeQueryParam(params.redirectTo), [params.redirectTo]);
+  const isPasswordResetDone = normalizeQueryParam(params.reset) === "done";
   const signupHref = useMemo<Href>(() => {
     return (redirectTo
       ? `/signup?redirectTo=${encodeURIComponent(redirectTo)}`
@@ -116,6 +122,17 @@ export default function LoginScreen() {
       ? `/login?mode=email&redirectTo=${encodeURIComponent(redirectTo)}`
       : "/login?mode=email") as Href;
   }, [redirectTo]);
+
+  function openForgotPassword() {
+    const query = [
+      email.trim() ? `email=${encodeURIComponent(email.trim())}` : "",
+      redirectTo ? `redirectTo=${encodeURIComponent(redirectTo)}` : ""
+    ]
+      .filter(Boolean)
+      .join("&");
+    setError("");
+    router.push((query ? `/forgot-password?${query}` : "/forgot-password") as Href);
+  }
 
   function openLegalDocument(document: "privacy-policy" | "privacy-consent") {
     router.push({
@@ -325,8 +342,14 @@ export default function LoginScreen() {
                     active={rememberMe}
                     onPress={() => setRememberMe((current) => !current)}
                   />
+                  <Pressable onPress={openForgotPassword} accessibilityRole="button" hitSlop={8}>
+                    <Text style={styles.forgotPasswordLink}>비밀번호 찾기</Text>
+                  </Pressable>
                 </View>
 
+                {isPasswordResetDone && !error ? (
+                  <Text style={styles.noticeText}>비밀번호를 바꿨어요. 새 비밀번호로 로그인해 주세요.</Text>
+                ) : null}
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 <Pressable
@@ -714,7 +737,20 @@ const styles = StyleSheet.create({
   },
   utilityRow: {
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingTop: 4
+  },
+  forgotPasswordLink: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#8D6B43",
+    textDecorationLine: "underline"
+  },
+  noticeText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#4F6B3A"
   },
   utilityToggle: {
     flexDirection: "row",

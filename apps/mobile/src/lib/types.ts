@@ -1,3 +1,5 @@
+import type { LobbyLayout } from "./lobby3d/lobby-layout";
+
 export type DailyDifficulty = "I" | "A" | "B" | "C";
 export type PromptDifficulty = "I" | "A" | "B" | "C";
 export type MobilePlatform = "ios" | "android";
@@ -396,6 +398,36 @@ export interface NowInEnglishReflectionEntryRequest {
 }
 
 /** 완료 응답에 붙는 이번 룹 적립 결과(라룹 홈쇼핑에서 쓰는 포인트). 적립 시점이 아니면 null이다. */
+/** GET /api/loop-points: 룹 잔액과 오늘 활동별 적립 횟수. */
+export interface LoopPointsSummary {
+  balance: number;
+}
+
+/** 라룹 홈쇼핑 가구 한 칸. salePrice는 그날 방송 상품만 있다. */
+export interface HomeShoppingItem {
+  type: string;
+  price: number;
+  salePrice: number | null;
+  owned: number;
+}
+
+/** GET /api/home-shopping */
+export interface HomeShopping {
+  balance: number;
+  broadcast: { type: string; price: number; salePrice: number };
+  items: HomeShoppingItem[];
+}
+
+/** POST /api/home-shopping/orders 결과. layout은 주문 뒤 저장된 배치다. */
+export interface HomeShoppingOrderResult {
+  type: string;
+  price: number;
+  balance: number;
+  owned: number;
+  itemId: string;
+  layout: LobbyLayout;
+}
+
 export interface LoopPointsReward {
   activity: "question" | "diary" | "nowInEnglish";
   earned: number;

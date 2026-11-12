@@ -35,8 +35,11 @@ import type {
   Feedback,
   FeedbackRequest,
   FeedbackSessionStatus,
+  HomeShopping,
+  HomeShoppingOrderResult,
   HistorySession,
   LoginRequest,
+  LoopPointsSummary,
   MobilePlatform,
   MobileHomeSnapshot,
   MonthWritingStatus,
@@ -1572,6 +1575,47 @@ export async function saveLobbyLayout(layout: LobbyLayout): Promise<LobbyLayout>
     throw new Error("가구 배치를 저장하지 못했어요.");
   }
   return saved;
+}
+
+/** 룹 잔액. 로그인하지 않았으면 null. */
+export async function getLoopPoints(): Promise<LoopPointsSummary | null> {
+  const response = await apiFetch("/api/loop-points");
+  if (response.status === 401) {
+    return null;
+  }
+  if (!response.ok) {
+    throw await parseApiError(response, "룹을 불러오지 못했어요.");
+  }
+  return (await response.json()) as LoopPointsSummary;
+}
+
+/** 라룹 홈쇼핑 목록(잔액, 오늘의 방송 상품, 가구마다 가격·가진 개수). */
+export async function getHomeShopping(): Promise<HomeShopping> {
+  const response = await apiFetch("/api/home-shopping");
+  if (!response.ok) {
+    throw await parseApiError(response, "홈쇼핑을 불러오지 못했어요");
+  }
+  return (await response.json()) as HomeShopping;
+}
+
+/** 라룹 홈쇼핑 주문. price는 화면에 보인 가격이다(서버의 지금 가격과 다르면 409 PRICE_CHANGED). */
+export async function orderHomeShopping(request: { type: string; price: number }): Promise<HomeShoppingOrderResult> {
+  const response = await apiFetch("/api/home-shopping/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+  if (!response.ok) {
+    throw await parseApiError(response, "주문하지 못했어요. 다시 시도해 주세요");
+  }
+  const payload = (await response.json()) as Omit<HomeShoppingOrderResult, "layout"> & { layout: unknown };
+  const layout = parseLobbyLayoutPayload(payload.layout);
+  if (!layout) {
+    throw new Error("주문하지 못했어요. 다시 시도해 주세요");
+  }
+  return { ...payload, layout };
 }
 
 export async function getTodayWritingStatus(): Promise<TodayWritingStatus | null> {

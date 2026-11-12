@@ -17,6 +17,8 @@ export interface LobbyLayoutState {
   ready: boolean;
   /** 배치를 계정에 저장한다. 성공하면 저장한 배치(서버가 돌려준 것)를 돌려주고, 실패하면 던진다. */
   save: (layout: LobbyLayout) => Promise<LobbyLayout>;
+  /** 서버가 이미 저장한 배치(홈쇼핑 주문 뒤 배치 등)를 홈의 배치로 둔다. */
+  apply: (layout: LobbyLayout) => void;
 }
 
 /** 로그인한 사용자의 id. 바뀌면 그 계정 몫으로 기억해 둔 배치(없으면 처음 배치)로 바꾸고 그 계정의 배치를 새로 불러온다. 로그인 전이면 null(불러오지 않는다). */
@@ -101,5 +103,16 @@ export function useLobbyLayout(userId: number | null): LobbyLayoutState {
     return saved;
   }, []);
 
-  return { layout, ready, save };
+  /** 서버가 이미 저장한 배치(예: 홈쇼핑 주문 뒤 배치)를 홈의 배치로 둔다. 늦게 온 옛 불러오기는 버리고, 기기에도 기억한다. */
+  const apply = useCallback((next: LobbyLayout) => {
+    requestRef.current += 1;
+    loadedRef.current = true;
+    fromServerRef.current = true;
+    setLayout(next);
+    setReady(true);
+    const owner = userIdRef.current;
+    if (owner !== null) void rememberLayout(owner, next);
+  }, []);
+
+  return { layout, ready, save, apply };
 }

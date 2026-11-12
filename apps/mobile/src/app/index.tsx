@@ -6,6 +6,7 @@ import HomeFeatureTutorial from "@/components/home-feature-tutorial";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import LobbySheet from "@/components/home/lobby-sheet";
+import HomeShoppingSheet from "@/components/home/home-shopping-sheet";
 import {
   DifficultySectionContent,
   FeaturedRecommendationContent,
@@ -35,13 +36,13 @@ import { useHomeMonthCalendar } from "@/components/home/use-home-month-calendar"
 import { useLobbyGreeting } from "@/components/home/use-lobby-greeting";
 import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
-import { trackDailyPromptClick } from "@/lib/api";
+import { getLoopPoints, trackDailyPromptClick } from "@/lib/api";
 import { getDifficultyMeta } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useAppOverlayStatus } from "@/lib/app-overlay-status";
 import { useSession } from "@/lib/session";
 import { getStreakMascotStage } from "@/lib/streak-mascot";
-import type { DailyDifficulty, DiaryCalendarSummary } from "@/lib/types";
+import type { DailyDifficulty, DiaryCalendarSummary, HomeShoppingOrderResult } from "@/lib/types";
 
 export default function HomeScreen() {
   const { currentUser, isHydrating, refreshSession } = useSession();
@@ -73,7 +74,52 @@ export default function HomeScreen() {
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   // 계정에 저장한 가구 배치(홈에 들어올 때마다 불러온다)
-  const { layout: lobbyLayout, ready: lobbyLayoutReady, save: saveLobbyLayoutForHome } = useLobbyLayout(currentUser?.id ?? null);
+  const {
+    layout: lobbyLayout,
+    ready: lobbyLayoutReady,
+    save: saveLobbyLayoutForHome,
+    apply: applyLobbyLayoutForHome
+  } = useLobbyLayout(currentUser?.id ?? null);
+  // 라룹 홈쇼핑: 열렸는지, 룹 잔액(머리 줄 칩. 불러오는 중·실패면 null), '바로 놓기' 요청
+  const [isShopOpen, setIsShopOpen] = useState(false);
+  const [loopBalance, setLoopBalance] = useState<number | null>(null);
+  const [placeRequest, setPlaceRequest] = useState<{ key: number; itemId: string; type: string } | null>(null);
+  const loopBalanceRequest = useRef(0);
+  const homeUserId = currentUser?.id ?? null;
+  // 홈이 보일 때마다 잔액을 불러온다. 계정이 바뀌면 앞 계정의 늦은 응답은 버린다
+  useFocusEffect(
+    useCallback(() => {
+      loopBalanceRequest.current += 1;
+      const request = loopBalanceRequest.current;
+      if (homeUserId === null) {
+        setLoopBalance(null);
+        return;
+      }
+      // 부르기 자체가 던져도(함수가 없는 시험 환경 등) 칩만 숨기고 홈은 그대로 쓴다
+      Promise.resolve()
+        .then(() => getLoopPoints())
+        .then((summary) => {
+          if (request === loopBalanceRequest.current) setLoopBalance(summary ? summary.balance : null);
+        })
+        .catch(() => {
+          if (request === loopBalanceRequest.current) setLoopBalance(null);
+        });
+    }, [homeUserId])
+  );
+  const handleShopBalance = useCallback((balance: number) => {
+    loopBalanceRequest.current += 1;
+    setLoopBalance(balance);
+  }, []);
+  const handleShopOrdered = useCallback(
+    (result: HomeShoppingOrderResult) => {
+      applyLobbyLayoutForHome(result.layout);
+    },
+    [applyLobbyLayoutForHome]
+  );
+  const handlePlaceNow = useCallback((result: HomeShoppingOrderResult) => {
+    setIsShopOpen(false);
+    setPlaceRequest((current) => ({ key: (current?.key ?? 0) + 1, itemId: result.itemId, type: result.type }));
+  }, []);
   // 로비 편집 모드('꾸미기') 동안은 아래 탭바를 숨긴다
   const [isEditingLobby, setIsEditingLobby] = useState(false);
   // 로비 위로 올라오는 판(질문·일기·생각). 한 번에 하나만 연다.
@@ -390,7 +436,7 @@ export default function HomeScreen() {
           onEnterMark={handleEnterMark}
           idleButton={incompleteLoopRoute ? { label: "이어 쓰기", onPress: handleResumeLoop } : null}
           greeting={lobbyGreeting}
-          inputBlocked={openSheet !== null || isCalendarOpen}
+          inputBlocked={openSheet !== null || isCalendarOpen || isShopOpen}
           onProjection={handleProjection}
           bottomInset={lobbyBottomInset}
           paused={!isFocused}
@@ -398,9 +444,20 @@ export default function HomeScreen() {
           layoutReady={lobbyLayoutReady}
           onSaveLayout={saveLobbyLayoutForHome}
           onEditingChange={setIsEditingLobby}
+          onOpenShop={() => setIsShopOpen(true)}
+          shopBalance={loopBalance}
+          placeRequest={placeRequest}
         />
       </View>
       {isEditingLobby ? null : <MobileNavBar activeTab="home" />}
+
+      <HomeShoppingSheet
+        visible={isFocused && isShopOpen}
+        onClose={() => setIsShopOpen(false)}
+        onBalance={handleShopBalance}
+        onOrdered={handleShopOrdered}
+        onPlaceNow={handlePlaceNow}
+      />
 
       <LobbySheet visible={isFocused && openSheet === "question"} title="질문에 답하기" onClose={closeSheet}>
         <HomeStatusPanel

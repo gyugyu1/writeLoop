@@ -26,7 +26,7 @@ import {
 } from "@/lib/lobby3d/engine";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
-import { FURNITURE_TYPES, furnitureType } from "@/lib/lobby3d/furniture-catalog";
+import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
 import { sameLobbyLayout, storedItems, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
 import { useLobbyClock, type ClockOverride } from "@/lib/lobby3d/use-lobby-clock";
@@ -61,9 +61,6 @@ const EDIT_CANNOT_PLACE = "여기에는 놓을 수 없어요. 원래 자리로 �
 const EDIT_CANNOT_MOVE_HERE = "여기에는 둘 수 없어요";
 const EDIT_NO_ROOM = "놓을 자리가 없어요. 가구를 옮기거나 치운 뒤 다시 꺼내 주세요";
 const STORAGE_EMPTY = "보관함이 비었어요";
-const EDIT_LIMIT = "가구는 40개까지 둘 수 있어요";
-/** 개발 빌드의 '가구 더하기' 탭에 보이는 종류: 치울 수 있는 모든 종류(카탈로그 순서). 상점이 생기면 탭과 함께 없앤다. */
-const ADDABLE_TYPES = FURNITURE_TYPES.filter((type) => type.removable);
 
 /** 편집 모드에서 그릴 것과 '완료'를 누를 수 있는지, '치우기' 버튼을 띄울지, 보관함에 든 가구(치운 순서). */
 interface EditView extends LobbyCanvasEdit {
@@ -117,8 +114,6 @@ function sameView(a: ViewState, b: ViewState) {
 export interface Lobby3dScreenProps {
   /** 시험판(동작 버튼·속도·명암·외곽선 조절). 기본은 켬(개발 화면). */
   devPanel?: boolean;
-  /** 꾸미기 보관함 줄에 개발용 '가구 더하기' 탭을 보일지. 기본은 개발 빌드(__DEV__)에서만이다(상점이 생기기 전까지). */
-  allowAddFurniture?: boolean;
   /** 초당 프레임·동작 표시. 기본은 시험판과 같다(홈은 개발 빌드에서만 켠다). */
   showFps?: boolean;
   /** 머리 줄 왼쪽 칩 글. 기본은 시험판의 고정 글. */
@@ -148,6 +143,15 @@ export interface Lobby3dScreenProps {
   onSaveLayout?: (layout: LobbyLayout) => Promise<LobbyLayout>;
   /** 편집 모드에 들어가고 나올 때(홈이 아래 탭바를 숨긴다). */
   onEditingChange?: (editing: boolean) => void;
+  /** 라룹 홈쇼핑을 연다. 있고 꾸미기를 쓸 수 있으면 머리 줄 '꾸미기' 옆에 '홈쇼핑' 버튼이 보인다. */
+  onOpenShop?: () => void;
+  /** 룹 잔액. 숫자면 '홈쇼핑' 옆에 "N룹" 칩이 보인다(누르면 홈쇼핑). null이면 칩을 숨긴다(불러오는 중·실패). */
+  shopBalance?: number | null;
+  /**
+   * 홈쇼핑 '바로 놓기': key가 바뀌면 꾸미기를 열고 그 가구(보관함의 itemId)를 꺼낸 채로 시작한다.
+   * 홈이 주문 뒤 배치(layout)를 먼저 넘긴 다음 렌더에서 함께 바꾼다.
+   */
+  placeRequest?: { key: number; itemId: string; type: string } | null;
 }
 
 /** 꾸미기 보관함 줄의 가구 한 칸: 가구 모양 그림(없으면 이름 첫 글자)과 이름. 보관함은 가구 하나마다 한 칸이다. */
@@ -168,7 +172,6 @@ function FurnitureTile({ type, label, onPress }: { type: string; label?: string;
 
 export default function Lobby3dScreen({
   devPanel = true,
-  allowAddFurniture = __DEV__,
   showFps = devPanel,
   streakLabel = "연속 1일",
   onStreakPress,
@@ -183,7 +186,10 @@ export default function Lobby3dScreen({
   layout,
   layoutReady = true,
   onSaveLayout,
-  onEditingChange
+  onEditingChange,
+  onOpenShop,
+  shopBalance = null,
+  placeRequest = null
 }: Lobby3dScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const bottomPad = bottomInset ?? insets.bottom;
@@ -235,8 +241,6 @@ export default function Lobby3dScreen({
   // 보관함 줄 머리(개발 빌드는 '보관함' 탭) 이름: 보관함 전체 개수, 0이면 개수 없이
   const storageTitle = storedCount > 0 ? `보관함 ${storedCount}` : "보관함";
   const [saving, setSaving] = useState(false);
-  // 개발 빌드 보관함 줄의 고른 탭(꾸미기에 들어올 때마다 '보관함'으로 시작)
-  const [storageTab, setStorageTab] = useState<"stored" | "add">("stored");
   const savingRef = useRef(false);
   savingRef.current = saving;
   // 편집 모드의 카메라 거리. 들어갈 때 방이 가로로 다 보이게 물러나고, 편집 중에 카메라 거리를 바꾸면 그 거리를 따른다.
@@ -288,7 +292,9 @@ export default function Lobby3dScreen({
   );
   useEffect(() => {
     if (!layout || editing) return;
-    applyLayout(layout);
+    // 보관함만 바뀐 배치(예: 홈쇼핑 주문으로 보관함에 가구가 더해짐)는 3D를 다시 짓지 않는다. 보관함 가구는 꺼낼 때 3D를 붙인다
+    const current = activeLobbyLayout();
+    applyLayout(layout, sameLobbyLayout({ ...layout, stored: storedItems(current) }, current));
   }, [layout, editing, applyLayout]);
   // 3D 방은 처음 지을 배치가 정해진 뒤 그린다. 정해진 배치를 먼저 적용하고(위 효과) 다음 그리기에서 짓게 해, 기본 배치로 먼저 짓지 않는다
   const [roomReady, setRoomReady] = useState(layoutReady);
@@ -561,8 +567,6 @@ export default function Lobby3dScreen({
     sim.relayout(Date.now());
     syncView();
     setCameraOpen(false);
-    // 개발 빌드의 보관함 줄 탭은 들어올 때마다 '보관함'으로 시작한다
-    setStorageTab("stored");
     editorRef.current = new LobbyEditor(activeLobbyLayout());
     setEditViewWidth(Math.max(viewWidth, roomFitViewWidth(screenWidth / Math.max(1, screenHeight))));
     refreshEdit();
@@ -604,15 +608,6 @@ export default function Lobby3dScreen({
     else if (notice === "no-room") showToast(EDIT_NO_ROOM);
     refreshEdit();
   };
-  const addEdit = (type: string) => {
-    const editor = editorRef.current;
-    if (!editor || savingRef.current) return;
-    const notice = editor.addNew(type);
-    if (notice === "red-first") showToast(EDIT_RED_FIRST);
-    else if (notice === "no-room") showToast(EDIT_NO_ROOM);
-    else if (notice === "limit") showToast(EDIT_LIMIT);
-    refreshEdit();
-  };
   const rotateEdit = () => {
     const editor = editorRef.current;
     if (!editor || savingRef.current) return;
@@ -642,6 +637,19 @@ export default function Lobby3dScreen({
       showToast(EDIT_SAVE_FAILED);
     }
   };
+  // 홈쇼핑 '바로 놓기': 꾸미기를 열고 산 가구를 보관함에서 꺼낸 채로 시작한다. 배치(layout)는 홈이 같은 렌더에서 먼저 넘겨, 위 효과가 먼저 적용한다
+  const placeRequestKey = placeRequest?.key ?? null;
+  const placeNowRef = useRef<(request: { itemId: string; type: string }) => void>(() => undefined);
+  placeNowRef.current = (request) => {
+    startEdit();
+    if (editorRef.current) takeOutEdit({ id: request.itemId, type: request.type });
+  };
+  useEffect(() => {
+    if (placeRequestKey === null || !placeRequest) return;
+    placeNowRef.current({ itemId: placeRequest.itemId, type: placeRequest.type });
+    // key가 바뀔 때만 한 번 한다
+  }, [placeRequestKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const cancelEditRef = useRef(cancelEdit);
   cancelEditRef.current = cancelEdit;
   // 안드로이드 뒤로 가기는 '취소'와 같다(저장하는 동안에는 아무 일도 하지 않는다)
@@ -861,6 +869,21 @@ export default function Lobby3dScreen({
                 <Text style={styles.decorText}>꾸미기</Text>
               </Pressable>
             ) : null}
+            {onSaveLayout && onOpenShop ? (
+              <Pressable accessibilityRole="button" style={styles.decorButton} onPress={onOpenShop}>
+                <Text style={styles.decorText}>홈쇼핑</Text>
+              </Pressable>
+            ) : null}
+            {onSaveLayout && onOpenShop && shopBalance !== null ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${shopBalance}룹, 홈쇼핑 열기`}
+                style={styles.chip}
+                onPress={onOpenShop}
+              >
+                <Text style={styles.chipText}>{shopBalance}룹</Text>
+              </Pressable>
+            ) : null}
           </View>
         )}
         <View style={styles.headerLeft}>
@@ -1037,23 +1060,7 @@ export default function Lobby3dScreen({
           // 보관함 줄: 꾸미기 동안 화면 맨 아래에 늘 보인다. 가림막이 없어 줄이 보이는 채로 방의 가구를 다룬다
           <View accessibilityLabel="보관함" style={[styles.storageTray, { paddingBottom: insets.bottom + 12 }]}>
             <View style={styles.rowBetween}>
-              {allowAddFurniture ? (
-                <View style={styles.headerLeft}>
-                  {(["stored", "add"] as const).map((tab) => (
-                    <Pressable
-                      key={tab}
-                      accessibilityRole="tab"
-                      accessibilityState={{ selected: storageTab === tab }}
-                      style={[styles.storageTab, storageTab === tab && styles.storageTabOn]}
-                      onPress={() => setStorageTab(tab)}
-                    >
-                      <Text style={styles.storageTabText}>{tab === "stored" ? storageTitle : "가구 더하기"}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.storageTitle}>{storageTitle}</Text>
-              )}
+              <Text style={styles.storageTitle}>{storageTitle}</Text>
               {/* 돌리기·치우기는 줄 머리 오른쪽에 둔다. 가구를 골랐을 때만 보이고, 아니면 자리만 비워 둔다(머리의 다른 것이 움직이지 않게) */}
               <View style={styles.headerLeft}>
                 {editView?.handle ? (
@@ -1086,13 +1093,7 @@ export default function Lobby3dScreen({
                 )}
               </View>
             </View>
-            {allowAddFurniture && storageTab === "add" ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storageList}>
-                {ADDABLE_TYPES.map((type) => (
-                  <FurnitureTile key={type.id} type={type.id} label={`${type.name} 더하기`} onPress={() => addEdit(type.id)} />
-                ))}
-              </ScrollView>
-            ) : editView && editView.stored.length > 0 ? (
+            {editView && editView.stored.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storageList}>
                 {editView.stored.map((item) => (
                   <FurnitureTile key={item.id} type={item.type} onPress={() => takeOutEdit(item)} />
@@ -1247,9 +1248,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     gap: 10
   },
-  storageTab: { minHeight: 36, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, borderWidth: 2, borderColor: LINE, backgroundColor: "#FFF7EE" },
-  storageTabOn: { backgroundColor: "#FFE2C2" },
-  storageTabText: { fontSize: 13, fontWeight: "700", color: "#2B1810" },
   tile: { width: 76, alignItems: "center", gap: 4 },
   tileBox: {
     width: 64,

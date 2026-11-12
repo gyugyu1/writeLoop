@@ -110,6 +110,11 @@ jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
       roomShownSent.current = true;
       onRoomShown();
     }, [onRoomShown]);
+    // 088 ② 03 결정 1: 구역이 마을로 바뀌면 마을 모델이 들어왔다고 알린다(S14를 고치며 준비만 더함)
+    const area = props.area ?? "room";
+    React.useEffect(() => {
+      if (area === "village") mockCanvas.props?.onVillageReady?.();
+    }, [area]);
     return React.createElement("Lobby3dCanvasMock");
   }
   return { __esModule: true, default: MockLobby3dCanvas };
@@ -791,17 +796,24 @@ describe("[spec] 메뉴와 장소(S10~S14)", () => {
     expect(router.push).not.toHaveBeenCalled();
   });
 
-  it("S14: 문(밖으로)에 도착해 '나가기'를 누르면 지금 시험판의 안내만 뜨고 판이 열리지 않는다", async () => {
+  // 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침"): '나가기'는 옛 안내 대신 마을로 나간다(② 02-qa-scenarios X2·X4).
+  // 판이 열리지 않고 다른 화면으로 가지 않는다는 단언은 그대로다.
+  it("S14(088 ② 03 결정 1): 문(밖으로)에 도착해 '나가기'를 누르면 옛 안내 없이 마을로 나가고 판이 열리지 않는다", async () => {
     await renderHome();
 
     await tapMark("door");
     await walkUntilArrived("door");
     await fireEvent.press(screen.getByRole("button", { name: "나가기" }));
     await flushAsync();
+    for (let index = 0; index < 30; index += 1) {
+      await act(async () => {
+        jest.advanceTimersByTime(50);
+        canvas().onFrame(0.05, Date.now());
+      });
+    }
 
-    // 안내는 role alert인 짧은 알림(지금 시험판과 같음)
-    const toast = screen.getByText("마을은 다음 업데이트에서 열려요");
-    expect(toast.parent!.props.accessibilityRole).toBe("alert");
+    expect(screen.queryByText("마을은 다음 업데이트에서 열려요", { includeHiddenElements: true })).toBeNull();
+    expect(canvas().area).toBe("village");
     expect(openSheets()).toEqual([]);
     expect(router.push).not.toHaveBeenCalled();
   });

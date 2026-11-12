@@ -263,13 +263,14 @@ describe("[spec] 064-① 처음 배치: 장소 다섯의 데이터(그대로 둘
       buttonLabel: "들어가기",
       enterMessage: "영어일기로 들어가요"
     },
+    // 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침")·3(들어갈 때 안내를 없앰)으로 밖으로의 문구와 안내만 고쳤다
     door: {
       label: "밖으로",
       faceTo: [4, 11.35],
       approach: [[4, 10.5]],
-      prompt: "밖으로 나가 볼까?\n마을은 다음에 열려.",
+      prompt: "밖으로 나가 볼까?",
       buttonLabel: "나가기",
-      enterMessage: "마을은 다음 업데이트에서 열려요"
+      enterMessage: ""
     },
     bookcase: {
       label: "학습 기록",

@@ -24,7 +24,9 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import type { ComponentType, MutableRefObject, ReactNode } from "react";
 
-const MODEL_FILES = ["lobby-furniture.glb", "lobby-room.glb", "writeloop.glb"];
+// 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침"): 앱이 미리 읽는 모델은 마을(lobby-village.glb)을 더한 넷이다.
+// 이 목록과 마을 모델 파일을 이름 문자열로 바꾸는 가짜만 더했고, 단언은 그대로다.
+const MODEL_FILES = ["lobby-furniture.glb", "lobby-room.glb", "lobby-village.glb", "writeloop.glb"];
 
 type PendingLoad = { url: string; onLoad: (data: unknown) => void; onError: (error: unknown) => void; settled: boolean };
 
@@ -99,6 +101,7 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
 jest.mock("@/assets/models/lobby-room.glb", () => "lobby-room.glb");
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
 jest.mock("@/assets/models/lobby-furniture.glb", () => "lobby-furniture.glb");
+jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");
   return {

@@ -38,6 +38,7 @@ import HomeScreen from "@/app/index";
 import type { Lobby3dCanvasProps } from "@/components/lobby3d/lobby3d-canvas";
 import { characterClipState, type CharacterClipInput } from "@/lib/lobby3d/character-clips";
 import { MARKS, headingTo, type FloorPoint, type MarkId } from "@/lib/lobby3d/engine";
+import { VILLAGE_START } from "@/lib/lobby3d/village";
 import { getDiaryCalendarSummary, getFeaturedDailyPrompt, getMobileHomeSnapshot, getMonthWritingStatus, getTodayWritingStatus, getWritingDraft, trackDailyPromptClick } from "@/lib/api";
 import { useAppOverlayStatus } from "@/lib/app-overlay-status";
 import { completeHomeTutorial, consumeHomeTutorialReplay, hasCompletedHomeTutorial } from "@/lib/home-tutorial";
@@ -103,6 +104,11 @@ jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
       roomShownSent.current = true;
       onRoomShown();
     }, [onRoomShown]);
+    // 088 ② 03 결정 1: 구역이 마을로 바뀌면 마을 모델이 들어왔다고 알린다(P1을 고치며 준비만 더함)
+    const area = props.area ?? "room";
+    React.useEffect(() => {
+      if (area === "village") mockCanvas.props?.onVillageReady?.();
+    }, [area]);
     return React.createElement("Lobby3dCanvasMock");
   }
   return { __esModule: true, default: MockLobby3dCanvas };
@@ -145,7 +151,6 @@ const RECORDS_MENU = "학습 기록";
 const SHEET_FOR: Record<"board" | "desk" | "window", string> = { board: SHEET.question, desk: SHEET.diary, window: SHEET.thought };
 /** 일기 책상의 서는 자리(지금 값). */
 const DESK_STAND: FloorPoint = { x: 1.5, z: 6.75 };
-const DOOR_MESSAGE = "마을은 다음 업데이트에서 열려요";
 const POKE_LINES = ["헤헤, 간지러워!", "응? 불렀어?", "오늘도 같이 쓰자!"];
 /** 오늘 완료 데이터에서 홈에 들어올 때의 인사(060-10 명세 1의 표). */
 const DONE_GREETING = "오늘도 해냈어!";
@@ -1102,10 +1107,11 @@ describe("[spec] 작업 063 그대로 둘 동작: \"동작 줄이기\"가 켜져
 // ---------- 그대로 둘 동작 ----------
 
 describe("[spec] 작업 063 그대로 둘 동작(지금 동작)", () => {
-  it("P1: 밖으로에서 '나가기'를 누르면 바로 마을 안내가 짧은 안내로 뜨고, 판이 열리지 않고 다른 화면으로 가지 않으며, 새 클립 없이 자리 그대로다", async () => {
+  // 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침")·3(밖으로의 들어갈 때 안내를 없앰): '나가기'는 안내 없이 마을로 나가
+  // 라룹이 집 문 앞(VILLAGE_START)에 선다(② 02-qa-scenarios X2·X4). 새 클립 없음, 판이 열리지 않음, 다른 화면으로 가지 않음은 그대로다.
+  it("P1(088 ② 03 결정 1): 밖으로에서 '나가기'를 누르면 안내 없이 마을로 나가 라룹이 집 문 앞에 서고, 판이 열리지 않고 다른 화면으로 가지 않으며, 새 클립이 없다", async () => {
     await renderHome();
     await arriveAt("door");
-    const spot = position();
 
     await pressEnter("door");
     const right = alertTexts();
@@ -1116,12 +1122,13 @@ describe("[spec] 작업 063 그대로 둘 동작(지금 동작)", () => {
     });
 
     expect({ right, newClips: [...seen], sheets: openSheets(), navigated: navigatedTo() }).toEqual({
-      right: [DOOR_MESSAGE],
+      right: [],
       newClips: [],
       sheets: [],
       navigated: []
     });
-    expect(position()).toEqual(spot);
+    expect(canvas().area).toBe("village");
+    expect(position()).toEqual({ x: VILLAGE_START.x, z: VILLAGE_START.z });
   });
 
   const MENUS: [string, string][] = [

@@ -15,6 +15,9 @@
 // 작업 063 03 결정 1(사용자 2026-11-08 "고치기"): '들어가기'를 누른 뒤의 확인을 동작(약 1초)이 끝난 뒤로 옮겼다(V2·V4·V6·V7·V8, waitEnterMotion). 단언은 그대로다.
 // 작업 079 03 결정(사용자 2026-11-11 "가짜 그림판이 신호를 보내게"): 방이 처음 보이기 전에는 이름표·장소 안내·말풍선을 숨기므로,
 // 가짜 3D 그림판이 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 준비만 바꿨다. 단언·기대값·입력은 그대로다.
+// 작업 088 ② 06 결정 1(사용자 2026-11-13 "둘 다 qa가 고침"): V2·V4·V6의 '밖으로'(door) 경우만, '나가기'를 누르면 홈에 들어가기(onEnterMark)를
+// 알리지 않고 마을로 간다로 고쳤다(expectEnteredAfterPress). 다른 장소와 다른 단언은 그대로다. 이를 위해 가짜 3D 그림판이 구역이 마을로 바뀌면
+// 마을 모델이 들어왔다(onVillageReady, ② 구현의 부르는 방법)고 알리게 준비만 더했다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import type { Lobby3dCanvasProps } from "@/components/lobby3d/lobby3d-canvas";
@@ -38,6 +41,11 @@ jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
       roomShownSent.current = true;
       onRoomShown();
     }, [onRoomShown]);
+    // 088 ② 06 결정 1: 구역이 마을로 바뀌면 마을 모델이 들어왔다고 알린다
+    const area = props.area ?? "room";
+    React.useEffect(() => {
+      if (area === "village") mockCanvas.props?.onVillageReady?.();
+    }, [area]);
     return React.createElement("Lobby3dCanvasMock");
   }
   return { __esModule: true, default: MockLobby3dCanvas };
@@ -48,12 +56,13 @@ jest.mock("@react-native-async-storage/async-storage", () =>
 );
 
 // ---------- 기대 문구(지금 장소 안내 그대로) ----------
+// 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침")로 밖으로(door)의 안내만 새 문구 "밖으로 나가 볼까?"로 고쳤다.
 
 const PROMPTS: Record<PlaceId, string> = {
   board: "오늘의 질문 게시판이야.\n질문에 답하러 갈까?",
   window: "생각 창가야.\n떠오르는 말을 바로 적어 볼까?",
   desk: "일기 책상이야.\n오늘 일기를 써 볼까?",
-  door: "밖으로 나가 볼까?\n마을은 다음에 열려."
+  door: "밖으로 나가 볼까?"
 };
 const BUTTONS: Record<PlaceId, string> = { board: "들어가기", window: "들어가기", desk: "들어가기", door: "나가기" };
 /** 장소와 아래 메뉴의 짝(지금 그대로). 밖으로는 짝이 없다. */
@@ -132,6 +141,22 @@ async function waitEnterMotion(done: () => boolean) {
       canvas().onFrame(0.05, Date.now());
     });
   }
+}
+
+/**
+ * 말풍선 버튼을 누른 뒤의 결과를 본다. 장소(board·window·desk)는 지금처럼 그 장소로 들어간다(onEnterMark를 그 장소로 한 번).
+ * 088 ② 06 결정 1: '밖으로'(door)의 '나가기'는 홈에 들어가기를 알리지 않고(onEnterMark 안 불림) 마을로 간다.
+ */
+async function expectEnteredAfterPress(mark: PlaceId, onEnterMark: jest.Mock) {
+  if (mark === "door") {
+    await waitEnterMotion(() => canvas().area === "village");
+    expect(canvas().area).toBe("village");
+    expect(onEnterMark).not.toHaveBeenCalled();
+    return;
+  }
+  await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
+  expect(onEnterMark).toHaveBeenCalledTimes(1);
+  expect(onEnterMark).toHaveBeenCalledWith(mark);
 }
 
 async function tapFloor(point: FloorPoint) {
@@ -218,21 +243,19 @@ describe("[spec] 작업 061 바뀔 동작: 구역 안에서 멈추면 장소 안
     expect(selectedMenus()).toEqual(lit ? [lit] : []);
   });
 
-  it.each(MARK_IDS)("V2: 장소(%s) 구역 안에 멈춰 나온 말풍선 버튼을 누르면 그 장소로 들어간다(가구를 눌러 도착했을 때와 같다)", async (mark) => {
+  it.each(MARK_IDS)("V2: 장소(%s) 구역 안에 멈춰 나온 말풍선 버튼을 누르면 그 장소로 들어간다(가구를 눌러 도착했을 때와 같다. '밖으로'는 마을로 간다, 088 ② 06 결정 1)", async (mark) => {
     const onEnterMark = jest.fn(() => true);
     await enter({ onEnterMark, onMenu: jest.fn() });
 
     await walkToFloor(INSIDE[mark]);
     await fireEvent.press(within(bubbleOf(PROMPTS[mark])).getByRole("button", { name: BUTTONS[mark] }));
-    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
 
-    expect(onEnterMark).toHaveBeenCalledTimes(1);
-    expect(onEnterMark).toHaveBeenCalledWith(mark);
+    await expectEnteredAfterPress(mark, onEnterMark);
   });
 });
 
 describe("[spec] 작업 061 그대로 둘 동작: 가구·이름표를 누르면 서는 자리로 걸어가 도착하고 안내가 나온다", () => {
-  it.each(MARK_IDS)("V4: 장소(%s)를 누르면 걸어가 도착해 말풍선에 그 장소 안내와 버튼이 나오고, 짝인 아래 메뉴만 강조되며, 버튼을 누르면 그 장소로 들어간다", async (mark) => {
+  it.each(MARK_IDS)("V4: 장소(%s)를 누르면 걸어가 도착해 말풍선에 그 장소 안내와 버튼이 나오고, 짝인 아래 메뉴만 강조되며, 버튼을 누르면 그 장소로 들어간다('밖으로'는 마을로 간다, 088 ② 06 결정 1)", async (mark) => {
     const onEnterMark = jest.fn(() => true);
     await enter({ onEnterMark, onMenu: jest.fn() });
 
@@ -242,9 +265,7 @@ describe("[spec] 작업 061 그대로 둘 동작: 가구·이름표를 누르면
     const lit = MENU_LABEL[mark];
     expect(selectedMenus()).toEqual(lit ? [lit] : []);
     await fireEvent.press(within(bubbleOf(PROMPTS[mark])).getByRole("button", { name: BUTTONS[mark] }));
-    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
-    expect(onEnterMark).toHaveBeenCalledTimes(1);
-    expect(onEnterMark).toHaveBeenCalledWith(mark);
+    await expectEnteredAfterPress(mark, onEnterMark);
   });
 });
 
@@ -414,7 +435,7 @@ describe("[spec] 작업 061 10 결정(바뀔 동작): 구역 안에 있기만 �
     }
   );
 
-  it.each(MARK_IDS)("V6: 장소(%s) 구역을 걸어서 지나는 중에 말풍선 버튼을 누르면 그 장소로 들어간다", async (mark) => {
+  it.each(MARK_IDS)("V6: 장소(%s) 구역을 걸어서 지나는 중에 말풍선 버튼을 누르면 그 장소로 들어간다('밖으로'는 마을로 간다, 088 ② 06 결정 1)", async (mark) => {
     const onEnterMark = jest.fn(() => true);
     await enter({ onEnterMark, onMenu: jest.fn() });
     const { start, goal } = PASS[mark];
@@ -431,10 +452,8 @@ describe("[spec] 작업 061 10 결정(바뀔 동작): 구역 안에 있기만 �
     const button = shownButton(mark);
     expect(button).not.toBeNull();
     await fireEvent.press(button!);
-    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
 
-    expect(onEnterMark).toHaveBeenCalledTimes(1);
-    expect(onEnterMark).toHaveBeenCalledWith(mark);
+    await expectEnteredAfterPress(mark, onEnterMark);
   });
 
   it("V7: 의자 뒤쪽에서 일기 책상 쪽으로 끄는 동안, 구역 밖에서는 말풍선이 숨고, 손가락을 댄 채 구역 안에 들어오면 일기 책상 안내와 버튼이 보이고 '영어일기' 메뉴만 강조되며, 버튼을 누르면 일기 책상으로 들어간다", async () => {

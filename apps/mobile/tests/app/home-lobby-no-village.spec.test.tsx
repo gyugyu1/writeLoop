@@ -3,6 +3,9 @@
 // '밖으로' 장소의 말풍선 글·버튼·안내는 ①이 홈을 바꾸지 않으므로 지금 그대로의 값이다.
 // 가짜로 두는 것(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내, 라우터, 포커스, 3D 그리기)은 기존 홈 시각 시험(lobby3d-clock.spec.test.tsx)과 같다.
 // 3D 그리기 가짜는 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부른다. 구현 코드는 부르는 방법(3D 그리기에 넘기는 sim·onFrame·onPointer)만 읽었다.
+// 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침")로 D9를 ②의 새 동작으로 고쳤다: 홈에 시험판 '방'·'마을' 버튼이 없는 것은 그대로이고,
+// '밖으로' 말풍선은 "밖으로 나가 볼까?"·버튼 "나가기", 누르면 옛 안내 없이 마을로 나간다(② 02-qa-scenarios X1·X2·X4).
+// 이를 위해 3D 그리기 가짜가 구역이 마을로 바뀌면 마을 모델이 들어왔다(onVillageReady, ② 구현의 부르는 방법)고 알리게 준비만 더했다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -68,6 +71,10 @@ jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
       sent.current = true;
       onRoomShown();
     }, [onRoomShown]);
+    const area = props.area ?? "room";
+    React.useEffect(() => {
+      if (area === "village") mockCanvas.props?.onVillageReady?.();
+    }, [area]);
     return React.createElement("Lobby3dCanvasMock");
   }
   return { __esModule: true, default: MockLobby3dCanvas };
@@ -192,9 +199,9 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-describe("[spec] 홈에는 아직 마을로 가는 길이 없다(D9)", () => {
+describe("[spec] 홈에는 시험판 구역 버튼이 없고, '밖으로'의 '나가기'로 마을에 간다(D9, 088 ② 03 결정 1로 고침)", () => {
   for (const dev of [false, true]) {
-    it(`D9 ${dev ? "개발" : "출시"} 빌드: '방'·'마을' 버튼이 없고, '밖으로'에 가면 지금 그대로의 말풍선·버튼·안내다`, async () => {
+    it(`D9 ${dev ? "개발" : "출시"} 빌드: '방'·'마을' 버튼이 없고, '밖으로'에 가면 말풍선 '밖으로 나가 볼까?'·버튼 '나가기'이며 누르면 옛 안내 없이 마을로 나간다`, async () => {
       devGlobal.__DEV__ = dev;
       await render(<HomeScreen />);
       await flushAsync();
@@ -222,12 +229,20 @@ describe("[spec] 홈에는 아직 마을로 가는 길이 없다(D9)", () => {
 
       const snap = canvas().sim.snapshot(Date.now());
       expect(snap.arrived).toBe("door");
-      expect(snap.bubbleText).toBe("밖으로 나가 볼까?\n마을은 다음에 열려.");
+      expect(snap.bubbleText).toBe("밖으로 나가 볼까?");
       expect(snap.bubbleButton).toBe("나가기");
 
       await fireEvent.press(screen.getByRole("button", { name: "나가기" }));
       await flushAsync();
-      expect(screen.getByText("마을은 다음 업데이트에서 열려요")).toBeTruthy();
+      await act(async () => {
+        for (let i = 0; i < 30; i += 1) {
+          jest.advanceTimersByTime(50);
+          canvas().onFrame(0.05, Date.now());
+        }
+      });
+      await flushAsync();
+      expect(screen.queryByText("마을은 다음 업데이트에서 열려요", { includeHiddenElements: true })).toBeNull();
+      expect(canvas().area).toBe("village");
     });
   }
 });

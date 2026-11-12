@@ -235,12 +235,13 @@ describe("[spec] 060-⑤ 그대로 둘 동작(명세 \"그대로여야 할 동�
         buttonLabel: "들어가기",
         enterMessage: "영어일기로 들어가요"
       },
+      // 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침")·3(들어갈 때 안내를 없앰)으로 밖으로의 문구와 안내만 고쳤다
       door: {
         id: "door",
         label: "밖으로",
-        prompt: "밖으로 나가 볼까?\n마을은 다음에 열려.",
+        prompt: "밖으로 나가 볼까?",
         buttonLabel: "나가기",
-        enterMessage: "마을은 다음 업데이트에서 열려요"
+        enterMessage: ""
       }
     });
   });

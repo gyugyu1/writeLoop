@@ -5,10 +5,20 @@
 // 물건 자리를 담은 village-layout.json)을 알려고만 읽었다. 마을 구역을 켠 시뮬레이션에 누르기와 프레임(0.05초)을 직접 넣는다.
 // 19 결정(사용자, 마을 70×60칸으로 넓힘·새 배치)으로 마을 칸 범위(가장 가까운 칸 찾기, B3의 끄는 점 찾기)를 옛 크기 28×24에서 마을 데이터의 크기로 고쳤다.
 // 단언과 기대값은 그대로다.
+// 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침")로 B5·B6의 말풍선 기대값만 ②의 새 동작으로 고쳤다:
+// 라룹이 집은 "집으로 들어갈까?"와 버튼 "들어가기", 닫힌 건물은 "<이름>은 곧 열려요"와 버튼 없음(버튼 값 null, 옛 B6과 같은 단언). 도착 자리·arrived 단언은 그대로다.
 // 걷기는 3D 모델과 관계없이 데이터대로 되므로, 이 파일 전체가 F4("모델을 불러오지 못해도 걷기는 된다")의 걷기 부분이기도 하다.
 import { LobbySim, applyArea, isClearLine, isFree, type FloorPoint, type PointerHit } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
+
+/** 088 ② 장소 말풍선(02-qa-scenarios N1·C1~C3). 버튼 없음은 null. */
+const PLACE_BUBBLE: Record<PlaceKey, { text: string; button: string | null }> = {
+  home: { text: "집으로 들어갈까?", button: "들어가기" },
+  furnitureShop: { text: "가구점은 곧 열려요", button: null },
+  cafe: { text: "카페는 곧 열려요", button: null },
+  library: { text: "도서관은 곧 열려요", button: null }
+};
 
 const fountain: FloorPoint = { x: LAYOUT.fountain.x, z: LAYOUT.fountain.z };
 type PlaceKey = "home" | "furnitureShop" | "cafe" | "library";
@@ -140,7 +150,7 @@ describe("[spec] 마을에서 움직이기(B1~B9)", () => {
     ["home", "furnitureShop"],
     ["home", "library"],
     ["library", "home"]
-  ] as [PlaceKey, PlaceKey][])("B5·B6: %s 앞에서 장소 %s 이름표를 누르면 그 서는 자리에 멈춰 도착하고, 말풍선 글·버튼은 없다", (from, to) => {
+  ] as [PlaceKey, PlaceKey][])("B5·B6(088 ② 03 결정 1): %s 앞에서 장소 %s 이름표를 누르면 그 서는 자리에 멈춰 도착하고, 그 장소의 말풍선 글·버튼이 나온다", (from, to) => {
     const sim = newSim(VILLAGE_PLACES[from].approach[0]);
     expect(tap(sim, placeHit(to))).toBe("walk");
     run(sim, 30);
@@ -148,9 +158,9 @@ describe("[spec] 마을에서 움직이기(B1~B9)", () => {
     expect(dist({ x: sim.x, z: sim.z }, goal)).toBeLessThanOrEqual(0.06);
     const snap = sim.snapshot(now);
     expect(snap.arrived).toBe(to);
-    // B6: 이번에는 이름표만 — 말풍선 글이 비고 버튼이 없다(방 장소 안내도 나오지 않는다)
-    expect(snap.bubbleText).toBe("");
-    expect(snap.bubbleButton).toBeNull();
+    // B6(088 ② 03 결정 1): 라룹이 집은 들어가기 말풍선, 닫힌 건물은 '곧 열려요'와 버튼 없음(방 장소 안내는 나오지 않는다)
+    expect(snap.bubbleText).toBe(PLACE_BUBBLE[to].text);
+    expect(snap.bubbleButton).toBe(PLACE_BUBBLE[to].button);
   });
 
   it("B7: 걷는 속도 3.2칸/초, 돌아서는 빠르기 10(방과 같다)", () => {

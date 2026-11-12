@@ -3,6 +3,8 @@
  */
 // [spec] qa 테스트(작업 088 ① 마을 장면, 새 기능, 모바일): 마을 3D 모델 파일(F1~F3).
 // 기대값은 시나리오(private 작업 폴더 088-2026-11-13-바깥-마을/02-마을-장면/02-qa-scenarios.md F1~F3)에서만 가져온다.
+// 18 결정(사용자: 풍차를 더함, 마을 나무를 Kenney 나무로 바꾸고 잎에 계절 색)으로 W2·T1을 더했다. 모델 안 이름(windmill, windmill-rotor,
+// tree-templates, tpl-<나무>-leaf/trunk)은 구현 커밋 63c0bc4의 모델과 그리기 코드에서 부르는 이름만 확인했다.
 // 기존 CREDITS 세 줄이 그대로인지는 이번 작업 전 CREDITS.md(기준 커밋 1b06dc1)의 파일 이름과 출처 글로 본다.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -37,5 +39,30 @@ describe("[spec] 마을 3D 모델 파일(F1~F3)", () => {
     );
     expect(lines).toContain("| `lobby-room.glb` | WriteLoop이 `scripts/lobby3d/bake-room.py`로 만들었다 | 저장소와 같다 |");
     expect(lines).toContain("| `writeloop.glb` | WriteLoop 캐릭터 모델 | 저장소와 같다 |");
+  });
+});
+
+/** glb의 JSON 덩어리에서 노드 이름들. */
+function glbNodeNames(file: string): string[] {
+  const buf = readFileSync(file);
+  const length = buf.readUInt32LE(12);
+  const json = JSON.parse(buf.subarray(20, 20 + length).toString("utf8")) as { nodes?: { name?: string }[] };
+  return (json.nodes ?? []).map((n) => n.name ?? "");
+}
+
+describe("[spec] 풍차와 Kenney 나무(W2, T1, 18 결정)", () => {
+  const names = () => glbNodeNames(join(MODELS, "lobby-village.glb"));
+
+  it("W2: 마을 모델에 풍차와, 따로 돌릴 수 있는 풍차 날개가 있다", () => {
+    expect(names()).toEqual(expect.arrayContaining(["windmill", "windmill-rotor"]));
+  });
+
+  it("T1: 마을 모델에 Kenney 나무 틀이 있고, 나무마다 잎(계절 색을 칠할 곳)과 줄기가 따로 있다", () => {
+    const all = names();
+    expect(all).toContain("tree-templates");
+    const leaves = all.filter((n) => /^tpl-.+-leaf$/.test(n)).map((n) => n.slice(4, -5));
+    const trunks = all.filter((n) => /^tpl-.+-trunk$/.test(n)).map((n) => n.slice(4, -6));
+    expect(leaves.length).toBeGreaterThan(0);
+    expect([...leaves].sort()).toEqual([...trunks].sort());
   });
 });

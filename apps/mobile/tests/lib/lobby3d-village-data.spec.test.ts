@@ -5,6 +5,8 @@
 // engine.ts의 applyArea·isFree·findPath·isClearLine, 물건 자리를 담은 village-layout.json)을 알려고만 읽었다.
 // 명세에 숫자가 없는 자리(건물 땅, 분수, 가로등 등)는 구현의 마을 데이터를 입력으로 읽는다.
 // "걸어갈 수 있음"은 마을 구역을 켠 상태의 isFree(라룹이가 그 자리에 설 수 있음)다.
+// 19 결정(사용자, 마을 70×60칸으로 넓힘·새 배치)으로 옛 크기를 적은 곳(A1의 크기, A3·A9·A10의 마을 칸 범위, A5의 "뒤쪽 절반" 경계 12 → 깊이의 절반)을
+// 새 크기로 고쳤다. 단언하는 규칙은 그대로다. 18 결정 1(풍차)로 W1을 더했다.
 // O2의 "분수 옆"은 결정 03-2("도서관 뒤로 약 5칸이 가려진다")에 맞춰 분수 뒤쪽(라룹이 집 쪽) 옆자리로 골랐다(보고 06-qa-tests.md).
 import { applyArea, findPath, isClearLine, isFree, type FloorPoint } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START, occludingBuildings } from "@/lib/lobby3d/village";
@@ -30,7 +32,7 @@ const fountain: FloorPoint = { x: LAYOUT.fountain.x, z: LAYOUT.fountain.z };
 /** 마을 칸의 모든 칸 가운데 중 걸어갈 수 있는 곳. */
 function freeTileCenters(): FloorPoint[] {
   const out: FloorPoint[] = [];
-  for (let c = 0; c < 28; c += 1) for (let r = 0; r < 24; r += 1) if (isFree(c + 0.5, r + 0.5)) out.push({ x: c + 0.5, z: r + 0.5 });
+  for (let c = 0; c < VILLAGE.width; c += 1) for (let r = 0; r < VILLAGE.depth; r += 1) if (isFree(c + 0.5, r + 0.5)) out.push({ x: c + 0.5, z: r + 0.5 });
   return out;
 }
 
@@ -43,8 +45,8 @@ afterEach(() => {
 });
 
 describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
-  it("A1: 마을은 가로 28칸 × 깊이 24칸", () => {
-    expect({ width: VILLAGE.width, depth: VILLAGE.depth }).toEqual({ width: 28, depth: 24 });
+  it("A1: 마을은 가로 70칸 × 깊이 60칸(19 결정)", () => {
+    expect({ width: VILLAGE.width, depth: VILLAGE.depth }).toEqual({ width: 70, depth: 60 });
   });
 
   it("A2: 장소는 정확히 넷이고 이름표는 라룹이 집·가구점·카페·도서관", () => {
@@ -56,7 +58,7 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
   it("A3: 장소 넷의 서는 자리는 모두 걸어갈 수 있고 마을 칸 안이다", () => {
     for (const id of PLACE_IDS) {
       const p = spot(id);
-      expect({ id, free: isFree(p.x, p.z), inside: p.x >= 0 && p.x <= 28 && p.z >= 0 && p.z <= 24 }).toEqual({ id, free: true, inside: true });
+      expect({ id, free: isFree(p.x, p.z), inside: p.x >= 0 && p.x <= VILLAGE.width && p.z >= 0 && p.z <= VILLAGE.depth }).toEqual({ id, free: true, inside: true });
     }
   });
 
@@ -75,7 +77,7 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
     const cafe = spot("cafe");
     const library = spot("library");
     expect(home.z).toBeLessThan(fountain.z);
-    expect(home.z).toBeLessThan(12);
+    expect(home.z).toBeLessThan(VILLAGE.depth / 2);
     expect(shop.x).toBeLessThan(fountain.x);
     expect(fountain.x).toBeLessThan(cafe.x);
     expect(home.x).toBeGreaterThan(shop.x);
@@ -112,29 +114,39 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
   });
 
   it("A9: 마을 칸 바로 바깥은 걸어갈 수 없다", () => {
-    for (let z = 0.5; z < 24; z += 1) {
+    for (let z = 0.5; z < VILLAGE.depth; z += 1) {
       expect(isFree(-0.5, z)).toBe(false);
-      expect(isFree(28.5, z)).toBe(false);
+      expect(isFree(VILLAGE.width + 0.5, z)).toBe(false);
     }
-    for (let x = 0.5; x < 28; x += 1) {
+    for (let x = 0.5; x < VILLAGE.width; x += 1) {
       expect(isFree(x, -0.5)).toBe(false);
-      expect(isFree(x, 24.5)).toBe(false);
+      expect(isFree(x, VILLAGE.depth + 0.5)).toBe(false);
     }
   });
 
+  // 19 결정으로 마을이 70×60칸(걸어갈 수 있는 칸 약 4천 개)이 되어, 칸마다 넷씩 길을 찾으면 2분이 넘게 걸렸다. 그래서 찾는 법만 바꿨다(단언하는 규칙은 그대로):
+  // 길이 있다는 것은 칸끼리 이어져 있다는 것이고(길 찾기는 칸 단위로 찾는다), 이어짐은 주고받는 관계라
+  // "모든 칸이 라룹이 집 서는 자리와 이어져 있다" + "라룹이 집 서는 자리에서 나머지 세 서는 자리까지 길이 있다"면 모든 칸에서 넷까지 길이 있다.
+  // 칸마다 이미 이어진 것으로 확인된 자리들까지의 길을 찾아(라룹이 집에서 가까운 칸부터) 확인한다.
   it("A10: 걸어갈 수 있는 모든 칸에서 장소 넷의 서는 자리까지 길이 있고, 길의 끝은 그 서는 자리다", () => {
-    const tiles = freeTileCenters();
+    const home = spot("home");
+    const tiles = freeTileCenters().sort((a, b) => Math.hypot(a.x - home.x, a.z - home.z) - Math.hypot(b.x - home.x, b.z - home.z));
     expect(tiles.length).toBeGreaterThan(0);
+    const connected: FloorPoint[] = [home];
     const missing: string[] = [];
     for (const from of tiles) {
-      for (const id of PLACE_IDS) {
-        const goal = spot(id);
-        const path = findPath(from, [goal]);
-        const last = path?.[path.length - 1];
-        if (!path || !last || last.x !== goal.x || last.z !== goal.z) missing.push(`${from.x},${from.z}→${id}`);
-      }
+      // 먼저 바로 곁(1.5칸 안)의 확인된 자리로, 안 되면 확인된 자리 모두로 찾는다
+      const nearby = connected.filter((p) => Math.hypot(p.x - from.x, p.z - from.z) <= 1.5);
+      if ((nearby.length > 0 && findPath(from, nearby)) || findPath(from, connected)) connected.push(from);
+      else missing.push(`${from.x},${from.z}`);
     }
     expect(missing).toEqual([]);
+    for (const id of PLACE_IDS) {
+      const goal = spot(id);
+      const path = findPath(home, [goal]);
+      const last = path?.[path.length - 1];
+      expect({ id, last }).toEqual({ id, last: goal });
+    }
   });
 
   it("A11: 분수 바로 앞(분수와 도서관 사이)에서 도서관 앞쪽 문 앞까지 건물을 뚫지 않는 길이 있다(결정 03-1)", () => {
@@ -193,5 +205,15 @@ describe("[spec] 라룹이를 가리는 건물(O1, O2, O4, 결정 03-2)", () => 
 
   it("O4: 도서관은 광장 앞쪽 그대로다(서는 자리 z > 분수 z)", () => {
     expect(spot("library").z).toBeGreaterThan(fountain.z);
+  });
+});
+
+describe("[spec] 풍차(W1, 18 결정 1)", () => {
+  it("W1: 풍차는 마을 끝 바깥 뒤쪽(z < 0)에 있고 마을 가로 범위 안이다", () => {
+    const windmill = (LAYOUT as unknown as { windmill?: { x: number; z: number } }).windmill;
+    expect(windmill).toBeDefined();
+    expect(windmill!.z).toBeLessThan(0);
+    expect(windmill!.x).toBeGreaterThanOrEqual(0);
+    expect(windmill!.x).toBeLessThanOrEqual(VILLAGE.width);
   });
 });

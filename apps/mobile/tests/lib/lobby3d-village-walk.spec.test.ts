@@ -3,9 +3,11 @@
 // 결정(04-main-decision.md 1: 마을에서 걸어갈 수 없는 곳이나 마을 밖을 누르면 누른 곳에서 가장 가까운 걸어갈 수 있는 곳으로 간다)에서만 가져온다.
 // 구현 코드는 부르는 방법(engine.ts의 applyArea·LobbySim·isFree·isClearLine, village.ts의 VILLAGE_PLACES·VILLAGE_START·VILLAGE_BUILDINGS,
 // 물건 자리를 담은 village-layout.json)을 알려고만 읽었다. 마을 구역을 켠 시뮬레이션에 누르기와 프레임(0.05초)을 직접 넣는다.
+// 19 결정(사용자, 마을 70×60칸으로 넓힘·새 배치)으로 마을 칸 범위(가장 가까운 칸 찾기, B3의 끄는 점 찾기)를 옛 크기 28×24에서 마을 데이터의 크기로 고쳤다.
+// 단언과 기대값은 그대로다.
 // 걷기는 3D 모델과 관계없이 데이터대로 되므로, 이 파일 전체가 F4("모델을 불러오지 못해도 걷기는 된다")의 걷기 부분이기도 하다.
 import { LobbySim, applyArea, isClearLine, isFree, type FloorPoint, type PointerHit } from "@/lib/lobby3d/engine";
-import { VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
+import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 
 const fountain: FloorPoint = { x: LAYOUT.fountain.x, z: LAYOUT.fountain.z };
@@ -48,8 +50,8 @@ function dist(a: FloorPoint, b: FloorPoint) {
 /** target에서 가장 가까운, 걸어갈 수 있는 칸 가운데. */
 function nearestFreeTile(target: FloorPoint): FloorPoint {
   let best: FloorPoint | null = null;
-  for (let c = 0; c < 28; c += 1) {
-    for (let r = 0; r < 24; r += 1) {
+  for (let c = 0; c < VILLAGE.width; c += 1) {
+    for (let r = 0; r < VILLAGE.depth; r += 1) {
       const p = { x: c + 0.5, z: r + 0.5 };
       if (isFree(p.x, p.z) && (!best || dist(p, target) < dist(best, target))) best = p;
     }
@@ -99,8 +101,8 @@ describe("[spec] 마을에서 움직이기(B1~B9)", () => {
     const start = { x: sim.x, z: sim.z };
     // 곧게 끌어갈 수 있는, 3~5칸 떨어진 걸어갈 수 있는 자리
     let q: FloorPoint | null = null;
-    for (let c = 0; c < 28 && !q; c += 1) {
-      for (let r = 0; r < 24 && !q; r += 1) {
+    for (let c = 0; c < VILLAGE.width && !q; c += 1) {
+      for (let r = 0; r < VILLAGE.depth && !q; r += 1) {
         const p = { x: c + 0.5, z: r + 0.5 };
         const d = dist(p, start);
         if (d >= 3 && d <= 5 && isFree(p.x, p.z) && isClearLine(start, p)) q = p;

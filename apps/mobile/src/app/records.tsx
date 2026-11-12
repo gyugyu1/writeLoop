@@ -448,7 +448,7 @@ export default function RecordsScreen() {
             <MobileScreenHeader title="기록" />
 
             {!currentUser && activeTab !== "now" ? (
-              <RecordsLoginCard />
+              <RecordsLoginCard activeTab={activeTab} />
             ) : (
               <>
                 <RecordsProfileCard

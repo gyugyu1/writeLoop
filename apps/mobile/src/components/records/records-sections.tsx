@@ -161,7 +161,10 @@ export function RecordsLoadingState() {
 }
 
 // 로그인 안내 카드
-export function RecordsLoginCard() {
+export function RecordsLoginCard({ activeTab }: Pick<RecordsScreenValues, "activeTab">) {
+  // 로그인 뒤 누른 탭으로 돌아온다. 작문 기록 탭은 탭 없는 주소(기본 탭)로 돌아온다.
+  const redirectTo = activeTab === "history" ? "/records" : `/records?tab=${activeTab}`;
+
   return (
     <View style={styles.emptyCard}>
       <Text style={styles.emptyTitle}>로그인이 필요해요</Text>
@@ -170,7 +173,7 @@ export function RecordsLoginCard() {
       </Text>
       <Pressable
         style={styles.primaryButton}
-        onPress={() => router.push(buildLoginHref("/records"))}
+        onPress={() => router.push(buildLoginHref(redirectTo))}
       >
         <Text style={styles.primaryButtonText}>로그인 하기</Text>
       </Pressable>
@@ -207,7 +210,7 @@ export function RecordsProfileCard({
             </View>
           </View>
 
-          <Pressable style={styles.diaryShortcutButton} onPress={() => router.push("/diary" as never)}>
+          <Pressable style={styles.diaryShortcutButton} onPress={() => router.push("/diary/write" as never)}>
             <Text style={styles.diaryShortcutButtonText}>오늘 일기 쓰기</Text>
             <Text style={styles.diaryShortcutButtonArrow}>{">"}</Text>
           </Pressable>

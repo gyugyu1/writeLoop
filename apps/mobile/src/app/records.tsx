@@ -49,7 +49,7 @@ export default function RecordsScreen() {
   const highlightedDateKey = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateKey) ? requestedDateKey : "";
   const { currentUser, isHydrating, refreshSession } = useSession();
   const [activeTab, setActiveTab] = useState<RecordsContentTab>(requestedTab);
-  const [deletingSavedExpressionId, setDeletingSavedExpressionId] = useState<number | null>(null);
+  const [deletingSavedExpressionIds, setDeletingSavedExpressionIds] = useState<Record<number, boolean>>({});
   const [savedExpressionSearchQuery, setSavedExpressionSearchQuery] = useState("");
   const [selectedSavedExpressionTag, setSelectedSavedExpressionTag] = useState<string | null>(null);
   const [selectedSavedExpressionTagAnchorId, setSelectedSavedExpressionTagAnchorId] = useState<number | null>(
@@ -73,7 +73,7 @@ export default function RecordsScreen() {
     nowEnglishEntries,
     nowEnglishError,
     nowEnglishRecordGroups
-  } = useNowEnglishRecords();
+  } = useNowEnglishRecords(currentUser?.id ?? null);
 
   const {
     handleRefresh,
@@ -252,7 +252,7 @@ export default function RecordsScreen() {
 
   async function confirmDeleteSavedExpression(savedExpressionId: number) {
     try {
-      setDeletingSavedExpressionId(savedExpressionId);
+      setDeletingSavedExpressionIds((current) => ({ ...current, [savedExpressionId]: true }));
       await deleteSavedExpression(savedExpressionId);
       setSavedExpressions((current) => current.filter((item) => item.id !== savedExpressionId));
       setOpenSavedExpressionPrompts((current) => {
@@ -266,7 +266,11 @@ export default function RecordsScreen() {
         caughtError instanceof Error ? caughtError.message : "잠시 후 다시 시도해 주세요."
       );
     } finally {
-      setDeletingSavedExpressionId(null);
+      setDeletingSavedExpressionIds((current) => {
+        const next = { ...current };
+        delete next[savedExpressionId];
+        return next;
+      });
     }
   }
 
@@ -485,7 +489,7 @@ export default function RecordsScreen() {
                   />
                 ) : (
                   <RecordsSavedExpressionsTab
-                    deletingSavedExpressionId={deletingSavedExpressionId}
+                    deletingSavedExpressionIds={deletingSavedExpressionIds}
                     findHistorySessionForSavedExpression={findHistorySessionForSavedExpression}
                     handleDeleteSavedExpression={handleDeleteSavedExpression}
                     handleOpenSavedExpressionHistory={handleOpenSavedExpressionHistory}

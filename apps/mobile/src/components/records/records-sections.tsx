@@ -69,7 +69,7 @@ type RecordsNowTabProps = Pick<
 >;
 type RecordsSavedExpressionsTabProps = Pick<
   RecordsScreenValues,
-  | "deletingSavedExpressionId"
+  | "deletingSavedExpressionIds"
   | "findHistorySessionForSavedExpression"
   | "handleDeleteSavedExpression"
   | "handleOpenSavedExpressionHistory"
@@ -558,7 +558,7 @@ export function RecordsNowTab({
 
 // 저장 표현 탭: 검색·태그·태그 연습, 표현 카드
 export function RecordsSavedExpressionsTab({
-  deletingSavedExpressionId,
+  deletingSavedExpressionIds,
   findHistorySessionForSavedExpression,
   handleDeleteSavedExpression,
   handleOpenSavedExpressionHistory,
@@ -771,9 +771,9 @@ export function RecordsSavedExpressionsTab({
                     <Pressable
                       style={styles.savedExpressionDeleteButton}
                       onPress={() => handleDeleteSavedExpression(item)}
-                      disabled={deletingSavedExpressionId === item.id}
+                      disabled={deletingSavedExpressionIds[item.id] === true}
                     >
-                      {deletingSavedExpressionId === item.id ? (
+                      {deletingSavedExpressionIds[item.id] === true ? (
                         <ActivityIndicator color="#A3371A" size="small" />
                       ) : (
                         <SymbolView

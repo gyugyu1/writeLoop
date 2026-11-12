@@ -60,6 +60,11 @@ export const ACTION_LABELS: Record<ActionType, string> = {
 const TEST_ACTIONS: ActionType[] = ["wave", "jump", "hop", "point", "spin", "look"];
 /** 방·마을의 장소 모두(이름표·말풍선 자리를 미리 만들어 둔다). */
 const ALL_PLACE_IDS: readonly PlaceId[] = [...ROOM_MARK_IDS, ...VILLAGE_MARK_IDS];
+/** 방↔마을 전환: 검게 어두워지는 시간과 밝아지는 시간(밀리초). */
+const TRAVEL_FADE_MS = 300;
+const VILLAGE_LOADING = "마을로 나가는 중…";
+const VILLAGE_FAILED = "마을을 불러오지 못했어요. 잠시 뒤 다시 나가 주세요";
+
 /** 시험판의 구역 버튼. */
 const AREA_LABELS: Record<LobbyArea, string> = { room: "방", village: "마을" };
 
@@ -224,8 +229,17 @@ export default function Lobby3dScreen({
     simRef.current = new LobbySim();
   }
   const sim = simRef.current;
-  // 지금 구역(방·마을). 개발 화면 시험판에서 바꾼다
+  // 지금 구역(방·마을). 방의 '나가기'·마을 집의 '들어가기'(검게 어두워지는 전환)와 개발 화면 시험판(바로 바뀜)에서 바꾼다
   const [area, setArea] = useState<LobbyArea>("room");
+  const areaRef = useRef<LobbyArea>("room");
+  // 전환 중(어두워지는 동안·마을을 읽는 동안·밝아지는 동안)에는 로비를 누르지 못한다
+  const travelFade = useRef(new Animated.Value(0)).current;
+  const [traveling, setTraveling] = useState(false);
+  const travelingRef = useRef(false);
+  const [villageLoading, setVillageLoading] = useState(false);
+  // 마을 모델이 장면에 들어온 적이 있는지(한 번 읽으면 다시 나갈 때 바로 뜬다)와, 다 뜨면 밝아질 전환
+  const villageReadyRef = useRef(false);
+  const waitingVillage = useRef<(() => void) | null>(null);
 
   const [view, setView] = useState<ViewState>({ bubbleText: "", bubbleButton: null, place: null, actionType: null, idleBubble: false });
   // 초당 프레임 표시. 값이 바뀔 때만 다시 그린다(이름표·말풍선 자리는 아래 Animated 값으로 옮긴다).
@@ -518,14 +532,80 @@ export default function Lobby3dScreen({
    * 꾸미기 중에는 바꾸지 않는다.
    */
   const switchArea = (next: LobbyArea) => {
-    if (editorRef.current || next === area) return;
+    if (editorRef.current || travelingRef.current || next === areaRef.current) return;
+    placeInArea(next);
+  };
+  /** 구역을 바꾸고 라룹이를 그 구역의 들어서는 자리에 세운다. */
+  const placeInArea = (next: LobbyArea) => {
     applyArea(next);
+    areaRef.current = next;
     const nowMs = Date.now();
     if (next === "village") sim.placeAt(VILLAGE_START, VILLAGE_START.heading, nowMs);
     else sim.placeAt(MARKS.door.approach[0], Math.PI, nowMs);
     setArea(next);
     syncView();
   };
+  /**
+   * 방↔마을 전환: 검게 어두워진 뒤(약 0.3초) 구역을 바꾸고, 밝아진다(약 0.3초). 마을로 갈 때 마을 모델을 아직 다 읽지 못했으면
+   * 어두운 채 "마을로 나가는 중…"을 보이고 다 뜨면 밝아진다. 동작 줄이기면 어두워지기·밝아지기 없이 바로 바꾼다.
+   * after는 밝아진 뒤 한다(마을에서 '바로 놓기': 방으로 와서 꾸미기를 연다).
+   */
+  const travel = (next: LobbyArea, after?: () => void) => {
+    if (travelingRef.current || editorRef.current || next === areaRef.current) return;
+    travelingRef.current = true;
+    setTraveling(true);
+    sim.pointerCancel();
+    const finish = () => {
+      travelingRef.current = false;
+      setTraveling(false);
+      setVillageLoading(false);
+      after?.();
+    };
+    const reveal = () => {
+      if (sim.reduceMotion) {
+        travelFade.setValue(0);
+        finish();
+        return;
+      }
+      Animated.timing(travelFade, { toValue: 0, duration: TRAVEL_FADE_MS, useNativeDriver: true }).start(finish);
+    };
+    const swap = () => {
+      placeInArea(next);
+      if (next === "village" && !villageReadyRef.current) {
+        travelFade.setValue(1);
+        setVillageLoading(true);
+        waitingVillage.current = reveal;
+        return;
+      }
+      reveal();
+    };
+    if (sim.reduceMotion) swap();
+    else Animated.timing(travelFade, { toValue: 1, duration: TRAVEL_FADE_MS, useNativeDriver: true }).start(swap);
+  };
+  const travelRef = useRef(travel);
+  travelRef.current = travel;
+  const onVillageReady = useCallback(() => {
+    villageReadyRef.current = true;
+    const waiting = waitingVillage.current;
+    waitingVillage.current = null;
+    waiting?.();
+  }, []);
+  // 마을 모델을 읽지 못하면 방으로 돌아와 밝아지고 안내한다(전환 중이 아니면 안내만)
+  const onVillageFailed = useCallback(() => {
+    villageReadyRef.current = false;
+    const waiting = waitingVillage.current;
+    waitingVillage.current = null;
+    if (!waiting) {
+      showToast(VILLAGE_FAILED);
+      return;
+    }
+    placeInAreaRef.current("room");
+    setVillageLoading(false);
+    waiting();
+    showToast(VILLAGE_FAILED);
+  }, [showToast]);
+  const placeInAreaRef = useRef(placeInArea);
+  placeInAreaRef.current = placeInArea;
 
   const onFrame = useCallback(
     (dt: number, nowMs: number) => {
@@ -571,7 +651,7 @@ export default function Lobby3dScreen({
       }
       // 시트를 연 동안에는 로비를 누르지 못한다. 막는 중에 누른 것이 남지 않게 지금 누르기도 거둔다.
       // 시트를 연 동안과 '들어가기' 동작을 하는 동안에는 로비를 누르지 못한다
-      if (inputBlockedRef.current || sim.scene) {
+      if (inputBlockedRef.current || sim.scene || travelingRef.current) {
         if (phase !== "move") sim.pointerCancel();
         return;
       }
@@ -686,8 +766,13 @@ export default function Lobby3dScreen({
   const handledPlaceKey = useRef(placeRequestKey);
   const placeNowRef = useRef<(request: { itemId: string; type: string }) => void>(() => undefined);
   placeNowRef.current = (request) => {
-    startEdit();
-    if (editorRef.current) takeOutEdit({ id: request.itemId, type: request.type });
+    const place = () => {
+      startEdit();
+      if (editorRef.current) takeOutEdit({ id: request.itemId, type: request.type });
+    };
+    // 마을에 있으면 방으로 돌아온 뒤(어두워졌다 밝아진 뒤) 꾸미기를 연다
+    if (areaRef.current === "village") travelRef.current("room", place);
+    else place();
   };
   useEffect(() => {
     if (placeRequestKey === null || !placeRequest || placeRequestKey === handledPlaceKey.current) return;
@@ -756,6 +841,8 @@ export default function Lobby3dScreen({
         settleKey={settleKey}
         onRoomSettled={settleRoom}
         area={area}
+        onVillageReady={onVillageReady}
+        onVillageFailed={onVillageFailed}
       />
       ) : null}
 
@@ -819,12 +906,22 @@ export default function Lobby3dScreen({
               <View pointerEvents="none">
                 <Text style={styles.bubbleText}>{markInfo(id).prompt}</Text>
               </View>
+              {markInfo(id).buttonLabel ? (
               <Pressable
                 accessibilityRole="button"
                 style={styles.bubbleButton}
                 onPress={() => {
                   // 걷기 시작해 이 안내가 사라졌는데 아직 다시 그리기 전이면 누르지 않은 것으로 본다
                   if (sim.snapshot(Date.now()).place !== id) return;
+                  // 방의 '나가기'는 마을로, 마을 집의 '들어가기'는 방으로 간다
+                  if (id === "door") {
+                    travel("village");
+                    return;
+                  }
+                  if (id === "home") {
+                    travel("room");
+                    return;
+                  }
                   // 장소마다 동작(생각하기·의자에 앉기·책 꺼내기)을 한 뒤 들어간다. 동작이 없거나 "동작 줄이기"면 바로 들어간다
                   if (sim.startScene(id, Date.now())) {
                     syncView();
@@ -835,6 +932,7 @@ export default function Lobby3dScreen({
               >
                 <Text style={styles.bubbleButtonText}>{markInfo(id).buttonLabel}</Text>
               </Pressable>
+              ) : null}
             </View>
             <View style={styles.bubbleTail} pointerEvents="none" />
           </Animated.View>
@@ -1193,6 +1291,20 @@ export default function Lobby3dScreen({
         </View>
         )}
       </View>
+      {/* 방↔마을 전환: 검게 어두워졌다 밝아진다. 로비의 맨 위에 덮여, 전환 중에는 3D·위 줄·아래 메뉴 모두 누르기가 닿지 않는다 */}
+      <Animated.View
+        pointerEvents={traveling ? "auto" : "none"}
+        accessibilityElementsHidden={!villageLoading}
+        importantForAccessibility={villageLoading ? "auto" : "no-hide-descendants"}
+        style={[styles.travelShade, { opacity: travelFade }]}
+      >
+        {villageLoading ? (
+          <View style={styles.travelLoading} accessibilityLiveRegion="polite">
+            <ActivityIndicator color="#FFFFFF" />
+            <Text style={styles.preparingText}>{VILLAGE_LOADING}</Text>
+          </View>
+        ) : null}
+      </Animated.View>
     </View>
   );
 }
@@ -1201,6 +1313,16 @@ export default function Lobby3dScreen({
 const BUBBLE_WIDTH = 196;
 
 const styles = StyleSheet.create({
+  travelShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#000000",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  travelLoading: {
+    alignItems: "center",
+    gap: 10
+  },
   root: { flex: 1, backgroundColor: "#000000" },
   label: {
     position: "absolute",

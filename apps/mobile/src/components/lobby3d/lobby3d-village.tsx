@@ -317,7 +317,7 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
 }
 
 /** 마을 모델을 불러오지 못하면 풀밭·나무·하늘만 보이게 한다. 오류는 개발 콘솔에 남긴다. */
-export class VillageModelErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+export class VillageModelErrorBoundary extends Component<{ children: ReactNode; onFailed?: () => void }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -326,6 +326,7 @@ export class VillageModelErrorBoundary extends Component<{ children: ReactNode }
 
   componentDidCatch(error: unknown) {
     console.warn("[lobby3d] 마을 모델을 불러오지 못했습니다", error);
+    this.props.onFailed?.();
   }
 
   render() {

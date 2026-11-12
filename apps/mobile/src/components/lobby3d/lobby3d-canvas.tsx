@@ -109,6 +109,10 @@ export interface Lobby3dCanvasProps {
   onRoomSettled?: () => void;
   /** 지금 구역(방·마을). 마을이면 방(껍데기·가구·방 조명)을 숨기고 마을을 그린다. 기본은 방. */
   area?: LobbyArea;
+  /** 마을 모델이 장면에 들어왔을 때(마을로 바뀔 때마다). 화면이 어두운 전환을 끝내는 때다. */
+  onVillageReady?: () => void;
+  /** 마을 모델을 불러오지 못했을 때. */
+  onVillageFailed?: () => void;
 }
 
 const LINE = 0x3d1b0f;
@@ -836,6 +840,8 @@ function Scene({
   settleKey = 0,
   onRoomSettled,
   area = "room",
+  onVillageReady,
+  onVillageFailed,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치 표시 수(layoutKey)가 바뀌면 다시 만든다(서버 배치 받기 등).
@@ -1270,7 +1276,9 @@ function Scene({
         </BakedRoomErrorBoundary>
       ) : null}
       </group>
-      {area === "village" ? <VillageLayer sim={sim} daylight={daylightState} pickTargets={villagePick} /> : null}
+      {area === "village" ? (
+        <VillageLayer sim={sim} daylight={daylightState} pickTargets={villagePick} onReady={onVillageReady} onFailed={onVillageFailed} />
+      ) : null}
       <CharacterErrorBoundary onFailed={characterSettled}>
         <Suspense fallback={null}>
           <Character kit={world.kit} outline={toon.outline} handleRef={character} />
@@ -1318,20 +1326,35 @@ function warmUpScenes(gl: THREE.WebGLRenderer, camera: THREE.Camera, scenes: (TH
 /**
  * 바깥 마을(풀밭·숲·하늘과 마을 모델). 마을 모듈은 마을을 처음 그릴 때 불러온다(방만 보는 동안은 마을 모델·도형 도구를 읽지 않는다).
  */
-function VillageLayer({ sim, daylight, pickTargets }: { sim: LobbySim; daylight: DaylightState; pickTargets: MutableRefObject<THREE.Object3D[]> }) {
+function VillageLayer({
+  sim,
+  daylight,
+  pickTargets,
+  onReady,
+  onFailed
+}: {
+  sim: LobbySim;
+  daylight: DaylightState;
+  pickTargets: MutableRefObject<THREE.Object3D[]>;
+  onReady?: () => void;
+  onFailed?: () => void;
+}) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const village = require("./lobby3d-village") as typeof VillageModule;
   return (
     <>
       <village.VillageNature daylight={daylight} />
-      <village.VillageModelErrorBoundary>
+      <village.VillageModelErrorBoundary onFailed={onFailed}>
         <Suspense fallback={null}>
           <village.VillageModel sim={sim} daylight={daylight} pickTargets={pickTargets} />
+          <Settled onSettled={onReady ?? noop} />
         </Suspense>
       </village.VillageModelErrorBoundary>
     </>
   );
 }
+
+const noop = () => undefined;
 
 /** 같은 Suspense 안의 부분과 함께 장면에 들어오면(모델을 다 읽으면) 알린다. */
 function Settled({ onSettled }: { onSettled: () => void }) {

@@ -13,6 +13,8 @@ const LOBBY_MODEL_ASSETS = [
   require("../../../assets/models/writeloop.glb"),
   require("../../../assets/models/lobby-furniture.glb")
 ] as string[];
+// 바깥 마을 모델. 방에서 '나가기'를 누르기 전에 읽어 두어 마을이 바로 뜨게 한다(lobby3d-village가 같은 파일을 읽는다)
+const VILLAGE_MODEL_ASSET = require("../../../assets/models/lobby-village.glb") as string;
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 /**
@@ -23,4 +25,5 @@ export function preloadLobbyModels(): void {
   for (const asset of LOBBY_MODEL_ASSETS) {
     useLoader.preload(GLTFLoader, asset);
   }
+  useLoader.preload(GLTFLoader, VILLAGE_MODEL_ASSET);
 }

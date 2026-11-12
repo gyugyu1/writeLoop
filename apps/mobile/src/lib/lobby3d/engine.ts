@@ -92,9 +92,10 @@ export const MARKS: Record<MarkId, MarkInfo> = {
     label: "밖으로",
     // 지금 방의 입구 발판에서 계산한다(기본 방은 바라볼 지점 (4.0, 11.35), 서는 자리 (4.0, 10.5))
     ...outsidePlace(currentRoom()),
-    prompt: "밖으로 나가 볼까?\n마을은 다음에 열려.",
+    prompt: "밖으로 나가 볼까?",
     buttonLabel: "나가기",
-    enterMessage: "마을은 다음 업데이트에서 열려요"
+    // '나가기'는 마을로 나가는 전환을 한다(로비 화면). 안내를 띄우지 않는다
+    enterMessage: ""
   },
   bookcase: {
     id: "bookcase",
@@ -106,11 +107,19 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   }
 };
 
-/** 마을의 장소(건물 문 앞). 지금은 이름표만 있고 말풍선·버튼이 없다(안내 글이 비어 있으면 말풍선을 띄우지 않는다). */
+/** 마을 장소의 말풍선. 라룹이 집은 '들어가기'로 방에 돌아가고, 닫힌 건물은 버튼 없이 안내만 한다(버튼 글이 비어 있으면 버튼이 없다). */
+const VILLAGE_PROMPTS: Record<VillageBuildingId, { prompt: string; buttonLabel: string }> = {
+  home: { prompt: "집으로 들어갈까?", buttonLabel: "들어가기" },
+  furnitureShop: { prompt: "가구점은 곧 열려요", buttonLabel: "" },
+  cafe: { prompt: "카페는 곧 열려요", buttonLabel: "" },
+  library: { prompt: "도서관은 곧 열려요", buttonLabel: "" }
+};
+
+/** 마을의 장소(건물 문 앞). */
 export const VILLAGE_MARKS: Record<VillageBuildingId, MarkInfo<VillageBuildingId>> = Object.fromEntries(
   Object.values(VILLAGE_PLACES).map((place) => [
     place.id,
-    { id: place.id, label: place.label, faceTo: place.faceTo, approach: place.approach, prompt: "", buttonLabel: "", enterMessage: "" }
+    { id: place.id, label: place.label, faceTo: place.faceTo, approach: place.approach, ...VILLAGE_PROMPTS[place.id], enterMessage: "" }
   ])
 ) as Record<VillageBuildingId, MarkInfo<VillageBuildingId>>;
 

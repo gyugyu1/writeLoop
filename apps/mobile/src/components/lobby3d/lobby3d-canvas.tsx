@@ -947,8 +947,15 @@ function Scene({
         const first = (onParent ? hits[at] : hits[0])?.object.userData as { pickPiece?: string } | undefined;
         return { point: floorPoint(), mark: null, onCharacter: false, piece: first?.pickPiece ?? null, wall: wallUnderRay(raycaster.ray) };
       }
-      // 마을: 라룹이 아니면 맞은 건물·소품의 그 자리(없으면 바닥)를 누른 곳으로 본다. 걸어갈 수 없는 곳이면 sim이 가장 가까운 곳으로 간다
+      // 마을: 이름표를 누르면 그 장소, 라룹이 아니면 맞은 건물·소품의 그 자리(없으면 바닥)를 누른 곳으로 본다. 걸어갈 수 없는 곳이면 sim이 가장 가까운 곳으로 간다
       if (areaRef.current === "village") {
+        // 이름표(화면 이름표 상자: 가운데에서 가로 ±40, 세로 ±22)는 3D 물체가 아니라 화면 자리로 본다
+        for (const id of VILLAGE_MARK_IDS) {
+          const p = villageLabels[id].clone().project(camera);
+          const lx = ((p.x + 1) / 2) * size.width;
+          const ly = ((1 - p.y) / 2) * size.height;
+          if (p.z < 1 && Math.abs(x - lx) <= LABEL_HALF_WIDTH && Math.abs(y - ly) <= LABEL_HALF_HEIGHT) return { point: floorPoint(), mark: id, onCharacter: false };
+        }
         const targets: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...villagePick.current];
         const hit = raycaster.intersectObjects(targets, true)[0];
         if (hit && (hit.object.userData as { isCharacter?: boolean }).isCharacter) return { point: floorPoint(), mark: null, onCharacter: true };
@@ -970,7 +977,7 @@ function Scene({
     return () => {
       pickRef.current = null;
     };
-  }, [camera, size, raycaster, world, pickRef]);
+  }, [camera, size, raycaster, world, pickRef, villageLabels]);
 
   // 일기 책상 의자(대체 모양과 가구 묶음). 가구 묶음은 나중에 불러와지므로 가끔 다시 찾는다.
   const chairs = useRef<{ list: THREE.Object3D[]; scannedAt: number }>({ list: [], scannedAt: -Infinity });
@@ -1273,6 +1280,10 @@ function Scene({
     </>
   );
 }
+
+/** 화면 이름표 상자의 반 크기(px). 화면(lobby3d-screen)의 이름표가 가운데에서 (-40, -22)만큼 옮겨 그려진다. */
+const LABEL_HALF_WIDTH = 40;
+const LABEL_HALF_HEIGHT = 22;
 
 // 방을 처음 보이기 전, 프레임이 고르게 그려지는지 보는 기준(사용자 결정: 연달아 5프레임이 각각 34ms 안, 늦어도 3초)
 const ROOM_SMOOTH_FRAMES = 5;

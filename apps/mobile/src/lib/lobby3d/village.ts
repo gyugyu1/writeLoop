@@ -76,7 +76,7 @@ function propTiles(x: number, z: number, w: number, d: number): string[] {
 function buildSolidTiles(): Set<string> {
   const solid = new Set<string>();
   const add = (tiles: string[]) => tiles.forEach((t) => solid.add(t));
-  // 가장자리 한 줄: 생울타리
+  // 가장자리 한 줄: 뒤쪽·양옆은 생울타리, 앞쪽은 나무 울타리
   for (let c = 0; c < LAYOUT.width; c += 1) add([key(c, 0), key(c, LAYOUT.depth - 1)]);
   for (let r = 0; r < LAYOUT.depth; r += 1) add([key(0, r), key(LAYOUT.width - 1, r)]);
   for (const b of VILLAGE_BUILDINGS) add(rectTiles(...b.rect));
@@ -90,7 +90,7 @@ function buildSolidTiles(): Set<string> {
   return solid;
 }
 
-/** 걸어갈 수 없는 칸("열,행"): 가장자리 생울타리, 건물, 분수, 가로등, 노점, 벤치, 나무, 바위. */
+/** 걸어갈 수 없는 칸("열,행"): 가장자리 생울타리·울타리, 건물, 분수, 가로등, 노점, 벤치, 나무, 바위. */
 export const VILLAGE_SOLID_TILES: ReadonlySet<string> = buildSolidTiles();
 
 export interface VillagePlace {

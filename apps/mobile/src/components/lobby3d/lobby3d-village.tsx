@@ -182,8 +182,6 @@ interface VillageModelProps {
   pickTargets: MutableRefObject<THREE.Object3D[]>;
 }
 
-/** 계절마다 생울타리에 곱하는 색(Kenney 생울타리는 여름 초록이다). */
-const HEDGE_TINT: Record<Season, number> = { spring: 0xf2fff0, summer: 0xffffff, autumn: 0xf2d79a, winter: 0xdfe9e6 };
 
 /** 건물·소품 모델. 라룹이를 가리는 건물은 반투명하게 하고, 밤에는 불빛 판을 켠다. */
 export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) {
@@ -197,6 +195,7 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     const hedgeMats: THREE.MeshLambertMaterial[] = [];
     const owned: THREE.Material[] = [glowMat];
     const pick: THREE.Object3D[] = [];
+    // 묶음 이름(합친 메시는 뒤에 "-mesh"가 붙는다: bld-home-mesh, props-mesh 등)
     const groupOf = (o: THREE.Object3D): string => {
       for (let n: THREE.Object3D | null = o; n; n = n.parent) {
         if (/^(bld-|glow-|props|paths|hedges)/.test(n.name)) return n.name;
@@ -225,11 +224,16 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
         entry.materials.push(material);
         buildings.set(id, entry);
         pick.push(o);
-      } else if (name === "props") {
+      } else if (name.startsWith("props")) {
         pick.push(o);
       } else {
         o.raycast = () => {};
-        if (name === "hedges") hedgeMats.push(material);
+        if (name.startsWith("hedges")) {
+          // 생울타리는 색 그림 대신 창밖 풍경 덤불과 같은 계절 색으로 칠한다(겨울에는 눈 덮인 흰색). 구석 어둠은 그대로 곱한다
+          material.map = null;
+          material.needsUpdate = true;
+          hedgeMats.push(material);
+        }
       }
     });
     return { root, buildings, glows, glowMat, hedgeMats, owned, pick };
@@ -264,8 +268,8 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     // 밤 불빛: 천장 조명과 같은 때(새벽·어스름·밤) 켜진다. 켜고 끌 때는 천장 조명처럼 부드럽게
     built.glowMat.opacity = 0.9 * daylight.ceiling;
     for (const g of built.glows) g.visible = daylight.ceiling > 0.01;
-    const tint = HEDGE_TINT[daylight.target.season];
-    for (const m of built.hedgeMats) m.color.set(tint);
+    const bush = SEASON_COLORS[daylight.target.season].bushes[0];
+    for (const m of built.hedgeMats) m.color.set(bush);
   });
 
   // eslint-disable-next-line react/no-unknown-property

@@ -7,7 +7,8 @@
 #   glow-<무엇>    밤에 켜지는 불빛 판(창, 가로등). 앱이 새벽·어스름·밤에만 보인다
 #   props          분수·가로등·노점·벤치·바위
 #   paths          돌길
-#   hedges         가장자리 생울타리(계절 색은 앱이 곱한다)
+#   hedges         뒤쪽·양옆 가장자리 생울타리(계절 색은 앱이 칠한다)
+#   fences         앞쪽(카메라 쪽) 가장자리 나무 울타리
 # 나무·풀밭처럼 계절 색이 바뀌는 것은 앱이 코드로 짓는다(창밖 풍경과 같은 색 규칙).
 # 좌표: 앱 (x, y 위, z 앞) = Blender (x, -y, z). glTF 내보내기가 Blender Z 위를 Y 위로 바꾼다.
 import json
@@ -247,11 +248,16 @@ for x0, z0, x1, z1 in LAYOUT["paths"]:
 # ---------- 가장자리 생울타리 ----------
 hedges = group("hedges")
 for x in range(W):
-    for z in (0, D - 1):
-        place("hedge-large", hedges, x + 0.5, z + 0.5, FACE_ROT["front"] if z else FACE_ROT["back"], scale=(1.0, 1.0, 1.6))
+    place("hedge-large", hedges, x + 0.5, 0.5, FACE_ROT["back"], scale=(1.0, 1.0, 1.6))
 for z in range(1, D - 1):
     place("hedge-large", hedges, 0.5, z + 0.5, FACE_ROT["left"], scale=(1.0, 1.0, 1.6))
     place("hedge-large", hedges, W - 0.5, z + 0.5, FACE_ROT["right"], scale=(1.0, 1.0, 1.6))
+
+# ---------- 앞쪽 가장자리 울타리 ----------
+# 카메라 쪽은 키가 낮은 나무 울타리로 둘러 마을 안이 가리지 않게 한다(Kenney 한 칸 = 앱 1칸 너비로 이어 붙인다)
+fences = group("fences")
+for x in range(W):
+    place("fence", fences, x + 0.5, D - 0.5, FACE_ROT["front"], scale=(1.0, 1.0, 2.0))
 
 # ---------- 묶음마다 메시 하나로 합친다(그리기 횟수를 줄인다) ----------
 bpy.context.view_layer.update()

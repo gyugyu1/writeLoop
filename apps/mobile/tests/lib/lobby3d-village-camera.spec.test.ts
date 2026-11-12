@@ -4,6 +4,7 @@
 // 카메라가 옆으로 돌지 않음, 따라갈 점을 그대로 따라감)은 지금 방 카메라의 값이다.
 // 구현 코드는 부르는 방법(engine.ts의 applyArea·cameraPose·isFree·VIEW_WIDTH_*, village.ts의 VILLAGE_PLACES, village-layout.json의 분수 자리)을
 // 알려고만 읽었다. 화면 크기는 명세에 없어 기존 방 카메라 시험과 같은 세 폰 화면을 쓴다.
+// C2는 07-main-decision.md(사용자 결정)로 고쳤다(아래 C2 위 설명).
 import { VIEW_WIDTH_DEFAULT, VIEW_WIDTH_MAX, VIEW_WIDTH_MIN, applyArea, cameraPose, isFree, type FloorPoint } from "@/lib/lobby3d/engine";
 import { VILLAGE_PLACES } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
@@ -95,7 +96,10 @@ describe("[spec] 마을 카메라(C1~C4, C6)", () => {
     expect(Math.abs(p.position.x - p.lookAt.x)).toBeLessThanOrEqual(EPS);
   });
 
-  it("C2: 마을 끝에서 먼 곳에서는 라룹이를 따라간다(보는 점 x = 따라갈 점 x, 앞으로 2칸 가면 보는 점도 2칸)", () => {
+  // 07-main-decision.md(사용자 결정 "테스트를 고침", 2026-11-13)로 고쳤다: 가로로 따라가는 부분(기본 거리)은 그대로이고,
+  // "앞으로 2칸 가면 보는 점도 2칸"은 마을 깊이가 화면에 다 들어오지 않는 가까운 거리(가장 가까이 4.0)에서 본다.
+  // 그 거리에서 마을 깊이가 화면에 다 들어오지 않는다는 전제도 함께 확인한다(화면 위·아래 끝에 보이는 바닥의 깊이 폭 < 24칸).
+  it("C2: 마을 끝에서 먼 곳에서는 라룹이를 가로로 따라가고(보는 점 x = 따라갈 점 x), 마을 깊이가 다 들어오지 않는 가까운 거리에서는 앞으로 2칸 가면 보는 점도 2칸 간다", () => {
     let base: FloorPoint | null = null;
     for (let z = 9.5; z <= 13.5 && !base; z += 1) {
       for (let x = 9.5; x <= 16.5 && !base; x += 1) {
@@ -105,10 +109,25 @@ describe("[spec] 마을 카메라(C1~C4, C6)", () => {
     expect(base).not.toBeNull();
     const a = pose(base!, VIEW_WIDTH_DEFAULT, PHONE);
     const right = pose({ x: base!.x + 3, z: base!.z }, VIEW_WIDTH_DEFAULT, PHONE);
-    const front = pose({ x: base!.x, z: base!.z + 2 }, VIEW_WIDTH_DEFAULT, PHONE);
     expect(Math.abs(a.lookAt.x - base!.x)).toBeLessThanOrEqual(EPS);
     expect(Math.abs(right.lookAt.x - (base!.x + 3))).toBeLessThanOrEqual(EPS);
-    expect(Math.abs(front.lookAt.z - a.lookAt.z - 2)).toBeLessThanOrEqual(EPS);
+
+    // 앞뒤로 따라가는지는 마을 깊이 가운데(z 12) 둘레의, 앞뒤 끝에서 먼 걸어갈 수 있는 두 자리 (x, z)와 (x, z+2)로 본다
+    let mid: FloorPoint | null = null;
+    for (const z of [11.5, 12.5, 10.5, 13.5]) {
+      for (let x = 9.5; x <= 19.5 && !mid; x += 1) if (isFree(x, z) && isFree(x, z + 2)) mid = { x, z };
+      if (mid) break;
+    }
+    expect(mid).not.toBeNull();
+    const near = pose(mid!, VIEW_WIDTH_MIN, PHONE);
+    const nearFront = pose({ x: mid!.x, z: mid!.z + 2 }, VIEW_WIDTH_MIN, PHONE);
+    const cam = camera(near, PHONE);
+    const bottom = cam.groundAt(0, -1);
+    const top = cam.groundAt(0, 1);
+    expect(bottom).not.toBeNull();
+    expect(top).not.toBeNull();
+    expect(bottom!.z - top!.z).toBeLessThan(24);
+    expect(Math.abs(nearFront.lookAt.z - near.lookAt.z - 2)).toBeLessThanOrEqual(EPS);
   });
 
   it("C3: 어느 화면·거리·자리에서도 화면 아래 모서리 둘과 아래 가운데에 보이는 바닥은 마을 칸 안이다", () => {

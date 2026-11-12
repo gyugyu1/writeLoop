@@ -63,9 +63,8 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   const [ordered, setOrdered] = useState<HomeShoppingOrderResult | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const requestRef = useRef(0);
-  // 열려 있는지(닫힌 뒤 온 주문 응답으로 완료 판을 열지 않게)
-  const visibleRef = useRef(visible);
-  visibleRef.current = visible;
+  // 닫힐 때마다 1씩 는다. 주문은 시작할 때의 값을 기억해, 그사이 닫혔으면(다시 열었어도) 응답으로 화면을 바꾸지 않는다
+  const openRef = useRef(0);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (message: string) => {
@@ -102,6 +101,7 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   useEffect(() => {
     if (!visible) {
       requestRef.current += 1;
+      openRef.current += 1;
       // 다시 열면 처음처럼 불러오는 동안·실패 표시부터 보이게 앞 목록을 비운다
       setShop(null);
       setLoadFailed(false);
@@ -116,9 +116,15 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
 
   const order = async (item: HomeShoppingItem) => {
     if (ordering) return;
+    const opened = openRef.current;
     setOrdering(true);
     try {
       const result = await orderHomeShopping({ type: item.type, price: priceOf(item) });
+      // 주문은 서버에서 됐으니 잔액·로비 배치는 늘 반영한다
+      onBalance(result.balance);
+      onOrdered(result);
+      // 기다리는 동안 닫았으면(다시 열었어도) 이 화면의 판·목록은 바꾸지 않는다
+      if (opened !== openRef.current) return;
       setConfirming(null);
       setShop((current) =>
         current
@@ -129,16 +135,14 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
             }
           : current
       );
-      onBalance(result.balance);
-      onOrdered(result);
-      // 기다리는 동안 닫았으면 완료 판은 열지 않는다(잔액·배치는 위에서 이미 반영했다)
-      if (visibleRef.current) setOrdered(result);
+      setOrdered(result);
     } catch (error) {
+      if (opened !== openRef.current) return;
       setConfirming(null);
       showToast(error instanceof ApiError && error.message ? error.message : ORDER_FAILED);
       if (error instanceof ApiError && error.code === "PRICE_CHANGED") void load();
     } finally {
-      setOrdering(false);
+      if (opened === openRef.current) setOrdering(false);
     }
   };
 

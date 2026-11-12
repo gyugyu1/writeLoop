@@ -726,3 +726,73 @@ describe("5. 바꾸지 않는 것", () => {
     ]);
   });
 });
+
+// ---------- 6. 응답을 기다리는 사이 칸을 고칠 때(09 결정, 08 검증의 확실한 문제 1·2) ----------
+// 두 테스트는 버그를 겨냥한 재현 테스트라 고치기 전 코드에서는 실패가 맞다.
+// 고치는 방법(기다리는 동안 칸을 막거나, 응답을 버리지 않거나)과 관계없이 명세의 성공 결과만 본다.
+// 칸이 막혀 있으면 changeText는 아무 일도 하지 않으므로 "고치려 해도"가 된다.
+
+describe("6. 응답을 기다리는 사이 칸을 고칠 때", () => {
+  function deferredReply() {
+    let resolveReply!: (value: unknown) => void;
+    const reply: FetchReply = () =>
+      new Promise((resolve) => {
+        resolveReply = resolve;
+      });
+    return {
+      reply,
+      resolveOk: async (body: object) => {
+        await act(async () => {
+          resolveReply({ ok: true, status: 200, json: async () => body });
+        });
+        await flushAsync();
+      }
+    };
+  }
+
+  test("결정 9-1: 다시 받기 응답 전에 코드 칸을 고쳐도, 성공하면 코드 비움·확인 풀림·3:00·버튼 복귀", async () => {
+    await verifySuccess();
+    await advance(60_000);
+    expect(timerText("2:00")).toBeOnTheScreen();
+    const pending = deferredReply();
+    queue("send-code", pending.reply);
+    await press(RESEND);
+    await fireEvent.changeText(codeInput(), "12345");
+    await flushAsync();
+    await pending.resolveOk({ email: EMAIL, message: SENT_NOTICE });
+
+    expect(callsTo("send-code")).toHaveLength(2);
+    expect(spinners()).toHaveLength(0);
+    expect(screen.getByText(RESEND)).not.toBeDisabled();
+    expect(codeInput().props.value).toBe("");
+    expect(passwordInputs()).toHaveLength(0);
+    expect(screen.queryByText(RESET)).toBeNull();
+    expect(timerText("3:00")).toBeOnTheScreen();
+    await advance(1000);
+    expect(timerText("2:59")).toBeOnTheScreen();
+  });
+
+  test.each([
+    ["코드 칸", "code"],
+    ["이메일 칸", "email"]
+  ])("결정 9-2: 비밀번호 바꾸기 응답 전에 %s을 고치려 해도, 성공하면 로그인 화면으로 바꾼다", async (_label, field) => {
+    await verifySuccess();
+    await typePasswords("newpass123", "newpass123");
+    const pending = deferredReply();
+    queue("complete", pending.reply);
+    await press(RESET);
+    if (field === "code") {
+      await fireEvent.changeText(codeInput(), "12345");
+    } else {
+      await fireEvent.changeText(emailInput(), "other@example.com");
+    }
+    await flushAsync();
+    await pending.resolveOk({ email: EMAIL, message: "ok" });
+
+    expect(callsTo("complete")).toHaveLength(1);
+    expect(router.push).not.toHaveBeenCalled();
+    const { path, params } = lastReplaceHref();
+    expect(path).toBe("/login");
+    expect(params.mode).toBe("email");
+  });
+});

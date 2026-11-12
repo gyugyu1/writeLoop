@@ -9,10 +9,13 @@ import type { HistorySession } from "@/lib/types";
 export function useRecordsDateScroll({
   groupedHistoryEntries,
   openDates,
+  renderedDateKeys,
   selectedDateKey
 }: {
   groupedHistoryEntries: { dateKey: string; sessions: HistorySession[] }[];
   openDates: Record<string, boolean>;
+  // 지금 화면에 그려진 날짜 묶음(작문 기록 탭이 아니거나 불러오는 중이면 빈 목록).
+  renderedDateKeys: string[];
   selectedDateKey: string;
 }) {
   const scrollViewRef = useRef<ScrollView | null>(null);
@@ -27,15 +30,17 @@ export function useRecordsDateScroll({
     lastScrolledDateRef.current = "";
   }, [selectedDateKey]);
 
-  // 목록에서 없어진 날짜 묶음의 옛 위치는 지운다.
+  // 화면에서 빠진 날짜 묶음(목록에서 없어짐, 모두 보기를 접음, 다른 탭, 불러오는 중)의 옛 위치는 지운다.
+  // 다시 그려지면 onLayout이 새 위치를 알린다.
+  const renderedDateKeysValue = renderedDateKeys.join("|");
   useEffect(() => {
-    const present = new Set(groupedHistoryEntries.map((entry) => entry.dateKey));
+    const rendered = new Set(renderedDateKeysValue ? renderedDateKeysValue.split("|") : []);
     for (const dateKey of Object.keys(dateGroupOffsetsRef.current)) {
-      if (!present.has(dateKey)) {
+      if (!rendered.has(dateKey)) {
         delete dateGroupOffsetsRef.current[dateKey];
       }
     }
-  }, [groupedHistoryEntries]);
+  }, [renderedDateKeysValue]);
 
   useEffect(() => {
     if (!selectedDateKey) {

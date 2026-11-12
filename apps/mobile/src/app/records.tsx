@@ -200,6 +200,14 @@ export default function RecordsScreen() {
     });
   }, [groupedHistoryEntries, selectedDateKey]);
 
+  const renderedDateKeys = useMemo(
+    () =>
+      activeTab === "history" && currentUser && !isHistoryLoading
+        ? visibleGroupedHistoryEntries.map((entry) => entry.dateKey)
+        : [],
+    [activeTab, currentUser, isHistoryLoading, visibleGroupedHistoryEntries]
+  );
+
   const {
     handleDateFeedLayout,
     handleDateGroupLayout,
@@ -208,6 +216,7 @@ export default function RecordsScreen() {
   } = useRecordsDateScroll({
     groupedHistoryEntries,
     openDates,
+    renderedDateKeys,
     selectedDateKey
   });
 

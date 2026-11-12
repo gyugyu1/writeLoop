@@ -442,6 +442,7 @@ export interface CameraPose {
  * 아니면 follow를 따라가되 화면 위·아래 끝이 방 끝 너머로 나가지 않게 막는다. 가로도 같은 규칙이다.
  */
 export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number): CameraPose {
+  if (area === "village") return villageCameraPose(follow, viewWidth, aspect);
   const pitch = (ROOM.pitchDeg * Math.PI) / 180;
   const sin = Math.sin(pitch);
   const cos = Math.cos(pitch);
@@ -473,10 +474,8 @@ export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number
   };
   const centerZ = solve((cz) => minY(cz) + maxY(cz), 0);
   const fitsY = centerZ > czFront && maxY(centerZ) <= 1;
-  // 마을이 세로로 다 들어오면 가운데 대신 마을 앞끝을 화면 아래 끝에 맞춘다(넘쳐 보이는 곳은 화면 위쪽, 마을 뒤 숲이다)
-  const fitZ = area === "village" ? solve(minY, -1) : centerZ;
   const cz = fitsY
-    ? fitZ
+    ? centerZ
     : Math.min(Math.max(follow.z - 0.6, solve(maxY, 1)), Math.max(solve(minY, -1), solve(maxY, 1)));
   // 가로: 화면 가로 자리 = (x − 보는 점 x) / (깊이 · tanH). 가까운 곳일수록 같은 화면 폭에 좁은 바닥이 보인다.
   // 다 들어오는지는 방 상자에서 가장 가까운 모서리로 본다.
@@ -494,6 +493,44 @@ export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number
   const cx = fitsX ? centerX : Math.min(Math.max(follow.x, b.minX + reach), Math.max(b.maxX - reach, centerX));
   return {
     position: { x: cx, y: dist * sin, z: cz + dist * cos },
+    lookAt: { x: cx, y: 0, z: cz },
+    fovDeg: ROOM.fovDeg
+  };
+}
+
+/**
+ * 마을의 카메라 자리. 방과 같은 기울기·시야각·거리로 내려다보되, 마을은 넓어서 끝 상자의 모든 모서리를 카메라 앞에 둘 수 없다.
+ * 그래서 바닥으로 정한다: 화면 아래 끝에 보이는 바닥이 마을 앞끝을 넘지 않고, 화면 위 끝에 보이는 바닥이 마을 뒤끝 너머
+ * VILLAGE_TOP_SLACK칸(생울타리 너머 숲)까지만 가는 범위에서 follow를 따라간다. 세로로 다 들어오면 앞끝을 화면 아래 끝에 맞춘다(넘쳐 보이는 곳은 화면 위쪽, 마을 뒤 숲이다).
+ * 가로는 화면 아래 끝 줄(가장 가까워 가장 좁게 보이는 바닥)의 양 끝이 마을 옆끝을 넘지 않게 막는다.
+ */
+/** 마을 화면 위 끝이 마을 뒤끝 너머로 보여도 되는 칸(그 너머는 숲이다). 뒤쪽 라룹이 집 앞에서도 라룹이가 화면 위에 붙지 않게 한다. */
+const VILLAGE_TOP_SLACK = 6;
+/** 마을 카메라가 라룹이보다 앞(+z)을 보는 칸. */
+const VILLAGE_LOOK_AHEAD = 1;
+
+function villageCameraPose(follow: FloorPoint, viewWidth: number, aspect: number): CameraPose {
+  const pitch = (ROOM.pitchDeg * Math.PI) / 180;
+  const half = (ROOM.fovDeg * Math.PI) / 360;
+  const tanH = Math.tan(half) * Math.max(aspect, 0.01);
+  const dist = viewWidth / (2 * tanH);
+  const height = dist * Math.sin(pitch);
+  const back = dist * Math.cos(pitch);
+  const b = VILLAGE_BOUNDS;
+  // 보는 점 z가 cz면 카메라는 cz + back에 있고, 화면 아래·위 끝 줄은 카메라에서 이만큼 앞(−z)의 바닥에 닿는다
+  const bottomReach = height / Math.tan(pitch + half);
+  const topReach = height / Math.tan(pitch - half);
+  const hi = b.maxZ - back + bottomReach;
+  const lo = b.minZ - VILLAGE_TOP_SLACK - back + topReach;
+  // 라룹이보다 조금 앞(카메라 쪽)을 본다. 라룹이가 화면 위쪽에 오고, 앞쪽(아래 메뉴에 가리는 쪽)이 더 넓게 보인다
+  const cz = lo > hi ? hi : Math.min(Math.max(follow.z + VILLAGE_LOOK_AHEAD, lo), hi);
+  // 화면 아래 끝 줄 바닥까지의 깊이(보는 방향으로 잰 거리)와 그 깊이에서 화면 옆 끝까지의 폭
+  const bottomDepth = (height / Math.sin(pitch + half)) * Math.cos(half);
+  const reach = bottomDepth * tanH;
+  const centerX = (b.minX + b.maxX) / 2;
+  const cx = b.maxX - b.minX <= reach * 2 ? centerX : Math.min(Math.max(follow.x, b.minX + reach), b.maxX - reach);
+  return {
+    position: { x: cx, y: height, z: cz + back },
     lookAt: { x: cx, y: 0, z: cz },
     fovDeg: ROOM.fovDeg
   };

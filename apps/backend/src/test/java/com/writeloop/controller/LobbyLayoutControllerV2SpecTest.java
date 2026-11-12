@@ -289,6 +289,9 @@ class LobbyLayoutControllerV2SpecTest extends IntegrationTestSupport {
 
     // ---------- 사용자·요청·DB ----------
 
+    // 작업 086 ② 결정 1: 배치를 저장하기 전에 그 계정이 필요한 가구를 산 것으로 준비한다(put에서). 토큰으로 계정을 찾는다
+    private final Map<String, Long> userIdByToken = new LinkedHashMap<>();
+
     private record TestUser(long id, String email, String password, String token) {
     }
 
@@ -300,7 +303,9 @@ class LobbyLayoutControllerV2SpecTest extends IntegrationTestSupport {
                 "INSERT INTO users (email, password_hash, display_name, email_verified, verified_at) VALUES (?, ?, ?, 1, NOW())",
                 email, passwordEncoder.encode(password), "qa-066-" + tag + "-" + suffix);
         long userId = jdbc.queryForObject("SELECT id FROM users WHERE email = ?", Long.class, email);
-        return new TestUser(userId, email, password, login(email, password));
+        String token = login(email, password);
+        userIdByToken.put(token, userId);
+        return new TestUser(userId, email, password, token);
     }
 
     private String login(String email, String password) throws Exception {
@@ -336,6 +341,7 @@ class LobbyLayoutControllerV2SpecTest extends IntegrationTestSupport {
     }
 
     private HttpResponse<String> put(String token, JsonNode layout) throws Exception {
+        LobbyLayoutPurchasePrep.ownEnoughFor(jdbc, token == null ? null : userIdByToken.get(token), layout);
         HttpRequest.Builder request = HttpRequest.newBuilder(uri(PATH))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(layout)));

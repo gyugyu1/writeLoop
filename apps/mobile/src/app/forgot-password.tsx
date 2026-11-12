@@ -49,8 +49,11 @@ export default function ForgotPasswordScreen() {
   const [isResetting, setIsResetting] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  // 이메일을 고치거나 코드를 다시 받거나 코드를 고치면 늘린다. 그 전에 보낸 요청의 늦은 응답은 버린다.
-  const flowVersionRef = useRef(0);
+  // 코드 받기 요청마다, 그리고 이메일을 고치면 늘린다. 값이 다른 send-code 응답은 버린다.
+  // 코드 칸을 고쳐도 늘리지 않는다. 다시 받기가 성공하면 그 칸을 비우기 때문이다.
+  const sendVersionRef = useRef(0);
+  // 코드 받기·이메일 고침·코드 고침·확인 요청마다 늘린다. 값이 다른 verify-code 응답은 버린다.
+  const verifyVersionRef = useRef(0);
 
   const emailLoginHref = useMemo<Href>(() => {
     return (redirectTo
@@ -85,7 +88,8 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
-    flowVersionRef.current += 1;
+    sendVersionRef.current += 1;
+    verifyVersionRef.current += 1;
     setIsCodeSent(false);
     setIsCodeVerified(false);
     setIsSendingCode(false);
@@ -106,8 +110,9 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
-    flowVersionRef.current += 1;
-    const version = flowVersionRef.current;
+    sendVersionRef.current += 1;
+    verifyVersionRef.current += 1;
+    const version = sendVersionRef.current;
     setIsSendingCode(true);
     setIsVerifyingCode(false);
     setError("");
@@ -115,9 +120,12 @@ export default function ForgotPasswordScreen() {
 
     try {
       const response = await sendPasswordResetCode({ email: trimmedEmail });
-      if (version !== flowVersionRef.current) {
+      if (version !== sendVersionRef.current) {
         return;
       }
+      // 기다리는 사이 코드 칸을 고쳐 보낸 확인 요청이 있으면 그 응답은 버린다.
+      verifyVersionRef.current += 1;
+      setIsVerifyingCode(false);
       setIsCodeSent(true);
       setIsCodeVerified(false);
       setCode("");
@@ -128,39 +136,39 @@ export default function ForgotPasswordScreen() {
       setCodeDeadline(sentAt + CODE_LIMIT_MS);
       setNotice(response.message);
     } catch (caughtError: unknown) {
-      if (version !== flowVersionRef.current) {
+      if (version !== sendVersionRef.current) {
         return;
       }
       setError(errorMessage(caughtError, "인증코드를 보내지 못했어요."));
     } finally {
-      if (version === flowVersionRef.current) {
+      if (version === sendVersionRef.current) {
         setIsSendingCode(false);
       }
     }
   }
 
   async function verifyCode(fullCode: string) {
-    flowVersionRef.current += 1;
-    const version = flowVersionRef.current;
+    verifyVersionRef.current += 1;
+    const version = verifyVersionRef.current;
     setIsVerifyingCode(true);
     setError("");
     setNotice("");
 
     try {
       const response = await verifyPasswordResetCode({ email: email.trim(), code: fullCode });
-      if (version !== flowVersionRef.current) {
+      if (version !== verifyVersionRef.current) {
         return;
       }
       setIsCodeVerified(true);
       setNotice(response.message);
     } catch (caughtError: unknown) {
-      if (version !== flowVersionRef.current) {
+      if (version !== verifyVersionRef.current) {
         return;
       }
       setIsCodeVerified(false);
       setError(errorMessage(caughtError, "인증코드를 확인하지 못했어요."));
     } finally {
-      if (version === flowVersionRef.current) {
+      if (version === verifyVersionRef.current) {
         setIsVerifyingCode(false);
       }
     }
@@ -173,7 +181,7 @@ export default function ForgotPasswordScreen() {
     }
 
     setCode(nextCode);
-    flowVersionRef.current += 1;
+    verifyVersionRef.current += 1;
     setIsVerifyingCode(false);
     if (isCodeVerified) {
       setIsCodeVerified(false);
@@ -213,16 +221,13 @@ export default function ForgotPasswordScreen() {
     }
 
     const trimmedEmail = email.trim();
-    const version = flowVersionRef.current;
     setIsResetting(true);
     setError("");
     setNotice("");
 
     try {
+      // 서버에서 비밀번호가 바뀌었으면 그 사이 칸이 바뀌었어도 로그인 화면으로 보낸다.
       await resetPassword({ email: trimmedEmail, code, newPassword });
-      if (version !== flowVersionRef.current) {
-        return;
-      }
       const loginQuery = [
         "mode=email",
         "reset=done",
@@ -233,9 +238,6 @@ export default function ForgotPasswordScreen() {
         .join("&");
       router.replace(`/login?${loginQuery}` as Href);
     } catch (caughtError: unknown) {
-      if (version !== flowVersionRef.current) {
-        return;
-      }
       setError(errorMessage(caughtError, "비밀번호를 바꾸지 못했어요."));
     } finally {
       setIsResetting(false);
@@ -290,6 +292,7 @@ export default function ForgotPasswordScreen() {
                 placeholderTextColor="#AE9A87"
                 value={email}
                 onChangeText={handleEmailChange}
+                editable={!isResetting}
               />
             </View>
 
@@ -321,7 +324,7 @@ export default function ForgotPasswordScreen() {
                   placeholderTextColor="#AE9A87"
                   value={code}
                   onChangeText={handleCodeChange}
-                  editable={!isCodeExpired}
+                  editable={!isCodeExpired && !isResetting}
                 />
                 <Text style={[styles.hintText, isCodeExpired && styles.hintTextWarning]}>{codeHint}</Text>
               </View>

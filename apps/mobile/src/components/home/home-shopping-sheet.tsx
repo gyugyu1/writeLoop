@@ -73,12 +73,18 @@ function discountOf(item: HomeShoppingItem): number | null {
 
 /** 서울 자정(오늘의 방송이 끝나는 때)까지 남은 시간 "H:MM:SS". */
 function untilSeoulMidnight(nowMs: number): string {
-  const left = Math.max(0, DAY_MS - ((nowMs + SEOUL_OFFSET_MS) % DAY_MS));
+  // 자정 정각은 "24:00:00"이 아니라 "0:00:00"(곧 다음 날 방송으로 바뀐다)
+  const left = (DAY_MS - ((nowMs + SEOUL_OFFSET_MS) % DAY_MS)) % DAY_MS;
   const total = Math.floor(left / 1000);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+/** 서울 날짜 번호(하루에 1씩 는다). 방송 상품이 바뀌는 날을 알아보는 데 쓴다. */
+function seoulDayOf(nowMs: number): number {
+  return Math.floor((nowMs + SEOUL_OFFSET_MS) / DAY_MS);
 }
 
 function ProductImage({ type, size }: { type: string; size: number }) {
@@ -132,6 +138,8 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 같은 렌더 안에서 두 번 눌러도 주문은 한 번(상태는 다음 렌더에야 바뀐다)
   const orderingRef = useRef(false);
+  // 마지막으로 목록을 불러온 서울 날짜. 열어 둔 채 자정을 넘기면 새 방송으로 다시 불러온다
+  const loadedDayRef = useRef(0);
   const sheetY = useRef(new Animated.Value(0)).current;
 
   const showToast = (message: string) => {
@@ -153,8 +161,13 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
         if (alive) setReduceMotion(enabled);
       })
       .catch(() => undefined);
+    // 앱을 켜 둔 채 설정을 바꿔도 따른다(홈쇼핑은 홈과 함께 늘 마운트되어 있다)
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", (enabled) => {
+      if (alive) setReduceMotion(enabled);
+    });
     return () => {
       alive = false;
+      subscription?.remove();
     };
   }, []);
 
@@ -169,6 +182,7 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   const load = useCallback(async () => {
     requestRef.current += 1;
     const request = requestRef.current;
+    loadedDayRef.current = seoulDayOf(Date.now());
     setLoading(true);
     setLoadFailed(false);
     try {
@@ -194,12 +208,21 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
       setDetailType(null);
       setOrdered(null);
       setOrdering(false);
+      // 기다리던 주문의 응답은 openRef로 버리므로, 다시 열면 바로 주문할 수 있게 막기도 푼다
+      orderingRef.current = false;
       setCategory("all");
       return;
     }
     setHostLine(HOST_LINES[Math.floor(Math.random() * HOST_LINES.length)]);
     void load();
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 열어 둔 채 서울 자정을 넘기면 오늘의 방송이 바뀌었으니 목록을 다시 불러온다
+  const seoulDay = seoulDayOf(now);
+  useEffect(() => {
+    if (!visible || seoulDay <= loadedDayRef.current) return;
+    void load();
+  }, [visible, seoulDay]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openDetail = (type: string) => {
     setOrdered(null);
@@ -246,13 +269,21 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
       // 가격이 바뀌었으면 목록을 다시 불러온다. 상세창은 열린 채 새 가격으로 바뀐다
       if (error instanceof ApiError && error.code === "PRICE_CHANGED") void load();
     } finally {
-      orderingRef.current = false;
-      if (opened === openRef.current) setOrdering(false);
+      // 그사이 닫혔으면 막기는 닫을 때 이미 풀었다(다시 연 화면의 새 주문 막기를 풀지 않는다)
+      if (opened === openRef.current) {
+        orderingRef.current = false;
+        setOrdering(false);
+      }
     }
   };
 
-  // 기기 뒤로 가기: 상세창(완료 판)이 열려 있으면 그것만 닫고, 아니면 홈쇼핑을 닫는다
+  // 기기 뒤로 가기: 주문을 기다리는 중이면 홈쇼핑을 닫고(늦은 응답은 openRef로 버린다),
+  // 상세창(완료 판)이 열려 있으면 그것만 닫고, 아니면 홈쇼핑을 닫는다
   const handleBack = () => {
+    if (ordering) {
+      onClose();
+      return;
+    }
     if (detailType !== null || ordered !== null) {
       closeDetail();
       return;
@@ -385,7 +416,13 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
             contentContainerStyle={[styles.content, { paddingHorizontal: sidePad, paddingBottom: insets.bottom + 28 }]}
           >
             {broadcastItem ? (
-              <View style={styles.broadcast}>
+              // 방송 칸 전체가 버튼이다(ON AIR 줄, 남은 시간, 라룹이 소개를 눌러도 상세창이 열린다)
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`오늘의 방송 상품 ${shopProductName(broadcastItem.type)}, ${shop.broadcast.salePrice}룹, 자세히 보기`}
+                style={styles.broadcast}
+                onPress={() => openDetail(broadcastItem.type)}
+              >
                 <View style={styles.broadcastTop}>
                   <View style={styles.onAir}>
                     <LiveDot reduceMotion={reduceMotion} />
@@ -393,12 +430,7 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
                   </View>
                   <Text style={styles.broadcastKicker}>오늘은 {discountOf(broadcastItem) ?? 20}% 할인</Text>
                 </View>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`오늘의 방송 상품 ${shopProductName(broadcastItem.type)}, ${shop.broadcast.salePrice}룹, 자세히 보기`}
-                  style={styles.feature}
-                  onPress={() => openDetail(broadcastItem.type)}
-                >
+                <View style={styles.feature}>
                   <View style={[styles.featureArt, { width: featureArt, height: featureArt }]}>
                     <View style={[styles.featureHalo, { width: featureArt - 18, height: featureArt - 18, borderRadius: (featureArt - 18) / 2 }]} />
                     <ProductImage type={broadcastItem.type} size={featureArt - 10} />
@@ -422,14 +454,14 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
                       <Text style={styles.link}>›</Text>
                     </View>
                   </View>
-                </Pressable>
+                </View>
                 <View style={styles.countdown}>
                   <Text style={styles.countdownText}>방송 종료까지 {untilSeoulMidnight(now)}</Text>
                 </View>
                 <View style={styles.host}>
                   <Text style={styles.hostText}>라룹이: “{hostLine}”</Text>
                 </View>
-              </View>
+              </Pressable>
             ) : null}
 
             <View accessibilityRole="tablist" style={styles.categories}>

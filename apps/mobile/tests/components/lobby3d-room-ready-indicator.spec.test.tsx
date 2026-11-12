@@ -245,15 +245,26 @@ async function flushAsync() {
   }
 }
 
-/** 3D 장면을 한 번 그린다: 등록된 useFrame을 모두 한 번 부르고 시계를 0.05초 돌린다. */
-async function frame(count = 1) {
+/** 3D 장면을 한 번 그린다: 등록된 useFrame을 모두 한 번 부르고 시계를 ms(기본 0.05초) 돌린다. */
+async function frame(count = 1, ms = 50) {
   for (let index = 0; index < count; index += 1) {
     await act(async () => {
-      for (const part of [...mockFrames]) part({ camera: mockThree.camera!, gl: {}, clock: { elapsedTime: 0 }, scene: mockThree.scene! }, 0.05);
-      jest.advanceTimersByTime(50);
+      for (const part of [...mockFrames]) part({ camera: mockThree.camera!, gl: {}, clock: { elapsedTime: 0 }, scene: mockThree.scene! }, ms / 1000);
+      jest.advanceTimersByTime(ms);
     });
   }
   await flushAsync();
+}
+
+/**
+ * 방이 보였다고 알릴 때까지 3D 장면을 16ms 간격으로 그린다(적어도 한 번, 표시가 사라지면 멈춤, 최대 60프레임 = 0.96초).
+ * 082에서 표시를 내리는 때가 "연달아 5프레임이 각각 34ms 안에 그려짐(상한 3초)"으로 바뀌어, 50ms 한 번 그리기 대신 쓴다(082 결정 03).
+ */
+async function framesUntilRoomShown() {
+  for (let index = 0; index < 60; index += 1) {
+    await frame(1, 16);
+    if (!indicatorShown()) break;
+  }
 }
 
 function hiddenByStyle(node: TestInstance | null): boolean {
@@ -386,7 +397,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
       expect(beforeRoomView()).toEqual(BEFORE_ROOM);
 
       await settle("loaded", FURNITURE_FILE, CHARACTER_FILE);
-      await frame();
+      await framesUntilRoomShown();
       expect(afterRoomView()).toEqual(AFTER_ROOM);
     },
     SLOW_TEST_MS
@@ -401,7 +412,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
       // 모델은 다 그려졌지만 아직 장면을 그리지 않았다
       expect(beforeRoomView()).toEqual(BEFORE_ROOM);
 
-      await frame();
+      await framesUntilRoomShown();
       expect(afterRoomView()).toEqual(AFTER_ROOM);
     },
     SLOW_TEST_MS
@@ -420,7 +431,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
       expect(beforeRoomView()).toEqual(BEFORE_ROOM);
 
       await settle("loaded", waiting);
-      await frame();
+      await framesUntilRoomShown();
       expect(afterRoomView()).toEqual(AFTER_ROOM);
     },
     SLOW_TEST_MS
@@ -440,7 +451,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
 
       await settle("failed", ...failing);
       await settle("loaded", ...loading);
-      await frame();
+      await framesUntilRoomShown();
       expect(afterRoomView()).toEqual(AFTER_ROOM);
     },
     SLOW_TEST_MS
@@ -454,7 +465,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
       expect(beforeRoomView()).toEqual(BEFORE_ROOM);
 
       await settle("failed", FURNITURE_FILE, CHARACTER_FILE);
-      await frame();
+      await framesUntilRoomShown();
       expect(afterRoomView()).toEqual(AFTER_ROOM);
     },
     SLOW_TEST_MS
@@ -471,7 +482,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
       expect(beforeRoomView()).toEqual(BEFORE_ROOM);
 
       await settle("loaded", FURNITURE_FILE);
-      await frame();
+      await framesUntilRoomShown();
       expect(afterRoomView()).toEqual(AFTER_ROOM);
     },
     SLOW_TEST_MS
@@ -487,7 +498,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
 
       await screen.rerender(lobby({ layoutReady: true }));
       await flushAsync();
-      await frame();
+      await framesUntilRoomShown();
       expect(afterRoomView()).toEqual(AFTER_ROOM);
     },
     SLOW_TEST_MS
@@ -506,7 +517,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
       });
 
       await settle("loaded", FURNITURE_FILE, CHARACTER_FILE);
-      await frame();
+      await framesUntilRoomShown();
       expect({ prompt: textShown(MARKS.board.prompt), enter: buttonShown(MARKS.board.buttonLabel), indicator: indicatorShown() }).toEqual({
         prompt: true,
         enter: true,
@@ -523,7 +534,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
       await openLobby();
       expect(indicatorShown()).toBe(true);
       await settle("loaded", FURNITURE_FILE, CHARACTER_FILE);
-      await frame();
+      await framesUntilRoomShown();
       expect(afterRoomView()).toEqual(AFTER_ROOM);
 
       await screen.rerender(lobby({ layout: MOVED_DESK }));
@@ -544,7 +555,7 @@ describe("[spec] 079 바뀌는 동작: 방이 처음 보일 때까지 준비 표
       await openLobby();
       expect(indicatorShown()).toBe(true);
       await settle("loaded", FURNITURE_FILE, CHARACTER_FILE);
-      await frame();
+      await framesUntilRoomShown();
       expect(afterRoomView()).toEqual(AFTER_ROOM);
 
       await fireEvent.press(screen.getByRole("button", { name: "꾸미기" }));

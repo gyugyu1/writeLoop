@@ -555,6 +555,8 @@ export default function Lobby3dScreen({
   );
   const startEdit = () => {
     if (editorRef.current) return;
+    // 앞 '완료'의 로딩 표시가 남아 있으면 내린다(꾸미기에서 '취소'로 나올 때 남은 표시가 보이지 않게)
+    settleRoom();
     // 걷기·'들어가기' 동작을 거두고 선다(편집하는 동안 라이트루프는 숨는다)
     sim.relayout(Date.now());
     syncView();

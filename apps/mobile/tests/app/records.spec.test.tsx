@@ -807,14 +807,14 @@ describe("[spec] 로그인 전", () => {
     expect(getNowInEnglishSummary).toHaveBeenCalledTimes(1);
   });
 
-  it("[spec] 로그인 하기를 누르면 기록 화면으로 돌아오는 로그인 주소로 간다", async () => {
+  it("[spec] 로그인 하기를 누르면 지금 탭(저장 표현)의 기록 화면으로 돌아오는 로그인 주소로 간다", async () => {
     setParams({ tab: "expressions" });
     await renderScreen();
 
     await pressText("로그인 하기");
 
     expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith("/login?redirectTo=%2Frecords");
+    expect(router.push).toHaveBeenCalledWith("/login?redirectTo=%2Frecords%3Ftab%3Dexpressions");
   });
 
   it("[spec] 영어조각 탭은 로그인 전에도 프로필 없이 탭 줄과 기록을 보이고, 다른 탭을 누르면 로그인 안내로 바뀐다", async () => {
@@ -833,7 +833,7 @@ describe("[spec] 로그인 전", () => {
     expect(screen.queryByText("영어 답변")).toBeNull();
   });
 
-  it("[spec] 로그인하면 작문 기록(첫 페이지)과 저장 표현을 부르고, Now in English 기록은 다시 부르지 않는다", async () => {
+  it("[spec] 로그인하면 작문 기록(첫 페이지)과 저장 표현을 부르고, Now in English 기록도 다시 부른다", async () => {
     await renderScreen();
 
     setSessionUser(signedInUser);
@@ -843,7 +843,7 @@ describe("[spec] 로그인 전", () => {
     expect(getAnswerHistory).toHaveBeenCalledWith({ limit: 30 });
     expect(getTodayWritingStatus).toHaveBeenCalledTimes(1);
     expect(getSavedExpressions).toHaveBeenCalledTimes(1);
-    expect(getNowInEnglishSummary).toHaveBeenCalledTimes(1);
+    expect(getNowInEnglishSummary).toHaveBeenCalledTimes(2);
     expect(screen.getByText("학습자")).toBeOnTheScreen();
     expect(screen.getByText(s1.questionEn)).toBeOnTheScreen();
   });
@@ -901,13 +901,13 @@ describe("[spec] 프로필 카드", () => {
     expect(screen.queryByText("오늘 상태 실패")).toBeNull();
   });
 
-  it("[spec] 오늘 일기 쓰기를 누르면 일기 화면으로 간다", async () => {
+  it("[spec] 오늘 일기 쓰기를 누르면 일기 쓰기 화면으로 간다", async () => {
     await renderScreen();
 
     expect(screen.getByText(">")).toBeOnTheScreen();
     await pressText("오늘 일기 쓰기");
 
-    expect(router.push).toHaveBeenCalledWith("/diary");
+    expect(router.push).toHaveBeenCalledWith("/diary/write");
   });
 });
 

@@ -3,9 +3,9 @@
 // 날짜 스크롤 훅으로 옮겨도 그대로여야 하는 것 중, 기록 ①의 화면 테스트(records.spec.test.tsx)가 보지 않는 것만 더 적는다.
 // - 효과 실행 순서: 처음 그릴 때 E2(Now in English 기록)가 E3(작문 기록·오늘 상태·저장 표현)보다 먼저 API를 부르는 것,
 //   당겨서 새로고침이 부르는 API의 순서
-// - E3이 다시 도는 때: 로그인 사용자(객체)가 바뀔 때만. 화면 조작·경로 값 변경으로는 다시 부르지 않고, 로그인 상태에서
-//   사용자 객체만 바뀌면 다시 부르되 검색어는 비우지 않는다. 로그아웃하면 고른 태그도 풀린다
-// - E7(날짜가 바뀌면 스크롤 기록 지우기)이 E8(고른 날짜로 스크롤)보다 먼저 도는 것, E8의 정리(clearTimeout)
+// - E3이 다시 도는 때: 로그인 사용자가 바뀔 때만. 화면 조작·경로 값 변경으로는 다시 부르지 않고, 로그인 상태에서
+//   같은 id의 사용자 객체만 바뀌면 다시 부르지 않고 검색어도 비우지 않는다(작업 083에서 고침). 로그아웃하면 고른 태그도 풀린다
+// - 80ms 안에 다른 날짜를 고르면 앞 날짜로 걸어 둔 스크롤은 취소되는 것(작업 083에서 고침), E8의 정리(clearTimeout)
 // - 훅 사이 값 전달: 경로 값 날짜(E4)·열린 날짜(화면 상태)가 스크롤 훅으로, 더 불러온 기록(데이터 훅)이 월 달력 훅으로
 // 가짜로 두는 것은 records.spec.test.tsx와 같다. 가짜 시계: 2026-11-12T03:00:00Z = 서울 2026-11-12(목) 12:00.
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -361,7 +361,7 @@ describe("[spec] 기록·표현 불러오기(E3)가 다시 도는 때", () => {
     expectApiCallCounts({ history: 1, today: 1, expressions: 1, now: 1 });
   });
 
-  it("[spec] 로그인한 채 사용자 객체만 바뀌면 작문 기록·오늘 상태·저장 표현을 다시 부르되, Now in English 기록은 다시 부르지 않고 검색어도 그대로 둔다", async () => {
+  it("[spec] 로그인한 채 같은 id의 사용자 객체만 바뀌면 작문 기록·오늘 상태·저장 표현·Now in English 기록을 다시 부르지 않고 검색어도 그대로 둔다", async () => {
     setParams({ tab: "expressions" });
     await renderScreen();
     await typeSearch("coffee");
@@ -370,7 +370,7 @@ describe("[spec] 기록·표현 불러오기(E3)가 다시 도는 때", () => {
     setSessionUser({ ...signedInUser });
     await rerenderScreen();
 
-    expectApiCallCounts({ history: 2, today: 2, expressions: 2, now: 1 });
+    expectApiCallCounts({ history: 1, today: 1, expressions: 1, now: 1 });
     expect(getAnswerHistory).toHaveBeenLastCalledWith({ limit: 30 });
     expect(searchInput().props.value).toBe("coffee");
     expect(screen.getByText("1개 결과 · 전체 2개")).toBeOnTheScreen();
@@ -452,22 +452,20 @@ describe("[spec] 날짜 스크롤(E7·E8)", () => {
     expect(scrollViewScrollTo).toHaveBeenCalledTimes(1);
   });
 
-  it("[spec] 날짜가 바뀌면 스크롤 기록을 먼저 지우므로(E7 → E8), 다른 날짜를 거쳐 앞 날짜로 돌아오면 다시 스크롤한다", async () => {
+  it("[spec] 위치가 정해져 앞 날짜로 스크롤이 걸린 뒤 80ms 안에 다른 날짜를 고르면 앞 날짜 스크롤은 취소되고, 다시 앞 날짜로 돌아오면 그 날짜로 한 번 스크롤한다", async () => {
     setParams({ date: "2026-11-11" });
     await renderScreen();
     // 위치가 정해지면 80ms 뒤 11-11로 스크롤하도록 걸린다.
     await layoutGroup(HEADING_1111, 640);
-    // 그 전에 위치를 모르는 11-09를 고른다. 11-09로는 스크롤하지 않는다.
+    // 그 전에 위치를 모르는 11-09를 고른다. 걸려 있던 11-11 스크롤은 취소되고, 11-09로는 스크롤하지 않는다.
     await pickCalendarDay("9");
-    await advance(80);
-    // 걸려 있던 11-11 스크롤은 그대로 돈다(이때 마지막 스크롤 날짜가 11-11이 된다).
-    expect(scrollViewScrollTo).toHaveBeenCalledTimes(1);
-    expect(scrollViewScrollTo).toHaveBeenLastCalledWith({ y: 628, animated: true });
+    await advance(200);
+    expect(scrollViewScrollTo).not.toHaveBeenCalled();
 
     await pickCalendarDay("11");
     await advance(80);
 
-    expect(scrollViewScrollTo).toHaveBeenCalledTimes(2);
+    expect(scrollViewScrollTo).toHaveBeenCalledTimes(1);
     expect(scrollViewScrollTo).toHaveBeenLastCalledWith({ y: 628, animated: true });
   });
 });

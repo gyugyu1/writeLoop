@@ -126,6 +126,7 @@ export default function ForgotPasswordScreen() {
       // 기다리는 사이 코드 칸을 고쳐 보낸 확인 요청이 있으면 그 응답은 버린다.
       verifyVersionRef.current += 1;
       setIsVerifyingCode(false);
+      setError("");
       setIsCodeSent(true);
       setIsCodeVerified(false);
       setCode("");
@@ -297,9 +298,9 @@ export default function ForgotPasswordScreen() {
             </View>
 
             <Pressable
-              style={[styles.secondaryButton, isSendingCode && styles.disabledButton]}
+              style={[styles.secondaryButton, (isSendingCode || isResetting) && styles.disabledButton]}
               onPress={() => void handleSendCode()}
-              disabled={isSendingCode}
+              disabled={isSendingCode || isResetting}
               accessibilityRole="button"
             >
               {isSendingCode ? (

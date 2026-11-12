@@ -49,9 +49,11 @@ import type {
   PromptHint,
   Prompt,
   RefinementExpression,
+  ResetPasswordRequest,
   SavedExpression,
   SaveExpressionRequest,
   SaveWritingDraftRequest,
+  SendPasswordResetCodeRequest,
   SendRegistrationCodeRequest,
   SocialLoginResult,
   SocialProvider,
@@ -60,6 +62,7 @@ import type {
   UpdateProfileRequest,
   UserFeedbackRequest,
   UserFeedbackResponse,
+  VerifyPasswordResetCodeRequest,
   WritingDraft,
   WritingDraftType
 } from "./types";
@@ -1103,6 +1106,34 @@ export async function completeRegistration(
   }
 
   return (await response.json()) as AuthUser;
+}
+
+async function postPasswordReset(path: string, request: object, fallbackMessage: string): Promise<AuthNotice> {
+  const response = await fetch(`${apiBaseUrl}/api/auth/password-reset/${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, fallbackMessage);
+  }
+
+  return (await response.json()) as AuthNotice;
+}
+
+export function sendPasswordResetCode(request: SendPasswordResetCodeRequest): Promise<AuthNotice> {
+  return postPasswordReset("send-code", request, "인증코드를 보내지 못했어요.");
+}
+
+export function verifyPasswordResetCode(request: VerifyPasswordResetCodeRequest): Promise<AuthNotice> {
+  return postPasswordReset("verify-code", request, "인증코드를 확인하지 못했어요.");
+}
+
+export function resetPassword(request: ResetPasswordRequest): Promise<AuthNotice> {
+  return postPasswordReset("complete", request, "비밀번호를 바꾸지 못했어요.");
 }
 
 export async function updateProfile(request: UpdateProfileRequest): Promise<AuthUser> {

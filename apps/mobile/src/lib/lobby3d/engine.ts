@@ -381,12 +381,15 @@ export const ROOM_BOUNDS = {
   maxZ: ROOM.depth + ROOM.stepDepth
 };
 
-/** 마을 끝을 둘러싼 상자: 마을 바닥 가장자리. 위로는 뒤쪽 건물 지붕까지 보이게 넉넉하다(그 너머는 풀밭·숲이라 검지 않다). */
+/**
+ * 마을 끝을 둘러싼 상자: 마을 바닥 가장자리(높이 0). 화면에 보이는 바닥이 마을 끝을 넘지 않게 카메라가 멈춘다.
+ * 건물·나무는 이 상자보다 높아도 화면 위로 그대로 보인다(그 너머는 풀밭·숲이라 검지 않다).
+ */
 export const VILLAGE_BOUNDS = {
   minX: 0,
   maxX: VILLAGE.width,
-  minY: -0.25,
-  maxY: 6,
+  minY: 0,
+  maxY: 0,
   minZ: 0,
   maxZ: VILLAGE.depth
 };
@@ -470,8 +473,10 @@ export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number
   };
   const centerZ = solve((cz) => minY(cz) + maxY(cz), 0);
   const fitsY = centerZ > czFront && maxY(centerZ) <= 1;
+  // 마을이 세로로 다 들어오면 가운데 대신 마을 앞끝을 화면 아래 끝에 맞춘다(넘쳐 보이는 곳은 화면 위쪽, 마을 뒤 숲이다)
+  const fitZ = area === "village" ? solve(minY, -1) : centerZ;
   const cz = fitsY
-    ? centerZ
+    ? fitZ
     : Math.min(Math.max(follow.z - 0.6, solve(maxY, 1)), Math.max(solve(minY, -1), solve(maxY, 1)));
   // 가로: 화면 가로 자리 = (x − 보는 점 x) / (깊이 · tanH). 가까운 곳일수록 같은 화면 폭에 좁은 바닥이 보인다.
   // 다 들어오는지는 방 상자에서 가장 가까운 모서리로 본다.

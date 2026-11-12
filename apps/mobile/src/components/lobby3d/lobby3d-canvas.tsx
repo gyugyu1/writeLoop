@@ -1008,8 +1008,17 @@ function Scene({
   const windowLift = useRef({ x: 0, y: 0, z: 0 });
 
   // 방이 처음 보였는지 알린다(onRoomShown). 부분마다 모델이 장면에 들어오거나 못 읽어 대신 그리게 되면 끝난 것으로 센다.
-  // 다 끝난 뒤 처음 오는 프레임에서, 그 프레임을 그린 다음(useFrame 다음에 그린다) 알린다. 그 뒤로는 방을 다시 지어도 알리지 않는다
-  const roomShown = useRef<{ settled: Set<string>; told: boolean }>({ settled: new Set(), told: false });
+  // 다 끝나면 화면이 준비 표시로 가린 동안 셰이더와 그림을 미리 준비하고(warmUpScenes), 프레임이 고르게 그려지면
+  // (연달아 ROOM_SMOOTH_FRAMES 프레임이 각각 ROOM_SMOOTH_FRAME_S 안) 알린다. 다 끝난 때부터 ROOM_SHOW_LIMIT_S가 지나면 고르지 않아도 알린다.
+  // 그 뒤로는 방을 다시 지어도 알리지 않는다
+  const roomShown = useRef<{ settled: Set<string>; told: boolean; warmed: boolean; since: number; smooth: number }>({
+    settled: new Set(),
+    told: false,
+    warmed: false,
+    since: 0,
+    smooth: 0
+  });
+  const outdoorScene = useRef<THREE.Scene | null>(null);
   const roomSettled = useCallback(() => {
     roomShown.current.settled.add("room");
   }, []);
@@ -1019,11 +1028,19 @@ function Scene({
   const characterSettled = useCallback(() => {
     roomShown.current.settled.add("character");
   }, []);
-  useFrame(() => {
+  useFrame((state, delta) => {
     const shown = roomShown.current;
     if (shown.told) return;
     const parts = currentRoom().id === BASIC_ROOM.id ? ["room", "furniture", "character"] : ["furniture", "character"];
     if (!parts.every((part) => shown.settled.has(part))) return;
+    if (!shown.warmed) {
+      shown.warmed = true;
+      warmUpScenes(state.gl, state.camera, [state.scene, outdoorScene.current]);
+      return;
+    }
+    shown.since += delta;
+    shown.smooth = delta <= ROOM_SMOOTH_FRAME_S ? shown.smooth + 1 : 0;
+    if (shown.smooth < ROOM_SMOOTH_FRAMES && shown.since < ROOM_SHOW_LIMIT_S) return;
     shown.told = true;
     setTimeout(() => onRoomShown?.(), 0);
   });
@@ -1142,6 +1159,7 @@ function Scene({
             daylight={daylightState}
             lightLayout={lightLayout}
             windowLift={windowLift}
+            outdoorRef={outdoorScene}
           />
           <Settled onSettled={furnitureSettled} />
         </Suspense>
@@ -1163,6 +1181,34 @@ function Scene({
       </CharacterErrorBoundary>
     </>
   );
+}
+
+// 방을 처음 보이기 전, 프레임이 고르게 그려지는지 보는 기준(사용자 결정: 연달아 5프레임이 각각 34ms 안, 늦어도 3초)
+const ROOM_SMOOTH_FRAMES = 5;
+const ROOM_SMOOTH_FRAME_S = 0.034;
+const ROOM_SHOW_LIMIT_S = 3;
+
+/**
+ * 장면들이 쓰는 재질의 셰이더를 미리 만들고 그림을 그래픽 메모리에 올린다. 처음 그릴 때 하면 그 몇 프레임이 끊겨서,
+ * 방이 준비 표시에 가려 있는 동안 해 둔다. 그림판(렌더 타깃)의 그림은 올릴 것이 없어 건너뛴다.
+ */
+function warmUpScenes(gl: THREE.WebGLRenderer, camera: THREE.Camera, scenes: (THREE.Object3D | null)[]) {
+  for (const scene of scenes) {
+    if (!scene) continue;
+    if (typeof gl.compile === "function") gl.compile(scene, camera);
+    if (typeof gl.initTexture !== "function") continue;
+    const textures = new Set<THREE.Texture>();
+    scene.traverse((o) => {
+      const material = (o as THREE.Mesh).material;
+      if (!material) return;
+      for (const m of Array.isArray(material) ? material : [material]) {
+        for (const value of Object.values(m)) {
+          if (value instanceof THREE.Texture && !value.isRenderTargetTexture) textures.add(value);
+        }
+      }
+    });
+    for (const texture of textures) gl.initTexture(texture);
+  }
 }
 
 /** 같은 Suspense 안의 부분과 함께 장면에 들어오면(모델을 다 읽으면) 알린다. */

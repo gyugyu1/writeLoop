@@ -60,9 +60,11 @@ interface BakedFurnitureProps {
   lightLayout?: MutableRefObject<LobbyLayout>;
   /** 고른 창문이 떠 있는 만큼(편집 모드). 창밖 장면도 같은 만큼 옮겨 창틀과 함께 나온다. */
   windowLift?: MutableRefObject<{ x: number; y: number; z: number }>;
+  /** 창밖 장면을 알려 줄 자리. 3D 화면이 방을 처음 보이기 전에 이 장면의 셰이더와 그림도 미리 준비한다. */
+  outdoorRef?: MutableRefObject<THREE.Scene | null>;
 }
 
-export function BakedFurniture({ layout, added, fallback, daylight, lightLayout, windowLift }: BakedFurnitureProps) {
+export function BakedFurniture({ layout, added, fallback, daylight, lightLayout, windowLift, outdoorRef }: BakedFurnitureProps) {
   const gltf = useLoader(GLTFLoader, FURNITURE_ASSET as string) as GLTF;
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판.
   // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 그릴 때마다 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
@@ -205,11 +207,13 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
   });
 
   useEffect(() => {
+    if (outdoorRef) outdoorRef.current = outdoor.scene;
     return () => {
+      if (outdoorRef?.current === outdoor.scene) outdoorRef.current = null;
       outdoor.dispose();
       target.dispose();
     };
-  }, [outdoor, target]);
+  }, [outdoor, target, outdoorRef]);
 
   useEffect(() => {
     fallback.visible = false;

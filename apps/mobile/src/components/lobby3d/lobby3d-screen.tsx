@@ -1107,7 +1107,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF"
   },
   labelText: { fontSize: 11, fontWeight: "700", color: "#2B1810" },
-  preparing: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 10 },
+  // 준비하는 동안 뒤에서 그리는 방이 비쳐 보이지 않게 3D 자리를 불투명한 검정으로 가린다
+  preparing: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#000000" },
   preparingText: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
   bubbleWrap: { position: "absolute", left: 0, top: 0, width: BUBBLE_WIDTH, alignItems: "center" },
   bubble: {

@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { loopPointsNotice } from "../lib/loop-points";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -150,6 +151,12 @@ export function AnswerLoop() {
   const [isRefreshingQuestion, setIsRefreshingQuestion] = useState(false);
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
   const [isFinishingLoop, setIsFinishingLoop] = useState(false);
+  // 이번 완료로 쌓인 룹 안내(완료 단계에 보인다)
+  const [loopNotice, setLoopNotice] = useState<string | null>(null);
+  // 다른 답 세션으로 바뀌면 앞 완료의 안내를 지운다
+  useEffect(() => {
+    setLoopNotice(null);
+  }, [sessionId]);
   const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mobileComposerBarRef = useRef<HTMLDivElement | null>(null);
   const helpSheetCloseButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -1042,6 +1049,7 @@ export function AnswerLoop() {
       return;
     }
     if (isSessionCompleted) {
+      // 같은 완료로 돌아온 것이라 그 안내를 그대로 보인다
       setStep("complete");
       return;
     }
@@ -1049,7 +1057,8 @@ export function AnswerLoop() {
     try {
       setIsFinishingLoop(true);
       setError("");
-      await completeFeedbackSession(sessionId, guestId || undefined);
+      const finished = await completeFeedbackSession(sessionId, guestId || undefined);
+      setLoopNotice(loopPointsNotice(finished?.loopPoints));
       setCompletedSessionId(sessionId);
       if (selectedPromptId) {
         drafts.clearVisibleIncompleteLoop(selectedPromptId);
@@ -1425,6 +1434,7 @@ export function AnswerLoop() {
           setStep={setStep}
           streakDays={streakDays}
           todayStatus={todayStatus}
+          loopNotice={loopNotice}
         />
       )}
       <FeedbackLoadingOverlay

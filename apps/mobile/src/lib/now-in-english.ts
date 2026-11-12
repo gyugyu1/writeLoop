@@ -1,3 +1,4 @@
+import type { LoopPointsReward } from "./types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
@@ -49,6 +50,8 @@ export type NowInEnglishEntry = {
   polishedFromText?: string | null;
   createdAt: string;
   dateKey: string;
+  /** 서버에 새로 저장했을 때의 룹 적립 결과(저장 응답에만 있고 기기에는 기억하지 않는다). */
+  loopPoints?: LoopPointsReward | null;
 };
 
 export type NowInEnglishAiReflectionExpression = {
@@ -558,9 +561,11 @@ export async function saveNowInEnglishEntry(
     try {
       const savedEntry = await createNowInEnglishEntry(entry);
       if (savedEntry) {
+        // 룹 적립 결과는 화면에만 넘기고 기기에 기억하는 조각에는 넣지 않는다
+        const { loopPoints, ...storedEntry } = savedEntry;
         const serverEntries = await getNowInEnglishEntries();
-        await writeEntriesForOwner(mergeEntries([savedEntry], serverEntries, entries), ownerId);
-        return savedEntry;
+        await writeEntriesForOwner(mergeEntries([storedEntry], serverEntries, entries), ownerId);
+        return { ...storedEntry, loopPoints: loopPoints ?? null };
       }
       await addPendingSyncEntryId(entry.id);
     } catch {

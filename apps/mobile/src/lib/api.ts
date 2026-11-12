@@ -1,3 +1,4 @@
+import { readLoopPoints } from "./loop-points";
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
@@ -285,7 +286,9 @@ function normalizeNowInEnglishEntryPayload(
     polishedFromEntryId: payload.polishedFromEntryId ?? null,
     polishedFromText: payload.polishedFromText ?? null,
     createdAt: payload.createdAt,
-    dateKey: payload.dateKey
+    dateKey: payload.dateKey,
+    // 저장 응답에만 있다(목록·동기화 응답에는 없다)
+    ...(payload.loopPoints !== undefined ? { loopPoints: readLoopPoints(payload.loopPoints) } : {})
   };
 }
 
@@ -514,7 +517,8 @@ function normalizeDiaryFeedbackPayload(value: unknown): DiaryFeedback | null {
       ? payload.diaryExpressions.map((item) => normalizeDiaryExpressionPayload(item))
       : [],
     nextDiaryMission: normalizeDiaryMissionPayload(payload.nextDiaryMission),
-    safetyFlags: asStringArray(payload.safetyFlags)
+    safetyFlags: asStringArray(payload.safetyFlags),
+    loopPoints: readLoopPoints(payload.loopPoints)
   };
 }
 
@@ -1879,7 +1883,8 @@ export async function completeFeedbackSession(
     throw await parseApiError(response, "답변 루프를 완료하지 못했어요.");
   }
 
-  return (await response.json()) as FeedbackSessionStatus;
+  const status = (await response.json()) as FeedbackSessionStatus;
+  return { ...status, loopPoints: readLoopPoints(status.loopPoints) };
 }
 
 export async function getDiaryEntries(): Promise<DiaryEntry[]> {

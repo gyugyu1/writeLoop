@@ -2,6 +2,16 @@ import { StyleSheet } from "react-native";
 
 // 영어일기 화면(src/components/diary-entry-screen.tsx)과 그 조각·피드백 패널이 함께 쓰는 스타일.
 export const styles = StyleSheet.create({
+  loopNotice: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#FFF1D6",
+    borderWidth: 1,
+    borderColor: "#E38B12"
+  },
+  loopNoticeText: { fontSize: 14, fontWeight: "800", color: "#B5650A" },
   safeArea: {
     flex: 1,
     backgroundColor: "#F7F2EB"

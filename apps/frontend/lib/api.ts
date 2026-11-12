@@ -1,3 +1,4 @@
+import { readLoopPoints } from "./loop-points";
 import type {
   AdminFeedbackMetrics,
   AdminPromptRecommendationMetrics,
@@ -333,7 +334,8 @@ function normalizeDiaryFeedbackPayload(value: unknown): DiaryFeedback | null {
       ? payload.diaryExpressions.map((item) => normalizeDiaryExpressionPayload(item))
       : [],
     nextDiaryMission: normalizeDiaryMissionPayload(payload.nextDiaryMission),
-    safetyFlags: asStringArray(payload.safetyFlags)
+    safetyFlags: asStringArray(payload.safetyFlags),
+    loopPoints: readLoopPoints(payload.loopPoints)
   };
 }
 
@@ -835,7 +837,8 @@ export async function completeFeedbackSession(
     throw await parseApiError(response, "Failed to finish answer session");
   }
 
-  return (await response.json()) as FeedbackSessionStatus;
+  const status = (await response.json()) as FeedbackSessionStatus;
+  return { ...status, loopPoints: readLoopPoints(status.loopPoints) };
 }
 
 export async function getDiaryEntries(): Promise<DiaryEntry[]> {

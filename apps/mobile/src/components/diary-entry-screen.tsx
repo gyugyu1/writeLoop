@@ -1,3 +1,4 @@
+import { loopPointsNotice } from "@/lib/loop-points";
 import { router, type Href } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -7,7 +8,8 @@ import {
   Platform,
   ScrollView,
   Text,
-  TextInput
+  TextInput,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FeedbackLoadingOverlay from "@/components/feedback-loading-overlay";
@@ -647,6 +649,11 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
             wordCount={wordCount}
           />
 
+          {feedback && loopPointsNotice(feedback.loopPoints) ? (
+            <View accessibilityLabel={loopPointsNotice(feedback.loopPoints) ?? undefined} style={styles.loopNotice}>
+              <Text style={styles.loopNoticeText}>{loopPointsNotice(feedback.loopPoints)}</Text>
+            </View>
+          ) : null}
           {feedback ? (
             <DiaryFeedbackPanel
               feedback={feedback}

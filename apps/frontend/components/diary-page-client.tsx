@@ -1,5 +1,6 @@
 "use client";
 
+import { loopPointsNotice } from "../lib/loop-points";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -707,6 +708,9 @@ export function DiaryPageClient() {
           {notice ? <p className={styles.noticeText}>{notice}</p> : null}
           {error ? <p className={styles.errorText}>{error}</p> : null}
 
+          {feedback && loopPointsNotice(feedback.loopPoints) ? (
+            <p className={styles.loopNotice}>{loopPointsNotice(feedback.loopPoints)}</p>
+          ) : null}
           {feedback ? <DiaryFeedbackPanel feedback={feedback} /> : null}
         </section>
       </div>

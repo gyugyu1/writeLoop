@@ -1,0 +1,81 @@
+import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
+
+// 라룹 홈쇼핑에서만 쓰는 상품 표시 값: 홈쇼핑 이름, 분류, 짧은 설명. 가격·할인·방송 상품은 서버 목록을 따른다.
+// 꾸미기 보관함의 이름(furniture-catalog의 name)은 그대로 둔다.
+
+export type ShopCategory = "all" | "furniture" | "lighting" | "decor" | "plants";
+
+export const SHOP_CATEGORIES: { id: ShopCategory; label: string }[] = [
+  { id: "all", label: "전체" },
+  { id: "furniture", label: "가구" },
+  { id: "lighting", label: "조명" },
+  { id: "decor", label: "장식" },
+  { id: "plants", label: "식물" }
+];
+
+interface ShopProductInfo {
+  name: string;
+  category: Exclude<ShopCategory, "all">;
+  description: string;
+}
+
+const PRODUCT_INFO: Record<string, ShopProductInfo> = {
+  bed: { name: "침대", category: "furniture", description: "하루를 마무리하는 포근한 자리예요." },
+  wardrobe: { name: "옷장", category: "furniture", description: "방 한쪽을 차분하게 채우는 기본 옷장이에요." },
+  nightstand: { name: "협탁", category: "furniture", description: "윗면에 조명이나 작은 소품을 올려 보세요." },
+  lamp: { name: "탁상 스탠드", category: "lighting", description: "책상이나 협탁 위를 따뜻하게 밝혀 줘요." },
+  floorLamp: { name: "바닥 스탠드", category: "lighting", description: "침대 옆이나 방 구석에 작은 빛을 더해요." },
+  frame: { name: "액자", category: "decor", description: "허전한 벽을 채우는 작은 그림이에요." },
+  rug: { name: "러그", category: "decor", description: "가구 아래에 깔아 공간을 아늑하게 묶어 줘요." },
+  books: { name: "책", category: "decor", description: "책 몇 권을 쌓아 나만의 독서 분위기를 만들어요." },
+  smallPlant: { name: "작은 화분", category: "plants", description: "작은 초록 하나로 책상이 산뜻해져요." },
+  plant: { name: "큰 화분", category: "plants", description: "빈 공간에 싱그러운 초록을 더해 보세요." }
+};
+
+/** 앱 가구 목록에 있는 종류면 그 이름, 없으면 종류 id(서버가 새 종류를 보낸 경우). */
+function catalogName(type: string): string {
+  try {
+    return furnitureType(type).name;
+  } catch {
+    return type;
+  }
+}
+
+/** 홈쇼핑 이름. 표에 없는 종류는 앱 가구 목록의 이름이다. */
+export function shopProductName(type: string): string {
+  return PRODUCT_INFO[type]?.name ?? catalogName(type);
+}
+
+/** 짧은 설명. 표에 없는 종류는 빈 글이다. */
+export function shopProductDescription(type: string): string {
+  return PRODUCT_INFO[type]?.description ?? "";
+}
+
+/** 그 종류가 그 분류에 드는지. 표에 없는 종류는 '전체'에만 든다. */
+export function inShopCategory(type: string, category: ShopCategory): boolean {
+  if (category === "all") return true;
+  return PRODUCT_INFO[type]?.category === category;
+}
+
+/** 놓는 위치와 차지하는 크기(앱 가구 목록의 mount·size 규칙). 목록에 없는 종류면 null. */
+export function shopPlacement(type: string): { where: string; size: string } | null {
+  let kind;
+  try {
+    kind = furnitureType(type);
+  } catch {
+    return null;
+  }
+  const { width, depth } = kind.size;
+  switch (kind.mount) {
+    case "floor":
+      return { where: "바닥에 놓기", size: `${width} × ${depth}칸` };
+    case "cover":
+      return { where: "바닥에 깔기", size: `${width} × ${depth}칸` };
+    case "tabletop":
+      return { where: "책상·협탁 위", size: "소품 자리 1칸" };
+    case "wall":
+      return { where: "벽에 걸기", size: `가로 ${width}칸` };
+    default:
+      return null;
+  }
+}

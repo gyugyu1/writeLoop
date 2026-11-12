@@ -1,17 +1,51 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ApiError, getHomeShopping, orderHomeShopping } from "@/lib/api";
-import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
 import type { HomeShopping, HomeShoppingItem, HomeShoppingOrderResult } from "@/lib/types";
+import {
+  SHOP_CATEGORIES,
+  inShopCategory,
+  shopPlacement,
+  shopProductDescription,
+  shopProductName,
+  type ShopCategory
+} from "./home-shopping-catalog";
 
-// 라룹 홈쇼핑: 로비 위에 전체 화면으로 열린다. 오늘의 방송 상품과 기본 가구를 룹으로 산다.
+// 라룹 홈쇼핑: 로비 위에 전체 화면으로 열린다. 위 줄(닫기·제목·잔액)은 늘 보이고, 그 아래로 오늘의 방송,
+// 분류 탭, 2열 상품 카드가 스크롤된다. 상품을 누르면 아래에서 상세창이 올라오고 거기서 주문한다.
 // 산 가구는 서버가 배치의 보관함에 더하고, 주문 결과(배치·잔액)는 홈이 받아 로비에 반영한다.
+// 보유 개수는 보이지 않는다(데이터와 주문 처리는 그대로).
 
-const LINE = "#3D1B0F";
-const ACCENT = "#E36A00";
+const C = {
+  bg: "#FFF8EE",
+  paper: "#FFFEFB",
+  ink: "#3D291C",
+  muted: "#796655",
+  line: "#E7D9C5",
+  soft: "#F4E8D6",
+  accent: "#BF4C13",
+  button: "#C85720",
+  buttonText: "#FFFAF4",
+  live: "#D93A2B"
+};
 const ORDER_FAILED = "주문하지 못했어요. 다시 시도해 주세요";
+const DAY_MS = 24 * 60 * 60 * 1000;
+const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
 /** 오늘의 방송 상품을 소개하는 라룹이 쇼호스트 말. 화면을 열 때마다 하나를 고른다. */
 export const HOST_LINES = ["오늘만 20%! 지금 주문하세요", "방송 중에만 이 가격이에요!", "매진되기 전에 서두르세요!"];
 
@@ -31,41 +65,74 @@ function priceOf(item: HomeShoppingItem): number {
   return item.salePrice ?? item.price;
 }
 
-/** 받침이 있는 이름(을/를). */
-function withObjectParticle(name: string): string {
-  const last = name.charCodeAt(name.length - 1);
-  const hasFinal = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
-  return `${name}${hasFinal ? "을" : "를"}`;
+/** 할인율(%, 정수). 할인이 없으면 null. */
+function discountOf(item: HomeShoppingItem): number | null {
+  if (item.salePrice === null || item.price <= 0 || item.salePrice >= item.price) return null;
+  return Math.round(((item.price - item.salePrice) / item.price) * 100);
 }
 
-function FurnitureImage({ type, size }: { type: string; size: number }) {
+/** 서울 자정(오늘의 방송이 끝나는 때)까지 남은 시간 "H:MM:SS". */
+function untilSeoulMidnight(nowMs: number): string {
+  const left = Math.max(0, DAY_MS - ((nowMs + SEOUL_OFFSET_MS) % DAY_MS));
+  const total = Math.floor(left / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function ProductImage({ type, size }: { type: string; size: number }) {
   const icon = furnitureIcon(type);
-  const { name } = furnitureType(type);
-  return (
-    <View style={[styles.imageBox, { width: size, height: size }]}>
-      {icon ? (
-        <Image source={icon} style={{ width: size - 8, height: size - 8 }} resizeMode="contain" />
-      ) : (
-        <Text style={styles.initial}>{name.slice(0, 1)}</Text>
-      )}
-    </View>
+  return icon ? (
+    <Image source={icon} style={{ width: size, height: size }} resizeMode="contain" accessibilityIgnoresInvertColors />
+  ) : (
+    <Text style={[styles.initial, { fontSize: Math.max(18, size / 3) }]}>{shopProductName(type).slice(0, 1)}</Text>
   );
+}
+
+/** 깜빡이는 방송 점. 동작 줄이기면 깜빡이지 않는다. */
+function LiveDot({ reduceMotion }: { reduceMotion: boolean }) {
+  const opacity = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (reduceMotion) {
+      opacity.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.25, duration: 600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 600, easing: Easing.inOut(Easing.quad), useNativeDriver: true })
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity, reduceMotion]);
+  return <Animated.View style={[styles.liveDot, { opacity }]} />;
 }
 
 export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrdered, onPlaceNow }: HomeShoppingSheetProps) {
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
   const [shop, setShop] = useState<HomeShopping | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [hostLine, setHostLine] = useState(HOST_LINES[0]);
-  const [confirming, setConfirming] = useState<HomeShoppingItem | null>(null);
+  const [category, setCategory] = useState<ShopCategory>("all");
+  /** 상세창에 연 상품 종류(없으면 상세창이 닫혀 있다). */
+  const [detailType, setDetailType] = useState<string | null>(null);
   const [ordering, setOrdering] = useState(false);
+  /** 주문 성공 결과(있으면 상세창 자리에 완료 판이 보인다). */
   const [ordered, setOrdered] = useState<HomeShoppingOrderResult | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [reduceMotion, setReduceMotion] = useState(false);
   const requestRef = useRef(0);
   // 닫힐 때마다 1씩 는다. 주문은 시작할 때의 값을 기억해, 그사이 닫혔으면(다시 열었어도) 응답으로 화면을 바꾸지 않는다
   const openRef = useRef(0);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 같은 렌더 안에서 두 번 눌러도 주문은 한 번(상태는 다음 렌더에야 바뀐다)
+  const orderingRef = useRef(false);
+  const sheetY = useRef(new Animated.Value(0)).current;
 
   const showToast = (message: string) => {
     setToast(message);
@@ -78,6 +145,26 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
     },
     []
   );
+
+  useEffect(() => {
+    let alive = true;
+    void AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => {
+        if (alive) setReduceMotion(enabled);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // 방송 종료까지 남은 시간: 열려 있는 동안 1초마다
+  useEffect(() => {
+    if (!visible) return;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [visible]);
 
   const load = useCallback(async () => {
     requestRef.current += 1;
@@ -97,25 +184,43 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
     }
   }, [onBalance]);
 
-  // 열릴 때마다 목록을 새로 불러오고 쇼호스트 말을 고른다. 닫으면 판들을 닫는다
+  // 열릴 때마다 목록을 새로 불러오고 쇼호스트 말을 고른다. 닫으면 판들을 닫고 목록·분류를 처음으로 돌린다
   useEffect(() => {
     if (!visible) {
       requestRef.current += 1;
       openRef.current += 1;
-      // 다시 열면 처음처럼 불러오는 동안·실패 표시부터 보이게 앞 목록을 비운다
       setShop(null);
       setLoadFailed(false);
-      setConfirming(null);
+      setDetailType(null);
       setOrdered(null);
       setOrdering(false);
+      setCategory("all");
       return;
     }
     setHostLine(HOST_LINES[Math.floor(Math.random() * HOST_LINES.length)]);
     void load();
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const order = async (item: HomeShoppingItem) => {
+  const openDetail = (type: string) => {
+    setOrdered(null);
+    setDetailType(type);
+    if (reduceMotion) {
+      sheetY.setValue(0);
+      return;
+    }
+    sheetY.setValue(320);
+    Animated.timing(sheetY, { toValue: 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  };
+  /** 상세창(또는 완료 판)을 닫는다. 목록·분류·스크롤은 그대로다. 주문 중이면 닫지 않는다. */
+  const closeDetail = () => {
     if (ordering) return;
+    setDetailType(null);
+    setOrdered(null);
+  };
+
+  const order = async (item: HomeShoppingItem) => {
+    if (orderingRef.current) return;
+    orderingRef.current = true;
     const opened = openRef.current;
     setOrdering(true);
     try {
@@ -125,7 +230,6 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
       onOrdered(result);
       // 기다리는 동안 닫았으면(다시 열었어도) 이 화면의 판·목록은 바꾸지 않는다
       if (opened !== openRef.current) return;
-      setConfirming(null);
       setShop((current) =>
         current
           ? {
@@ -138,89 +242,241 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
       setOrdered(result);
     } catch (error) {
       if (opened !== openRef.current) return;
-      setConfirming(null);
       showToast(error instanceof ApiError && error.message ? error.message : ORDER_FAILED);
+      // 가격이 바뀌었으면 목록을 다시 불러온다. 상세창은 열린 채 새 가격으로 바뀐다
       if (error instanceof ApiError && error.code === "PRICE_CHANGED") void load();
     } finally {
+      orderingRef.current = false;
       if (opened === openRef.current) setOrdering(false);
     }
   };
 
+  // 기기 뒤로 가기: 상세창(완료 판)이 열려 있으면 그것만 닫고, 아니면 홈쇼핑을 닫는다
+  const handleBack = () => {
+    if (detailType !== null || ordered !== null) {
+      closeDetail();
+      return;
+    }
+    onClose();
+  };
+
   const balance = shop?.balance ?? null;
   const broadcastItem = shop ? shop.items.find((item) => item.type === shop.broadcast.type) ?? null : null;
+  const visibleItems = shop ? shop.items.filter((item) => inShopCategory(item.type, category)) : [];
+  const categoryInfo = SHOP_CATEGORIES.find((entry) => entry.id === category) ?? SHOP_CATEGORIES[0];
+  const detailItem = shop && detailType ? shop.items.find((item) => item.type === detailType) ?? null : null;
+  const sheetOpen = detailItem !== null || ordered !== null;
 
-  const orderButton = (item: HomeShoppingItem, big = false) => {
+  // 2열 카드 폭: 화면 폭에서 좌우 여백(16)과 칸 사이(12)를 뺀 절반
+  const sidePad = screenWidth < 360 ? 12 : 16;
+  const cardWidth = Math.floor((screenWidth - sidePad * 2 - 12) / 2);
+  const cardArt = Math.max(84, Math.min(150, cardWidth - 28));
+  // 방송 그림: 넉넉하게(작은 화면에서는 줄인다)
+  const featureArt = Math.max(130, Math.min(184, Math.floor((screenWidth - sidePad * 2) * 0.46)));
+
+  const renderDetail = (item: HomeShoppingItem) => {
     const price = priceOf(item);
-    const short = balance !== null && balance < price;
+    const shortage = balance === null ? 0 : Math.max(0, price - balance);
+    const placement = shopPlacement(item.type);
+    const description = shopProductDescription(item.type);
+    const discount = discountOf(item);
+    const orderLabel = shortage > 0 ? `${shortage}룹 더 필요해요` : `${price}룹에 주문하기`;
     return (
-      <View style={big ? styles.bigOrderWrap : styles.orderWrap}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${furnitureType(item.type).name} 주문하기`}
-          accessibilityState={{ disabled: short }}
-          disabled={short}
-          style={[styles.orderButton, big && styles.bigOrderButton, short && styles.orderButtonOff]}
-          onPress={() => setConfirming(item)}
-        >
-          <Text style={[styles.orderText, big && styles.bigOrderText]}>주문하기</Text>
-        </Pressable>
-        {short ? <Text style={styles.shortText}>{price - (balance ?? 0)}룹 더 모으면 살 수 있어요</Text> : null}
-      </View>
+      <>
+        <View style={styles.detailArt}>
+          <ProductImage type={item.type} size={170} />
+          {discount !== null ? (
+            <View style={styles.saleBadge}>
+              <Text style={styles.saleBadgeText}>{discount}%</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text accessibilityRole="header" style={styles.detailTitle}>
+          {shopProductName(item.type)}
+        </Text>
+        {description ? <Text style={styles.detailDescription}>{description}</Text> : null}
+        {placement ? (
+          <View style={styles.facts}>
+            <View style={styles.fact}>
+              <Text style={styles.factLabel}>놓는 위치</Text>
+              <Text style={styles.factValue}>{placement.where}</Text>
+            </View>
+            <View style={styles.fact}>
+              <Text style={styles.factLabel}>차지하는 크기</Text>
+              <Text style={styles.factValue}>{placement.size}</Text>
+            </View>
+          </View>
+        ) : null}
+        <View style={styles.checkout}>
+          <View style={styles.balanceLine}>
+            <Text style={styles.balanceLabel}>{shortage > 0 ? "조금만 더 모으면 살 수 있어요" : "주문 후 남는 룹"}</Text>
+            <Text style={[styles.balanceValue, shortage > 0 && styles.shortValue]}>
+              {shortage > 0 ? `${shortage}룹 부족` : balance === null ? "" : `${balance - price}룹`}
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={orderLabel}
+            accessibilityState={{ disabled: shortage > 0 || ordering, busy: ordering }}
+            disabled={shortage > 0 || ordering}
+            style={[styles.primary, (shortage > 0 || ordering) && styles.primaryOff]}
+            onPress={() => void order(item)}
+          >
+            {ordering ? <ActivityIndicator color={C.buttonText} /> : <Text style={styles.primaryText}>{orderLabel}</Text>}
+          </Pressable>
+        </View>
+      </>
     );
   };
 
+  const renderSuccess = (result: HomeShoppingOrderResult) => (
+    <View style={styles.success}>
+      <View style={styles.detailArt}>
+        <ProductImage type={result.type} size={150} />
+      </View>
+      <Text accessibilityRole="header" style={styles.successTitle}>
+        보관함에 도착했어요
+      </Text>
+      <Text style={styles.successMessage}>
+        {shopProductName(result.type)} 1개 · 남은 룹 {result.balance}
+      </Text>
+      <View style={styles.successActions}>
+        <Pressable accessibilityRole="button" style={styles.secondary} onPress={closeDetail}>
+          <Text style={styles.secondaryText}>계속 구경하기</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          style={styles.primaryFlex}
+          onPress={() => {
+            setOrdered(null);
+            setDetailType(null);
+            onPlaceNow(result);
+          }}
+        >
+          <Text style={styles.primaryText}>바로 놓기</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
   return (
-    <Modal animationType="slide" visible={visible} onRequestClose={onClose} statusBarTranslucent>
-      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="홈쇼핑 닫기" hitSlop={10} style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeText}>✕</Text>
+    <Modal animationType="slide" visible={visible} onRequestClose={handleBack} statusBarTranslucent>
+      <View style={styles.root}>
+        {/* 위 줄: 스크롤해도 늘 보인다 */}
+        <View style={[styles.header, { paddingTop: insets.top + 8, paddingLeft: Math.max(8, insets.left + 4), paddingRight: Math.max(14, insets.right + 10) }]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="홈쇼핑 닫기" hitSlop={6} style={styles.iconButton} onPress={onClose}>
+            <Text style={styles.iconText}>✕</Text>
           </Pressable>
-          <Text accessibilityRole="header" style={styles.title}>
+          <Text accessibilityRole="header" numberOfLines={1} style={styles.title}>
             라룹 홈쇼핑
           </Text>
-          <View style={styles.onAir}>
-            <View style={styles.onAirDot} />
-            <Text style={styles.onAirText}>ON AIR</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-          {balance !== null ? <Text style={styles.balance}>{balance}룹</Text> : null}
+          {balance !== null ? (
+            <View accessibilityLabel={`잔액 ${balance}룹`} style={styles.wallet}>
+              <View style={styles.coin} />
+              <Text style={styles.walletText}>{balance}룹</Text>
+            </View>
+          ) : null}
         </View>
 
         {shop ? (
-          <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
+          <ScrollView
+            accessibilityElementsHidden={sheetOpen}
+            importantForAccessibility={sheetOpen ? "no-hide-descendants" : "auto"}
+            contentContainerStyle={[styles.content, { paddingHorizontal: sidePad, paddingBottom: insets.bottom + 28 }]}
+          >
             {broadcastItem ? (
-              <View accessibilityLabel="오늘의 방송 상품" style={styles.broadcast}>
-                <Text style={styles.broadcastLabel}>오늘의 방송 상품</Text>
-                <View style={styles.broadcastRow}>
-                  <FurnitureImage type={broadcastItem.type} size={96} />
-                  <View style={styles.broadcastInfo}>
-                    <Text style={styles.broadcastName}>{furnitureType(broadcastItem.type).name}</Text>
-                    <View style={styles.priceRow}>
-                      <Text style={styles.originalPrice}>{shop.broadcast.price}룹</Text>
-                      <Text style={styles.salePrice}>{shop.broadcast.salePrice}룹</Text>
-                      <Text style={styles.discount}>20%</Text>
+              <View style={styles.broadcast}>
+                <View style={styles.broadcastTop}>
+                  <View style={styles.onAir}>
+                    <LiveDot reduceMotion={reduceMotion} />
+                    <Text style={styles.onAirText}>ON AIR</Text>
+                  </View>
+                  <Text style={styles.broadcastKicker}>오늘은 {discountOf(broadcastItem) ?? 20}% 할인</Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`오늘의 방송 상품 ${shopProductName(broadcastItem.type)}, ${shop.broadcast.salePrice}룹, 자세히 보기`}
+                  style={styles.feature}
+                  onPress={() => openDetail(broadcastItem.type)}
+                >
+                  <View style={[styles.featureArt, { width: featureArt, height: featureArt }]}>
+                    <View style={[styles.featureHalo, { width: featureArt - 18, height: featureArt - 18, borderRadius: (featureArt - 18) / 2 }]} />
+                    <ProductImage type={broadcastItem.type} size={featureArt - 10} />
+                    <View style={styles.soldOutSoon}>
+                      <Text style={styles.soldOutSoonText}>품절 임박</Text>
                     </View>
                   </View>
+                  <View style={styles.featureInfo}>
+                    <Text style={styles.featureLabel}>오늘의 방송 상품</Text>
+                    <Text style={styles.featureName}>{shopProductName(broadcastItem.type)}</Text>
+                    <View style={styles.prices}>
+                      <Text style={styles.originalPrice}>{shop.broadcast.price}룹</Text>
+                      <Text style={styles.salePrice}>{shop.broadcast.salePrice}룹</Text>
+                    </View>
+                    <Text style={styles.discount}>{discountOf(broadcastItem) ?? 20}%</Text>
+                    <View style={styles.rushChip}>
+                      <Text style={styles.rushText}>주문 폭주 중</Text>
+                    </View>
+                    <View style={styles.linkRow}>
+                      <Text style={styles.link}>자세히 보기</Text>
+                      <Text style={styles.link}>›</Text>
+                    </View>
+                  </View>
+                </Pressable>
+                <View style={styles.countdown}>
+                  <Text style={styles.countdownText}>방송 종료까지 {untilSeoulMidnight(now)}</Text>
                 </View>
-                <View style={styles.hostBubble}>
+                <View style={styles.host}>
                   <Text style={styles.hostText}>라룹이: “{hostLine}”</Text>
                 </View>
-                {orderButton(broadcastItem, true)}
               </View>
             ) : null}
 
-            {shop.items.map((item) => (
-              <View key={item.type} style={styles.itemRow}>
-                <FurnitureImage type={item.type} size={56} />
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{furnitureType(item.type).name}</Text>
-                  <Text style={styles.itemPrice}>{priceOf(item)}룹</Text>
-                  <Text style={styles.owned}>{item.owned}개 있음</Text>
-                </View>
-                {orderButton(item)}
-              </View>
-            ))}
+            <View accessibilityRole="tablist" style={styles.categories}>
+              {SHOP_CATEGORIES.map((entry) => {
+                const selected = entry.id === category;
+                return (
+                  <Pressable
+                    key={entry.id}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected }}
+                    style={[styles.categoryButton, selected && styles.categoryButtonOn]}
+                    onPress={() => setCategory(entry.id)}
+                  >
+                    <Text style={[styles.categoryText, selected && styles.categoryTextOn]}>{entry.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <View style={styles.listLabel}>
+              <Text style={styles.listTitle}>{categoryInfo.label}</Text>
+              <Text style={styles.listCount}>{visibleItems.length}가지</Text>
+            </View>
+
+            <View style={styles.grid}>
+              {visibleItems.map((item) => {
+                const discount = discountOf(item);
+                const name = shopProductName(item.type);
+                const label = discount !== null ? `${name}, ${priceOf(item)}룹, ${discount}% 할인, 자세히 보기` : `${name}, ${priceOf(item)}룹, 자세히 보기`;
+                return (
+                  <Pressable key={item.type} accessibilityRole="button" accessibilityLabel={label} style={{ width: cardWidth }} onPress={() => openDetail(item.type)}>
+                    <View style={[styles.cardArt, { height: Math.round(cardWidth / 1.15) }]}>
+                      <ProductImage type={item.type} size={cardArt} />
+                      {discount !== null ? (
+                        <View style={styles.saleBadge}>
+                          <Text style={styles.saleBadgeText}>{discount}%</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text numberOfLines={1} style={styles.cardName}>
+                      {name}
+                    </Text>
+                    <Text style={styles.cardPrice}>{priceOf(item)}룹</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </ScrollView>
         ) : loadFailed ? (
           <View style={styles.center}>
@@ -230,61 +486,36 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
             </Pressable>
           </View>
         ) : (
-          <View style={styles.center}>{loading ? <ActivityIndicator color={ACCENT} /> : null}</View>
+          <View style={styles.center}>{loading ? <ActivityIndicator color={C.accent} /> : null}</View>
         )}
 
-        {confirming ? (
-          <View style={styles.dim}>
-            <View accessibilityViewIsModal style={styles.dialog}>
-              <Text style={styles.dialogText}>
-                {withObjectParticle(furnitureType(confirming.type).name)} {priceOf(confirming)}룹에 주문할까요?
-              </Text>
-              <View style={styles.dialogButtons}>
-                <Pressable accessibilityRole="button" style={styles.dialogCancel} disabled={ordering} onPress={() => setConfirming(null)}>
-                  <Text style={styles.dialogCancelText}>취소</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: ordering }}
-                  disabled={ordering}
-                  style={[styles.dialogOk, ordering && styles.orderButtonOff]}
-                  onPress={() => void order(confirming)}
-                >
-                  {ordering ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.dialogOkText}>주문</Text>}
+        {sheetOpen ? (
+          <View style={styles.shade}>
+            {/* 어두운 뒤를 누르면 닫힌다(화면 읽기에서는 판의 닫기 버튼을 쓴다) */}
+            <Pressable accessible={false} importantForAccessibility="no" style={StyleSheet.absoluteFill} onPress={closeDetail} />
+            <Animated.View
+              accessibilityViewIsModal
+              style={[styles.sheet, { paddingBottom: insets.bottom + 18, transform: [{ translateY: sheetY }] }]}
+            >
+              <View style={styles.handle} />
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetLabel}>{ordered ? "주문 완료" : "상품 자세히 보기"}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel="상품 상세 닫기" hitSlop={6} style={styles.iconButton} onPress={closeDetail}>
+                  <Text style={styles.iconText}>✕</Text>
                 </Pressable>
               </View>
-            </View>
-          </View>
-        ) : null}
-
-        {ordered ? (
-          <View style={styles.dim}>
-            <View accessibilityViewIsModal style={styles.dialog}>
-              <FurnitureImage type={ordered.type} size={72} />
-              <Text style={styles.dialogText}>택배가 보관함에 도착했어요</Text>
-              <View style={styles.dialogButtons}>
-                <Pressable accessibilityRole="button" style={styles.dialogCancel} onPress={() => setOrdered(null)}>
-                  <Text style={styles.dialogCancelText}>계속 쇼핑하기</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  style={styles.dialogOk}
-                  onPress={() => {
-                    const result = ordered;
-                    setOrdered(null);
-                    onPlaceNow(result);
-                  }}
-                >
-                  <Text style={styles.dialogOkText}>바로 놓기</Text>
-                </Pressable>
-              </View>
-            </View>
+              <ScrollView bounces={false} contentContainerStyle={styles.sheetBody}>
+                {ordered ? renderSuccess(ordered) : detailItem ? renderDetail(detailItem) : null}
+              </ScrollView>
+            </Animated.View>
           </View>
         ) : null}
 
         {toast ? (
           <View pointerEvents="none" style={[styles.toast, { bottom: insets.bottom + 24 }]}>
-            <Text style={styles.toastText}>{toast}</Text>
+            <Text accessibilityLiveRegion="polite" style={styles.toastText}>
+              {toast}
+            </Text>
           </View>
         ) : null}
       </View>
@@ -293,55 +524,88 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#FFF4E6" },
-  header: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: LINE },
-  closeButton: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: LINE, alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF" },
-  closeText: { fontSize: 16, fontWeight: "800", color: LINE },
-  title: { fontSize: 18, fontWeight: "800", color: "#2B1810" },
-  onAir: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: "#D93A2B" },
-  onAirDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#FFFFFF" },
-  onAirText: { fontSize: 11, fontWeight: "800", color: "#FFFFFF", letterSpacing: 0.5 },
-  headerSpacer: { flex: 1 },
-  balance: { fontSize: 15, fontWeight: "800", color: ACCENT },
-  content: { padding: 16, gap: 12 },
-  broadcast: { gap: 10, padding: 16, borderRadius: 18, borderWidth: 2, borderColor: LINE, backgroundColor: "#FFFFFF" },
-  broadcastLabel: { alignSelf: "flex-start", fontSize: 12, fontWeight: "800", color: "#FFFFFF", backgroundColor: ACCENT, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, overflow: "hidden" },
-  broadcastRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  broadcastInfo: { flex: 1, gap: 6 },
-  broadcastName: { fontSize: 20, fontWeight: "800", color: "#2B1810" },
-  priceRow: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  originalPrice: { fontSize: 14, color: "#8A6A55", textDecorationLine: "line-through" },
-  salePrice: { fontSize: 20, fontWeight: "800", color: ACCENT },
-  discount: { fontSize: 13, fontWeight: "800", color: "#D93A2B" },
-  hostBubble: { padding: 10, borderRadius: 12, borderWidth: 2, borderColor: LINE, backgroundColor: "#FFF7EE" },
-  hostText: { fontSize: 14, fontWeight: "600", color: "#2B1810" },
-  itemRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 14, borderWidth: 2, borderColor: LINE, backgroundColor: "#FFFFFF" },
-  itemInfo: { flex: 1, gap: 2 },
-  itemName: { fontSize: 15, fontWeight: "700", color: "#2B1810" },
-  itemPrice: { fontSize: 14, fontWeight: "800", color: ACCENT },
-  owned: { fontSize: 12, color: "#8A6A55" },
-  imageBox: { borderRadius: 12, borderWidth: 2, borderColor: LINE, backgroundColor: "#FFF7EE", alignItems: "center", justifyContent: "center" },
-  initial: { fontSize: 18, fontWeight: "800", color: "#2B1810" },
-  orderWrap: { alignItems: "flex-end", gap: 4, maxWidth: 120 },
-  bigOrderWrap: { alignItems: "stretch", gap: 4 },
-  orderButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 2, borderColor: LINE, backgroundColor: ACCENT },
-  bigOrderButton: { alignItems: "center", paddingVertical: 12 },
-  orderButtonOff: { opacity: 0.45 },
-  orderText: { fontSize: 13, fontWeight: "800", color: "#FFFFFF" },
-  bigOrderText: { fontSize: 16 },
-  shortText: { fontSize: 11, color: "#8A6A55", textAlign: "right" },
+  root: { flex: 1, backgroundColor: C.bg },
+  header: { flexDirection: "row", alignItems: "center", gap: 6, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.paper },
+  iconButton: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  iconText: { fontSize: 18, fontWeight: "700", color: C.ink },
+  title: { flex: 1, fontSize: 17, fontWeight: "800", color: C.ink, letterSpacing: -0.5 },
+  wallet: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: C.soft },
+  coin: { width: 13, height: 13, borderRadius: 7, backgroundColor: "#F2A93B", borderWidth: 2, borderColor: "#D98A1C" },
+  walletText: { fontSize: 13, fontWeight: "800", color: C.ink, fontVariant: ["tabular-nums"] },
+  content: { paddingTop: 16, gap: 0 },
+  broadcast: { borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, borderRadius: 18, overflow: "hidden", marginBottom: 18 },
+  broadcastTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingTop: 12 },
+  onAir: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: C.live },
+  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#FFFFFF" },
+  onAirText: { fontSize: 11, fontWeight: "800", color: "#FFFFFF", letterSpacing: 0.6 },
+  broadcastKicker: { fontSize: 12, fontWeight: "700", color: C.accent },
+  feature: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 8 },
+  featureArt: { alignItems: "center", justifyContent: "center" },
+  featureHalo: { position: "absolute", backgroundColor: C.soft },
+  soldOutSoon: { position: "absolute", top: 4, left: 0, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: C.ink },
+  soldOutSoonText: { fontSize: 11, fontWeight: "800", color: "#FFF4E0" },
+  featureInfo: { flex: 1, minWidth: 0, gap: 4 },
+  featureLabel: { fontSize: 12, color: C.muted },
+  featureName: { fontSize: 19, fontWeight: "800", color: C.ink },
+  prices: { flexDirection: "row", alignItems: "baseline", gap: 7, flexWrap: "wrap" },
+  originalPrice: { fontSize: 13, color: C.muted, textDecorationLine: "line-through" },
+  salePrice: { fontSize: 22, fontWeight: "800", color: C.accent },
+  discount: { fontSize: 12, fontWeight: "800", color: C.live },
+  rushChip: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, borderWidth: 1, borderColor: C.live },
+  rushText: { fontSize: 11, fontWeight: "800", color: C.live },
+  linkRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 },
+  link: { fontSize: 12, fontWeight: "800", color: C.ink },
+  countdown: { marginHorizontal: 14, marginBottom: 10, paddingVertical: 6, borderRadius: 10, alignItems: "center", backgroundColor: C.soft },
+  countdownText: { fontSize: 12, fontWeight: "800", color: C.ink, fontVariant: ["tabular-nums"] },
+  host: { borderTopWidth: 1, borderTopColor: C.line, borderStyle: "dashed", paddingHorizontal: 14, paddingVertical: 10 },
+  hostText: { fontSize: 13, color: C.muted },
+  categories: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
+  categoryButton: { minHeight: 44, paddingHorizontal: 13, justifyContent: "center", borderRadius: 22 },
+  categoryButtonOn: { backgroundColor: C.ink },
+  categoryText: { fontSize: 14, color: C.muted },
+  categoryTextOn: { color: C.bg, fontWeight: "800" },
+  listLabel: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 11 },
+  listTitle: { fontSize: 15, fontWeight: "800", color: C.ink },
+  listCount: { fontSize: 12, color: C.muted },
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 16 },
+  cardArt: { alignItems: "center", justifyContent: "center", borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper, marginBottom: 7 },
+  cardName: { marginHorizontal: 2, fontSize: 14, fontWeight: "700", color: C.ink },
+  cardPrice: { marginHorizontal: 2, marginTop: 1, fontSize: 14, fontWeight: "800", color: C.accent, fontVariant: ["tabular-nums"] },
+  saleBadge: { position: "absolute", top: 8, left: 8, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 7, backgroundColor: C.accent },
+  saleBadgeText: { fontSize: 11, fontWeight: "800", color: C.buttonText },
+  initial: { fontWeight: "800", color: C.ink },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
-  message: { fontSize: 15, color: "#2B1810" },
-  retryButton: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999, borderWidth: 2, borderColor: LINE, backgroundColor: "#FFFFFF" },
-  retryText: { fontSize: 14, fontWeight: "700", color: "#2B1810" },
-  dim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(43, 24, 16, 0.45)", alignItems: "center", justifyContent: "center", padding: 24 },
-  dialog: { width: "100%", maxWidth: 360, alignItems: "center", gap: 14, padding: 20, borderRadius: 18, borderWidth: 2, borderColor: LINE, backgroundColor: "#FFFFFF" },
-  dialogText: { fontSize: 16, fontWeight: "700", color: "#2B1810", textAlign: "center" },
-  dialogButtons: { flexDirection: "row", gap: 10, alignSelf: "stretch" },
-  dialogCancel: { flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 999, borderWidth: 2, borderColor: LINE, backgroundColor: "#FFFFFF" },
-  dialogCancelText: { fontSize: 14, fontWeight: "700", color: "#2B1810" },
-  dialogOk: { flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 999, borderWidth: 2, borderColor: LINE, backgroundColor: ACCENT },
-  dialogOkText: { fontSize: 14, fontWeight: "800", color: "#FFFFFF" },
-  toast: { position: "absolute", left: 24, right: 24, alignItems: "center" },
-  toastText: { overflow: "hidden", paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: "rgba(43, 24, 16, 0.88)", color: "#FFFFFF", fontSize: 14, fontWeight: "600" }
+  message: { fontSize: 15, color: C.ink },
+  retryButton: { minHeight: 44, paddingHorizontal: 18, justifyContent: "center", borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.paper },
+  retryText: { fontSize: 14, fontWeight: "700", color: C.ink },
+  shade: { ...StyleSheet.absoluteFillObject, justifyContent: "flex-end", backgroundColor: "rgba(44, 32, 25, 0.38)" },
+  sheet: { maxHeight: "88%", paddingHorizontal: 20, paddingTop: 8, borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: C.paper },
+  handle: { alignSelf: "center", width: 34, height: 4, borderRadius: 2, backgroundColor: C.line },
+  sheetHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 2 },
+  sheetLabel: { fontSize: 12, color: C.muted },
+  sheetBody: { paddingBottom: 4 },
+  detailArt: { height: 180, alignItems: "center", justifyContent: "center", borderRadius: 16, backgroundColor: C.bg },
+  detailTitle: { marginTop: 15, fontSize: 21, fontWeight: "800", color: C.ink },
+  detailDescription: { marginTop: 5, fontSize: 14, lineHeight: 20, color: C.muted },
+  facts: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 14 },
+  fact: { flexGrow: 1, flexBasis: 120, gap: 2, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: C.soft },
+  factLabel: { fontSize: 11, color: C.muted },
+  factValue: { fontSize: 14, fontWeight: "700", color: C.ink },
+  checkout: { marginTop: 16, paddingTop: 15, borderTopWidth: 1, borderTopColor: C.line },
+  balanceLine: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 8 },
+  balanceLabel: { flexShrink: 1, fontSize: 13, color: C.muted },
+  balanceValue: { fontSize: 14, fontWeight: "800", color: C.ink, fontVariant: ["tabular-nums"] },
+  shortValue: { color: C.live },
+  primary: { minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingHorizontal: 14, backgroundColor: C.button },
+  primaryFlex: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingHorizontal: 14, backgroundColor: C.button },
+  primaryOff: { opacity: 0.55 },
+  primaryText: { fontSize: 15, fontWeight: "800", color: C.buttonText },
+  secondary: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingHorizontal: 14, backgroundColor: C.soft },
+  secondaryText: { fontSize: 15, fontWeight: "800", color: C.ink },
+  success: { paddingTop: 8, alignItems: "stretch" },
+  successTitle: { marginTop: 16, marginBottom: 6, fontSize: 20, fontWeight: "800", color: C.ink, textAlign: "center" },
+  successMessage: { fontSize: 14, color: C.muted, textAlign: "center" },
+  successActions: { flexDirection: "row", gap: 8, marginTop: 22 },
+  toast: { position: "absolute", left: 16, right: 16, alignItems: "center" },
+  toastText: { overflow: "hidden", paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: C.ink, color: C.bg, fontSize: 13, textAlign: "center" }
 });

@@ -11,7 +11,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
@@ -65,6 +64,7 @@ public class LoopPointService {
     private final LoopPointBalanceRepository balanceRepository;
     private final LoopPointEntryRepository entryRepository;
     private final TransactionTemplate separateTransaction;
+    private final TransactionTemplate readTransaction;
     private final Clock clock;
 
     public LoopPointService(
@@ -77,22 +77,27 @@ public class LoopPointService {
         this.entryRepository = entryRepository;
         this.separateTransaction = new TransactionTemplate(transactionManager);
         this.separateTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.readTransaction = new TransactionTemplate(transactionManager);
+        this.readTransaction.setReadOnly(true);
         this.clock = clockProvider.getIfAvailable(() -> Clock.system(SEOUL));
     }
 
     /** 잔액과 오늘 활동별 적립 횟수. 처음 부르면 시작 선물을 준다. */
-    @Transactional
     public LoopPointsSummaryDto getSummary(Long userId) {
-        LoopPointBalanceEntity balance = lockAccount(userId);
-        LocalDate today = today();
-        return new LoopPointsSummaryDto(
-                balance.getBalance(),
-                new LoopPointsSummaryDto.Today(
-                        todayOf(userId, Activity.QUESTION, today),
-                        todayOf(userId, Activity.DIARY, today),
-                        todayOf(userId, Activity.NOW_IN_ENGLISH, today)
-                )
-        );
+        ensureAccount(userId);
+        return readTransaction.execute(status -> {
+            LoopPointBalanceEntity balance = balanceRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalStateException("룹 잔액을 찾지 못했어요."));
+            LocalDate today = today();
+            return new LoopPointsSummaryDto(
+                    balance.getBalance(),
+                    new LoopPointsSummaryDto.Today(
+                            todayOf(userId, Activity.QUESTION, today),
+                            todayOf(userId, Activity.DIARY, today),
+                            todayOf(userId, Activity.NOW_IN_ENGLISH, today)
+                    )
+            );
+        });
     }
 
     /**
@@ -104,6 +109,7 @@ public class LoopPointService {
             return null;
         }
         try {
+            ensureAccount(userId);
             return separateTransaction.execute(status -> earn(userId, activity, sourceId));
         } catch (RuntimeException exception) {
             log.warn("Loop points for {} {} of user {} were not recorded", activity, sourceId, userId, exception);
@@ -112,6 +118,7 @@ public class LoopPointService {
     }
 
     private LoopPointsRewardDto earn(Long userId, Activity activity, String sourceId) {
+        // 트랜잭션의 첫 문장으로 잔액 행을 잠근다. 그 뒤의 읽기(이미 적립했는지, 오늘 횟수)는 잠금을 얻은 뒤의 최신 값이다
         LoopPointBalanceEntity balance = lockAccount(userId);
         String reason = activity.name();
         if (entryRepository.existsByUserIdAndReasonAndSourceKey(userId, reason, sourceId)) {
@@ -131,12 +138,27 @@ public class LoopPointService {
         return new LoopPointsRewardDto(activity.key(), amount, balance.getBalance(), limitReached);
     }
 
-    /** 잔액 행을 잠가 읽는다. 없으면 시작 선물을 넣어 만들고 그 기록을 남긴다(계정마다 한 번). */
+    /**
+     * 잔액 행이 없으면 시작 선물을 넣어 만들고 그 기록을 남긴다(계정마다 한 번).
+     * 잠그는 트랜잭션과 따로, 짧은 트랜잭션에서 만든다. 같은 트랜잭션에서 INSERT IGNORE(겹치면 공유 잠금) 뒤에
+     * 배타 잠금으로 올리면 같은 계정의 요청 둘이 서로를 기다려 교착이 나기 때문이다. 처음 요청이 동시에 와도
+     * 한 요청만 만들고, 다른 요청의 INSERT IGNORE는 그 커밋을 기다렸다가 아무것도 하지 않는다.
+     */
+    void ensureAccount(Long userId) {
+        // 있는지 보는 읽기도 따로 한다. 바깥 트랜잭션(예: 질문 완료)에 붙어 실패하면 바깥까지 되돌려지기 때문이다
+        separateTransaction.executeWithoutResult(status -> {
+            if (balanceRepository.existsById(userId)) {
+                return;
+            }
+            Instant now = clock.instant();
+            if (balanceRepository.insertIfAbsent(userId, START_GIFT, now) == 1) {
+                entryRepository.save(new LoopPointEntryEntity(userId, START_GIFT_REASON, START_GIFT_SOURCE, START_GIFT, today(), now));
+            }
+        });
+    }
+
+    /** 잔액 행을 잠가 읽는다(ensureAccount로 먼저 만들어 둔다). */
     LoopPointBalanceEntity lockAccount(Long userId) {
-        Instant now = clock.instant();
-        if (balanceRepository.insertIfAbsent(userId, START_GIFT, now) == 1) {
-            entryRepository.save(new LoopPointEntryEntity(userId, START_GIFT_REASON, START_GIFT_SOURCE, START_GIFT, today(), now));
-        }
         return balanceRepository.findForUpdate(userId)
                 .orElseThrow(() -> new IllegalStateException("룹 잔액을 찾지 못했어요."));
     }

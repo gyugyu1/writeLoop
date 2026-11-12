@@ -16,11 +16,13 @@ export type RecordsScreenValues = {
   canGoToNextCalendarMonth: boolean;
   canGoToPreviousCalendarMonth: boolean;
   currentUser: ReturnType<typeof useSession>["currentUser"];
-  deletingSavedExpressionId: number | null;
+  deletingSavedExpressionIds: Record<number, boolean>;
   findHistorySessionForSavedExpression: (savedExpression: SavedExpression) => HistorySession | null;
   groupedHistoryEntries: { dateKey: string; sessions: HistorySession[] }[];
   handleCloseCalendar: () => void;
   handleDateGroupLayout: (dateKey: string, event: LayoutChangeEvent) => void;
+  handleDateFeedLayout: (event: LayoutChangeEvent) => void;
+  handleHistoryBoardLayout: (event: LayoutChangeEvent) => void;
   handleDeleteSavedExpression: (savedExpression: SavedExpression) => void;
   handleOpenCalendar: () => void;
   handleOpenSavedExpressionHistory: (savedExpression: SavedExpression) => void;

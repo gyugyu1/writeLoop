@@ -45,7 +45,9 @@ type RecordsContentTabRowProps = Pick<
 type RecordsHistoryTabProps = Pick<
   RecordsScreenValues,
   | "groupedHistoryEntries"
+  | "handleDateFeedLayout"
   | "handleDateGroupLayout"
+  | "handleHistoryBoardLayout"
   | "handleOpenCalendar"
   | "handleOpenSession"
   | "hasMoreHistory"
@@ -69,7 +71,7 @@ type RecordsNowTabProps = Pick<
 >;
 type RecordsSavedExpressionsTabProps = Pick<
   RecordsScreenValues,
-  | "deletingSavedExpressionId"
+  | "deletingSavedExpressionIds"
   | "findHistorySessionForSavedExpression"
   | "handleDeleteSavedExpression"
   | "handleOpenSavedExpressionHistory"
@@ -159,7 +161,10 @@ export function RecordsLoadingState() {
 }
 
 // 로그인 안내 카드
-export function RecordsLoginCard() {
+export function RecordsLoginCard({ activeTab }: Pick<RecordsScreenValues, "activeTab">) {
+  // 로그인 뒤 누른 탭으로 돌아온다. 작문 기록 탭은 탭 없는 주소(기본 탭)로 돌아온다.
+  const redirectTo = activeTab === "history" ? "/records" : `/records?tab=${activeTab}`;
+
   return (
     <View style={styles.emptyCard}>
       <Text style={styles.emptyTitle}>로그인이 필요해요</Text>
@@ -168,7 +173,7 @@ export function RecordsLoginCard() {
       </Text>
       <Pressable
         style={styles.primaryButton}
-        onPress={() => router.push(buildLoginHref("/records"))}
+        onPress={() => router.push(buildLoginHref(redirectTo))}
       >
         <Text style={styles.primaryButtonText}>로그인 하기</Text>
       </Pressable>
@@ -205,7 +210,7 @@ export function RecordsProfileCard({
             </View>
           </View>
 
-          <Pressable style={styles.diaryShortcutButton} onPress={() => router.push("/diary" as never)}>
+          <Pressable style={styles.diaryShortcutButton} onPress={() => router.push("/diary/write" as never)}>
             <Text style={styles.diaryShortcutButtonText}>오늘 일기 쓰기</Text>
             <Text style={styles.diaryShortcutButtonArrow}>{">"}</Text>
           </Pressable>
@@ -293,7 +298,9 @@ export function RecordsContentTabRow({
 // 작문 기록 탭: 머리와 달력 버튼, 날짜별 묶음, 모두 보기, 더 불러오기
 export function RecordsHistoryTab({
   groupedHistoryEntries,
+  handleDateFeedLayout,
   handleDateGroupLayout,
+  handleHistoryBoardLayout,
   handleOpenCalendar,
   handleOpenSession,
   hasMoreHistory,
@@ -310,7 +317,7 @@ export function RecordsHistoryTab({
   visibleGroupedHistoryEntries
 }: RecordsHistoryTabProps) {
   return (
-    <View style={styles.historyBoard}>
+    <View style={styles.historyBoard} onLayout={handleHistoryBoardLayout}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionHeaderCopy}>
@@ -339,7 +346,7 @@ export function RecordsHistoryTab({
           </Pressable>
         </View>
       ) : (
-        <View style={styles.dateFeed}>
+        <View style={styles.dateFeed} onLayout={handleDateFeedLayout}>
           {visibleGroupedHistoryEntries.map(({ dateKey, sessions }, groupIndex) => {
             const isOpen = openDates[dateKey] ?? false;
 
@@ -558,7 +565,7 @@ export function RecordsNowTab({
 
 // 저장 표현 탭: 검색·태그·태그 연습, 표현 카드
 export function RecordsSavedExpressionsTab({
-  deletingSavedExpressionId,
+  deletingSavedExpressionIds,
   findHistorySessionForSavedExpression,
   handleDeleteSavedExpression,
   handleOpenSavedExpressionHistory,
@@ -771,9 +778,9 @@ export function RecordsSavedExpressionsTab({
                     <Pressable
                       style={styles.savedExpressionDeleteButton}
                       onPress={() => handleDeleteSavedExpression(item)}
-                      disabled={deletingSavedExpressionId === item.id}
+                      disabled={deletingSavedExpressionIds[item.id] === true}
                     >
-                      {deletingSavedExpressionId === item.id ? (
+                      {deletingSavedExpressionIds[item.id] === true ? (
                         <ActivityIndicator color="#A3371A" size="small" />
                       ) : (
                         <SymbolView

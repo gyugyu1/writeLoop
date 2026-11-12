@@ -9,6 +9,7 @@ import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.LobbyLayoutEntity;
 import com.writeloop.persistence.LobbyLayoutRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,6 +82,21 @@ public class LobbyLayoutService {
     private final LobbyLayoutRepository lobbyLayoutRepository;
     private final ObjectMapper objectMapper;
 
+    /** 가진 가구 개수. 있으면 저장할 때 종류마다 가진 개수를 넘지 않는지 본다(운영 빈에서는 늘 있다). */
+    @Autowired(required = false)
+    private FurnitureOwnershipService furnitureOwnershipService;
+
+    /** 처음 배치(앱 lobby-layout.ts의 DEFAULT_LOBBY_LAYOUT과 같다). 저장된 배치가 없는 계정에 주문한 가구를 더할 때 쓴다. */
+    static final LobbyLayoutDto DEFAULT_LAYOUT = new LobbyLayoutDto(SHAPE_VERSION, List.of(
+            new LobbyLayoutDto.Item("desk", "desk", new LobbyLayoutDto.FloorSpot(1.5, 5.5, 0), null),
+            new LobbyLayoutDto.Item("bookcase", "bookcase", new LobbyLayoutDto.FloorSpot(0.5, 2.5, 1), null),
+            new LobbyLayoutDto.Item("wardrobe", "wardrobe", new LobbyLayoutDto.FloorSpot(7.5, 3.5, 3), null),
+            new LobbyLayoutDto.Item("rug", "rug", new LobbyLayoutDto.FloorSpot(4.6, 7.2, 0), null),
+            new LobbyLayoutDto.Item("board", "board", null, new LobbyLayoutDto.WallSpot("back", 1.8)),
+            new LobbyLayoutDto.Item("window", "window", null, new LobbyLayoutDto.WallSpot("back", 4.8)),
+            new LobbyLayoutDto.Item("lamp", "lamp", null, null, new LobbyLayoutDto.TabletopSpot("desk", 0, 0))
+    ), null);
+
     /** 저장한 배치. 저장한 적이 없거나 옛 모양 버전이면 null이다. */
     @Transactional(readOnly = true)
     public LobbyLayoutDto getLayout(Long userId) {
@@ -93,9 +109,66 @@ public class LobbyLayoutService {
     @Transactional
     public LobbyLayoutDto saveLayout(Long userId, JsonNode request) {
         LobbyLayoutDto layout = parse(request, LobbyRoom.current());
+        requireOwned(userId, layout);
         String layoutJson = writeJson(new StoredLayout(layout.items(), layout.stored()));
         lobbyLayoutRepository.upsert(userId, layout.version(), layoutJson, Instant.now());
         return layout;
+    }
+
+    /** 치울 수 있는 종류마다 (방에 놓인 것 + 보관함) 개수가 가진 개수를 넘지 않아야 한다. */
+    private void requireOwned(Long userId, LobbyLayoutDto layout) {
+        if (furnitureOwnershipService == null) {
+            return;
+        }
+        Map<String, Integer> counts = new HashMap<>();
+        for (LobbyLayoutDto.Item item : layout.items()) {
+            if (!KINDS.get(item.type()).place()) {
+                counts.merge(item.type(), 1, Integer::sum);
+            }
+        }
+        if (layout.stored() != null) {
+            for (LobbyLayoutDto.StoredItem item : layout.stored()) {
+                counts.merge(item.type(), 1, Integer::sum);
+            }
+        }
+        Map<String, Integer> owned = furnitureOwnershipService.ownedCounts(userId);
+        for (Map.Entry<String, Integer> count : counts.entrySet()) {
+            if (count.getValue() > owned.getOrDefault(count.getKey(), 0)) {
+                throw invalid("가지지 않은 가구가 있어요.");
+            }
+        }
+    }
+
+    /** 주문으로 보관함에 더한 가구: 그 뒤의 배치와 새 가구 id. */
+    public record AddedToStorage(LobbyLayoutDto layout, String itemId) {
+    }
+
+    /**
+     * 주문한 가구를 그 계정 배치의 보관함 맨 뒤에 더해 저장한다. 저장된 배치가 없으면 처음 배치에서 시작한다.
+     * 새 id는 "종류-수"이고, 배치(방 + 보관함)의 다른 id와 겹치지 않는 가장 작은 수(1부터)다.
+     * 배치가 이미 MAX_ITEMS개면 409 LAYOUT_FULL이다. 부르는 쪽의 트랜잭션 안에서 부른다(홈쇼핑 주문).
+     */
+    public AddedToStorage addToStorage(Long userId, String type) {
+        LobbyLayoutDto current = getLayout(userId);
+        if (current == null) {
+            current = DEFAULT_LAYOUT;
+        }
+        List<LobbyLayoutDto.StoredItem> stored = current.stored() == null ? new ArrayList<>() : new ArrayList<>(current.stored());
+        if (current.items().size() + stored.size() >= MAX_ITEMS) {
+            throw new ApiException(HttpStatus.CONFLICT, "LAYOUT_FULL", "가구는 40개까지 둘 수 있어요.");
+        }
+        Set<String> ids = new HashSet<>();
+        current.items().forEach(item -> ids.add(item.id()));
+        stored.forEach(item -> ids.add(item.id()));
+        int number = 1;
+        while (ids.contains(type + "-" + number)) {
+            number++;
+        }
+        String itemId = type + "-" + number;
+        stored.add(new LobbyLayoutDto.StoredItem(itemId, type));
+        LobbyLayoutDto next = new LobbyLayoutDto(SHAPE_VERSION, current.items(), List.copyOf(stored));
+        lobbyLayoutRepository.upsert(userId, SHAPE_VERSION, writeJson(new StoredLayout(next.items(), next.stored())), Instant.now());
+        return new AddedToStorage(next, itemId);
     }
 
     /** 배치 본문을 그 방(크기·걸 수 있는 벽) 기준으로 검사해 읽는다. 저장은 지금 방으로 검사한다. */

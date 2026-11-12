@@ -14,6 +14,8 @@ import com.writeloop.persistence.FeedbackDiagnosisLogEntity;
 import com.writeloop.persistence.FeedbackDiagnosisLogRepository;
 import com.writeloop.persistence.FeedbackTimingLogEntity;
 import com.writeloop.persistence.FeedbackTimingLogRepository;
+import com.writeloop.persistence.HomeShoppingOrderEntity;
+import com.writeloop.persistence.HomeShoppingOrderRepository;
 import com.writeloop.persistence.LobbyLayoutEntity;
 import com.writeloop.persistence.LobbyLayoutRepository;
 import com.writeloop.persistence.LoopPointBalanceEntity;
@@ -59,6 +61,7 @@ public class AccountDataPurgeService {
             EmailVerificationTokenEntity.class,
             FeedbackDiagnosisLogEntity.class,
             FeedbackTimingLogEntity.class,
+            HomeShoppingOrderEntity.class,
             LobbyLayoutEntity.class,
             LoopPointBalanceEntity.class,
             LoopPointEntryEntity.class,
@@ -96,6 +99,9 @@ public class AccountDataPurgeService {
     private LoopPointEntryRepository loopPointEntryRepository;
 
     @Autowired(required = false)
+    private HomeShoppingOrderRepository homeShoppingOrderRepository;
+
+    @Autowired(required = false)
     private LoopPointBalanceRepository loopPointBalanceRepository;
 
     @Transactional
@@ -117,6 +123,10 @@ public class AccountDataPurgeService {
         }
         if (loopPointBalanceRepository != null) {
             loopPointBalanceRepository.deleteAllByUserId(userId);
+        }
+        // 홈쇼핑에서 산 기록
+        if (homeShoppingOrderRepository != null) {
+            homeShoppingOrderRepository.deleteAllByUserId(userId);
         }
         userFeedbackRepository.purgeByUserId(userId);
 

@@ -144,7 +144,7 @@ public class LoopPointService {
      * 배타 잠금으로 올리면 같은 계정의 요청 둘이 서로를 기다려 교착이 나기 때문이다. 처음 요청이 동시에 와도
      * 한 요청만 만들고, 다른 요청의 INSERT IGNORE는 그 커밋을 기다렸다가 아무것도 하지 않는다.
      */
-    void ensureAccount(Long userId) {
+    public void ensureAccount(Long userId) {
         // 있는지 보는 읽기도 따로 한다. 바깥 트랜잭션(예: 질문 완료)에 붙어 실패하면 바깥까지 되돌려지기 때문이다
         separateTransaction.executeWithoutResult(status -> {
             if (balanceRepository.existsById(userId)) {
@@ -157,10 +157,26 @@ public class LoopPointService {
         });
     }
 
-    /** 잔액 행을 잠가 읽는다(ensureAccount로 먼저 만들어 둔다). */
-    LoopPointBalanceEntity lockAccount(Long userId) {
+    /** 잔액 행을 잠가 읽는다(ensureAccount로 먼저 만들어 둔다). 부르는 트랜잭션의 첫 문장으로 부른다. */
+    public LoopPointBalanceEntity lockAccount(Long userId) {
         return balanceRepository.findForUpdate(userId)
                 .orElseThrow(() -> new IllegalStateException("룹 잔액을 찾지 못했어요."));
+    }
+
+    /**
+     * 잠근 잔액에서 룹을 쓴다(홈쇼핑 주문). 장부에 음수 한 줄을 남긴다. 부르는 쪽이 잔액이 넉넉한지 먼저 확인하고,
+     * 같은 트랜잭션에서 lockAccount로 잠근 잔액을 넘긴다.
+     */
+    public void spend(LoopPointBalanceEntity balance, int amount, String reason, String sourceKey) {
+        Instant now = clock.instant();
+        balance.change(-amount, now);
+        balanceRepository.save(balance);
+        entryRepository.save(new LoopPointEntryEntity(balance.getUserId(), reason, sourceKey, -amount, today(), now));
+    }
+
+    /** 서버의 서울 날짜(홈쇼핑 오늘의 방송 상품도 이 날짜를 쓴다). */
+    public LocalDate seoulToday() {
+        return today();
     }
 
     private LoopPointsSummaryDto.Activity todayOf(Long userId, Activity activity, LocalDate today) {

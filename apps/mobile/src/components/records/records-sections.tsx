@@ -45,7 +45,9 @@ type RecordsContentTabRowProps = Pick<
 type RecordsHistoryTabProps = Pick<
   RecordsScreenValues,
   | "groupedHistoryEntries"
+  | "handleDateFeedLayout"
   | "handleDateGroupLayout"
+  | "handleHistoryBoardLayout"
   | "handleOpenCalendar"
   | "handleOpenSession"
   | "hasMoreHistory"
@@ -293,7 +295,9 @@ export function RecordsContentTabRow({
 // 작문 기록 탭: 머리와 달력 버튼, 날짜별 묶음, 모두 보기, 더 불러오기
 export function RecordsHistoryTab({
   groupedHistoryEntries,
+  handleDateFeedLayout,
   handleDateGroupLayout,
+  handleHistoryBoardLayout,
   handleOpenCalendar,
   handleOpenSession,
   hasMoreHistory,
@@ -310,7 +314,7 @@ export function RecordsHistoryTab({
   visibleGroupedHistoryEntries
 }: RecordsHistoryTabProps) {
   return (
-    <View style={styles.historyBoard}>
+    <View style={styles.historyBoard} onLayout={handleHistoryBoardLayout}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionHeaderCopy}>
@@ -339,7 +343,7 @@ export function RecordsHistoryTab({
           </Pressable>
         </View>
       ) : (
-        <View style={styles.dateFeed}>
+        <View style={styles.dateFeed} onLayout={handleDateFeedLayout}>
           {visibleGroupedHistoryEntries.map(({ dateKey, sessions }, groupIndex) => {
             const isOpen = openDates[dateKey] ?? false;
 

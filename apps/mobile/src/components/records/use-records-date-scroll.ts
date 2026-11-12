@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type LayoutChangeEvent, ScrollView } from "react-native";
 import type { HistorySession } from "@/lib/types";
 
 // 기록 화면의 고른 날짜로 스크롤: 스크롤 ref, 날짜 묶음 위치 기록, 날짜가 바뀌면 다시 스크롤할 수 있게(E7),
-// 열린 고른 날짜로 스크롤(E8), 날짜 묶음 onLayout 처리.
+// 열린 고른 날짜로 스크롤(E8), 작문 기록 판·날짜 목록·날짜 묶음 onLayout 처리.
+// 날짜 묶음의 onLayout y는 날짜 목록 안의 위치라, 작문 기록 판과 날짜 목록의 위치를 더해 스크롤 내용 전체의 위치로 쓴다.
+// 스크롤 예약은 아래 효과 한 곳에서만 하므로 고른 날짜 하나에 한 번만 스크롤한다.
 export function useRecordsDateScroll({
   groupedHistoryEntries,
   openDates,
@@ -15,11 +17,25 @@ export function useRecordsDateScroll({
 }) {
   const scrollViewRef = useRef<ScrollView | null>(null);
   const dateGroupOffsetsRef = useRef<Record<string, number>>({});
+  const historyBoardOffsetRef = useRef(0);
+  const dateFeedOffsetRef = useRef(0);
   const lastScrolledDateRef = useRef("");
+  // 고른 날짜의 위치를 알게 되거나 바뀌면 늘려 스크롤 효과를 다시 돌린다.
+  const [layoutVersion, setLayoutVersion] = useState(0);
 
   useEffect(() => {
     lastScrolledDateRef.current = "";
   }, [selectedDateKey]);
+
+  // 목록에서 없어진 날짜 묶음의 옛 위치는 지운다.
+  useEffect(() => {
+    const present = new Set(groupedHistoryEntries.map((entry) => entry.dateKey));
+    for (const dateKey of Object.keys(dateGroupOffsetsRef.current)) {
+      if (!present.has(dateKey)) {
+        delete dateGroupOffsetsRef.current[dateKey];
+      }
+    }
+  }, [groupedHistoryEntries]);
 
   useEffect(() => {
     if (!selectedDateKey) {
@@ -34,11 +50,12 @@ export function useRecordsDateScroll({
       return;
     }
 
-    const targetOffset = dateGroupOffsetsRef.current[selectedDateKey];
-    if (typeof targetOffset !== "number" || lastScrolledDateRef.current === selectedDateKey) {
+    const groupOffset = dateGroupOffsetsRef.current[selectedDateKey];
+    if (typeof groupOffset !== "number" || lastScrolledDateRef.current === selectedDateKey) {
       return;
     }
 
+    const targetOffset = historyBoardOffsetRef.current + dateFeedOffsetRef.current + groupOffset;
     const timeoutId = setTimeout(() => {
       scrollViewRef.current?.scrollTo({
         y: Math.max(targetOffset - 12, 0),
@@ -50,34 +67,44 @@ export function useRecordsDateScroll({
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [groupedHistoryEntries, openDates, selectedDateKey]);
+  }, [groupedHistoryEntries, layoutVersion, openDates, selectedDateKey]);
 
   const handleDateGroupLayout = useCallback(
     (dateKey: string, event: LayoutChangeEvent) => {
       const nextOffset = event.nativeEvent.layout.y;
+      if (dateGroupOffsetsRef.current[dateKey] === nextOffset) {
+        return;
+      }
       dateGroupOffsetsRef.current[dateKey] = nextOffset;
-
-      if (dateKey !== selectedDateKey || !(openDates[dateKey] ?? false)) {
-        return;
+      if (dateKey === selectedDateKey) {
+        setLayoutVersion((current) => current + 1);
       }
-
-      if (lastScrolledDateRef.current === selectedDateKey) {
-        return;
-      }
-
-      setTimeout(() => {
-        scrollViewRef.current?.scrollTo({
-          y: Math.max(nextOffset - 12, 0),
-          animated: true
-        });
-        lastScrolledDateRef.current = selectedDateKey;
-      }, 80);
     },
-    [openDates, selectedDateKey]
+    [selectedDateKey]
   );
 
+  const handleHistoryBoardLayout = useCallback((event: LayoutChangeEvent) => {
+    const nextOffset = event.nativeEvent.layout.y;
+    if (historyBoardOffsetRef.current === nextOffset) {
+      return;
+    }
+    historyBoardOffsetRef.current = nextOffset;
+    setLayoutVersion((current) => current + 1);
+  }, []);
+
+  const handleDateFeedLayout = useCallback((event: LayoutChangeEvent) => {
+    const nextOffset = event.nativeEvent.layout.y;
+    if (dateFeedOffsetRef.current === nextOffset) {
+      return;
+    }
+    dateFeedOffsetRef.current = nextOffset;
+    setLayoutVersion((current) => current + 1);
+  }, []);
+
   return {
+    handleDateFeedLayout,
     handleDateGroupLayout,
+    handleHistoryBoardLayout,
     scrollViewRef
   };
 }

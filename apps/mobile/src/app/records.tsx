@@ -201,7 +201,9 @@ export default function RecordsScreen() {
   }, [groupedHistoryEntries, selectedDateKey]);
 
   const {
+    handleDateFeedLayout,
     handleDateGroupLayout,
+    handleHistoryBoardLayout,
     scrollViewRef
   } = useRecordsDateScroll({
     groupedHistoryEntries,
@@ -463,7 +465,9 @@ export default function RecordsScreen() {
                 {activeTab === "history" ? (
                 <RecordsHistoryTab
                   groupedHistoryEntries={groupedHistoryEntries}
+                  handleDateFeedLayout={handleDateFeedLayout}
                   handleDateGroupLayout={handleDateGroupLayout}
+                  handleHistoryBoardLayout={handleHistoryBoardLayout}
                   handleOpenCalendar={handleOpenCalendar}
                   handleOpenSession={handleOpenSession}
                   hasMoreHistory={hasMoreHistory}

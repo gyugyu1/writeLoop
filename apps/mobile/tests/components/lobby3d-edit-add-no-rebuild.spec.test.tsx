@@ -26,6 +26,10 @@
 // 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
 // 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 빈 곳을 톡하면 고르기가 풀리지 않고 골라진 가구가 그리로 옮겨 간다.
 // 그래서 고르기를 푸는 도우미(deselect)는 골라진 가구 자신을 다시 톡한다(판정은 보지 않고 누르기 결과를 화면에 직접 넣는다). 준비만 바꿨고 단언은 그대로다.
+// 086-③(라룹 홈쇼핑 화면) 03 결정 1(사용자)로 고친 것(private 작업 폴더 086-2026-11-12-라룹-홈쇼핑/04-홈쇼핑-화면/03-main-decision.md, 보고 05-qa-tests.md):
+// 개발용 '가구 더하기' 탭이 없어져, 가구를 더하던 준비(R1·R2·R4, K1~K5)를 "홈쇼핑에서 산 침대 bed-1·화분 plant-1이 보관함에 든 처음 배치(DEF_BOUGHT)로 시작해
+// 보관함 칸을 눌러 꺼낸다"로 바꿨다. 보관함 가구는 방에 미리 3D를 만들지 않으므로 꺼낼 때도 "편집 중 방에 미리 만들지 않은 가구가 나오는" 경우다.
+// 단언과 기대값은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { useState } from "react";
@@ -150,6 +154,11 @@ const copy = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const layoutOf = (items: FurnitureItem[], stored: StoredItem[] = []): LobbyLayout => copy(makeLayout(items, stored));
 /** 처음 배치(책상·책장·옷장·깔개·게시판·창문·스탠드). */
 const DEF = layoutOf(DEFAULT_LOBBY_LAYOUT.items);
+/** 086-③: 처음 배치 + 홈쇼핑에서 산 침대 bed-1·화분 plant-1이 든 보관함. */
+const DEF_BOUGHT = layoutOf(DEFAULT_LOBBY_LAYOUT.items, [
+  { id: "bed-1", type: "bed" },
+  { id: "plant-1", type: "plant" }
+]);
 /** 깔개가 방에도 보관함에도 없는 배치. '처음 배치로'를 누르면 깔개가 나오는데 미리 만들지 않은 가구다. */
 const NO_RUG = layoutOf(DEFAULT_LOBBY_LAYOUT.items.filter((item) => item.id !== "rug"));
 /** 처음 배치에 화분 plant-9를 빈 바닥 (5.5, 3.5)에 더한 배치(꾸미기 밖에서 서버 배치가 바뀔 때). */
@@ -341,24 +350,10 @@ async function pressButton(label: string) {
   await frames();
 }
 
-/**
- * 개발 빌드의 '가구 더하기' 탭에서 그 가구 칸을 누른다. 보관함 줄이 닫혀 있으면 '보관함' 버튼으로 먼저 연다.
- * 칸은 접근성 이름 "<가구 이름> 더하기"로 찾고, 없으면 가구 이름 글을 가진 버튼으로 찾는다.
- */
+/** 086-③ 03 결정 1: '가구 더하기' 탭 대신 보관함 줄의 산 가구 칸(가구 이름)을 눌러 꺼낸다. */
 async function addFurniture(name: string) {
-  let addTabs = screen.queryAllByRole(/^(tab|button)$/, { name: "가구 더하기" });
-  if (addTabs.length === 0) {
-    await fireEvent.press(screen.getByRole("button", { name: /^보관함( \d+)?$/ }));
-    await flushAsync();
-    addTabs = screen.queryAllByRole(/^(tab|button)$/, { name: "가구 더하기" });
-  }
-  expect(addTabs).toHaveLength(1);
-  await fireEvent.press(addTabs[0]);
-  await flushAsync();
-  let cells = screen.queryAllByRole("button", { name: `${name} 더하기` });
-  if (cells.length === 0) cells = screen.queryAllByRole("button").filter((button) => within(button).queryByText(name) !== null);
-  expect(cells).toHaveLength(1);
-  await fireEvent.press(cells[0]);
+  const tray = screen.getByLabelText("보관함");
+  await fireEvent.press(within(tray).getByRole("button", { name }));
   await flushAsync();
   await frames();
 }
@@ -513,7 +508,7 @@ describe("[spec] 072 재현: 편집 중 방에 미리 만들지 않은 가구가
   test(
     "R1 (사용자 보고) 꾸미기에서 '가구 더하기'로 침대를 놓으면, 더하기 전 장면의 메시(가구·방 껍데기·그림자)가 하나도 바뀌지 않고 그대로 보이며, 침대 bed-1이 침대 모델로 보인다",
     async () => {
-      await renderLobby(DEF);
+      await renderLobby(DEF_BOUGHT);
       await enterEdit();
       const before = meshesInScene();
       const shownBefore = [...before].filter((mesh) => isShown(mesh));
@@ -536,7 +531,7 @@ describe("[spec] 072 재현: 편집 중 방에 미리 만들지 않은 가구가
   test(
     "R2 꾸미기에서 책상을 (1.5, 6.5)로 옮긴 뒤 침대를 더해도, 일기 책상 이름표는 다시 만들지 않아 더하기 전 자리(1.5, 2.1, 5.5)에 그대로 있다",
     async () => {
-      await renderLobby(DEF);
+      await renderLobby(DEF_BOUGHT);
       await enterEdit();
       await dragPiece("desk", DESK_AT, { x: DESK_AT.x, z: DESK_AT.z + 1 });
       expect(floorOf(edit().layout, "desk")).toEqual({ x: 1.5, z: 6.5, facing: 0 });
@@ -579,7 +574,7 @@ describe("[spec] 072 재현: 편집 중 방에 미리 만들지 않은 가구가
   test(
     "R4 침대를 더한 뒤 화분을 이어서 더하면, 두 번째 더하기 전 장면의 메시(앞서 더한 침대 포함)가 하나도 바뀌지 않고 둘 다 보인다",
     async () => {
-      await renderLobby(DEF);
+      await renderLobby(DEF_BOUGHT);
       await enterEdit();
       await addFurniture("침대");
       expect(shownFurniture("bed-1").length).toBeGreaterThan(0);
@@ -605,7 +600,7 @@ describe("[spec] 072 더한 가구는 다른 가구처럼 다뤄지고, 꾸미�
   test(
     "K1 더한 화분 plant-1은 놓인 자리에 보이고, 눌러 고르면 옷장과 같은 만큼 뜨며, 돌리고 끌면 모양·그림자가 편집 중 자리와 방향을 따른다",
     async () => {
-      await renderLobby(DEF);
+      await renderLobby(DEF_BOUGHT);
       await enterEdit();
       // 비교할 다른 가구: 옷장을 골랐을 때 뜨는 높이
       await tapPiece("wardrobe", WARDROBE_AT);
@@ -673,7 +668,7 @@ describe("[spec] 072 더한 가구는 다른 가구처럼 다뤄지고, 꾸미�
   test(
     "K2 더한 화분 plant-1을 치우면 모양·그림자가 보이지 않고, 그 자리를 눌러도 화분이 눌리지 않는다",
     async () => {
-      await renderLobby(DEF);
+      await renderLobby(DEF_BOUGHT);
       await enterEdit();
       await addFurniture("화분");
       expect(lifted()).toBe("plant-1");
@@ -697,7 +692,7 @@ describe("[spec] 072 더한 가구는 다른 가구처럼 다뤄지고, 꾸미�
   test(
     "K3 침대를 더한 뒤 '취소'하면 꾸미기 밖 로비에서 침대가 보이지 않고, 침대가 있던 자리를 눌러도 막히지 않는다(바닥 점이 있다)",
     async () => {
-      const { onSaveLayout } = await renderLobby(DEF);
+      const { onSaveLayout } = await renderLobby(DEF_BOUGHT);
       await enterEdit();
       await addFurniture("침대");
       const placed = placementOf(edit().layout, "bed-1");
@@ -720,7 +715,7 @@ describe("[spec] 072 더한 가구는 다른 가구처럼 다뤄지고, 꾸미�
   test(
     "K4 침대를 더한 뒤 '완료'하면 저장한 배치에 bed-1이 있고, 꾸미기 밖 로비에서 침대가 그 자리에 침대 모델로 보이며 그 자리를 누르면 막힌다",
     async () => {
-      const { onSaveLayout } = await renderLobby(DEF);
+      const { onSaveLayout } = await renderLobby(DEF_BOUGHT);
       await enterEdit();
       await addFurniture("침대");
       const bedFloor = floorOf(edit().layout, "bed-1");
@@ -750,7 +745,7 @@ describe("[spec] 072 더한 가구는 다른 가구처럼 다뤄지고, 꾸미�
   test(
     "K5 침대를 더한 뒤 '처음 배치로'를 누르면 bed-1은 보관함으로 가 보이지 않는다",
     async () => {
-      await renderLobby(DEF);
+      await renderLobby(DEF_BOUGHT);
       await enterEdit();
       await addFurniture("침대");
       expect(shownFurniture("bed-1").length).toBeGreaterThan(0);

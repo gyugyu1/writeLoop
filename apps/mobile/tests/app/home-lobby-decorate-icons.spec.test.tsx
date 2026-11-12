@@ -28,6 +28,10 @@
 // 071에서 이름을 고친 테스트의 [바뀔]·[그대로]는 071 분류이고, 이름을 고치지 않은 테스트의 표시는 070 분류 그대로다
 // (071 분류는 071 보고에 테스트마다 적었다. openStorage·storageBadge를 거치는 테스트는 071에서 모두 바뀔 동작이다).
 // 가정(071): 줄 머리 글은 버튼이 아니고, 개발 빌드의 탭 역할은 070처럼 tab이다(그래서 버튼 안의 "보관함 N" 글은 없어질 '보관함' 버튼의 글로 본다).
+// 086-③(라룹 홈쇼핑 화면) 03 결정 1(사용자)로 고친 것(private 작업 폴더 086-2026-11-12-라룹-홈쇼핑/04-홈쇼핑-화면/03-main-decision.md, 보고 05-qa-tests.md):
+// 개발용 '가구 더하기' 탭이 없어져 개발 빌드도 운영 빌드처럼 줄 머리가 "보관함 N" 글이고 보관함 칸만 있다. 탭 자체를 보던 D2·D4는 "탭이 없다"로 바꿨고,
+// 탭으로 침대를 더하던 D3은 "보관함에 산 침대(bed-1)가 든 배치로 시작해 칸 '침대'를 눌러 꺼낸다"로 준비를 바꿨다(놓인 자리·골라짐·남은 보관함 단언은 그대로,
+// "줄은 열린 채"는 '가구 더하기' 칸 대신 남은 보관함 칸이 그대로 보이는지로 본다).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -519,13 +523,6 @@ function tabsNamed(name: string): UiNode[] {
   return screen.queryAllByRole(/^(tab|button)$/, { name });
 }
 
-async function pressTab(name: string) {
-  const found = tabsNamed(name);
-  expect(found).toHaveLength(1);
-  await fireEvent.press(found[0]);
-  await flushAsync();
-}
-
 // ---------- PNG 읽기 ----------
 
 interface PngInfo {
@@ -993,56 +990,52 @@ describe("[spec] 070 명세 4: 가구 더하기는 개발 빌드에서만", () =
     expect(visibleCells().map(cellName)).toEqual(["옷장"]);
   });
 
-  test("D2 [바뀔] 개발 빌드: 꾸미기에 들어가면 칸 위에 '보관함 1'(개수 규칙)·'가구 더하기' 탭이 있고, 처음에는 보관함 칸이 보인다", async () => {
+  test("D2 [바뀔] 개발 빌드(086-③): 꾸미기에 들어가면 칸 위에 줄 머리 글 '보관함 1'(개수 규칙)이 있고 '가구 더하기' 탭(글·탭·'… 더하기' 칸)이 없으며 보관함 칸이 보인다", async () => {
     devGlobal.__DEV__ = true;
     await renderHome(ONE_WARDROBE);
     await enterEdit();
 
     await openStorage();
 
-    expect(tabsNamed(STORAGE_TAB)).toHaveLength(1);
-    expect(tabsNamed(ADD_TAB)).toHaveLength(1);
+    expect(storageBadge()).toBe(1);
+    expect(tabsNamed(STORAGE_TAB)).toHaveLength(0);
+    expect(tabsNamed(ADD_TAB)).toHaveLength(0);
+    expect(screen.queryByText(ADD_TAB)).toBeNull();
+    expect(screen.queryAllByLabelText(/더하기/)).toHaveLength(0);
     const cells = visibleCells();
     expect(cells.map(cellName)).toEqual(["옷장"]);
-    expect(orderOf(tabsNamed(STORAGE_TAB)[0])).toBeLessThan(orderOf(cells[0]));
-    expect(orderOf(tabsNamed(ADD_TAB)[0])).toBeLessThan(orderOf(cells[0]));
+    expect(orderOf(storageHeader())).toBeLessThan(orderOf(cells[0]));
   });
 
-  test("D3 [바뀔] 개발 빌드: '가구 더하기' 탭은 치울 수 있는 열 종류를 카탈로그 순서의 그림 칸으로 보이고(×N 없음), '침대'를 누르면 bed-1이 (4, 5.5, 0)에 놓여 골라지며 줄은 열린 채다", async () => {
+  test("D3 [바뀔] 개발 빌드(086-③): 보관함의 산 침대 칸은 그림 칸이고(×N 없음), 누르면 bed-1이 (4, 5.5, 0)에 놓여 골라지며 줄은 열린 채다", async () => {
     devGlobal.__DEV__ = true;
-    await renderHome(ONE_WARDROBE);
+    await renderHome(layout(N0_ITEMS, [{ id: "wardrobe-1", type: "wardrobe" }, { id: "bed-1", type: "bed" }]));
     await enterEdit();
     await openStorage();
 
-    await pressTab(ADD_TAB);
-
     const cells = visibleCells();
-    expect(cells.map(cellName)).toEqual(FURNITURE_TYPES.filter((type) => type.removable).map((type) => type.name));
-    expect(cells.map(cellName)).toEqual(REMOVABLE_NAMES);
+    expect(cells.map(cellName)).toEqual(["옷장", "침대"]);
     for (const cell of cells) {
       expect({ name: cellName(cell), images: imagesIn(cell).length > 0 }).toEqual({ name: cellName(cell), images: true });
       expect(within(cell).queryAllByText(/×/)).toHaveLength(0);
     }
 
-    await fireEvent.press(cells[REMOVABLE_NAMES.indexOf("침대")]);
+    await fireEvent.press(cells[1]);
     await flushAsync();
 
     expect(itemIn(editLayout(), "bed-1")).toEqual(floor("bed-1", "bed", 4, 5.5, 0));
     expect(lifted()).toBe("bed-1");
     expect(storedOf(editLayout())).toEqual([{ id: "wardrobe-1", type: "wardrobe" }]);
-    // 줄은 열린 채('가구 더하기' 칸이 그대로 보인다)
-    expect(visibleCells().map(cellName)).toEqual(REMOVABLE_NAMES);
+    // 줄은 열린 채(남은 보관함 칸이 그대로 보인다)
+    expect(visibleCells().map(cellName)).toEqual(["옷장"]);
   });
 
-  test("D4 [바뀔] 개발 빌드: '가구 더하기' 탭에서 '보관함 1' 탭으로 돌아오면 보관함 칸이 다시 보인다", async () => {
+  test("D4 [바뀔] 개발 빌드(086-③): 고를 탭이 없어(역할 tab 없음) 보관함 칸이 늘 보인다", async () => {
     devGlobal.__DEV__ = true;
     await renderHome(ONE_WARDROBE);
     await enterEdit();
     await openStorage();
-    await pressTab(ADD_TAB);
-    expect(visibleCells()).toHaveLength(REMOVABLE_NAMES.length);
-
-    await pressTab(STORAGE_TAB);
+    expect(screen.queryAllByRole("tab")).toHaveLength(0);
 
     expect(visibleCells().map(cellName)).toEqual(["옷장"]);
   });

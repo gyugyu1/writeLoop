@@ -28,6 +28,9 @@
 // - "5프레임이 34ms 안"의 프레임은 '완료'로 꾸미기에서 나온 뒤에 그린 프레임부터 센다고 보았다(표시는 나온 뒤에 뜨므로).
 // - 03 결정 2(사용자 2026-11-12)로 D1~D3을 더했다: 로딩 표시는 누르기를 막지 않고(표시는 누르기를 받지 않고 뒤의 방이 받는다),
 //   프레임이 그려지지 않아도 꾸미기에서 나온 때부터 1.5초가 지나면 내린다. "프레임이 없다"는 가짜 시계만 돌리고 useFrame을 부르지 않는 것이다.
+// - 086-③(라룹 홈쇼핑 화면) 03 결정 1(사용자)로 고친 것(private 작업 폴더 086-2026-11-12-라룹-홈쇼핑/04-홈쇼핑-화면/03-main-decision.md, 보고 05-qa-tests.md):
+//   개발용 '가구 더하기' 탭과 화면의 allowAddFurniture 속성이 없어져, 속성을 빼고 B2의 "침대를 더한다" 준비를
+//   "홈쇼핑에서 산 침대 bed-1이 보관함에 든 처음 배치(DEF_BOUGHT_BED)로 열어 보관함 칸 '침대'를 눌러 꺼낸다"로 바꿨다. 단언과 기대값은 그대로다.
 // - 한계: 실제 폰에서 멈칫함이 줄었는지, 모양이 어울리는지, 장소 안내 말풍선(라룹이가 장소에 섰을 때)은 이 테스트로 보지 않는다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -211,6 +214,8 @@ const SLOW_MS = 50;
 
 const copy = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const DEF: LobbyLayout = copy(DEFAULT_LOBBY_LAYOUT);
+/** 086-③: 처음 배치 + 홈쇼핑에서 산 침대 bed-1이 든 보관함. */
+const DEF_BOUGHT_BED: LobbyLayout = copy({ ...DEFAULT_LOBBY_LAYOUT, stored: [{ id: "bed-1", type: "bed" }] } as LobbyLayout);
 
 /** 그 가구만 바닥 자리를 바꾼 배치(방향은 그대로). */
 function withFloor(layout: LobbyLayout, id: string, x: number, z: number): LobbyLayout {
@@ -752,21 +757,10 @@ async function press(label: string) {
   await flushAsync();
 }
 
-/** 개발용 '가구 더하기' 탭에서 그 가구 칸을 누른다(072 테스트와 같은 찾기). */
+/** 086-③ 03 결정 1: '가구 더하기' 탭 대신 보관함 줄의 산 가구 칸(가구 이름)을 눌러 꺼낸다. */
 async function addFurniture(name: string) {
-  let addTabs = screen.queryAllByRole(/^(tab|button)$/, { name: "가구 더하기" });
-  if (addTabs.length === 0) {
-    await fireEvent.press(screen.getByRole("button", { name: /^보관함( \d+)?$/ }));
-    await flushAsync();
-    addTabs = screen.queryAllByRole(/^(tab|button)$/, { name: "가구 더하기" });
-  }
-  expect(addTabs).toHaveLength(1);
-  await fireEvent.press(addTabs[0]);
-  await flushAsync();
-  let cells = screen.queryAllByRole("button", { name: `${name} 더하기` });
-  if (cells.length === 0) cells = screen.queryAllByRole("button").filter((button) => within(button).queryByText(name) !== null);
-  expect(cells).toHaveLength(1);
-  await fireEvent.press(cells[0]);
+  const tray = screen.getByLabelText("보관함");
+  await fireEvent.press(within(tray).getByRole("button", { name }));
   await flushAsync();
   await frameAfter(FAST_MS, 2);
 }
@@ -791,7 +785,6 @@ function LobbyHost({ loaded }: { loaded: LobbyLayout }) {
   return (
     <Lobby3dScreen
       devPanel={false}
-      allowAddFurniture
       greeting={{ line: GREETING_LINE, action: "wave", key: 1 }}
       layout={layout}
       onSaveLayout={save}
@@ -906,7 +899,7 @@ describe("[spec] 085 바뀌는 동작 1: '완료'로 저장에 성공해 나올 
   test(
     "[바뀔] B2 꾸미기 중 '가구 더하기'로 침대를 더해 '완료'하면, 더한 침대를 포함해 '완료' 전 장면의 메시가 하나도 바뀌지 않고 layoutKey가 그대로이며, 침대가 저장된 자리에 침대 모델로 보이고 그 자리를 누르면 막힌다",
     async () => {
-      await openReadyLobby();
+      await openReadyLobby(DEF_BOUGHT_BED);
       await enterEdit();
       await addFurniture("침대");
       await deselect();

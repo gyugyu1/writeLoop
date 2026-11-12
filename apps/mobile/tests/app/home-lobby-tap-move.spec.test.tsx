@@ -9,6 +9,9 @@
 // '가구 더하기'는 개발 빌드에서만 보여 개발 빌드(__DEV__ = true)로 돌린다.
 // 구현 코드는 부르는 방법(3D 그리기가 받는 edit의 layout·lifted, 누르기 결과의 point·piece·wall, 보관함 줄 칸의 접근성 이름)을 알려고만 읽었다.
 // 빨간 가구 경우(H8·H9)는 결정(같은 폴더 03-main-decision.md의 답 2)에서 가져온다: 탭한 곳으로 옮기고 둘 수 있으면 빨간 상태가 풀리며, 둘 수 없으면 안내만 뜨고 그대로다.
+// 086-③(라룹 홈쇼핑 화면) 03 결정 1(사용자)로 고친 것(private 작업 폴더 086-2026-11-12-라룹-홈쇼핑/04-홈쇼핑-화면/03-main-decision.md, 보고 05-qa-tests.md):
+// 개발용 '가구 더하기' 탭이 없어져, H1·H4의 "화분을 더한다" 준비를 "보관함에 산 화분(plant-1)이 든 배치로 시작해 보관함 칸 '화분'을 눌러 꺼낸다"로 바꿨다
+// (편집기의 꺼내기는 더하기와 같은 자리 찾기를 쓴다). 단언과 기대값은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { BackHandler } from "react-native";
@@ -121,7 +124,6 @@ jest.mock("@/lib/writing-drafts", () => ({ getLocalWritingDraft: jest.fn() }));
 const TAP_CANNOT = "여기에는 둘 수 없어요";
 /** 끌어서 놓을 수 없는 자리에 놓았을 때의 안내(지금 그대로). */
 const DRAG_CANNOT = "여기에는 놓을 수 없어요. 원래 자리로 돌려놓았어요";
-const ADD_TAB = "가구 더하기";
 /** 빨간 가구가 있어 '완료'가 막힐 때의 안내(지금 그대로). */
 const RED_FINISH = "빨간 가구를 놓을 수 있는 자리로 옮기거나 돌려 주세요";
 
@@ -295,14 +297,15 @@ function storedOf(value: LobbyLayout | null | undefined): Stored[] {
   return ((value as { stored?: Stored[] } | null | undefined)?.stored ?? []).map((s) => ({ id: s.id, type: s.type }));
 }
 
-/** '가구 더하기' 탭을 눌러 그 종류("<이름> 더하기" 칸)를 더한다. */
+/** 086-③ 03 결정 1: '가구 더하기' 탭 대신 보관함의 산 가구 칸을 눌러 꺼낸다. */
 async function addFurniture(name: string) {
-  const tabs = screen.queryAllByRole(/^(tab|button)$/, { name: ADD_TAB });
-  expect(tabs).toHaveLength(1);
-  await fireEvent.press(tabs[0]);
+  const tray = screen.getByLabelText("보관함");
+  await fireEvent.press(within(tray).getByRole("button", { name }));
   await flushAsync();
-  await pressButton(`${name} 더하기`);
 }
+
+/** 086-③: 홈쇼핑에서 산 화분 plant-1이 보관함에 든 처음 배치. */
+const N0_BOUGHT_PLANT = layout(N0_ITEMS, [{ id: "plant-1", type: "plant" }]);
 
 /** 보관함 줄(보관함 쪽)의 그 가구 칸을 눌러 꺼낸다. */
 async function takeOut(name: string) {
@@ -357,7 +360,7 @@ afterEach(() => {
 
 describe("[spec] 075 바뀌는 동작 1: 들린 가구를 탭으로 옮기고, 그 가구를 탭해 확정한다(화면)", () => {
   test("H1 '가구 더하기'로 화분을 더한 뒤 빈 바닥 (5.3, 9.6)을 탭하면 화분이 (5.5, 9.5)로 옮겨 가 들린 채이고, 화분을 탭하면 내려앉으며 '완료'하면 그 자리로 저장된다", async () => {
-    await renderHome(N0);
+    await renderHome(N0_BOUGHT_PLANT);
     await enterEdit();
     await addFurniture("화분");
     expect(lifted()).toBe("plant-1");
@@ -440,7 +443,7 @@ describe("[spec] 075 바뀌는 동작 1: 들린 가구를 탭으로 옮기고, �
 
 describe("[spec] 075 바뀌는 동작 1: 다른 가구가 있어 둘 수 없는 곳을 탭하면 안내가 뜨고 가구는 그대로다(화면)", () => {
   test("H4 더한 화분을 들고 책상 (1.5, 5.5)를 탭하면 '여기에는 둘 수 없어요'가 뜨고, 화분은 원래 자리에서 들린 채이며 책상은 골라지지 않는다", async () => {
-    await renderHome(N0);
+    await renderHome(N0_BOUGHT_PLANT);
     await enterEdit();
     await addFurniture("화분");
     const before = editLayout();

@@ -4,6 +4,8 @@
 // 같은 폴더 04-main-decision.md의 결정 3은 부르는 방법으로만 쓴다('가구 더하기' 줄의 접근성 이름 "<가구 이름> 더하기").
 // 070(꾸미기 화면 버튼·보관함 아이콘) 03 결정으로 고친 것(찾는 방법만, 단언의 뜻은 그대로): '가구 더하기'가 개발 빌드에서만 보이는
 // 보관함 줄의 탭이 되어, G3·G4는 개발 빌드(__DEV__ = true)에서 '가구 더하기' 탭을 누른 뒤 '침대' 칸(가구 이름 글을 가진 버튼)을 누른다.
+// 086-③(라룹 홈쇼핑 화면) 03 결정 1(사용자)로 고친 것(private 작업 폴더 086-2026-11-12-라룹-홈쇼핑/04-홈쇼핑-화면/03-main-decision.md, 보고 05-qa-tests.md):
+// '가구 더하기' 탭이 없어져, G3·G4는 홈쇼핑에서 산 침대 bed-1이 보관함에 든 N0으로 열어 보관함 줄의 '침대' 칸을 눌러 꺼낸다. 단언과 기대값은 그대로다.
 // 어떻게 보나: ④ 판정 테스트(lobby3d-tabletop-pick-scope.spec.test.tsx)와 같은 틀이다. 가구 묶음은 모델 이름마다 0.8칸 가짜 상자이고
 // 누르기를 받지 않는다. 누르기 판정은 3D 그리기의 대체 상자(카탈로그의 칸에 맞춘 크기)와 소품의 넓힌 판정(가로·깊이·높이 적어도 0.8칸)이 받는다.
 // 누른 점마다 광선이 어느 상자를 먼저 지나는지를 먼저 단언해(전제), 시나리오가 말한 상황인지 확인한 뒤 결과를 본다.
@@ -690,17 +692,13 @@ describe("[spec] 066-⑤ 명세 1·2·3: 3D(G)", () => {
   );
 
   test(
-    "G3·G4 꾸미기에서 '침대'를 더하면 bed-1이 (4, 5.5)에 보이고, '취소'하면 보이지 않는다",
+    "G3·G4 꾸미기에서 보관함의 산 '침대'를 꺼내면 bed-1이 (4, 5.5)에 보이고, '취소'하면 보이지 않는다",
     async () => {
-      // 070 03 결정: 개발 빌드의 '가구 더하기' 탭에서 '침대' 칸을 누른다
+      // 086-③ 03 결정 1: '가구 더하기' 탭 대신 보관함의 산 침대 칸을 누른다
       devGlobal.__DEV__ = true;
-      await renderLobby(N0);
+      await renderLobby(layoutOf(N0.items, [{ id: "bed-1", type: "bed" }]));
       await enterEdit();
       await openStorage();
-      const addTabs = screen.queryAllByRole(/^(tab|button)$/, { name: "가구 더하기" });
-      expect(addTabs).toHaveLength(1);
-      await fireEvent.press(addTabs[0]);
-      await flushAsync();
       const bedCells = screen.queryAllByRole(/button/).filter((button) => within(button).queryByText("침대") !== null);
       expect(bedCells).toHaveLength(1);
       await fireEvent.press(bedCells[0]);

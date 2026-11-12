@@ -15,6 +15,9 @@
 // - 알림이 "떠 있다"·"사라졌다"는 알림 글이 화면에 있는지로 본다. 알림이 사라지는 시간은 명세에 없어 넉넉히(10초) 흘려 본다.
 //   카메라 거리 판은 카메라 버튼(이름 "카메라 거리 설정")으로 열고, 판의 '닫기'나 카메라 버튼을 다시 눌러 닫는다(지금 동작).
 // 엔진의 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다.
+// 086-③(라룹 홈쇼핑 화면) 03 결정 1(사용자)로 고친 것(private 작업 폴더 086-2026-11-12-라룹-홈쇼핑/04-홈쇼핑-화면/03-main-decision.md, 보고 05-qa-tests.md):
+// 개발용 '가구 더하기' 탭이 없어져 개발 빌드도 줄 머리가 탭이 아닌 "보관함"·"보관함 N" 글이다. 탭 자체를 보던 T7·T7b·T8은 "탭이 없고 줄 머리 글이 그 글이다"로 바꿨고,
+// 탭으로 침대를 더하던 T9·T10의 준비는 "보관함에 산 침대(bed-1)가 든 배치로 시작해 보관함 칸 '침대'를 눌러 꺼낸다"로 바꿨다. 나온 뒤를 보는 단언은 그대로다.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -136,7 +139,6 @@ const STORAGE_EMPTY = "보관함이 비었어요";
 const ADD_TAB = "가구 더하기";
 const CAMERA = "카메라 거리 설정";
 const FURNITURE_NAMES = FURNITURE_TYPES.map((type) => type.name);
-const ADDABLE_NAMES = FURNITURE_TYPES.filter((type) => type.removable).map((type) => type.name);
 
 // ---------- 배치(기존 보관함 테스트와 같은 값) ----------
 
@@ -170,6 +172,8 @@ const TWO_STORED: Stored[] = [
   { id: "rug2", type: "rug" }
 ];
 const WARDROBE_AT: FloorPoint = { x: 7.5, z: 3.5 };
+/** 086-③: 홈쇼핑에서 산 침대(보관함에 든다). */
+const BOUGHT_BED: Stored = { id: "bed-1", type: "bed" };
 
 // ---------- 고정 데이터 ----------
 
@@ -359,13 +363,6 @@ function tabsNamed(name: string): UiNode[] {
   return screen.queryAllByRole(/^(tab|button)$/, { name });
 }
 
-async function pressTab(name: string) {
-  const found = tabsNamed(name);
-  expect(found).toHaveLength(1);
-  await fireEvent.press(found[0]);
-  await flushAsync();
-}
-
 /** 자신이나 조상의 접근성 이름이 "… 더하기"인지('가구 더하기' 탭의 칸, 070 그대로). */
 function inAddGroup(node: UiNode): boolean {
   for (let n: UiNode | null = node; n; n = n.parent) {
@@ -534,32 +531,33 @@ describe("[spec] 071 명세 2: 보관함 줄은 꾸미기 동안 늘 보인다",
     expect(screen.queryAllByRole("button", { name: /닫기/ })).toHaveLength(0);
   });
 
-  test("T7 [바뀔] 개발 빌드: 보관함에 둘이면 꾸미기에 들어가자마자 탭 '보관함 2'·'가구 더하기'가 보이고 보관함 칸(옷장, 깔개)이 보인다", async () => {
+  test("T7 [바뀔] 개발 빌드: 보관함에 둘이면 꾸미기에 들어가자마자 줄 머리 '보관함 2'가 보이고 '가구 더하기' 탭이 없으며 보관함 칸(옷장, 깔개)이 보인다(086-③)", async () => {
     devGlobal.__DEV__ = true;
     await renderHome(layout(DEF_ITEMS, TWO_STORED));
     await enterEdit();
 
-    expect(tabsNamed("보관함 2")).toHaveLength(1);
-    expect(tabsNamed(ADD_TAB)).toHaveLength(1);
+    expectHeaderText("보관함 2");
+    expect(tabsNamed(ADD_TAB)).toHaveLength(0);
+    expect(screen.queryAllByText(ADD_TAB)).toHaveLength(0);
     expect(storageCells().map(cellName)).toEqual(["옷장", "깔개"]);
   });
 
-  test("T7b [바뀔] 개발 빌드: 보관함이 빈 꾸미기의 탭 이름은 정확히 '보관함'이다", async () => {
+  test("T7b [바뀔] 개발 빌드: 보관함이 빈 꾸미기의 줄 머리는 정확히 '보관함'이고 '가구 더하기' 탭이 없다(086-③)", async () => {
     devGlobal.__DEV__ = true;
     await renderHome(DEF);
     await enterEdit();
 
-    expect(tabsNamed("보관함")).toHaveLength(1);
-    expect(tabsNamed(ADD_TAB)).toHaveLength(1);
+    expectHeaderText("보관함");
+    expect(tabsNamed(ADD_TAB)).toHaveLength(0);
     expect(screen.getByText(STORAGE_EMPTY)).toBeTruthy();
   });
 
-  test("T8 [바뀔] 개발 빌드: '가구 더하기' 탭으로 바꾼 뒤 '취소'로 나왔다가 다시 들어가면 '보관함' 탭으로 시작한다(보관함 칸이 보이고 '… 더하기' 칸이 없다)", async () => {
+  test("T8 [바뀔] 개발 빌드: '가구 더하기' 탭이 없고, '취소'로 나왔다가 다시 들어가도 보관함 칸이 보이고 '… 더하기' 칸이 없다(086-③)", async () => {
     devGlobal.__DEV__ = true;
     await renderHome(layout(DEF_ITEMS, TWO_STORED));
     await enterEdit();
-    await pressTab(ADD_TAB);
-    expect(addCells().map(cellName)).toEqual(ADDABLE_NAMES);
+    expect(tabsNamed(ADD_TAB)).toHaveLength(0);
+    expect(addCells()).toHaveLength(0);
 
     await pressButton("취소");
     expectNotEditing();
@@ -569,12 +567,11 @@ describe("[spec] 071 명세 2: 보관함 줄은 꾸미기 동안 늘 보인다",
     expect(storageCells().map(cellName)).toEqual(["옷장", "깔개"]);
   });
 
-  test("T9 [바뀔] 개발 빌드: '가구 더하기' 탭에서 침대를 더하고 '완료'(저장)로 나왔다가 다시 들어가면 '보관함' 탭으로 시작한다", async () => {
+  test("T9 [바뀔] 개발 빌드: 보관함의 산 침대를 꺼내고 '완료'(저장)로 나왔다가 다시 들어가면 보관함 칸(옷장, 깔개)으로 시작하고 '… 더하기' 칸이 없다", async () => {
     devGlobal.__DEV__ = true;
-    await renderHome(layout(DEF_ITEMS, TWO_STORED));
+    await renderHome(layout(DEF_ITEMS, [...TWO_STORED, BOUGHT_BED]));
     await enterEdit();
-    await pressTab(ADD_TAB);
-    const bed = addCells().filter((cell) => cellName(cell) === "침대");
+    const bed = storageCells().filter((cell) => cellName(cell) === "침대");
     expect(bed).toHaveLength(1);
     await fireEvent.press(bed[0]);
     await flushAsync();
@@ -589,12 +586,11 @@ describe("[spec] 071 명세 2: 보관함 줄은 꾸미기 동안 늘 보인다",
     expect(storageCells().map(cellName)).toEqual(["옷장", "깔개"]);
   });
 
-  test("T10 [바뀔] 개발 빌드: '가구 더하기' 탭을 보는 중에도 안드로이드 뒤로 가기는 바로 '취소'와 같다(저장하지 않고 나오며 더한 침대는 없다)", async () => {
+  test("T10 [바뀔] 개발 빌드: 보관함의 산 침대를 꺼낸 뒤에도 안드로이드 뒤로 가기는 바로 '취소'와 같다(저장하지 않고 나오며 방에 침대는 없다)", async () => {
     devGlobal.__DEV__ = true;
-    await renderHome(layout(DEF_ITEMS, TWO_STORED));
+    await renderHome(layout(DEF_ITEMS, [...TWO_STORED, BOUGHT_BED]));
     await enterEdit();
-    await pressTab(ADD_TAB);
-    const bed = addCells().filter((cell) => cellName(cell) === "침대");
+    const bed = storageCells().filter((cell) => cellName(cell) === "침대");
     expect(bed).toHaveLength(1);
     await fireEvent.press(bed[0]);
     await flushAsync();

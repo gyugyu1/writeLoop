@@ -397,8 +397,7 @@ export interface NowInEnglishReflectionEntryRequest {
   createdAt?: string;
 }
 
-/** 완료 응답에 붙는 이번 룹 적립 결과(라룹 홈쇼핑에서 쓰는 포인트). 적립 시점이 아니면 null이다. */
-/** GET /api/loop-points: 룹 잔액과 오늘 활동별 적립 횟수. */
+/** GET /api/loop-points 중 앱이 쓰는 룹 잔액. */
 export interface LoopPointsSummary {
   balance: number;
 }
@@ -428,6 +427,7 @@ export interface HomeShoppingOrderResult {
   layout: LobbyLayout;
 }
 
+/** 완료 응답에 붙는 이번 룹 적립 결과(라룹 홈쇼핑에서 쓰는 포인트). 적립 시점이 아니면 null이다. */
 export interface LoopPointsReward {
   activity: "question" | "diary" | "nowInEnglish";
   earned: number;

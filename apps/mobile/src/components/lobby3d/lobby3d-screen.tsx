@@ -639,13 +639,16 @@ export default function Lobby3dScreen({
   };
   // 홈쇼핑 '바로 놓기': 꾸미기를 열고 산 가구를 보관함에서 꺼낸 채로 시작한다. 배치(layout)는 홈이 같은 렌더에서 먼저 넘겨, 위 효과가 먼저 적용한다
   const placeRequestKey = placeRequest?.key ?? null;
+  // 로비가 새로 만들어질 때 이미 있던 요청은 처리하지 않는다(다시 마운트되어 꾸미기가 저절로 열리지 않게)
+  const handledPlaceKey = useRef(placeRequestKey);
   const placeNowRef = useRef<(request: { itemId: string; type: string }) => void>(() => undefined);
   placeNowRef.current = (request) => {
     startEdit();
     if (editorRef.current) takeOutEdit({ id: request.itemId, type: request.type });
   };
   useEffect(() => {
-    if (placeRequestKey === null || !placeRequest) return;
+    if (placeRequestKey === null || !placeRequest || placeRequestKey === handledPlaceKey.current) return;
+    handledPlaceKey.current = placeRequestKey;
     placeNowRef.current({ itemId: placeRequest.itemId, type: placeRequest.type });
     // key가 바뀔 때만 한 번 한다
   }, [placeRequestKey]); // eslint-disable-line react-hooks/exhaustive-deps

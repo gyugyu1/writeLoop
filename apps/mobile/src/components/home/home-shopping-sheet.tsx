@@ -63,6 +63,9 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   const [ordered, setOrdered] = useState<HomeShoppingOrderResult | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const requestRef = useRef(0);
+  // 열려 있는지(닫힌 뒤 온 주문 응답으로 완료 판을 열지 않게)
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (message: string) => {
@@ -99,6 +102,9 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   useEffect(() => {
     if (!visible) {
       requestRef.current += 1;
+      // 다시 열면 처음처럼 불러오는 동안·실패 표시부터 보이게 앞 목록을 비운다
+      setShop(null);
+      setLoadFailed(false);
       setConfirming(null);
       setOrdered(null);
       setOrdering(false);
@@ -125,7 +131,8 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
       );
       onBalance(result.balance);
       onOrdered(result);
-      setOrdered(result);
+      // 기다리는 동안 닫았으면 완료 판은 열지 않는다(잔액·배치는 위에서 이미 반영했다)
+      if (visibleRef.current) setOrdered(result);
     } catch (error) {
       setConfirming(null);
       showToast(error instanceof ApiError && error.message ? error.message : ORDER_FAILED);

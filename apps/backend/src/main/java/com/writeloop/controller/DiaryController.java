@@ -5,6 +5,7 @@ import com.writeloop.dto.DiaryCalendarSummaryDto;
 import com.writeloop.dto.DiaryEntryDto;
 import com.writeloop.dto.DiaryFeedbackRequestDto;
 import com.writeloop.dto.DiaryFeedbackResponseDto;
+import com.writeloop.dto.DiaryFeedbackWithPointsDto;
 import com.writeloop.dto.UpdateDiaryEntryRequestDto;
 import com.writeloop.service.AuthService;
 import com.writeloop.service.DiaryService;
@@ -55,12 +56,12 @@ public class DiaryController {
 
     @PostMapping("/{entryId}/feedback")
     @ResponseStatus(HttpStatus.OK)
-    public DiaryFeedbackResponseDto generateFeedback(
+    public DiaryFeedbackWithPointsDto generateFeedback(
             @PathVariable String entryId,
             @RequestBody(required = false) DiaryFeedbackRequestDto request,
             HttpServletRequest httpRequest
     ) {
-        return diaryService.generateFeedback(requireCurrentUserId(httpRequest), entryId, request);
+        return diaryService.generateFeedbackWithPoints(requireCurrentUserId(httpRequest), entryId, request);
     }
 
     @GetMapping

@@ -12,6 +12,8 @@ import com.writeloop.dto.DiaryCorrectionPointDto;
 import com.writeloop.dto.DiaryEntryDto;
 import com.writeloop.dto.DiaryFeedbackRequestDto;
 import com.writeloop.dto.DiaryFeedbackResponseDto;
+import com.writeloop.dto.DiaryFeedbackWithPointsDto;
+import com.writeloop.dto.LoopPointsRewardDto;
 import com.writeloop.dto.DiaryFlowDto;
 import com.writeloop.dto.DiaryMissionDto;
 import com.writeloop.dto.UpdateDiaryEntryRequestDto;
@@ -60,6 +62,8 @@ public class DiaryService {
     private final ObjectMapper objectMapper;
     @Autowired(required = false)
     private FeedbackTimingRecorder feedbackTimingRecorder;
+    @Autowired(required = false)
+    private LoopPointService loopPointService;
 
     @Value("${app.diary.max-content-chars:4000}")
     private int maxDiaryContentChars;
@@ -158,6 +162,22 @@ public class DiaryService {
     public void deleteEntry(Long userId, String entryId) {
         DiaryEntryEntity entry = requireOwnedEntry(userId, entryId);
         diaryEntryRepository.delete(entry);
+    }
+
+    /**
+     * 일기 피드백을 만들고, 그 일기의 첫 피드백(attemptNo 1)이면 룹을 적립한다(일기마다 한 번, 하루 한도 안에서).
+     * 같은 일기의 두 번째 피드백부터는 적립하지 않고 loopPoints가 null이다.
+     */
+    public DiaryFeedbackWithPointsDto generateFeedbackWithPoints(
+            Long userId,
+            String entryId,
+            DiaryFeedbackRequestDto request
+    ) {
+        DiaryFeedbackResponseDto feedback = generateFeedback(userId, entryId, request);
+        LoopPointsRewardDto loopPoints = feedback.attemptNo() == 1 && loopPointService != null
+                ? loopPointService.earnQuietly(userId, LoopPointService.Activity.DIARY, feedback.entryId())
+                : null;
+        return new DiaryFeedbackWithPointsDto(feedback, loopPoints);
     }
 
     public DiaryFeedbackResponseDto generateFeedback(

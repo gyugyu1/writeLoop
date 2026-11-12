@@ -413,9 +413,19 @@ export interface PreviousMissionResult {
   message: string;
 }
 
+/** 완료 응답에 붙는 이번 룹 적립 결과(라룹 홈쇼핑에서 쓰는 포인트). 적립 시점이 아니면 null이다. */
+export interface LoopPointsReward {
+  activity: "question" | "diary" | "nowInEnglish";
+  earned: number;
+  balance: number;
+  dailyLimitReached: boolean;
+}
+
 export interface FeedbackSessionStatus {
   sessionId: string;
   status: "IN_PROGRESS" | "READY_TO_FINISH" | "COMPLETED";
+  /** 이번 요청으로 룹을 적립하는 때에만 있다(완료 응답). */
+  loopPoints?: LoopPointsReward | null;
 }
 
 export type DiaryAnswerBand =
@@ -485,6 +495,8 @@ export interface DiaryFeedback {
   diaryExpressions: DiaryExpression[];
   nextDiaryMission: DiaryMission;
   safetyFlags: string[];
+  /** 이번 요청으로 룹을 적립하는 때에만 있다(완료 응답). */
+  loopPoints?: LoopPointsReward | null;
 }
 
 export interface DiaryEntryRequest {

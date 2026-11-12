@@ -16,6 +16,10 @@ import com.writeloop.persistence.FeedbackTimingLogEntity;
 import com.writeloop.persistence.FeedbackTimingLogRepository;
 import com.writeloop.persistence.LobbyLayoutEntity;
 import com.writeloop.persistence.LobbyLayoutRepository;
+import com.writeloop.persistence.LoopPointBalanceEntity;
+import com.writeloop.persistence.LoopPointBalanceRepository;
+import com.writeloop.persistence.LoopPointEntryEntity;
+import com.writeloop.persistence.LoopPointEntryRepository;
 import com.writeloop.persistence.NowInEnglishEntryEntity;
 import com.writeloop.persistence.NowInEnglishEntryRepository;
 import com.writeloop.persistence.NowInEnglishReflectionEntity;
@@ -33,6 +37,7 @@ import com.writeloop.persistence.SavedExpressionRepository;
 import com.writeloop.persistence.UserFeedbackEntity;
 import com.writeloop.persistence.UserFeedbackRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,6 +60,8 @@ public class AccountDataPurgeService {
             FeedbackDiagnosisLogEntity.class,
             FeedbackTimingLogEntity.class,
             LobbyLayoutEntity.class,
+            LoopPointBalanceEntity.class,
+            LoopPointEntryEntity.class,
             NowInEnglishEntryEntity.class,
             NowInEnglishReflectionEntity.class,
             PasswordResetTokenEntity.class,
@@ -85,6 +92,12 @@ public class AccountDataPurgeService {
     private final RefreshTokenService refreshTokenService;
     private final DraftService draftService;
 
+    @Autowired(required = false)
+    private LoopPointEntryRepository loopPointEntryRepository;
+
+    @Autowired(required = false)
+    private LoopPointBalanceRepository loopPointBalanceRepository;
+
     @Transactional
     public void purgeUserData(Long userId) {
         // 하위 기록을 먼저 지운다. DB에 ON DELETE CASCADE가 없어도 고아 행이 남지 않게 한다.
@@ -98,6 +111,13 @@ public class AccountDataPurgeService {
         coachInteractionRepository.deleteAllByUserId(userId);
         savedExpressionRepository.deleteAllByUserId(userId);
         lobbyLayoutRepository.deleteAllByUserId(userId);
+        // 룹 기록·잔액(사용자 행을 지울 때 외래 키로도 함께 지워진다)
+        if (loopPointEntryRepository != null) {
+            loopPointEntryRepository.deleteAllByUserId(userId);
+        }
+        if (loopPointBalanceRepository != null) {
+            loopPointBalanceRepository.deleteAllByUserId(userId);
+        }
         userFeedbackRepository.purgeByUserId(userId);
 
         feedbackDiagnosisLogRepository.purgeByUserId(userId);

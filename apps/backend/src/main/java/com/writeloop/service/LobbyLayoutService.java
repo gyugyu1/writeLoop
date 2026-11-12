@@ -86,6 +86,10 @@ public class LobbyLayoutService {
     @Autowired(required = false)
     private FurnitureOwnershipService furnitureOwnershipService;
 
+    /** 있으면 배치를 저장할 때 홈쇼핑 주문과 같은 계정 잠금을 잡는다(운영 빈에서는 늘 있다). */
+    @Autowired(required = false)
+    private LoopPointService loopPointService;
+
     /** 처음 배치(앱 lobby-layout.ts의 DEFAULT_LOBBY_LAYOUT과 같다). 저장된 배치가 없는 계정에 주문한 가구를 더할 때 쓴다. */
     static final LobbyLayoutDto DEFAULT_LAYOUT = new LobbyLayoutDto(SHAPE_VERSION, List.of(
             new LobbyLayoutDto.Item("desk", "desk", new LobbyLayoutDto.FloorSpot(1.5, 5.5, 0), null),
@@ -109,6 +113,11 @@ public class LobbyLayoutService {
     @Transactional
     public LobbyLayoutDto saveLayout(Long userId, JsonNode request) {
         LobbyLayoutDto layout = parse(request, LobbyRoom.current());
+        // 같은 계정의 홈쇼핑 주문(보관함에 가구를 더함)과 겹치지 않게, 주문과 같은 잔액 행 잠금을 이 트랜잭션의 첫 문장으로 잡는다
+        if (loopPointService != null) {
+            loopPointService.ensureAccount(userId);
+            loopPointService.lockAccount(userId);
+        }
         requireOwned(userId, layout);
         String layoutJson = writeJson(new StoredLayout(layout.items(), layout.stored()));
         lobbyLayoutRepository.upsert(userId, layout.version(), layoutJson, Instant.now());

@@ -274,6 +274,21 @@ export interface SendRegistrationCodeRequest {
   email: string;
 }
 
+export interface SendPasswordResetCodeRequest {
+  email: string;
+}
+
+export interface VerifyPasswordResetCodeRequest {
+  email: string;
+  code: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
 export interface CompleteRegistrationRequest {
   email: string;
   code: string;

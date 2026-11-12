@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import type { Season } from "@/lib/lobby3d/daylight";
-import { VILLAGE, VILLAGE_TREES, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
+import { VILLAGE, VILLAGE_TREES, VILLAGE_WINDMILL, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import type { DaylightState } from "./lobby3d-daylight";
 import { SEASON_COLORS } from "./lobby3d-outdoor";
 
@@ -85,7 +85,9 @@ function treeSpots(): TreeSpot[] {
       const jx = x + (rnd() - 0.5) * 1.6;
       const jz = z + (rnd() - 0.5) * 1.6;
       const inside = jx > -1 && jx < VILLAGE.width + 1 && jz > -1 && jz < VILLAGE.depth + 1;
-      if (inside || rnd() < 0.12) continue;
+      // 풍차 탑과 도는 날개 둘레는 비운다
+      const nearMill = Math.abs(jx - VILLAGE_WINDMILL.x) < MILL_CLEAR && Math.abs(jz - VILLAGE_WINDMILL.z) < MILL_CLEAR;
+      if (inside || nearMill || rnd() < 0.12) continue;
       spots.push({ kind: pick(FOREST_TREE_KINDS), x: jx, z: jz, scale: 1.8 + rnd() * 0.7, turn: rnd() * Math.PI * 2, leaf: Math.floor(rnd() * 4) });
     }
   }
@@ -95,6 +97,10 @@ function treeSpots(): TreeSpot[] {
 /** 마을 안에 섞어 심는 나무(둥근 나무 많이)와 둘레 숲 나무(침엽수 많이). 이름은 모델의 나무 틀(tpl-<이름>-leaf/trunk)이다. */
 const VILLAGE_TREE_KINDS = ["tree-high-round", "tree-high-round", "tree-crooked", "tree", "tree-high-crooked"] as const;
 const FOREST_TREE_KINDS = ["tree", "tree-high", "tree-high", "tree-high-round"] as const;
+/** 둘레 숲을 심지 않는 풍차 둘레(풍차 가운데에서 가로·깊이로, 칸). 탑 반 폭 1.5 + 날개 길이 약 3.7 + 나무 잎 반지름 약 1. */
+const MILL_CLEAR = 6.5;
+/** 침엽수 틀(잎을 사철 초록 pine으로 칠한다. 창밖 풍경과 같은 규칙). 둥근 나무만 활엽수 잎 색을 쓴다. */
+const isPine = (kind: string) => !kind.includes("round");
 /** 풍차 날개가 한 바퀴 도는 시간(초). */
 const ROTOR_TURN_SECONDS = 14;
 
@@ -298,7 +304,7 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       for (const m of built.hedgeMats) m.color.set(colors.bushes[0]);
       const color = new THREE.Color();
       for (const { mesh, spots } of built.leaves) {
-        spots.forEach((spot, i) => mesh.setColorAt(i, color.set(colors.leaves[spot.leaf % colors.leaves.length])));
+        spots.forEach((spot, i) => mesh.setColorAt(i, color.set(isPine(spot.kind) ? colors.pine : colors.leaves[spot.leaf % colors.leaves.length])));
         if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       }
     }

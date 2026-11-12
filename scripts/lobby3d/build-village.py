@@ -272,7 +272,8 @@ for f in range(2):
 place("roof-point", mill, MILL["x"], MILL["z"], 0, y=2 * S, uv_shift=ROOF_UV["red"])
 rotor = group("windmill-rotor")
 # 날개는 얇은 쪽이 부품 x라, 앱 앞(카메라 쪽)을 보게 돌린다
-place("windmill", rotor, MILL["x"], MILL["z"] + S / 2 + 0.25, FACE_ROT["front"], scale=S * 1.1, y=S * 1.55)
+# 날개 길이(바퀴 가운데에서 끝까지)가 바퀴 높이보다 짧아야 돌 때 땅에 박히지 않는다(부품 날개 길이 1.56 × 2.4 ≈ 3.7 < 바퀴 높이 4.65)
+place("windmill", rotor, MILL["x"], MILL["z"] + S / 2 + 0.25, FACE_ROT["front"], scale=2.4, y=S * 1.55)
 
 # ---------- 나무 틀 ----------
 # 잎(색 그림의 초록 칸)과 줄기(그 밖)를 나눠 원점에 둔다. 앱이 계절 색으로 잎을 칠한다(구석 어둠은 굽지 않는다)

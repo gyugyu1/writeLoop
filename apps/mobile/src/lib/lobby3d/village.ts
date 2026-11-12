@@ -44,6 +44,9 @@ export const VILLAGE_BUILDINGS: readonly VillageBuilding[] = LAYOUT.buildings.ma
 
 const key = (c: number, r: number) => `${c},${r}`;
 
+/** 풍차 자리(마을 끝 바깥 장식, 가운데 x·z). 둘레 숲이 이 둘레를 비운다. */
+export const VILLAGE_WINDMILL: VillagePoint = LAYOUT.windmill;
+
 /** 마을 안 나무 자리(가운데 x·z). 그리기(lobby3d-village)가 이 자리에 나무를 짓는다. */
 export const VILLAGE_TREES: readonly (readonly [number, number])[] = LAYOUT.trees as unknown as [number, number][];
 

@@ -2,16 +2,16 @@ import { useFrame, useLoader, useThree } from "@react-three/fiber/native";
 import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import type { Season } from "@/lib/lobby3d/daylight";
 import { VILLAGE, VILLAGE_TREES, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import type { DaylightState } from "./lobby3d-daylight";
 import { SEASON_COLORS } from "./lobby3d-outdoor";
 
-// 바깥 마을 그리기. 풀밭·나무·숲·하늘(코드로 짓고 계절·하루의 때를 따른다)과, Kenney 키트로 조립한 건물·소품 모델(lobby-village.glb)을 그린다.
-// 모델을 불러오지 못하면 풀밭·나무·하늘만 보인다(걸어갈 수 없는 곳은 village.ts 데이터대로 막는다).
-// 라룹이를 가리는 건물은 반투명하게 하고, 새벽·어스름·밤에는 창과 가로등에 불을 켠다.
+// 바깥 마을 그리기. 풀밭·하늘(코드로 짓고 계절·하루의 때를 따른다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·풍차·나무 틀)을 그린다.
+// 나무는 모델의 나무 틀을 마을 나무 자리와 둘레 숲에 여러 그루 찍고(인스턴스), 잎을 계절 색으로 칠한다.
+// 모델을 불러오지 못하면 풀밭·하늘만 보인다(걸어갈 수 없는 곳은 village.ts 데이터대로 막는다).
+// 라룹이를 가리는 건물은 반투명하게 하고, 새벽·어스름·밤에는 창과 가로등에 불을 켠다. 풍차 날개는 천천히 돈다.
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const VILLAGE_ASSET = require("../../../assets/models/lobby-village.glb");
@@ -30,84 +30,21 @@ function seeded(seed: number) {
   };
 }
 
-/** 나무 한 그루의 잎 공들(가운데 x·z, 크기 s). [x, y, z, 반지름]. */
-function crownBalls(x: number, z: number, s: number, full: boolean): [number, number, number, number][] {
-  const parts: [number, number, number, number][] = full
-    ? [
-        [0, 2.4, 0, 1.0],
-        [-0.6, 1.95, 0.2, 0.72],
-        [0.62, 2.0, -0.1, 0.75],
-        [0.1, 3.05, 0.1, 0.68],
-        [0, 2.0, 0.55, 0.6]
-      ]
-    : [
-        [0, 2.4, 0, 1.05],
-        [-0.55, 2.0, 0.25, 0.75],
-        [0.15, 3.0, 0, 0.7]
-      ];
-  return parts.map(([px, py, pz, r]) => [x + px * s, py * s, z + pz * s, r * s]);
-}
-
 interface Nature {
   group: THREE.Group;
   setSeason(season: Season): void;
   dispose(): void;
 }
 
-/** 풀밭(마을 안팎), 마을 나무, 둘레 숲. 잎 색을 넷으로 나눠 색마다 한 모양으로 합친다(그리는 횟수를 줄인다). */
+/** 풀밭(마을 안팎). 계절 색을 따른다. */
 function buildNature(): Nature {
   const group = new THREE.Group();
-  const geometries: THREE.BufferGeometry[] = [];
   const groundMat = new THREE.MeshLambertMaterial({ color: 0x8cc76a });
-  const leafMats = [0, 1, 2, 3].map(() => new THREE.MeshLambertMaterial({ color: 0xffffff }));
-  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x8d5f3f });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(VILLAGE.width + FOREST_MARGIN * 6, VILLAGE.depth + FOREST_MARGIN * 6), groundMat);
-  geometries.push(ground.geometry);
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(VILLAGE.width / 2, -0.02, VILLAGE.depth / 2);
   ground.raycast = () => {};
   group.add(ground);
-
-  const rnd = seeded(11);
-  const ball = new THREE.IcosahedronGeometry(1, 1);
-  const crowns: THREE.BufferGeometry[][] = [[], [], [], []];
-  const trunks: THREE.BufferGeometry[] = [];
-  const addTree = (x: number, z: number, s: number, full: boolean) => {
-    const leaf = Math.floor(rnd() * 4);
-    for (const [bx, by, bz, r] of crownBalls(x, z, s, full)) crowns[leaf].push(ball.clone().scale(r, r, r).translate(bx, by, bz));
-    trunks.push(new THREE.CylinderGeometry(0.13 * s, 0.2 * s, 1.8 * s, 6).translate(x, 0.9 * s, z));
-  };
-  // 마을 안 나무(걸어갈 수 없는 칸은 village.ts가 같은 자리로 막는다)
-  for (const [x, z] of VILLAGE_TREES) addTree(x, z, 0.95 + rnd() * 0.2, true);
-  // 둘레 숲: 마을 끝 바깥을 채운다(화면 어디에도 검은 바깥이 보이지 않게)
-  for (let x = -FOREST_MARGIN; x <= VILLAGE.width + FOREST_MARGIN; x += 2.6) {
-    for (let z = -FOREST_MARGIN; z <= VILLAGE.depth + FOREST_MARGIN; z += 2.6) {
-      const jx = x + (rnd() - 0.5) * 1.6;
-      const jz = z + (rnd() - 0.5) * 1.6;
-      const inside = jx > -1 && jx < VILLAGE.width + 1 && jz > -1 && jz < VILLAGE.depth + 1;
-      if (inside || rnd() < 0.15) continue;
-      addTree(jx, jz, 1.0 + rnd() * 0.5, false);
-    }
-  }
-  crowns.forEach((parts, i) => {
-    if (parts.length === 0) return;
-    const merged = mergeGeometries(parts);
-    parts.forEach((p) => p.dispose());
-    geometries.push(merged);
-    const mesh = new THREE.Mesh(merged, leafMats[i]);
-    mesh.raycast = () => {};
-    group.add(mesh);
-  });
-  if (trunks.length) {
-    const merged = mergeGeometries(trunks);
-    trunks.forEach((t) => t.dispose());
-    geometries.push(merged);
-    const mesh = new THREE.Mesh(merged, trunkMat);
-    mesh.raycast = () => {};
-    group.add(mesh);
-  }
-  ball.dispose();
-
   let shownSeason: Season | null = null;
   return {
     group,
@@ -115,16 +52,51 @@ function buildNature(): Nature {
       if (season === shownSeason) return;
       shownSeason = season;
       // 색 값(16진)은 화면 색이고, set이 알아서 선형 색으로 바꾼다
-      const colors = SEASON_COLORS[season];
-      groundMat.color.set(colors.ground);
-      leafMats.forEach((m, i) => m.color.set(colors.leaves[i % colors.leaves.length]));
+      groundMat.color.set(SEASON_COLORS[season].ground);
     },
     dispose() {
-      geometries.forEach((g) => g.dispose());
-      [groundMat, trunkMat, ...leafMats].forEach((m) => m.dispose());
+      ground.geometry.dispose();
+      groundMat.dispose();
     }
   };
 }
+
+/** 나무 한 그루를 찍을 자리. */
+interface TreeSpot {
+  kind: string;
+  x: number;
+  z: number;
+  scale: number;
+  turn: number;
+  /** 잎 색 번호(계절 색 넷 중). */
+  leaf: number;
+}
+
+/** 마을 나무 자리(배치 데이터)와 둘레 숲(마을 끝 바깥을 채운다. 화면 어디에도 검은 바깥이 보이지 않게). */
+function treeSpots(): TreeSpot[] {
+  const rnd = seeded(11);
+  const spots: TreeSpot[] = [];
+  const pick = <T,>(items: readonly T[]) => items[Math.floor(rnd() * items.length)];
+  for (const [x, z] of VILLAGE_TREES) {
+    spots.push({ kind: pick(VILLAGE_TREE_KINDS), x, z, scale: 1.7 + rnd() * 0.35, turn: rnd() * Math.PI * 2, leaf: Math.floor(rnd() * 4) });
+  }
+  for (let x = -FOREST_MARGIN; x <= VILLAGE.width + FOREST_MARGIN; x += 2.7) {
+    for (let z = -FOREST_MARGIN; z <= VILLAGE.depth + FOREST_MARGIN; z += 2.7) {
+      const jx = x + (rnd() - 0.5) * 1.6;
+      const jz = z + (rnd() - 0.5) * 1.6;
+      const inside = jx > -1 && jx < VILLAGE.width + 1 && jz > -1 && jz < VILLAGE.depth + 1;
+      if (inside || rnd() < 0.12) continue;
+      spots.push({ kind: pick(FOREST_TREE_KINDS), x: jx, z: jz, scale: 1.8 + rnd() * 0.7, turn: rnd() * Math.PI * 2, leaf: Math.floor(rnd() * 4) });
+    }
+  }
+  return spots;
+}
+
+/** 마을 안에 섞어 심는 나무(둥근 나무 많이)와 둘레 숲 나무(침엽수 많이). 이름은 모델의 나무 틀(tpl-<이름>-leaf/trunk)이다. */
+const VILLAGE_TREE_KINDS = ["tree-high-round", "tree-high-round", "tree-crooked", "tree", "tree-high-crooked"] as const;
+const FOREST_TREE_KINDS = ["tree", "tree-high", "tree-high", "tree-high-round"] as const;
+/** 풍차 날개가 한 바퀴 도는 시간(초). */
+const ROTOR_TURN_SECONDS = 14;
 
 interface VillageNatureProps {
   daylight: DaylightState;
@@ -198,10 +170,26 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     // 묶음 이름(합친 메시는 뒤에 "-mesh"가 붙는다: bld-home-mesh, props-mesh 등)
     const groupOf = (o: THREE.Object3D): string => {
       for (let n: THREE.Object3D | null = o; n; n = n.parent) {
-        if (/^(bld-|glow-|props|paths|hedges)/.test(n.name)) return n.name;
+        if (/^(bld-|glow-|props|paths|hedges|fences|windmill)/.test(n.name)) return n.name;
       }
       return "";
     };
+    // 나무 틀은 그리지 않고 떼어 둔다(아래에서 여러 그루로 찍는다)
+    const templates = root.getObjectByName("tree-templates");
+    if (templates) templates.removeFromParent();
+    // 풍차 날개: 날개 가운데를 축으로 돌도록 모양을 가운데로 옮기고 그만큼 자리를 옮긴다
+    let rotor: THREE.Mesh | null = null;
+    root.getObjectByName("windmill-rotor")?.traverse((o) => {
+      if (o instanceof THREE.Mesh && !rotor) rotor = o;
+    });
+    if (rotor) {
+      const r = rotor as THREE.Mesh;
+      r.geometry = r.geometry.clone();
+      r.geometry.computeBoundingBox();
+      const center = r.geometry.boundingBox!.getCenter(new THREE.Vector3());
+      r.geometry.translate(-center.x, -center.y, -center.z);
+      r.position.add(center);
+    }
     root.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;
       const name = groupOf(o);
@@ -236,7 +224,42 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
         }
       }
     });
-    return { root, buildings, glows, glowMat, hedgeMats, owned, pick };
+    // 나무: 틀마다 잎·줄기를 인스턴스로 찍는다. 잎은 흰 재질에 그루마다 색을 곱한다(계절 색)
+    const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    owned.push(leafMat);
+    const leaves: { mesh: THREE.InstancedMesh; spots: TreeSpot[] }[] = [];
+    const spots = treeSpots();
+    const matrix = new THREE.Matrix4();
+    const turn = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    const kinds = new Set(spots.map((spot) => spot.kind));
+    for (const kind of kinds) {
+      const mine = spots.filter((spot) => spot.kind === kind);
+      for (const part of ["leaf", "trunk"] as const) {
+        const source = templates?.getObjectByName(`tpl-${kind}-${part}`) as THREE.Mesh | undefined;
+        if (!source) continue;
+        let material: THREE.Material = leafMat;
+        if (part === "trunk") {
+          const map = (source.material as THREE.MeshStandardMaterial).map;
+          if (map) map.colorSpace = THREE.SRGBColorSpace;
+          material = new THREE.MeshLambertMaterial({ map });
+          owned.push(material);
+        }
+        const mesh = new THREE.InstancedMesh(source.geometry, material, mine.length);
+        mine.forEach((spot, i) => {
+          turn.setFromAxisAngle(up, spot.turn);
+          matrix.compose(new THREE.Vector3(spot.x, 0, spot.z), turn, new THREE.Vector3(spot.scale, spot.scale, spot.scale));
+          mesh.setMatrixAt(i, matrix);
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+        // 잎은 그루마다 색을 곱한다. 처음 그리기 전에 색 자리를 만들어 둬야 셰이더가 그 색을 쓴다(계절 색은 아래 프레임에서 칠한다)
+        if (part === "leaf") mine.forEach((_, i) => mesh.setColorAt(i, new THREE.Color(0xffffff)));
+        mesh.raycast = () => {};
+        root.add(mesh);
+        if (part === "leaf") leaves.push({ mesh, spots: mine });
+      }
+    }
+    return { root, buildings, glows, glowMat, hedgeMats, owned, pick, leaves, rotor: rotor as THREE.Mesh | null, season: { shown: null as Season | null } };
   }, [gltf]);
 
   useEffect(() => {
@@ -268,8 +291,19 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     // 밤 불빛: 천장 조명과 같은 때(새벽·어스름·밤) 켜진다. 켜고 끌 때는 천장 조명처럼 부드럽게
     built.glowMat.opacity = 0.9 * daylight.ceiling;
     for (const g of built.glows) g.visible = daylight.ceiling > 0.01;
-    const bush = SEASON_COLORS[daylight.target.season].bushes[0];
-    for (const m of built.hedgeMats) m.color.set(bush);
+    const season = daylight.target.season;
+    if (built.season.shown !== season) {
+      built.season.shown = season;
+      const colors = SEASON_COLORS[season];
+      for (const m of built.hedgeMats) m.color.set(colors.bushes[0]);
+      const color = new THREE.Color();
+      for (const { mesh, spots } of built.leaves) {
+        spots.forEach((spot, i) => mesh.setColorAt(i, color.set(colors.leaves[spot.leaf % colors.leaves.length])));
+        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      }
+    }
+    // 풍차 날개: 동작 줄이기면 멈춘다
+    if (built.rotor && !sim.reduceMotion) built.rotor.rotation.z -= (delta * Math.PI * 2) / ROTOR_TURN_SECONDS;
   });
 
   // eslint-disable-next-line react/no-unknown-property

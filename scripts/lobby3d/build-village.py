@@ -9,7 +9,9 @@
 #   paths          돌길
 #   hedges         뒤쪽·양옆 가장자리 생울타리(계절 색은 앱이 칠한다)
 #   fences         앞쪽(카메라 쪽) 가장자리 나무 울타리
-# 나무·풀밭처럼 계절 색이 바뀌는 것은 앱이 코드로 짓는다(창밖 풍경과 같은 색 규칙).
+#   windmill       마을 끝 바깥 뒤쪽의 풍차 탑. windmill-rotor는 그 날개(앱이 날개 가운데를 축으로 돌린다)
+#   tpl-<나무>-leaf / tpl-<나무>-trunk  나무 틀(원점, 크기 1). 앱이 마을 나무·둘레 숲 자리에 여러 그루로 찍고, 잎은 계절 색으로 칠한다
+# 풀밭은 앱이 코드로 짓는다(계절 색).
 # 좌표: 앱 (x, y 위, z 앞) = Blender (x, -y, z). glTF 내보내기가 Blender Z 위를 Y 위로 바꾼다.
 import json
 import math
@@ -259,6 +261,48 @@ fences = group("fences")
 for x in range(W):
     place("fence", fences, x + 0.5, D - 0.5, FACE_ROT["front"], scale=(1.0, 1.0, 2.0))
 
+# ---------- 풍차(장식, 마을 끝 바깥 뒤쪽 숲 옆) ----------
+# Kenney 키트의 windmill은 날개뿐이라, 탑은 벽 한 칸 두 층과 뾰족 지붕으로 짓는다. 날개는 탑 앞면(카메라 쪽) 위에 붙인다
+MILL = LAYOUT["windmill"]
+mill = group("windmill")
+for f in range(2):
+    for face in ("front", "back", "left", "right"):
+        piece = WALLS["plaster"]["window"] if (face == "front" and f == 1) else WALLS["plaster"]["plain"]
+        place(piece, mill, MILL["x"], MILL["z"], FACE_ROT[face], y=f * S)
+place("roof-point", mill, MILL["x"], MILL["z"], 0, y=2 * S, uv_shift=ROOF_UV["red"])
+rotor = group("windmill-rotor")
+# 날개는 얇은 쪽이 부품 x라, 앱 앞(카메라 쪽)을 보게 돌린다
+place("windmill", rotor, MILL["x"], MILL["z"] + S / 2 + 0.25, FACE_ROT["front"], scale=S * 1.1, y=S * 1.55)
+
+# ---------- 나무 틀 ----------
+# 잎(색 그림의 초록 칸)과 줄기(그 밖)를 나눠 원점에 둔다. 앱이 계절 색으로 잎을 칠한다(구석 어둠은 굽지 않는다)
+LEAF_CELL = (3, 2)  # (열, 줄): 색 그림 64px 칸, 위 128px 검정 아래부터 128px씩 0줄, 1줄, 2줄(맨 아래 줄의 초록)
+TREE_KINDS = ["tree", "tree-high", "tree-crooked", "tree-high-crooked", "tree-high-round"]
+templates = group("tree-templates")
+for kind in TREE_KINDS:
+    base = load_piece(kind)
+    for part in ("leaf", "trunk"):
+        me = base.data.copy()
+        uv = me.uv_layers.active.data
+        bm_faces = []
+        for poly in me.polygons:
+            u = sum(uv[l].uv[0] for l in poly.loop_indices) / poly.loop_total
+            v = sum(uv[l].uv[1] for l in poly.loop_indices) / poly.loop_total
+            cell = (int(u * PW / 64), int(((1 - v) * PH - 128) / 128))
+            is_leaf = cell == LEAF_CELL
+            if is_leaf != (part == "leaf"):
+                bm_faces.append(poly.index)
+        import bmesh
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        bm.faces.ensure_lookup_table()
+        bmesh.ops.delete(bm, geom=[bm.faces[i] for i in bm_faces], context="FACES")
+        bm.to_mesh(me)
+        bm.free()
+        o = bpy.data.objects.new(f"tpl-{kind}-{part}", me)
+        scene.collection.objects.link(o)
+        o.parent = templates
+
 # ---------- 묶음마다 메시 하나로 합친다(그리기 횟수를 줄인다) ----------
 bpy.context.view_layer.update()
 
@@ -280,7 +324,7 @@ def join_children(root):
     merged.parent = root
 
 
-for root in [o for o in scene.objects if o.type == "EMPTY"]:
+for root in [o for o in scene.objects if o.type == "EMPTY" and o.name != "tree-templates"]:
     join_children(root)
 
 # ---------- 구석 어둠 ----------
@@ -297,7 +341,7 @@ gm = bpy.data.meshes.new("bake-ground")
 gm.from_pydata([(-20, 20, 0), (W + 20, 20, 0), (W + 20, -D - 20, 0), (-20, -D - 20, 0)], [], [(0, 1, 2, 3)])
 ground = bpy.data.objects.new("bake-ground", gm)
 scene.collection.objects.link(ground)
-meshes = [o for o in scene.objects if o.type == "MESH" and o.parent and not o.parent.name.startswith("glow")]
+meshes = [o for o in scene.objects if o.type == "MESH" and o.parent and not o.parent.name.startswith("glow") and o.parent.name != "tree-templates"]
 bpy.ops.object.select_all(action="DESELECT")
 for o in meshes:
     attr = o.data.color_attributes.new("ao", "BYTE_COLOR", "CORNER")
@@ -326,7 +370,7 @@ if preview:
     c = bpy.data.objects.new("cam", cam)
     scene.collection.objects.link(c)
     pitch = math.radians(42)
-    dist = 52
+    dist = 120
     tx, tz = W / 2, D / 2
     c.location = (tx, -(tz + dist * math.cos(pitch)), dist * math.sin(pitch))
     c.rotation_euler = (math.radians(90) - pitch, 0, 0)

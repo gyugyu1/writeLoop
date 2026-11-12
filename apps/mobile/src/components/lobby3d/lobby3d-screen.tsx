@@ -38,6 +38,8 @@ import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/l
 const ACCENT = "#E36A00";
 const LINE = "#3D1B0F";
 const TOAST_MS = 1800;
+/** 꾸미기 '완료' 뒤 로딩 표시를 늦어도 이만큼 뒤에는 내린다. */
+const RETURN_SETTLE_LIMIT_MS = 1500;
 
 export const ACTION_LABELS: Record<ActionType, string> = {
   wave: "손 흔들기",
@@ -272,14 +274,15 @@ export default function Lobby3dScreen({
 
   // 가구 배치가 바뀌면 방에 적용하고, 라이트루프를 멈춰 막히지 않은 자리에 세운 뒤 3D를 다시 그린다.
   // 같은 배치를 다시 받았으면(홈에 들어올 때마다 불러온다) 아무것도 하지 않는다. 편집하는 동안 받은 배치는 나온 뒤 적용한다.
+  // 꾸미기 '완료'로 저장한 배치는 3D를 다시 짓지 않는다(keepScene). 꾸미던 3D가 이미 그 배치로 그려져 있어, 3D 그리기가 가구 자리·이름표만 맞춘다.
   const [layoutKey, setLayoutKey] = useState(0);
   const applyLayout = useCallback(
-    (next: LobbyLayout) => {
+    (next: LobbyLayout, keepScene = false) => {
       if (sameLobbyLayout(next, activeLobbyLayout())) return;
       applyLobbyLayout(next);
       sim.relayout(Date.now());
       syncView();
-      setLayoutKey((key) => key + 1);
+      if (!keepScene) setLayoutKey((key) => key + 1);
     },
     [sim, syncView]
   );
@@ -295,6 +298,28 @@ export default function Lobby3dScreen({
   // 방이 처음 보였는지(3D 그림판이 알린다). 그 전에는 준비 표시를 띄우고 이름표·장소 안내·말풍선을 숨긴다. 한 번 보이면 다시 띄우지 않는다
   const [roomShown, setRoomShown] = useState(false);
   const showRoom = useCallback(() => setRoomShown(true), []);
+  // 꾸미기 '완료'로 나온 뒤 방이 부드럽게 그려질 때까지 띄우는 작은 로딩 표시. 3D 그리기가 settleKey가 바뀐 뒤 부드러운 프레임을 세어 알리고,
+  // 알리지 못해도 늦어도 RETURN_SETTLE_LIMIT_MS 뒤에는 내린다. 떠 있는 동안 이름표·장소 안내·말풍선을 숨긴다
+  const [returning, setReturning] = useState(false);
+  const [settleKey, setSettleKey] = useState(0);
+  const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settleRoom = useCallback(() => {
+    if (returnTimer.current) clearTimeout(returnTimer.current);
+    returnTimer.current = null;
+    setReturning(false);
+  }, []);
+  const startReturning = () => {
+    setReturning(true);
+    setSettleKey((key) => key + 1);
+    if (returnTimer.current) clearTimeout(returnTimer.current);
+    returnTimer.current = setTimeout(settleRoom, RETURN_SETTLE_LIMIT_MS);
+  };
+  useEffect(
+    () => () => {
+      if (returnTimer.current) clearTimeout(returnTimer.current);
+    },
+    []
+  );
 
   // 로비 인사: 홈이 새 인사를 줄 때마다(key) 한 번 한다
   const greetingKey = greeting?.key;
@@ -540,13 +565,17 @@ export default function Lobby3dScreen({
     setEditViewWidth(Math.max(viewWidth, roomFitViewWidth(screenWidth / Math.max(1, screenHeight))));
     refreshEdit();
   };
-  /** 편집 모드에서 나온다. saved가 있으면 그 배치를 적용한다(없으면 그동안 받은 배치를 위 효과가 적용한다). */
-  const finishEdit = (saved: LobbyLayout | null) => {
+  /**
+   * 편집 모드에서 나온다. saved가 있으면 그 배치를 적용한다(없으면 그동안 받은 배치를 위 효과가 적용한다).
+   * '완료'로 나오면(done) 로딩 표시를 띄우고, 저장한 배치는 3D를 다시 짓지 않고 적용한다.
+   */
+  const finishEdit = (saved: LobbyLayout | null, done = false) => {
     editorRef.current = null;
     setSaving(false);
     setEditViewWidth(null);
     refreshEdit();
-    if (saved) applyLayout(saved);
+    if (saved) applyLayout(saved, true);
+    if (done) startReturning();
   };
   const cancelEdit = () => {
     if (!editorRef.current || savingRef.current) return;
@@ -596,14 +625,14 @@ export default function Lobby3dScreen({
       return;
     }
     if (!editor.changed || !onSaveLayout) {
-      finishEdit(null);
+      finishEdit(null, true);
       return;
     }
     setSaving(true);
     savingRef.current = true;
     try {
       const saved = await onSaveLayout(editor.layout);
-      if (aliveRef.current) finishEdit(saved);
+      if (aliveRef.current) finishEdit(saved, true);
     } catch {
       if (!aliveRef.current) return;
       setSaving(false);
@@ -668,6 +697,8 @@ export default function Lobby3dScreen({
         edit={editView}
         editLive={editLive}
         onRoomShown={showRoom}
+        settleKey={settleKey}
+        onRoomSettled={settleRoom}
       />
       ) : null}
 
@@ -678,8 +709,18 @@ export default function Lobby3dScreen({
         </View>
       )}
 
-      {/* 편집 모드와 방이 보이기 전에는 이름표·장소 안내·말풍선을 숨긴다 */}
-      {editing || !roomShown ? null : (Object.keys(MARKS) as MarkId[]).map((id) => (
+      {/* 꾸미기 '완료'로 나온 뒤: 방은 보이는 채로 가운데 작은 판 */}
+      {returning && roomShown && !editing ? (
+        <View pointerEvents="none" style={styles.returningWrap}>
+          <View style={styles.returning} accessibilityLiveRegion="polite">
+            <ActivityIndicator color="#FFFFFF" />
+            <Text style={styles.returningText}>방을 정리하고 있어요</Text>
+          </View>
+        </View>
+      ) : null}
+
+      {/* 편집 모드, 방이 보이기 전, '완료' 뒤 로딩 표시가 떠 있는 동안에는 이름표·장소 안내·말풍선을 숨긴다 */}
+      {editing || !roomShown || returning ? null : (Object.keys(MARKS) as MarkId[]).map((id) => (
         <Animated.View
           key={id}
           pointerEvents="none"
@@ -695,7 +736,7 @@ export default function Lobby3dScreen({
         </Animated.View>
       ))}
 
-      {editing || !roomShown ? null : (Object.keys(MARKS) as MarkId[]).map((id) => {
+      {editing || !roomShown || returning ? null : (Object.keys(MARKS) as MarkId[]).map((id) => {
         const active = view.place === id;
         return (
           <Animated.View
@@ -742,7 +783,7 @@ export default function Lobby3dScreen({
         );
       })}
 
-      {lineText && !editing && roomShown ? (
+      {lineText && !editing && roomShown && !returning ? (
         <Animated.View
           pointerEvents="box-none"
           onLayout={(e) => {
@@ -1110,6 +1151,17 @@ const styles = StyleSheet.create({
   // 준비하는 동안 뒤에서 그리는 방이 비쳐 보이지 않게 3D 자리를 불투명한 검정으로 가린다
   preparing: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#000000" },
   preparingText: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
+  returningWrap: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
+  returning: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    borderRadius: 16,
+    backgroundColor: "rgba(43, 24, 16, 0.72)"
+  },
+  returningText: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
   bubbleWrap: { position: "absolute", left: 0, top: 0, width: BUBBLE_WIDTH, alignItems: "center" },
   bubble: {
     maxWidth: BUBBLE_WIDTH,

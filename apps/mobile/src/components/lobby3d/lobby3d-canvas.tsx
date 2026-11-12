@@ -88,6 +88,10 @@ export interface Lobby3dCanvasProps {
   editLive?: MutableRefObject<LobbyCanvasEdit | null>;
   /** 방이 처음 보였을 때 한 번. 방 껍데기(기본 방일 때)·가구·라이트루프가 모두 모델로 들어오거나(못 읽으면 대신 그린 채) 그 장면을 한 번 그린 뒤다. */
   onRoomShown?: () => void;
+  /** 바뀌면(0 빼고) 그때부터 방이 부드럽게 그려지는지 다시 세어 onRoomSettled로 알린다(꾸미기 '완료' 뒤 로딩 표시). */
+  settleKey?: number;
+  /** settleKey가 바뀐 뒤 연달아 ROOM_SMOOTH_FRAMES 프레임이 ROOM_SMOOTH_FRAME_S 안에 그려지거나 ROOM_SETTLE_LIMIT_S가 지나면 한 번. */
+  onRoomSettled?: () => void;
 }
 
 const LINE = 0x3d1b0f;
@@ -366,6 +370,19 @@ function placeWallShadow(m: THREE.Object3D, place: { x: number; y: number; z: nu
 
 // ---------- 방과 라이트루프 ----------
 
+/** 이름표 자리: 장소 가구는 배치를 따라가고, 밖으로 가는 입구 발판은 고정이다. */
+function computeLabelPoints(layout: LobbyLayout): Record<MarkId, THREE.Vector3> {
+  const places = layoutGeometry(layout, ROOM.width).places;
+  const at = (p: { x: number; y: number; z: number }) => new THREE.Vector3(p.x, p.y, p.z);
+  return {
+    board: at(places.board.label),
+    window: at(places.window.label),
+    door: new THREE.Vector3(outsideExit(currentRoom()).x, 0.4, ROOM.depth + ROOM.stepDepth / 2),
+    desk: at(places.desk.label),
+    bookcase: at(places.bookcase.label)
+  };
+}
+
 interface World {
   root: THREE.Group;
   kit: WorldKit;
@@ -455,15 +472,7 @@ function buildWorld(layout: LobbyLayout): World {
   const furniture = new THREE.Group();
   root.add(furniture);
   // 이름표 자리는 가구를 따라간다(받은 배치에서 계산). 밖으로 가는 입구 발판은 고정이다
-  const places = layoutGeometry(layout, ROOM.width).places;
-  const at = (p: { x: number; y: number; z: number }) => new THREE.Vector3(p.x, p.y, p.z);
-  const labelPoints: Record<MarkId, THREE.Vector3> = {
-    board: at(places.board.label),
-    window: at(places.window.label),
-    door: new THREE.Vector3(outsideExit(currentRoom()).x, 0.4, D + ROOM.stepDepth / 2),
-    desk: at(places.desk.label),
-    bookcase: at(places.bookcase.label)
-  };
+  const labelPoints = computeLabelPoints(layout);
 
   // 방 조명. 해는 앞쪽 왼편 위에서 가구 앞면을 비춘다(실제 해 방향은 바닥의 창문 빛이 맡는다). 색·세기는 하루의 때를 따른다.
   const ambient = new THREE.AmbientLight(0xffffff, 1.35);
@@ -802,23 +811,27 @@ function Scene({
   edit = null,
   editLive,
   onRoomShown,
+  settleKey = 0,
+  onRoomSettled,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
-  // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치가 바뀌면(layoutKey) 다시 만든다.
-  // 꾸미기 중에는 다시 만들지 않는다. 끌기·돌리기는 자리만, 치우기·꺼내기는 보이기만 바꾼다(poseFurniture).
-  // 미리 만들지 않은 가구가 방에 나오면(새로 더한 가구 등) 그 가구의 3D만 만들어 붙이고(added). 완료로 지금 배치가 바뀌면 다시 만들고, 취소하면 붙인 가구는 숨긴 채 둔다(다시 더하면 같은 id라 그 3D를 다시 쓴다).
+  // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치 표시 수(layoutKey)가 바뀌면 다시 만든다(서버 배치 받기 등).
+  // 그 밖에는 다시 만들지 않는다. 끌기·돌리기는 자리만, 치우기·꺼내기는 보이기만 바꾼다(poseFurniture).
+  // 꾸미기 '완료'로 지금 배치가 바뀌어도(layoutKey는 그대로) 꾸미던 3D를 그대로 쓰고, poseFurniture가 지금 배치로 맞춘다.
+  // 미리 만들지 않은 가구가 방에 나오면(새로 더한 가구 등) 그 가구의 3D만 만들어 붙인다(added). 취소하면 붙인 가구는 숨긴 채 둔다(다시 더하면 같은 id라 그 3D를 다시 쓴다).
   const live = activeLobbyLayout();
   const built = useRef<{ layout: LobbyLayout; layoutKey: number; ids: Set<string>; added: FurniturePlacement[] } | null>(null);
-  if (!built.current || built.current.layoutKey !== layoutKey || (!edit && built.current.layout !== live)) {
+  if (!built.current || built.current.layoutKey !== layoutKey) {
     const from = edit?.layout ?? live;
     // 실제로 3D를 만든 가구만 센다(받침 가구가 없어 만들지 않은 탁상형 보관함 가구는 꺼낼 때 붙인다)
     built.current = { layout: from, layoutKey, ids: new Set(buildPlacements(from).map((place) => place.item)), added: [] };
-  } else if (edit) {
+  } else {
     const current = built.current;
-    const missing = new Set(edit.layout.items.filter((item) => !current.ids.has(item.id)).map((item) => item.id));
+    const want = edit?.layout ?? live;
+    const missing = new Set(want.items.filter((item) => !current.ids.has(item.id)).map((item) => item.id));
     if (missing.size > 0) {
-      // 편집 중 배치에서 그 가구(딸린 의자 포함)의 자리만 골라 붙인다. 자리는 그 뒤 poseFurniture가 맞춘다
-      const fresh = buildPlacements(edit.layout).filter((place) => missing.has(place.item));
+      // 그 배치에서 그 가구(딸린 의자 포함)의 자리만 골라 붙인다. 자리는 그 뒤 poseFurniture가 맞춘다
+      const fresh = buildPlacements(want).filter((place) => missing.has(place.item));
       built.current = { ...current, ids: new Set([...current.ids, ...missing]), added: [...current.added, ...fresh] };
     }
   }
@@ -827,6 +840,12 @@ function Scene({
   const world = useMemo(() => buildWorld(furnitureLayout), [furnitureLayout]);
   // 붙일 가구의 대체 모양(누르기 판정)과 그림자를 방에 더한다. 이미 만든 자리는 건너뛰어 여러 번 불러도 같다
   useMemo(() => addWorldPieces(world, addedPieces), [world, addedPieces]);
+  // 꾸미기 밖에서는 이름표 자리를 지금 배치로 맞춘다(꾸미기 '완료'로 다시 짓지 않고 배치가 바뀐 때). 꾸미기 중에는 그대로 둔다
+  const labelLayout = edit ? null : live;
+  useMemo(() => {
+    if (!labelLayout || labelLayout === furnitureLayout) return;
+    Object.assign(world.labelPoints, computeLabelPoints(labelLayout));
+  }, [world, labelLayout, furnitureLayout]);
   // 시각에 따른 빛: 지금 보이는 색감(부드럽게 넘어가는 중인 값)과 구운 방에 곱하는 색
   const daylightState = useMemo(() => createDaylightState(daylight), []); // eslint-disable-line react-hooks/exhaustive-deps
   const roomTint = useMemo(() => new THREE.Color(0xffffff), []);
@@ -1045,6 +1064,22 @@ function Scene({
     setTimeout(() => onRoomShown?.(), 0);
   });
 
+  // settleKey가 바뀌면(꾸미기 '완료' 뒤) 방이 부드럽게 그려지는지 다시 센다
+  const settle = useRef({ key: settleKey, since: 0, smooth: 0, told: true });
+  useFrame((_, delta) => {
+    const s = settle.current;
+    if (s.key !== settleKey) {
+      settle.current = { key: settleKey, since: 0, smooth: 0, told: settleKey === 0 };
+      return;
+    }
+    if (s.told) return;
+    s.since += delta;
+    s.smooth = delta <= ROOM_SMOOTH_FRAME_S ? s.smooth + 1 : 0;
+    if (s.smooth < ROOM_SMOOTH_FRAMES && s.since < ROOM_SETTLE_LIMIT_S) return;
+    s.told = true;
+    setTimeout(() => onRoomSettled?.(), 0);
+  });
+
   useFrame((_, delta) => {
     paintShownFloor(world);
     const nowMs = Date.now();
@@ -1187,6 +1222,8 @@ function Scene({
 const ROOM_SMOOTH_FRAMES = 5;
 const ROOM_SMOOTH_FRAME_S = 0.034;
 const ROOM_SHOW_LIMIT_S = 3;
+/** 꾸미기 '완료' 뒤 부드럽게 그려지지 않아도 이만큼 지나면 알린다(로딩 표시를 내린다). */
+const ROOM_SETTLE_LIMIT_S = 1.5;
 
 /**
  * 장면들이 쓰는 재질의 셰이더를 미리 만들고 그림을 그래픽 메모리에 올린다. 처음 그릴 때 하면 그 몇 프레임이 끊겨서,

@@ -508,12 +508,11 @@ describe("[spec] 086-③ 로비 머리 줄(H)", () => {
     await renderHome(N0);
     await fireEvent.press(shopButtons()[0]);
     await flushAsync();
-    const broadcast = screen.getByLabelText("오늘의 방송 상품");
-    await fireEvent.press(within(broadcast).getByText("주문하기"));
-    await flushAsync();
-    await pressButton("주문");
-    expect(screen.getByText("택배가 보관함에 도착했어요")).toBeTruthy();
-    await pressButton("계속 쇼핑하기");
+    // (087 결정 1) 조작만 새 홈쇼핑 화면으로: 침대 카드 → 상세창 '240룹에 주문하기' → 완료 판 '계속 구경하기'. 아래 로비 칩 단언은 그대로다
+    await pressButton("침대, 240룹, 20% 할인, 자세히 보기");
+    await pressButton("240룹에 주문하기");
+    expect(screen.getByText("보관함에 도착했어요")).toBeTruthy();
+    await pressButton("계속 구경하기");
 
     await fireEvent.press(screen.getByText("✕"));
     await flushAsync();

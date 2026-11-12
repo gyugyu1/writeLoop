@@ -7,6 +7,10 @@
 // 가짜로 두는 것은 기존 홈 로비 테스트(home-lobby-add-furniture.spec.test.tsx)와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내, 라우터, 포커스, 3D 그리기).
 // 엔진 배치는 모듈 전역이라 테스트마다 끝에 처음 배치로 되돌린다.
 // 시나리오 S20은 1단계 보고를 쓰는 중에 뺐다(명세에 없는 짐작이라).
+// (087 홈쇼핑 화면 개편, 기능 변경) 명세(private 작업 폴더 087-2026-11-13-홈쇼핑-화면-개편/01-main-spec.md)의 "고칠 기존 테스트"대로 고쳤다:
+// 한 줄 목록의 '주문하기'·"N개 있음"·"N룹 더 모으면 살 수 있어요", 확인 판('취소'·'주문'), 완료 판 "택배가 보관함에 도착했어요"·'계속 쇼핑하기',
+// 방송 칸의 '주문하기', 앱 가구 목록 이름을 보던 부분을 새 화면(카드 → 상세창 → 'N룹에 주문하기', 홈쇼핑 이름, 가진 개수 숨김)으로 바꿨다.
+// 주문 요청 본문·잔액·배치·알림 문구·다시 불러오기·바로 놓기의 단언과 기대값은 그대로다. 새 화면에서 바뀐 기대값은 087 명세에서만 가져왔다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -276,7 +280,10 @@ function chips(): UiNode[] {
 }
 
 function buttonOf(node: UiNode): UiNode | null {
-  for (let n: UiNode | null = node; n; n = n.parent) if ((n.props as { accessibilityRole?: unknown }).accessibilityRole === "button") return n;
+  for (let n: UiNode | null = node; n; n = n.parent) {
+    const props = n.props as { accessibilityRole?: unknown; role?: unknown };
+    if (props.accessibilityRole === "button" || props.role === "button") return n;
+  }
   return null;
 }
 
@@ -377,15 +384,23 @@ afterEach(() => {
 
 
 // ---------- 홈쇼핑 화면 도우미 ----------
+// (087) 한 줄 목록·확인 판이 2열 카드·상세창으로 바뀌어, 칸·판을 찾는 도우미를 새 화면(087 명세 "화면" 1~8)에 맞췄다.
+// 상세창이 뒤를 접근성에서 가릴 수 있어(accessibilityViewIsModal) 뒤 화면을 찾는 질의는 가려진 것까지 찾는다(ALL).
 
-const BROADCAST_LABEL = "오늘의 방송 상품";
+const ALL = { includeHiddenElements: true } as const;
 const HOST_LINES = ["오늘만 20%! 지금 주문하세요", "방송 중에만 이 가격이에요!", "매진되기 전에 서두르세요!"];
-const DELIVERED = "택배가 보관함에 도착했어요";
+const DELIVERED = "보관함에 도착했어요";
+const DETAIL_TITLE = "상품 자세히 보기";
+const DETAIL_CLOSE = "상품 상세 닫기";
+const SHOP_CLOSE = "홈쇼핑 닫기";
 const ORDER_FAILED = "주문하지 못했어요. 다시 시도해 주세요";
 const NO_ROOM = "놓을 자리가 없어요. 가구를 옮기거나 치운 뒤 다시 꺼내 주세요";
 const GUIDE = "가구를 눌러 고르고, 끌어서 옮겨요";
 const REMEMBER_KEY = "writeloop.lobby3d.layout.v1.7";
-const ORDER_NAMES = ["책", "작은 화분", "스탠드", "액자", "화분", "협탁", "바닥 스탠드", "깔개", "옷장", "침대"];
+/** ITEMS_260 순서의 홈쇼핑 이름(087 명세 표). */
+const ORDER_NAMES = ["책", "작은 화분", "탁상 스탠드", "액자", "큰 화분", "협탁", "바닥 스탠드", "러그", "옷장", "침대"];
+/** 카드의 접근성 이름: "<이름>, N룹, 자세히 보기" 또는 "<이름>, N룹, 20% 할인, 자세히 보기". */
+const CARD_LABEL = /^(.+), (\d+)룹, (20% 할인, )?자세히 보기$/;
 
 async function openShop() {
   await fireEvent.press(shopButtons()[0]);
@@ -397,93 +412,115 @@ async function closeShopWithX() {
   await flushAsync();
 }
 
+async function pressNode(node: UiNode) {
+  await fireEvent.press(node);
+  await flushAsync();
+}
+
 /** 홈쇼핑 화면을 담은 모달(제목 글을 품은 Modal). */
 function shopModal(): UiNode {
-  const title = screen.getByText(TITLE);
+  const title = screen.getByText(TITLE, ALL);
   for (let n: UiNode | null = title; n; n = n.parent) if ((n.type as unknown) === "Modal") return n;
   throw new Error("홈쇼핑 모달이 없다");
 }
 
-function broadcastBox(): UiNode {
-  return screen.getByLabelText(BROADCAST_LABEL);
+function labelOf(node: UiNode): string | undefined {
+  const props = node.props as { accessibilityLabel?: string; "aria-label"?: string };
+  return props["aria-label"] ?? props.accessibilityLabel;
 }
 
-function inBroadcast(node: UiNode): boolean {
-  const box = screen.queryByLabelText(BROADCAST_LABEL);
-  return box ? contains(box, node) : false;
+function isStruck(node: UiNode): boolean {
+  const style = (StyleSheet.flatten((node.props as { style?: unknown }).style as never) ?? {}) as { textDecorationLine?: string };
+  return (style.textDecorationLine ?? "").includes("line-through");
 }
 
-/** 목록 칸들(화면 순서): "N개 있음" 글에서 '주문하기' 버튼을 품은 조상까지 올라간 것. 방송 상품 큰 칸은 뺀다. */
-function listRows(): UiNode[] {
-  return screen
-    .queryAllByText(/^\d+개 있음$/)
-    .filter((node) => !inBroadcast(node))
-    .map((owned) => {
-      let n: UiNode | null = owned;
-      while (n && within(n).queryAllByText("주문하기").length === 0) n = n.parent;
-      expect(n).not.toBeNull();
-      return n!;
-    });
+function isDisabled(button: UiNode): boolean {
+  const props = button.props as { accessibilityState?: { disabled?: boolean }; "aria-disabled"?: boolean };
+  return (props["aria-disabled"] ?? props.accessibilityState?.disabled) === true;
 }
 
-function nameIn(container: UiNode): string {
-  const names = ORDER_NAMES.filter((name) => within(container).queryAllByText(name).length > 0);
-  expect(names).toHaveLength(1);
-  return names[0];
+/** 열린 상세창(제목에서 '상품 상세 닫기'와 주문 쪽 버튼이나 진행 표시를 함께 품은 조상까지). 없으면 null. */
+function detailPanelOrNull(): UiNode | null {
+  const titles = screen.queryAllByText(DETAIL_TITLE, ALL);
+  if (titles.length === 0) return null;
+  expect(titles).toHaveLength(1);
+  for (let n: UiNode | null = titles[0]; n; n = n.parent) {
+    const hasClose = within(n).queryAllByRole("button", { name: DETAIL_CLOSE, ...ALL }).length > 0;
+    const hasBottom =
+      within(n).queryAllByRole("button", { name: /룹에 주문하기$|룹 더 필요해요$/, ...ALL }).length > 0 || spinnersIn(n).length > 0;
+    if (hasClose && hasBottom) return n;
+    // 상세창을 담은 Modal 밖(로비)까지는 올라가지 않는다
+    if ((n.type as unknown) === "Modal") break;
+  }
+  return null;
 }
 
-function rowOf(name: string): UiNode {
-  const rows = listRows().filter((row) => nameIn(row) === name);
-  expect(rows).toHaveLength(1);
-  return rows[0];
+function detailPanel(): UiNode {
+  const panel = detailPanelOrNull();
+  expect(panel).not.toBeNull();
+  return panel!;
+}
+
+/** 방송 칸(버튼): 줄 그은 정가를 품은 버튼. 목록 카드에는 줄 그은 정가가 없다(087 명세 화면 2·4). 없으면 null. */
+function broadcastButtonOrNull(): UiNode | null {
+  const titles = screen.queryAllByText(TITLE, ALL);
+  if (titles.length === 0) return null;
+  const panel = detailPanelOrNull();
+  const struck = within(shopModal())
+    .queryAllByText(/^\d+룹$/, ALL)
+    .filter((node) => isStruck(node) && !(panel && contains(panel, node)));
+  if (struck.length === 0) return null;
+  expect(struck).toHaveLength(1);
+  // 줄 그은 정가가 버튼 안에 없으면(방송 칸이 버튼이 아니면) null. broadcastButton()이 그때 실패한다
+  return buttonOf(struck[0]);
+}
+
+function broadcastButton(): UiNode {
+  const button = broadcastButtonOrNull();
+  expect(button).not.toBeNull();
+  return button!;
+}
+
+/** 목록 카드들(화면 순서): 접근성 이름이 카드 모양인 버튼. 방송 칸은 뺀다. */
+function listCards(): UiNode[] {
+  if (screen.queryAllByText(TITLE, ALL).length === 0) return [];
+  const broadcast = broadcastButtonOrNull();
+  return screen.queryAllByRole("button", { name: CARD_LABEL, ...ALL }).filter((button) => button !== broadcast);
+}
+
+function cardName(card: UiNode): string {
+  const label = labelOf(card) ?? "";
+  expect(label).toMatch(CARD_LABEL);
+  return CARD_LABEL.exec(label)![1];
+}
+
+function cardOf(name: string): UiNode {
+  const cards = listCards().filter((card) => cardName(card) === name);
+  expect(cards).toHaveLength(1);
+  return cards[0];
 }
 
 /** 칸 안의 "N룹" 글들. */
 function pricesIn(container: UiNode): string[] {
-  return within(container).queryAllByText(/^\d+룹$/).map(textOf);
+  return within(container).queryAllByText(/^\d+룹$/, ALL).map(textOf);
 }
 
-function ownedIn(container: UiNode): string {
-  const found = within(container).queryAllByText(/^\d+개 있음$/);
-  expect(found).toHaveLength(1);
-  return textOf(found[0]);
-}
-
-function shortIn(container: UiNode): string | null {
-  const found = within(container).queryAllByText(/더 모으면 살 수 있어요$/);
-  expect(found.length).toBeLessThanOrEqual(1);
-  return found.length === 0 ? null : textOf(found[0]);
-}
-
-function orderButtonIn(container: UiNode): UiNode {
-  const found = within(container).getAllByText("주문하기");
-  expect(found).toHaveLength(1);
-  return buttonOf(found[0])!;
-}
-
-function isDisabled(button: UiNode): boolean {
-  const state = (button.props as { accessibilityState?: { disabled?: boolean } }).accessibilityState;
-  return state?.disabled === true;
-}
-
-function confirmTexts(): string[] {
-  return screen.queryAllByText(/주문할까요\?$/).map(textOf);
-}
-
-async function pressOrderIn(container: UiNode) {
-  await fireEvent.press(orderButtonIn(container));
-  await flushAsync();
-}
-
-/** 홈쇼핑 위 줄의 잔액 글: 모달 안 "N룹" 글 가운데 방송 상품 칸·목록 칸·버튼 밖의 것. */
+/** 홈쇼핑 위 줄의 잔액 글: 제목에서 올라가며 처음 "N룹" 글을 품은 조상(방송 칸·카드를 품지 않은 것)의 그 글. */
 function shopBalanceText(): string | null {
   const modal = shopModal();
-  const rows = listRows();
-  const found = within(modal)
-    .queryAllByText(/^\d+룹$/)
-    .filter((node) => !inBroadcast(node) && !rows.some((row) => contains(row, node)) && buttonOf(node) === null);
-  expect(found.length).toBeLessThanOrEqual(1);
-  return found.length === 0 ? null : textOf(found[0]);
+  const cards = listCards();
+  const broadcast = broadcastButtonOrNull();
+  for (let n: UiNode | null = within(modal).getByText(TITLE, ALL); n; n = n.parent) {
+    const found = within(n).queryAllByText(/^\d+룹$/, ALL);
+    if (found.length === 0) {
+      if (n === modal) return null;
+      continue;
+    }
+    if (cards.some((card) => contains(n!, card)) || (broadcast && contains(n, broadcast))) return null;
+    expect(found).toHaveLength(1);
+    return textOf(found[0]);
+  }
+  return null;
 }
 
 function spinnersIn(container: UiNode): UiNode[] {
@@ -495,7 +532,28 @@ function imageSourcesIn(container: UiNode): unknown[] {
 }
 
 function hostLinesShown(): string[] {
-  return HOST_LINES.filter((line) => screen.queryAllByText(new RegExp(line.replace(/[.*+?^${}()|[\]\\!%]/g, "\\$&"))).length > 0);
+  return HOST_LINES.filter((line) => screen.queryAllByText(new RegExp(line.replace(/[.*+?^${}()|[\]\\!%]/g, "\\$&")), ALL).length > 0);
+}
+
+function orderButton(price: number): UiNode {
+  return screen.getByRole("button", { name: `${price}룹에 주문하기`, ...ALL });
+}
+
+async function pressOrder(price: number) {
+  await pressNode(orderButton(price));
+}
+
+/** 상세창 아래 "주문 후 남는 룹" 줄의 값("N룹"). */
+function remainingIn(panel: UiNode): string {
+  const label = within(panel).getByText("주문 후 남는 룹", ALL);
+  for (let n: UiNode | null = label; n && n !== panel.parent; n = n.parent) {
+    const found = within(n).queryAllByText(/^-?\d+룹$/, ALL);
+    if (found.length > 0) {
+      expect(found).toHaveLength(1);
+      return textOf(found[0]);
+    }
+  }
+  throw new Error("주문 후 남는 룹 값이 없다");
 }
 
 async function rememberedLayout(): Promise<LobbyLayout | null> {
@@ -511,12 +569,12 @@ function sortedItems(value: LobbyLayout) {
   return [...value.items].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
-/** S260에서 방송 상품 '주문하기' → 확인 판 '주문'(OK-BED)까지. 완료 판이 열린 채다. */
+/** S260에서 방송 칸 → 상세창 '240룹에 주문하기'(OK-BED)까지. 완료 판이 열린 채다. */
 async function orderBroadcastBed() {
   await openShop();
-  await pressOrderIn(broadcastBox());
-  await pressButton("주문");
-  expect(screen.getByText(DELIVERED)).toBeTruthy();
+  await pressNode(broadcastButton());
+  await pressOrder(240);
+  expect(screen.getByText(DELIVERED, ALL)).toBeTruthy();
 }
 
 function editLayout(): LobbyLayout {
@@ -558,7 +616,7 @@ function referenceTakeOut(start: LobbyLayout, type: string, id: string) {
 // ---------- S. 홈쇼핑 화면 ----------
 
 describe("[spec] 086-③ 홈쇼핑 화면(S)", () => {
-  test("S1 열면 GET /api/home-shopping을 한 번 부르고, 끝나기 전에는 진행 표시가 보이며 가구 칸이 없다", async () => {
+  test("S1 열면 GET /api/home-shopping을 한 번 부르고, 끝나기 전에는 진행 표시가 보이며 가구 카드가 없다", async () => {
     jest.mocked(getHomeShopping).mockReturnValue(new Promise(() => undefined));
     await renderHome(N0);
 
@@ -566,7 +624,7 @@ describe("[spec] 086-③ 홈쇼핑 화면(S)", () => {
 
     expect(getHomeShopping).toHaveBeenCalledTimes(1);
     expect(spinnersIn(shopModal()).length).toBeGreaterThan(0);
-    expect(screen.queryAllByText("주문하기")).toHaveLength(0);
+    expect(listCards()).toHaveLength(0);
   });
 
   test("S2 불러오기가 실패하면 '홈쇼핑을 불러오지 못했어요'와 '다시 시도'가 보인다", async () => {
@@ -588,13 +646,13 @@ describe("[spec] 086-③ 홈쇼핑 화면(S)", () => {
 
     expect(getHomeShopping).toHaveBeenCalledTimes(2);
     expect(screen.queryByText("홈쇼핑을 불러오지 못했어요")).toBeNull();
-    expect(listRows()).toHaveLength(10);
+    expect(listCards()).toHaveLength(10);
   });
 
   test("S1b 닫았다가 다시 열 때도 GET /api/home-shopping을 다시 부르고(모두 2번), 끝나기 전에는 진행 표시가 보인다", async () => {
     await renderHome(N0);
     await openShop();
-    expect(listRows()).toHaveLength(10);
+    expect(listCards()).toHaveLength(10);
     await closeShopWithX();
     jest.mocked(getHomeShopping).mockReturnValue(new Promise(() => undefined));
 
@@ -607,7 +665,7 @@ describe("[spec] 086-③ 홈쇼핑 화면(S)", () => {
   test("S2b 닫았다가 다시 열 때 불러오기가 실패하면 '홈쇼핑을 불러오지 못했어요'와 '다시 시도'가 보인다", async () => {
     await renderHome(N0);
     await openShop();
-    expect(listRows()).toHaveLength(10);
+    expect(listCards()).toHaveLength(10);
     await closeShopWithX();
     jest.mocked(getHomeShopping).mockRejectedValue(new Error("boom"));
 
@@ -618,44 +676,40 @@ describe("[spec] 086-③ 홈쇼핑 화면(S)", () => {
     expect(screen.getByRole("button", { name: "다시 시도" })).toBeTruthy();
   });
 
-  test("S4 위 줄: 닫기(✕), 제목 '라룹 홈쇼핑', 'ON AIR', 잔액 '260룹'", async () => {
+  test("S4 위 줄: 닫기(✕, '홈쇼핑 닫기'), 제목 '라룹 홈쇼핑', 'ON AIR', 잔액 '260룹'", async () => {
     await renderHome(N0);
 
     await openShop();
 
     expect(screen.getByText("✕")).toBeTruthy();
-    expect(buttonOf(screen.getByText("✕"))).not.toBeNull();
+    expect(buttonOf(screen.getByText("✕"))).toBe(screen.getByRole("button", { name: SHOP_CLOSE }));
     expect(screen.getByText(TITLE)).toBeTruthy();
     expect(screen.getByText("ON AIR")).toBeTruthy();
     expect(shopBalanceText()).toBe("260룹");
   });
 
-  test("S5 방송 상품 칸: '침대', 원래 가격 '300룹'(줄 그음), 할인 가격 '240룹', '20%', '주문하기'", async () => {
+  test("S5 방송 칸(버튼): '침대', 정가 '300룹'(줄 그음), 할인 가격 '240룹', '20%', '자세히 보기'", async () => {
     await renderHome(N0);
 
     await openShop();
 
-    const box = broadcastBox();
-    expect(within(box).getByText("침대")).toBeTruthy();
+    const box = broadcastButton();
+    expect(within(box).getByText("침대", ALL)).toBeTruthy();
     expect(pricesIn(box)).toEqual(["300룹", "240룹"]);
-    const original = within(box).getByText("300룹");
-    const style = StyleSheet.flatten((original.props as { style?: unknown }).style as never) as { textDecorationLine?: string };
-    expect(style.textDecorationLine).toBe("line-through");
-    const sale = within(box).getByText("240룹");
-    const saleStyle = StyleSheet.flatten((sale.props as { style?: unknown }).style as never) as { textDecorationLine?: string } | undefined;
-    expect(saleStyle?.textDecorationLine ?? "none").not.toBe("line-through");
-    expect(within(box).getByText("20%")).toBeTruthy();
-    expect(orderButtonIn(box)).toBeTruthy();
+    expect(isStruck(within(box).getByText("300룹", ALL))).toBe(true);
+    expect(isStruck(within(box).getByText("240룹", ALL))).toBe(false);
+    expect(within(box).getByText("20%", ALL)).toBeTruthy();
+    expect(within(box).getByText("자세히 보기", ALL)).toBeTruthy();
   });
 
-  test("S6 방송 상품 칸에 라룹이 말 셋 가운데 정확히 하나가 보인다", async () => {
+  test("S6 홈쇼핑 화면에 라룹이 말 셋 가운데 정확히 하나가 한 번 보인다", async () => {
     await renderHome(N0);
 
     await openShop();
 
     const shown = hostLinesShown();
     expect(shown).toHaveLength(1);
-    expect(within(broadcastBox()).queryAllByText(new RegExp(shown[0].replace(/[.*+?^${}()|[\]\\!%]/g, "\\$&")))).toHaveLength(1);
+    expect(within(shopModal()).queryAllByText(new RegExp(shown[0].replace(/[.*+?^${}()|[\]\\!%]/g, "\\$&")), ALL)).toHaveLength(1);
   });
 
   test("S7 열 때마다 고르는 값에 따라 셋 모두 나올 수 있다(고르는 값을 바꿔 세 번 열기)", async () => {
@@ -675,22 +729,22 @@ describe("[spec] 086-③ 홈쇼핑 화면(S)", () => {
     expect([...seen].sort()).toEqual([...HOST_LINES].sort());
   });
 
-  test("S8 방송 상품 칸의 그림은 꾸미기 보관함과 같은 침대 아이콘이다", async () => {
+  test("S8 방송 칸의 그림은 꾸미기 보관함과 같은 침대 아이콘이다", async () => {
     await renderHome(N0);
 
     await openShop();
 
-    const sources = imageSourcesIn(broadcastBox());
+    const sources = imageSourcesIn(broadcastButton());
     expect(sources).toHaveLength(1);
     expect(sources[0]).toEqual(actualIcon("bed"));
   });
 
-  test("S9 목록 칸이 10개이고 이름 순서가 응답 순서(책 … 침대)이며 침대도 목록에 있다", async () => {
+  test("S9 목록 카드가 10개이고 이름 순서가 응답 순서(책 … 침대)이며 침대도 목록에 있다", async () => {
     await renderHome(N0);
 
     await openShop();
 
-    expect(listRows().map(nameIn)).toEqual(ORDER_NAMES);
+    expect(listCards().map(cardName)).toEqual(ORDER_NAMES);
   });
 
   test("S10 items를 거꾸로 주면 목록도 거꾸로다(앱이 다시 줄 세우지 않는다)", async () => {
@@ -701,100 +755,132 @@ describe("[spec] 086-③ 홈쇼핑 화면(S)", () => {
 
     await openShop();
 
-    expect(listRows().map(nameIn)).toEqual([...ORDER_NAMES].reverse());
+    expect(listCards().map(cardName)).toEqual([...ORDER_NAMES].reverse());
   });
 
-  test("S11·S12 목록 칸마다 가격과 가진 개수가 시나리오대로이고(침대는 할인 가격 240룹, 300룹이 없다) 칸마다 '주문하기'가 있다", async () => {
+  test("S11·S12 카드마다 접근성 이름·보이는 이름·가격이 명세대로이고(침대는 할인 가격 240룹과 '20%', 300룹이 없다) 가진 개수는 보이지 않는다", async () => {
     await renderHome(N0);
 
     await openShop();
 
     const expected: Record<string, [string, string]> = {
-      책: ["40룹", "0개 있음"],
-      "작은 화분": ["50룹", "0개 있음"],
-      스탠드: ["60룹", "1개 있음"],
-      액자: ["70룹", "0개 있음"],
-      화분: ["80룹", "0개 있음"],
-      협탁: ["100룹", "0개 있음"],
-      "바닥 스탠드": ["110룹", "0개 있음"],
-      깔개: ["150룹", "1개 있음"],
-      옷장: ["180룹", "1개 있음"],
-      침대: ["240룹", "0개 있음"]
+      책: ["40룹", "책, 40룹, 자세히 보기"],
+      "작은 화분": ["50룹", "작은 화분, 50룹, 자세히 보기"],
+      "탁상 스탠드": ["60룹", "탁상 스탠드, 60룹, 자세히 보기"],
+      액자: ["70룹", "액자, 70룹, 자세히 보기"],
+      "큰 화분": ["80룹", "큰 화분, 80룹, 자세히 보기"],
+      협탁: ["100룹", "협탁, 100룹, 자세히 보기"],
+      "바닥 스탠드": ["110룹", "바닥 스탠드, 110룹, 자세히 보기"],
+      러그: ["150룹", "러그, 150룹, 자세히 보기"],
+      옷장: ["180룹", "옷장, 180룹, 자세히 보기"],
+      침대: ["240룹", "침대, 240룹, 20% 할인, 자세히 보기"]
     };
-    for (const row of listRows()) {
-      const name = nameIn(row);
-      expect({ name, prices: pricesIn(row), owned: ownedIn(row) }).toEqual({ name, prices: [expected[name][0]], owned: expected[name][1] });
-      expect(orderButtonIn(row)).toBeTruthy();
+    const cards = listCards();
+    expect(cards).toHaveLength(10);
+    for (const card of cards) {
+      const name = cardName(card);
+      expect({
+        name,
+        label: labelOf(card),
+        nameShown: within(card).queryAllByText(name, ALL).length,
+        prices: pricesIn(card),
+        discount: within(card).queryAllByText("20%", ALL).length
+      }).toEqual({ name, label: expected[name][1], nameShown: 1, prices: [expected[name][0]], discount: name === "침대" ? 1 : 0 });
     }
+    expect(within(shopModal()).queryAllByText(/개 있음/, ALL)).toHaveLength(0);
   });
 
-  test("S13 목록 칸마다 그 종류의 보관함 아이콘이 보인다", async () => {
+  test("S13 카드마다 그 종류의 보관함 아이콘이 보인다", async () => {
     await renderHome(N0);
 
     await openShop();
 
     for (const item of ITEMS_260) {
-      const row = rowOf(ORDER_NAMES[ITEMS_260.indexOf(item)]);
-      expect({ type: item.type, sources: imageSourcesIn(row) }).toEqual({ type: item.type, sources: [actualIcon(item.type)] });
+      const card = cardOf(ORDER_NAMES[ITEMS_260.indexOf(item)]);
+      expect({ type: item.type, sources: imageSourcesIn(card) }).toEqual({ type: item.type, sources: [actualIcon(item.type)] });
     }
   });
 
-  test("S14 화분에 그림이 없으면 화분 칸에 그림 대신 '화'가 보이고 다른 칸은 그림 그대로다", async () => {
+  test("S14 큰 화분(plant)에 그림이 없으면 그 카드에는 그림 대신 홈쇼핑 이름의 첫 글자 '큰'이 보이고(087 결정 2) 다른 카드는 그림 그대로다", async () => {
     jest.mocked(furnitureIcon).mockImplementation((type: string) => (type === "plant" ? undefined : actualIcon(type)));
     await renderHome(N0);
 
     await openShop();
 
-    const plantRow = rowOf("화분");
-    expect(imageSourcesIn(plantRow)).toEqual([]);
-    expect(within(plantRow).getByText("화")).toBeTruthy();
-    expect(imageSourcesIn(rowOf("옷장"))).toEqual([actualIcon("wardrobe")]);
+    const plantCard = cardOf("큰 화분");
+    expect(imageSourcesIn(plantCard)).toEqual([]);
+    expect(within(plantCard).getByText("큰 화분", ALL)).toBeTruthy();
+    expect(within(plantCard).getByText("큰", ALL)).toBeTruthy();
+    expect(within(plantCard).queryAllByText("화", ALL)).toHaveLength(0);
+    expect(imageSourcesIn(cardOf("옷장"))).toEqual([actualIcon("wardrobe")]);
   });
 
-  test("S15 잔액 100이면 바닥 스탠드·깔개·옷장·침대 칸에 'N룹 더 모으면 살 수 있어요'(10, 50, 80, 140)가 보이고 '주문하기'가 막혀 누르면 확인 판이 열리지 않는다", async () => {
+  test("S15 잔액 100이면 바닥 스탠드·러그·옷장·침대 카드도 열리고, 상세창에 '조금만 더 모으면 살 수 있어요'·'N룹 부족'(10, 50, 80, 140)과 막힌 'N룹 더 필요해요'가 보이며 눌러도 주문하지 않는다", async () => {
     jest.mocked(getHomeShopping).mockResolvedValue(shop(100));
     await renderHome(N0);
     await openShop();
 
-    const expected: Record<string, string> = {
-      "바닥 스탠드": "10룹 더 모으면 살 수 있어요",
-      깔개: "50룹 더 모으면 살 수 있어요",
-      옷장: "80룹 더 모으면 살 수 있어요",
-      침대: "140룹 더 모으면 살 수 있어요"
+    const expected: Record<string, number> = { "바닥 스탠드": 10, 러그: 50, 옷장: 80, 침대: 140 };
+    for (const [name, short] of Object.entries(expected)) {
+      await pressNode(cardOf(name));
+      const panel = detailPanel();
+      const button = within(panel).getByRole("button", { name: `${short}룹 더 필요해요`, ...ALL });
+      expect({
+        name,
+        hint: within(panel).queryAllByText("조금만 더 모으면 살 수 있어요", ALL).length,
+        short: within(panel).queryAllByText(`${short}룹 부족`, ALL).length,
+        disabled: isDisabled(button),
+        orderButtons: within(panel).queryAllByRole("button", { name: /룹에 주문하기$/, ...ALL }).length
+      }).toEqual({ name, hint: 1, short: 1, disabled: true, orderButtons: 0 });
+      await pressNode(button);
+      expect(orderHomeShopping).not.toHaveBeenCalled();
+      await pressButton(DETAIL_CLOSE);
+      expect(detailPanelOrNull()).toBeNull();
+    }
+  });
+
+  test("S16 잔액 100이면 책·작은 화분·탁상 스탠드·액자·큰 화분·협탁(100 = 잔액) 상세창에 '주문 후 남는 룹'과 (100 − 가격)룹, 막히지 않은 'N룹에 주문하기'가 보이고 부족 안내가 없다", async () => {
+    jest.mocked(getHomeShopping).mockResolvedValue(shop(100));
+    await renderHome(N0);
+    await openShop();
+
+    const expected: Record<string, [number, string]> = {
+      책: [40, "60룹"],
+      "작은 화분": [50, "50룹"],
+      "탁상 스탠드": [60, "40룹"],
+      액자: [70, "30룹"],
+      "큰 화분": [80, "20룹"],
+      협탁: [100, "0룹"]
     };
-    for (const [name, text] of Object.entries(expected)) {
-      const row = rowOf(name);
-      expect({ name, short: shortIn(row), disabled: isDisabled(orderButtonIn(row)) }).toEqual({ name, short: text, disabled: true });
-      await pressOrderIn(row);
-      expect(confirmTexts()).toEqual([]);
+    for (const [name, [price, remaining]] of Object.entries(expected)) {
+      await pressNode(cardOf(name));
+      const panel = detailPanel();
+      const button = within(panel).getByRole("button", { name: `${price}룹에 주문하기`, ...ALL });
+      expect({
+        name,
+        remaining: remainingIn(panel),
+        disabled: isDisabled(button),
+        short: within(panel).queryAllByText(/룹 부족$|조금만 더 모으면 살 수 있어요/, ALL).length
+      }).toEqual({ name, remaining, disabled: false, short: 0 });
+      await pressButton(DETAIL_CLOSE);
+      expect(detailPanelOrNull()).toBeNull();
     }
+    expect(orderHomeShopping).not.toHaveBeenCalled();
   });
 
-  test("S16 잔액 100이면 책·작은 화분·스탠드·액자·화분·협탁(100 = 잔액) 칸에는 안내가 없고 '주문하기'를 누르면 확인 판이 열린다", async () => {
+  test("S17 잔액 100이면 방송 칸을 눌러 연 침대 상세창도 '140룹 부족'과 막힌 '140룹 더 필요해요'이고 눌러도 주문하지 않는다", async () => {
     jest.mocked(getHomeShopping).mockResolvedValue(shop(100));
     await renderHome(N0);
     await openShop();
 
-    for (const name of ["책", "작은 화분", "스탠드", "액자", "화분", "협탁"]) {
-      const row = rowOf(name);
-      expect({ name, short: shortIn(row), disabled: isDisabled(orderButtonIn(row)) }).toEqual({ name, short: null, disabled: false });
-      await pressOrderIn(row);
-      expect(confirmTexts()).toHaveLength(1);
-      await pressButton("취소");
-      expect(confirmTexts()).toEqual([]);
-    }
-  });
+    await pressNode(broadcastButton());
 
-  test("S17 잔액 100이면 방송 상품 큰 칸의 '주문하기'도 막히고 '140룹 더 모으면 살 수 있어요'가 보인다", async () => {
-    jest.mocked(getHomeShopping).mockResolvedValue(shop(100));
-    await renderHome(N0);
-    await openShop();
-
-    const box = broadcastBox();
-    expect(shortIn(box)).toBe("140룹 더 모으면 살 수 있어요");
-    expect(isDisabled(orderButtonIn(box))).toBe(true);
-    await pressOrderIn(box);
-    expect(confirmTexts()).toEqual([]);
+    const panel = detailPanel();
+    expect(within(panel).getByText("140룹 부족", ALL)).toBeTruthy();
+    const button = within(panel).getByRole("button", { name: "140룹 더 필요해요", ...ALL });
+    expect(isDisabled(button)).toBe(true);
+    await pressNode(button);
+    expect(orderHomeShopping).not.toHaveBeenCalled();
   });
 
   test("S18 닫기(✕)를 누르면 홈쇼핑 제목이 사라지고 로비 머리 줄('꾸미기', '홈쇼핑')이 보인다", async () => {
@@ -828,30 +914,33 @@ describe("[spec] 086-③ 홈쇼핑 화면(S)", () => {
 // ---------- O. 주문 ----------
 
 describe("[spec] 086-③ 주문(O)", () => {
-  test("O1 방송 상품 칸의 '주문하기'를 누르면 확인 판 '침대를 240룹에 주문할까요?'와 '주문'·'취소'가 보인다", async () => {
+  test("O1 방송 칸을 누르면 침대 상세창('상품 자세히 보기', '침대', '240룹에 주문하기', '상품 상세 닫기')이 열린다", async () => {
     await renderHome(N0);
     await openShop();
 
-    await pressOrderIn(broadcastBox());
+    await pressNode(broadcastButton());
 
-    expect(confirmTexts()).toEqual(["침대를 240룹에 주문할까요?"]);
-    expect(screen.getByRole("button", { name: "주문" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "취소" })).toBeTruthy();
+    const panel = detailPanel();
+    expect(within(panel).getByText("침대", ALL)).toBeTruthy();
+    expect(within(panel).getByRole("button", { name: "240룹에 주문하기", ...ALL })).toBeTruthy();
+    expect(within(panel).getByRole("button", { name: DETAIL_CLOSE, ...ALL })).toBeTruthy();
   });
 
   test.each([
-    ["옷장", "옷장을 180룹에 주문할까요?"],
-    ["스탠드", "스탠드를 60룹에 주문할까요?"]
-  ])("O2 목록의 %s '주문하기'를 누르면 확인 판이 '%s'다", async (name, text) => {
+    ["옷장", 180],
+    ["탁상 스탠드", 60]
+  ])("O2 목록의 %s 카드를 누르면 그 이름과 '%s룹에 주문하기'가 있는 상세창이 열린다", async (name, price) => {
     await renderHome(N0);
     await openShop();
 
-    await pressOrderIn(rowOf(name));
+    await pressNode(cardOf(name));
 
-    expect(confirmTexts()).toEqual([text]);
+    const panel = detailPanel();
+    expect(within(panel).getByText(name, ALL)).toBeTruthy();
+    expect(within(panel).getByRole("button", { name: `${price}룹에 주문하기`, ...ALL })).toBeTruthy();
   });
 
-  test("O3 확인 판에서 '주문'을 누르면 주문 API가 한 번 { type: 'bed', price: 240 }으로 불리고 완료 판(문구, '바로 놓기'·'계속 쇼핑하기')이 열린다", async () => {
+  test("O3 상세창에서 '240룹에 주문하기'를 누르면 주문 API가 한 번 { type: 'bed', price: 240 }으로 불리고 완료 판(문구, '바로 놓기'·'계속 구경하기')이 열린다", async () => {
     await renderHome(N0);
 
     await orderBroadcastBed();
@@ -859,74 +948,79 @@ describe("[spec] 086-③ 주문(O)", () => {
     expect(orderHomeShopping).toHaveBeenCalledTimes(1);
     expect(jest.mocked(orderHomeShopping).mock.calls[0][0]).toEqual({ type: "bed", price: 240 });
     expect(screen.getByRole("button", { name: "바로 놓기" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "계속 쇼핑하기" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "계속 구경하기" })).toBeTruthy();
   });
 
   test.each([
-    ["침대", { type: "bed", price: 240 }],
-    ["옷장", { type: "wardrobe", price: 180 }]
-  ])("O4 목록의 %s 칸에서 주문하면 화면에 보인 가격으로 보낸다", async (name, body) => {
+    ["침대", 240, { type: "bed", price: 240 }],
+    ["옷장", 180, { type: "wardrobe", price: 180 }]
+  ])("O4 목록의 %s 카드에서 주문하면 화면에 보인 가격으로 보낸다", async (name, price, body) => {
     await renderHome(N0);
     await openShop();
 
-    await pressOrderIn(rowOf(name));
-    await pressButton("주문");
+    await pressNode(cardOf(name));
+    await pressOrder(price);
 
     expect(orderHomeShopping).toHaveBeenCalledTimes(1);
     expect(jest.mocked(orderHomeShopping).mock.calls[0][0]).toEqual(body);
   });
 
-  test("O5 주문을 기다리는 동안 '주문'이 막히고 진행 표시가 보이며, 한 번 더 눌러도 주문 API는 1번만 불린다", async () => {
+  test("O5 주문을 기다리는 동안 주문 버튼이 막히고 진행 표시가 보이며, 한 번 더 눌러도 주문 API는 1번만 불린다", async () => {
     jest.mocked(orderHomeShopping).mockReturnValue(new Promise(() => undefined));
     await renderHome(N0);
     await openShop();
-    await pressOrderIn(broadcastBox());
-    const orderButton = screen.getByRole("button", { name: "주문" });
-    expect(isDisabled(orderButton)).toBe(false);
+    await pressNode(broadcastButton());
+    const button = orderButton(240);
+    expect(isDisabled(button)).toBe(false);
     expect(spinnersIn(shopModal())).toHaveLength(0);
 
-    await fireEvent.press(orderButton);
-    await flushAsync();
+    await pressNode(button);
 
-    expect(isDisabled(orderButton)).toBe(true);
-    expect(spinnersIn(shopModal()).length).toBeGreaterThan(0);
-    await fireEvent.press(orderButton);
-    await flushAsync();
+    const spinners = spinnersIn(shopModal());
+    expect(spinners.length).toBeGreaterThan(0);
+    const busy = screen.queryByRole("button", { name: "240룹에 주문하기", ...ALL }) ?? buttonOf(spinners[0]);
+    expect(busy).not.toBeNull();
+    expect(isDisabled(busy!)).toBe(true);
+    await pressNode(busy!);
     expect(orderHomeShopping).toHaveBeenCalledTimes(1);
   });
 
-  test("O6 확인 판에서 '취소'를 누르면 판이 닫히고 주문 API가 불리지 않으며 잔액은 '260룹' 그대로다", async () => {
+  test("O6 상세창을 '상품 상세 닫기'로 닫으면 주문 API가 불리지 않으며 잔액은 '260룹' 그대로다", async () => {
     await renderHome(N0);
     await openShop();
-    await pressOrderIn(broadcastBox());
+    await pressNode(broadcastButton());
 
-    await pressButton("취소");
+    await pressButton(DETAIL_CLOSE);
 
-    expect(confirmTexts()).toEqual([]);
+    expect(detailPanelOrNull()).toBeNull();
     expect(orderHomeShopping).not.toHaveBeenCalled();
     expect(shopBalanceText()).toBe("260룹");
   });
 
-  test("O7 주문 뒤 위 줄 잔액 '20룹', 목록 침대 칸 '1개 있음'이고 다른 칸의 개수는 그대로다", async () => {
+  test("O7 주문 뒤 위 줄 잔액 '20룹'이고, 가진 개수는 목록에 보이지 않는다", async () => {
     await renderHome(N0);
 
     await orderBroadcastBed();
 
     expect(shopBalanceText()).toBe("20룹");
-    expect(ownedIn(rowOf("침대"))).toBe("1개 있음");
-    const before: Record<string, string> = { 책: "0개 있음", 스탠드: "1개 있음", 깔개: "1개 있음", 옷장: "1개 있음", 협탁: "0개 있음" };
-    for (const [name, owned] of Object.entries(before)) expect({ name, owned: ownedIn(rowOf(name)) }).toEqual({ name, owned });
+    await pressButton("계속 구경하기");
+    expect(listCards()).toHaveLength(10);
+    expect(within(shopModal()).queryAllByText(/개 있음/, ALL)).toHaveLength(0);
   });
 
-  test("O8 주문 뒤 '계속 쇼핑하기'하면 잔액 20이라 책 칸 '20룹 더 모으면 살 수 있어요'·'주문하기' 막힘, 침대 칸 '220룹 더 모으면 살 수 있어요'", async () => {
+  test("O8 주문 뒤 '계속 구경하기'하면 잔액 20이라 책 상세창 '20룹 부족'·'20룹 더 필요해요' 막힘, 침대 상세창 '220룹 더 필요해요'", async () => {
     await renderHome(N0);
     await orderBroadcastBed();
 
-    await pressButton("계속 쇼핑하기");
+    await pressButton("계속 구경하기");
 
-    expect(shortIn(rowOf("책"))).toBe("20룹 더 모으면 살 수 있어요");
-    expect(isDisabled(orderButtonIn(rowOf("책")))).toBe(true);
-    expect(shortIn(rowOf("침대"))).toBe("220룹 더 모으면 살 수 있어요");
+    await pressNode(cardOf("책"));
+    expect(within(detailPanel()).getByText("20룹 부족", ALL)).toBeTruthy();
+    expect(isDisabled(screen.getByRole("button", { name: "20룹 더 필요해요", ...ALL }))).toBe(true);
+    await pressButton(DETAIL_CLOSE);
+    await pressNode(cardOf("침대"));
+    expect(within(detailPanel()).getByText("220룹 부족", ALL)).toBeTruthy();
+    expect(within(detailPanel()).getByRole("button", { name: "220룹 더 필요해요", ...ALL })).toBeTruthy();
   });
 
   test("O9 주문 뒤 기기에 기억한 배치(writeloop.lobby3d.layout.v1.7)가 OK-BED의 배치(N0 + 보관함 [bed-1])다", async () => {
@@ -941,11 +1035,11 @@ describe("[spec] 086-③ 주문(O)", () => {
     expect(storedItems(remembered!)).toEqual([{ id: "bed-1", type: "bed" }]);
   });
 
-  test("O10 주문 뒤 '계속 쇼핑하기' → 닫기 → '꾸미기'에서 보관함 줄 머리 '보관함 1', 칸 '침대'(배치를 다시 받지 않아도)", async () => {
+  test("O10 주문 뒤 '계속 구경하기' → 닫기 → '꾸미기'에서 보관함 줄 머리 '보관함 1', 칸 '침대'(배치를 다시 받지 않아도)", async () => {
     await renderHome(N0);
     const loadsBefore = jest.mocked(getLobbyLayout).mock.calls.length;
     await orderBroadcastBed();
-    await pressButton("계속 쇼핑하기");
+    await pressButton("계속 구경하기");
     await closeShopWithX();
 
     await enterEdit();
@@ -958,7 +1052,7 @@ describe("[spec] 086-③ 주문(O)", () => {
   test("O11 O10에서 깔개를 치운 뒤 '완료'하면 배치 저장이 한 번 불리고 보낸 보관함에 bed-1과 rug가 모두 있다", async () => {
     await renderHome(N0);
     await orderBroadcastBed();
-    await pressButton("계속 쇼핑하기");
+    await pressButton("계속 구경하기");
     await closeShopWithX();
     await enterEdit();
 
@@ -972,19 +1066,20 @@ describe("[spec] 086-③ 주문(O)", () => {
     expect(storedIds(sent).sort()).toEqual(["bed-1", "rug"]);
   });
 
-  test("O12 '계속 쇼핑하기'를 누르면 완료 판이 닫히고 홈쇼핑에 머문다(꾸미기에 들어가지 않는다)", async () => {
+  test("O12 '계속 구경하기'를 누르면 완료 판이 닫히고 홈쇼핑 목록에 머문다(꾸미기에 들어가지 않는다)", async () => {
     await renderHome(N0);
     await orderBroadcastBed();
 
-    await pressButton("계속 쇼핑하기");
+    await pressButton("계속 구경하기");
 
-    expect(screen.queryByText(DELIVERED)).toBeNull();
+    expect(screen.queryByText(DELIVERED, ALL)).toBeNull();
+    expect(detailPanelOrNull()).toBeNull();
     expect(shopOpen()).toBe(true);
-    expect(listRows()).toHaveLength(10);
+    expect(listCards()).toHaveLength(10);
     expect(canvas().edit ?? null).toBeNull();
   });
 
-  test("O13 이어서 책을 주문하면 { type: 'books', price: 40 }으로 불리고 잔액 '160룹', 책 '1개 있음', 침대 '1개 있음'", async () => {
+  test("O13 이어서 책을 주문하면 { type: 'books', price: 40 }으로 불리고 잔액 '160룹'", async () => {
     jest
       .mocked(orderHomeShopping)
       .mockResolvedValueOnce({ ...okBed(), balance: 200 })
@@ -1001,24 +1096,22 @@ describe("[spec] 086-③ 주문(O)", () => {
       });
     await renderHome(N0);
     await orderBroadcastBed();
-    await pressButton("계속 쇼핑하기");
+    await pressButton("계속 구경하기");
 
-    await pressOrderIn(rowOf("책"));
-    await pressButton("주문");
+    await pressNode(cardOf("책"));
+    await pressOrder(40);
 
     expect(orderHomeShopping).toHaveBeenCalledTimes(2);
     expect(jest.mocked(orderHomeShopping).mock.calls[1][0]).toEqual({ type: "books", price: 40 });
     expect(shopBalanceText()).toBe("160룹");
-    expect(ownedIn(rowOf("책"))).toBe("1개 있음");
-    expect(ownedIn(rowOf("침대"))).toBe("1개 있음");
   });
 
-  /** 실패한 주문 뒤 바뀐 것이 없는지: 완료 판 없음, 잔액·침대 개수 그대로, 로비 배치·기억한 배치에 bed-1 없음. */
+  /** 실패한 주문 뒤 바뀐 것이 없는지: 완료 판 없음, 상세창은 남음(087 명세 7), 잔액 그대로, 로비 배치·기억한 배치에 bed-1 없음. */
   async function expectNothingChanged() {
-    expect(screen.queryByText(DELIVERED)).toBeNull();
-    expect(confirmTexts()).toEqual([]);
+    expect(screen.queryByText(DELIVERED, ALL)).toBeNull();
+    expect(detailPanelOrNull()).not.toBeNull();
+    expect(isDisabled(orderButton(240))).toBe(false);
     expect(shopBalanceText()).toBe("260룹");
-    expect(ownedIn(rowOf("침대"))).toBe("0개 있음");
     expect(storedIds(activeLobbyLayout())).toEqual([]);
     expect(storedIds(await rememberedLayout())).toEqual([]);
   }
@@ -1028,20 +1121,20 @@ describe("[spec] 086-③ 주문(O)", () => {
     ["O15 40개", new ApiError("가구는 40개까지 둘 수 있어요.", 409, "LAYOUT_FULL"), "가구는 40개까지 둘 수 있어요."],
     ["O17 서버 문구 없음(화면 쪽)", new ApiError("", 500), ORDER_FAILED],
     ["O18 네트워크 오류", new TypeError("Network request failed"), ORDER_FAILED]
-  ])("%s: 확인 판이 닫히고 알림 문구가 보이며 바뀐 것이 없다", async (_label, error, message) => {
+  ])("%s: 상세창이 남고 알림 문구가 보이며 바뀐 것이 없다", async (_label, error, message) => {
     jest.mocked(orderHomeShopping).mockRejectedValue(error);
     await renderHome(N0);
     await openShop();
-    await pressOrderIn(broadcastBox());
+    await pressNode(broadcastButton());
 
-    await pressButton("주문");
+    await pressOrder(240);
 
-    expect(screen.getByText(message)).toBeTruthy();
-    expect(screen.queryByText("Network request failed")).toBeNull();
+    expect(screen.getByText(message, ALL)).toBeTruthy();
+    expect(screen.queryByText("Network request failed", ALL)).toBeNull();
     await expectNothingChanged();
   });
 
-  test("O16 PRICE_CHANGED면 알림 '가격이 바뀌었어요. 다시 확인해 주세요.'가 보이고, 목록을 다시 불러(모두 2번) 방송 상품이 책 40룹(줄 그음)·32룹, 목록 침대가 300룹이 된다", async () => {
+  test("O16 PRICE_CHANGED면 알림 '가격이 바뀌었어요. 다시 확인해 주세요.'가 보이고, 목록을 다시 불러(모두 2번) 방송 칸이 책 40룹(줄 그음)·32룹, 목록 침대가 300룹이 된다", async () => {
     const changed = shop(260);
     changed.broadcast = { type: "books", price: 40, salePrice: 32 };
     changed.items = changed.items.map((item) =>
@@ -1051,32 +1144,32 @@ describe("[spec] 086-③ 주문(O)", () => {
     jest.mocked(orderHomeShopping).mockRejectedValue(new ApiError("가격이 바뀌었어요. 다시 확인해 주세요.", 409, "PRICE_CHANGED"));
     await renderHome(N0);
     await openShop();
-    await pressOrderIn(broadcastBox());
+    await pressNode(broadcastButton());
 
-    await pressButton("주문");
+    await pressOrder(240);
 
-    expect(screen.getByText("가격이 바뀌었어요. 다시 확인해 주세요.")).toBeTruthy();
+    expect(screen.getByText("가격이 바뀌었어요. 다시 확인해 주세요.", ALL)).toBeTruthy();
     expect(getHomeShopping).toHaveBeenCalledTimes(2);
-    const box = broadcastBox();
-    expect(within(box).getByText("책")).toBeTruthy();
+    const box = broadcastButton();
+    expect(within(box).getByText("책", ALL)).toBeTruthy();
     expect(pricesIn(box)).toEqual(["40룹", "32룹"]);
-    const original = within(box).getByText("40룹");
-    expect((StyleSheet.flatten((original.props as { style?: unknown }).style as never) as { textDecorationLine?: string }).textDecorationLine).toBe("line-through");
-    expect(pricesIn(rowOf("침대"))).toEqual(["300룹"]);
-    expect(screen.queryByText(DELIVERED)).toBeNull();
+    expect(isStruck(within(box).getByText("40룹", ALL))).toBe(true);
+    expect(pricesIn(cardOf("침대"))).toEqual(["300룹"]);
+    expect(screen.queryByText(DELIVERED, ALL)).toBeNull();
   });
 
-  test("O19 실패 뒤 다시 '주문하기'를 누르면 확인 판이 다시 열린다", async () => {
+  test("O19 실패 뒤 상세창의 '240룹에 주문하기'를 다시 누르면 주문을 다시 보낸다(모두 2번)", async () => {
     jest.mocked(orderHomeShopping).mockRejectedValue(new ApiError("룹이 모자라요.", 409, "NOT_ENOUGH_LOOP_POINTS"));
     await renderHome(N0);
     await openShop();
-    await pressOrderIn(broadcastBox());
-    await pressButton("주문");
-    expect(confirmTexts()).toEqual([]);
+    await pressNode(broadcastButton());
+    await pressOrder(240);
+    expect(orderHomeShopping).toHaveBeenCalledTimes(1);
 
-    await pressOrderIn(broadcastBox());
+    await pressOrder(240);
 
-    expect(confirmTexts()).toEqual(["침대를 240룹에 주문할까요?"]);
+    expect(orderHomeShopping).toHaveBeenCalledTimes(2);
+    expect(jest.mocked(orderHomeShopping).mock.calls[1][0]).toEqual({ type: "bed", price: 240 });
   });
 
   test("O20 (03 결정 3) 주문으로 보관함만 바뀐 배치를 받으면 로비 3D를 다시 짓지 않는다(layoutKey 그대로, 로비의 지금 배치 보관함에 bed-1)", async () => {
@@ -1084,7 +1177,7 @@ describe("[spec] 086-③ 주문(O)", () => {
     const keyBefore = canvas().layoutKey;
 
     await orderBroadcastBed();
-    await pressButton("계속 쇼핑하기");
+    await pressButton("계속 구경하기");
     await closeShopWithX();
 
     expect(storedIds(activeLobbyLayout())).toEqual(["bed-1"]);
@@ -1170,9 +1263,9 @@ describe("[spec] 086-③ 바로 놓기(P)", () => {
     jest.mocked(orderHomeShopping).mockResolvedValue(response);
     await renderHome(N0);
     await openShop();
-    await pressOrderIn(rowOf("책"));
-    await pressButton("주문");
-    expect(screen.getByText(DELIVERED)).toBeTruthy();
+    await pressNode(cardOf("책"));
+    await pressOrder(40);
+    expect(screen.getByText(DELIVERED, ALL)).toBeTruthy();
 
     await pressButton("바로 놓기");
 

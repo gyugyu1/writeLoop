@@ -21,7 +21,8 @@ const MOBILE = join(__dirname, "..", "..");
 const REPO = join(MOBILE, "..", "..");
 const WEARABLES = join(MOBILE, "assets", "models", "lobby-wearables.glb");
 const CHARACTER = join(MOBILE, "assets", "models", "writeloop.glb");
-const ICONS = join(MOBILE, "assets", "icons", "wearables");
+// 090-③ 옷 내려받기(05-main-decision 2, 사용자 결정): 옷 칸 그림은 앱에서 빠지고 서버 아이템 목록 폴더로 옮겼다. F5는 그 폴더에서 본다(단언은 그대로)
+const ICONS = join(REPO, "apps", "backend", "src", "main", "resources", "catalog", "files");
 const BASE_COMMIT = "6e2f069";
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 

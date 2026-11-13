@@ -47,6 +47,13 @@ import type {
   Wardrobe
 } from "@/lib/types";
 import { getLocalWritingDraft } from "@/lib/writing-drafts";
+// 090-③ 옷 내려받기(05-main-decision 2, 사용자 결정 "qa가 새 동작에 맞게 고침"): 옷은 받은 아이템 목록의 그리기 정보·모델·그림 파일로만
+// 홈쇼핑·옷장·라룹이에 나온다(목록이 없으면 그릴 줄 모르는 옷). 그래서 테스트마다 서버 목록 파일의 옷으로 목록을 두고 그 파일을 기기에 둔
+// 상태(이미 받아 둠)로 시작한다. 단언·입력은 바꾸지 않았다.
+import { parseItemCatalog as qaParseCatalog, setItemCatalog as qaSetCatalog } from "@/lib/item-catalog-store";
+import { putWearFilesOnDevice, resetDevice, serverWearCatalog } from "../__fixtures__/wear-files-090";
+
+jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 
 const mockFocus = { focused: true, listeners: new Set<() => void>() };
 const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
@@ -594,6 +601,9 @@ const devGlobal = globalThis as unknown as { __DEV__: boolean };
 const originalDev = devGlobal.__DEV__;
 
 beforeEach(async () => {
+  resetDevice();
+  qaSetCatalog(qaParseCatalog(serverWearCatalog())!);
+  putWearFilesOnDevice();
   jest.useFakeTimers({ now: NOW });
   devGlobal.__DEV__ = false;
   await AsyncStorage.clear();

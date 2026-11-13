@@ -4,8 +4,14 @@
 // 04-main-decision.md B(A-4: 그리기에는 부위 일곱의 종류를 look으로 따로 넘긴다)에서만 가져온다.
 // 구현 커밋 59b34f2에서 읽은 것은 부르는 방법뿐이다: 아이템 목록 WEARABLE_ITEMS(종류 → slot·label), 서버의 입은 것을 그릴 값(look)으로 바꾸는
 // lookFromEquipped(equipped), 칸 그림 wearableIcon(종류).
+// 090-③ 옷 내려받기(05-main-decision 2, 사용자 결정 "qa가 새 동작에 맞게 고침"): 옷 칸 그림은 앱에서 빠지고 받은 아이템 목록의
+// 그림 파일을 기기에 받아 쓴다. 그래서 C7은 서버 목록 파일의 옷으로 목록을 두고 그 그림 파일을 기기에 둔 채로 본다(단언은 그대로).
+import { parseItemCatalog, setItemCatalog } from "@/lib/item-catalog-store";
 import { WEARABLE_ITEMS, lookFromEquipped } from "@/lib/lobby3d/wear";
 import { wearableIcon } from "@/lib/lobby3d/wearable-icons";
+import { putOnDevice, serverWearCatalog, serverWearable } from "../__fixtures__/wear-files-090";
+
+jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 
 // ---------- 시나리오의 값 ----------
 
@@ -86,6 +92,8 @@ describe("[spec] 089-⑤ C4~C6: 서버의 입은 것을 그릴 값(부위 일곱
 
 describe("[spec] 089-⑤ C7: 아이템마다 칸 그림", () => {
   it("C7 열여섯 모두 그림이 있고 서로 다르며, glassesRound는 그림이 없다", () => {
+    setItemCatalog(parseItemCatalog(serverWearCatalog())!);
+    for (const [type] of ITEMS) putOnDevice(serverWearable(type).assets!.icon!);
     const icons = ITEMS.map(([type]) => wearableIcon(type));
     expect(icons.filter((icon) => icon === null || icon === undefined)).toEqual([]);
     expect(new Set(icons.map((icon) => JSON.stringify(icon))).size).toBe(16);

@@ -3,12 +3,14 @@
 // 서로 다르며, PNG이고 투명 채널이 있다)에서만 가져온다.
 // 구현 커밋 5832ac1에서 읽은 것은 그림 파일의 자리뿐이다(assets/icons/wearables/<종류>.png). 화면이 그 그림을 칸에 쓰는지는
 // 화면 테스트(home-closet.spec SC4)가 본다. 그림이 또렷한지·구도는 사용자가 직접 본다(I3).
+// 090-③ 옷 내려받기(05-main-decision 2, 사용자 결정 "qa가 새 동작에 맞게 고침"): 옷 칸 그림은 앱에서 빠지고 서버 아이템 목록 폴더
+// (apps/backend/src/main/resources/catalog/files/<종류>.png)로 옮겨 내려받는다. 그래서 그림을 찾는 자리만 그 폴더로 바꿨다(단언은 그대로).
 import { createHash } from "crypto";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
 const TYPES = ["capOrange", "tshirtOrange", "shortsNavy", "shoesBrown"];
-const DIR = join(__dirname, "..", "..", "assets", "icons", "wearables");
+const DIR = join(__dirname, "..", "..", "..", "backend", "src", "main", "resources", "catalog", "files");
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 /** PNG에 투명 채널이 있는지: 색 형식이 알파 포함(4 회색+알파, 6 RGBA)이거나 tRNS 덩어리가 있다. */

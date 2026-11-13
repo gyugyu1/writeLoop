@@ -32,6 +32,14 @@ import Lobby3dScreen from "@/components/lobby3d/lobby3d-screen";
 import { LobbySim, applyArea, applyLobbyLayout, applyRoom, type ActionType } from "@/lib/lobby3d/engine";
 import { DEFAULT_LOBBY_LAYOUT, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import { BASIC_ROOM } from "@/lib/lobby3d/room";
+// 090-③ 옷 내려받기(05-main-decision 2, 사용자 결정 "qa가 새 동작에 맞게 고침"): 옷의 그리기 정보(붙이는 방식·뼈·뒤집을 뼈·색·몸 판)는
+// 받은 아이템 목록에서만 읽고, 모델은 옷마다 서버 파일을 기기에 받아 GLTFLoader.loadAsync(기기 주소)로 읽는다(앱의 착용 모델 묶음은 쓰지 않는다).
+// 그래서 테스트마다 서버 목록 파일과 같은 draw의 옷으로 목록을 두고(파일 참조는 테스트마다 새 해시: 읽은 모델이 모듈 안에 남기 때문),
+// 그 파일을 기기에 둔 상태로 시작한다. 가짜 GLTFLoader는 기기 주소의 파일 이름(wear-hat.glb 등)에 맞는 노드만 이 파일의 가짜 착용 모델에서 꺼내
+// 한 파일 모델로 준다(신발은 서버 파일처럼 왼쪽 한 짝). 읽기 상태(읽는 중·읽음·못 읽음)는 지금처럼 WEAR_FILE의 상태를 따르고, 읽을 때마다 WEAR_FILE을 적는다.
+// 단언·입력은 바꾸지 않았다.
+import { parseItemCatalog as qaParseCatalog, setItemCatalog as qaSetCatalog } from "@/lib/item-catalog-store";
+import { deviceUri, fakeRef, putOnDevice, rawServerItems, resetDevice, serverWearable } from "../__fixtures__/wear-files-090";
 
 type FramePart = (state: { camera: THREE.Camera; gl: unknown; clock: { elapsedTime: number }; scene: THREE.Scene }, delta: number) => void;
 type ModelStatus = "pending" | "loaded" | "failed";
@@ -104,7 +112,14 @@ jest.mock("@react-three/fiber/native", () => {
     }
   };
 });
-jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({ GLTFLoader: class {} }));
+jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
+  GLTFLoader: class {
+    loadAsync(uri: string) {
+      return mockLoadWear(uri);
+    }
+  }
+}));
+jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 // three의 SkeletonUtils.clone과 같은 방법: 나무를 복제하고, 뼈대로 휘는 메시는 복제한 뼈로 다시 묶는다
 jest.mock("three/examples/jsm/utils/SkeletonUtils.js", () => ({
   clone: (source: MockObject3D) => {
@@ -563,7 +578,68 @@ const originalDev = devGlobal.__DEV__;
 let errorSpy: jest.SpyInstance;
 let warnSpy: jest.SpyInstance;
 
+// ---------- 090-③: 받은 목록의 옷과 옷마다 받은 모델 파일 ----------
+
+/** 서버 모델 파일 이름 → 이 파일의 가짜 착용 모델 안 노드 이름(신발은 왼쪽 한 짝). */
+const WEAR_NODES: Record<string, string> = {
+  "wear-hat.glb": "wear-hat",
+  "wear-hat-blue.glb": "wear-hat-blue",
+  "wear-hat-green.glb": "wear-hat-green",
+  "wear-top.glb": "wear-top",
+  "wear-bottom.glb": "wear-bottom",
+  "wear-shoe.glb": "wear-shoe-l",
+  "wear-sunglasses.glb": "wear-sunglasses",
+  "wear-backpack.glb": "wear-backpack",
+  "wear-muffler.glb": "wear-muffler",
+  "wear-necklace.glb": "wear-necklace"
+};
+const WEAR_IDS = ["capOrange","tshirtOrange","shortsNavy","shoesBrown"];
+/** 기기 주소 → 서버 모델 파일 이름. */
+const mockWearFiles = new Map<string, string>();
+let wearRound = 0;
+
+/** 서버 목록 파일과 같은 draw의 옷으로 목록을 두고, 테스트마다 새 해시의 모델 파일을 기기에 둔다. */
+function setWearCatalog() {
+  wearRound += 1;
+  resetDevice();
+  mockWearFiles.clear();
+  const raw = rawServerItems();
+  const items = WEAR_IDS.map((id) => {
+    const file = raw.find((item) => item.id === id)!.files!.model!;
+    const ref = fakeRef(`lobby3d-wear-character-${file}-${wearRound}`, "glb");
+    putOnDevice(ref);
+    mockWearFiles.set(deviceUri(ref), file);
+    return { ...serverWearable(id), assets: { model: ref, icon: null } };
+  });
+  qaSetCatalog(qaParseCatalog({ version: `qa-090-3-${wearRound}`, items })!);
+}
+
+/** 한 파일 모델: 이 파일의 가짜 착용 모델에서 그 노드만(뼈대로 휘는 껍질이면 뼈대도) 꺼낸다. */
+function mockWearScene(file: string) {
+  const bundle = fakeWearables().scene;
+  const scene = new THREE.Group();
+  const node = bundle.getObjectByName(WEAR_NODES[file] ?? "");
+  if (node) {
+    if ((node as THREE.SkinnedMesh).isSkinnedMesh) scene.add(bundle.children[0]);
+    scene.add(node);
+  }
+  scene.updateMatrixWorld(true);
+  return { scene, scenes: [scene], animations: [], cameras: [], asset: {}, parser: {}, userData: {} };
+}
+
+/** 가짜 GLTFLoader.loadAsync: 착용 모델의 읽기 상태(WEAR_FILE)를 따른다. */
+function mockLoadWear(uri: string): Promise<unknown> {
+  mockLoaded.push(WEAR_FILE);
+  const file = mockWearFiles.get(uri);
+  const model = mockModels.get(WEAR_FILE);
+  if (!file || !model) return Promise.reject(new Error(`테스트가 모르는 착용 모델 파일: ${uri}`));
+  const settle = (): Promise<unknown> => (model.status === "loaded" ? Promise.resolve(mockWearScene(file)) : Promise.reject(model.error ?? new Error("읽지 못했다(테스트 가짜)")));
+  if (model.status === "pending") return (model as unknown as { promise: Promise<void> }).promise.then(settle);
+  return settle();
+}
+
 beforeEach(async () => {
+  setWearCatalog();
   jest.useFakeTimers({ now: NOW });
   await AsyncStorage.clear();
   mockThree.camera = new THREE.PerspectiveCamera(30, mockThree.size.width / mockThree.size.height, 1, 200);

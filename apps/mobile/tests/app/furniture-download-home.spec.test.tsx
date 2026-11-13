@@ -425,7 +425,9 @@ function shop(options: { broadcast?: { type: string; price: number; salePrice: n
 }
 
 /** 지금 이름으로 본 SHOP_ITEMS 순서의 카드 이름(087 표). */
-const CURRENT_CARD_NAMES = ["책", "작은 화분", "탁상 스탠드", "주황 야구모자", "액자", "큰 화분", "협탁", "바닥 스탠드", "러그", "옷장", "침대"];
+// 090-③ 옷 내려받기(05-main-decision 2, 사용자 결정 "qa가 새 동작에 맞게 고침"): 옷은 받은 목록에 그리기 정보와 모델 파일이 있어야 홈쇼핑에 보인다.
+// 이 파일의 목록(CAT1)은 옷 assets가 null이고 draw가 없으며, 목록이 없을 때(B4)도 옷은 그릴 줄 모르는 옷이라 주황 야구모자 카드가 빠진다(나머지 단언은 그대로).
+const CURRENT_CARD_NAMES = ["책", "작은 화분", "탁상 스탠드", "액자", "큰 화분", "협탁", "바닥 스탠드", "러그", "옷장", "침대"];
 
 /** 처음 배치(스탠드 포함) 본문의 가구. */
 function defBodyItems(): Record<string, unknown>[] {

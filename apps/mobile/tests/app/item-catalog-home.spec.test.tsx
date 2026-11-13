@@ -41,6 +41,13 @@ import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { useSession } from "@/lib/session";
 import type { AuthUser, HomeShopping, LoopPointsSummary, MobileHomeSnapshot } from "@/lib/types";
 import { getLocalWritingDraft } from "@/lib/writing-drafts";
+// 090-③ 옷 내려받기(05-main-decision 2, 사용자 결정 "qa가 새 동작에 맞게 고침"): 옷은 받은 목록의 그리기 정보(draw)와 모델 파일(assets)이 있어야
+// 그릴 수 있는 옷으로 보이고, 목록이 없거나 draw가 없으면 그릴 줄 모르는 옷이라 홈쇼핑에서 숨는다. 그래서
+// - 목록의 아는 옷(주황 야구모자 등)에는 서버 목록 파일과 같은 draw·assets를 넣고(앱이 그리던 옷을 서버가 목록으로 주는 지금 모양), 그 파일을 기기에 둔다.
+// - 목록이 없을 때(H1)와 목록에 주황 야구모자가 빠졌을 때(H17)는 주황 야구모자 카드가 보이지 않는 것으로 기대값을 바꿨다(04-qa-scenarios B1·B2).
+import { putWearFilesOnDevice, resetDevice, serverWearable } from "../__fixtures__/wear-files-090";
+
+jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 
 type UiNode = ReturnType<typeof screen.getByRole>;
 
@@ -135,7 +142,8 @@ type CatalogItem = {
   category: "furniture" | "lighting" | "decor" | "plants" | "clothes" | null;
   slot: string | null;
   price: number | null;
-  assets: null;
+  draw?: unknown;
+  assets: unknown;
 };
 
 // 04-main-decision.md B: 팔지 않는 아이템도 shopName은 name과 같은 글, description은 빈 글. 옷의 shopName은 name과 같다.
@@ -151,6 +159,15 @@ const furniture = (id: string, name: string, sale?: { shopName: string; descript
   assets: null
 });
 
+// 090-③: 서버 목록 파일에 그리기 정보가 있는 옷은 그 draw·assets를 그대로 넣는다(없으면 null: 라룹이 고글, 앱이 모르는 glassesRound)
+const serverDraw = (id: string): { draw: unknown; assets: unknown } => {
+  try {
+    const item = serverWearable(id);
+    return { draw: item.draw ?? null, assets: item.assets ?? null };
+  } catch {
+    return { draw: null, assets: null };
+  }
+};
 const wearable = (id: string, slot: string, name: string, sale?: { description: string; price: number }): CatalogItem => ({
   id,
   kind: "wearable",
@@ -160,7 +177,7 @@ const wearable = (id: string, slot: string, name: string, sale?: { description: 
   category: sale ? "clothes" : null,
   slot,
   price: sale?.price ?? null,
-  assets: null
+  ...serverDraw(id)
 });
 
 /** 지금 앱·서버와 같은 값의 목록(이름·설명·분류·가격). */
@@ -347,6 +364,8 @@ function shop(options: { broadcast?: { type: string; price: number; salePrice: n
 
 /** 지금 이름으로 본 SHOP_ITEMS 순서의 카드 이름(087 표). */
 const CURRENT_CARD_NAMES = ["책", "작은 화분", "탁상 스탠드", "주황 야구모자", "액자", "큰 화분", "협탁", "바닥 스탠드", "러그", "옷장", "침대"];
+/** 090-③: 목록이 없으면 옷은 그릴 줄 모르는 옷이라 주황 야구모자 카드가 없다(04-qa-scenarios B1). 나머지는 지금과 같다. */
+const NO_CATALOG_CARD_NAMES = CURRENT_CARD_NAMES.filter((name) => name !== "주황 야구모자");
 /** qaCatalog로 본 카드 이름. */
 const QA_CARD_NAMES = ["책", "작은 화분", "탁상 스탠드", QA_CAP.name, "액자", QA_PLANT_SHOP, "협탁", "바닥 스탠드", "러그", "옷장", QA_BED.shopName];
 
@@ -505,6 +524,8 @@ afterAll(() => {
 });
 
 beforeEach(async () => {
+  resetDevice();
+  putWearFilesOnDevice();
   devGlobal.__DEV__ = false;
   await AsyncStorage.clear();
   mockFocus.focused = true;
@@ -564,7 +585,7 @@ describe("[spec] 090-① 모바일: 목록을 한 번도 받은 적 없으면 �
     await renderHome();
 
     await openShop();
-    expect(cardNames()).toEqual(CURRENT_CARD_NAMES);
+    expect(cardNames()).toEqual(NO_CATALOG_CARD_NAMES);
     expect(labelOf(broadcastButtons()[0])).toBe("오늘의 방송 상품 침대, 240룹, 20% 할인, 자세히 보기");
     await pressTab("식물");
     expect(cardNames()).toEqual(["작은 화분", "큰 화분"]);
@@ -747,7 +768,7 @@ describe("[spec] 090-① 모바일: 이름·설명·분류를 받은 목록에�
     expect(trayCellNames()).toEqual([QA_BED.name]);
   });
 
-  test("H17 [바뀔] (04 결정 C1) 앱이 그릴 줄 아는데 받은 목록에 없는 아이템(액자·주황 모자)은 앱에 든 기본값(지금 이름·설명·분류)으로 보이고, 목록에 있는 침대는 목록 이름이다", async () => {
+  test("H17 [바뀔] (04 결정 C1) 앱이 그릴 줄 아는데 받은 목록에 없는 가구(액자)는 앱에 든 기본값(지금 이름·설명·분류)으로 보이고, 목록에 있는 침대는 목록 이름이다(090-③: 목록에 없는 옷 주황 모자는 그릴 정보가 없어 보이지 않는다)", async () => {
     jest.useFakeTimers({ now: nextDay() });
     const partial = qaCatalog();
     partial.items = partial.items.filter((item) => item.id !== "frame" && item.id !== "capOrange");
@@ -756,14 +777,12 @@ describe("[spec] 090-① 모바일: 이름·설명·분류를 받은 목록에�
     await renderHome();
 
     await openShop();
-    expect(cardNames()).toEqual(["책", "작은 화분", "탁상 스탠드", "주황 야구모자", "액자", QA_PLANT_SHOP, "협탁", "바닥 스탠드", "러그", "옷장", QA_BED.shopName]);
+    // 090-③: 목록에 없는 주황 야구모자는 그리기 정보가 없어 그릴 줄 모르는 옷이므로 카드가 없다(액자는 앱 기본값 그대로)
+    expect(cardNames()).toEqual(["책", "작은 화분", "탁상 스탠드", "액자", QA_PLANT_SHOP, "협탁", "바닥 스탠드", "러그", "옷장", QA_BED.shopName]);
     await pressTab("장식");
     expect(cardNames()).toEqual(["책", "액자", QA_PLANT_SHOP, "러그"]);
     await pressTab("옷");
-    expect(cardNames()).toEqual(["주황 야구모자"]);
-    await pressNode(cardOf("주황 야구모자"));
-    expect(screen.getAllByText("발바닥 무늬가 들어간 산뜻한 주황 모자예요.", ALL).length).toBeGreaterThan(0);
-    await pressNode(screen.getByRole("button", { name: "상품 상세 닫기", ...ALL }));
+    expect(cardNames()).toEqual([]);
     await pressTab("장식");
     await pressNode(cardOf("액자"));
     expect(screen.getAllByText("허전한 벽을 채우는 작은 그림이에요.", ALL).length).toBeGreaterThan(0);

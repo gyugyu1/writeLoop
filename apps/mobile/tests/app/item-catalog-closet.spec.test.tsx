@@ -34,6 +34,12 @@ import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { useSession } from "@/lib/session";
 import type { AuthUser, LoopPointsSummary, MobileHomeSnapshot, Wardrobe } from "@/lib/types";
 import { getLocalWritingDraft } from "@/lib/writing-drafts";
+// 090-③ 옷 내려받기(05-main-decision 2, 사용자 결정 "qa가 새 동작에 맞게 고침"): 옷장 칸은 받은 목록으로 그릴 수 있는 옷(draw·모델 파일이 있고 몸 판이 맞음)에만
+// 생긴다. 그래서 목록의 아는 옷(주황 모자·주황 티셔츠·남색 반바지)에 서버 목록 파일과 같은 draw·assets를 넣고, 그 파일을 기기에 둔다.
+// 이름(QA 이름)과 단언은 그대로다. 라룹이 고글·앱이 모르는 glassesRound는 draw가 없는 그대로다.
+import { putWearFilesOnDevice, resetDevice, serverWearable } from "../__fixtures__/wear-files-090";
+
+jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 
 const mockFocus = { focused: true, listeners: new Set<() => void>() };
 const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
@@ -137,8 +143,18 @@ const wearable = (id: string, slot: string, name: string, price: number | null, 
   category: price === null ? null : "clothes",
   slot,
   price,
-  assets: null
+  ...serverDraw(id)
 });
+
+/** 090-③: 서버 목록 파일에 그리기 정보가 있는 옷은 그 draw·assets(없으면 null). */
+function serverDraw(id: string): { draw: unknown; assets: unknown } {
+  try {
+    const item = serverWearable(id);
+    return { draw: item.draw ?? null, assets: item.assets ?? null };
+  } catch {
+    return { draw: null, assets: null };
+  }
+}
 
 const furniture = (id: string, name: string) => ({
   id,
@@ -388,6 +404,8 @@ afterAll(() => {
 });
 
 beforeEach(async () => {
+  resetDevice();
+  putWearFilesOnDevice();
   devGlobal.__DEV__ = false;
   await AsyncStorage.clear();
   mockFocus.focused = true;

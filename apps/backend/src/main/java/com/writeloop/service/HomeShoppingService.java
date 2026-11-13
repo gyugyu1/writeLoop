@@ -21,7 +21,7 @@ import java.util.Set;
 
 /**
  * 라룹 홈쇼핑: 기본 가구와 라룹이 옷(착용 아이템)을 룹으로 산다. 나중에 생길 마을 가구점·옷가게와 따로다.
- * 가격은 여기 한곳에 둔다. 날마다 한 종류가 오늘의 방송 상품이고 그날만 20% 싸다.
+ * 가격은 아이템 목록 파일(ItemCatalog) 한곳에 둔다. 날마다 한 종류가 오늘의 방송 상품이고 그날만 20% 싸다.
  * 가구는 배치 보관함에 더하고, 옷은 가진 착용 아이템에 더한다(같은 옷은 하나만).
  */
 @Service
@@ -31,37 +31,12 @@ public class HomeShoppingService {
     static final String PURCHASE_REASON = "PURCHASE";
 
     /**
-     * 팔 수 있는 가구(치울 수 있는 종류)·옷과 가격(룹). 순서는 가격이 낮은 것부터이고, 같은 가격이면 가구, 처음 옷 넷, ⑤에서 더한 옷 순서다.
-     * 오늘의 방송 상품도 이 순서로 돈다.
+     * 팔 수 있는 가구(치울 수 있는 종류)·옷과 가격(룹): 아이템 목록 파일(ItemCatalog)에서 가격이 있는 아이템을 파일 순서대로 가져온다.
+     * 순서는 가격이 낮은 것부터이고, 오늘의 방송 상품도 이 순서로 돈다.
      */
-    static final List<Product> PRODUCTS = List.of(
-            new Product("books", 40),
-            new Product("smallPlant", 50),
-            new Product("lamp", 60),
-            new Product("capOrange", 60),
-            new Product("capBlue", 60),
-            new Product("capGreen", 60),
-            new Product("frame", 70),
-            new Product("shortsNavy", 70),
-            new Product("shortsBrown", 70),
-            new Product("shortsRed", 70),
-            new Product("plant", 80),
-            new Product("tshirtOrange", 80),
-            new Product("tshirtWhite", 80),
-            new Product("tshirtYellow", 80),
-            new Product("shoesBrown", 90),
-            new Product("shoesRed", 90),
-            new Product("shoesWhite", 90),
-            new Product("mufflerRed", 90),
-            new Product("nightstand", 100),
-            new Product("sunglassesBlack", 100),
-            new Product("floorLamp", 110),
-            new Product("necklaceGold", 110),
-            new Product("backpackRed", 120),
-            new Product("rug", 150),
-            new Product("wardrobe", 180),
-            new Product("bed", 300)
-    );
+    static final List<Product> PRODUCTS = ItemCatalog.DEFAULT.products().stream()
+            .map(item -> new Product(item.id(), item.price()))
+            .toList();
 
     record Product(String type, int price) {
     }

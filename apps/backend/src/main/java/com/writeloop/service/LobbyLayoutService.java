@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,28 +57,28 @@ public class LobbyLayoutService {
     private enum Mount { FLOOR, WALL, TABLETOP }
 
     /**
-     * 아는 가구 종류(앱 furniture-catalog.ts): 두는 곳, 장소가 딸려 배치에 정확히 하나 있어야 하는지,
+     * 아는 가구 종류(아이템 목록 파일 ItemCatalog의 가구): 두는 곳, 장소가 딸려 배치에 정확히 하나 있어야 하는지,
      * 윗면의 소품 자리 수(차지한 칸 수, 윗면이 없으면 0).
      */
     private record FurnitureKind(Mount mount, boolean place, int slots) {
     }
 
-    private static final Map<String, FurnitureKind> KINDS = Map.ofEntries(
-            Map.entry("desk", new FurnitureKind(Mount.FLOOR, true, 3)),
-            Map.entry("bookcase", new FurnitureKind(Mount.FLOOR, true, 0)),
-            Map.entry("wardrobe", new FurnitureKind(Mount.FLOOR, false, 0)),
-            Map.entry("rug", new FurnitureKind(Mount.FLOOR, false, 0)),
-            Map.entry("lamp", new FurnitureKind(Mount.TABLETOP, false, 0)),
-            Map.entry("bed", new FurnitureKind(Mount.FLOOR, false, 0)),
-            Map.entry("nightstand", new FurnitureKind(Mount.FLOOR, false, 1)),
-            Map.entry("floorLamp", new FurnitureKind(Mount.FLOOR, false, 0)),
-            Map.entry("plant", new FurnitureKind(Mount.FLOOR, false, 0)),
-            Map.entry("smallPlant", new FurnitureKind(Mount.TABLETOP, false, 0)),
-            Map.entry("books", new FurnitureKind(Mount.TABLETOP, false, 0)),
-            Map.entry("board", new FurnitureKind(Mount.WALL, true, 0)),
-            Map.entry("window", new FurnitureKind(Mount.WALL, true, 0)),
-            Map.entry("frame", new FurnitureKind(Mount.WALL, false, 0))
-    );
+    private static final Map<String, FurnitureKind> KINDS = furnitureKinds();
+
+    private static Map<String, FurnitureKind> furnitureKinds() {
+        Map<String, FurnitureKind> kinds = new LinkedHashMap<>();
+        ItemCatalog.DEFAULT.furnitureKinds().forEach((type, furniture) -> kinds.put(type, new FurnitureKind(
+                switch (furniture.mount()) {
+                    case "floor" -> Mount.FLOOR;
+                    case "wall" -> Mount.WALL;
+                    case "tabletop" -> Mount.TABLETOP;
+                    default -> throw new IllegalStateException("모르는 가구 두는 곳: " + type + " " + furniture.mount());
+                },
+                furniture.place(),
+                furniture.slots()
+        )));
+        return Map.copyOf(kinds);
+    }
 
     private final LobbyLayoutRepository lobbyLayoutRepository;
     private final ObjectMapper objectMapper;

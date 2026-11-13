@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -16,8 +15,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class FurnitureOwnershipService {
 
-    /** 처음 배치(앱 DEFAULT_LOBBY_LAYOUT)에 있는 치울 수 있는 가구. 모든 계정이 처음부터 가진 것으로 친다. */
-    static final Map<String, Integer> STARTER_COUNTS = starterCounts();
+    /** 처음 배치에 있는 치울 수 있는 가구(아이템 목록 파일의 starter). 모든 계정이 처음부터 가진 것으로 친다. */
+    static final Map<String, Integer> STARTER_COUNTS = Map.copyOf(ItemCatalog.DEFAULT.starterCounts());
 
     private final HomeShoppingOrderRepository orderRepository;
 
@@ -28,13 +27,5 @@ public class FurnitureOwnershipService {
             owned.merge(bought.getType(), Math.toIntExact(bought.getCount()), Integer::sum);
         }
         return owned;
-    }
-
-    private static Map<String, Integer> starterCounts() {
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        counts.put("wardrobe", 1);
-        counts.put("rug", 1);
-        counts.put("lamp", 1);
-        return Map.copyOf(counts);
     }
 }

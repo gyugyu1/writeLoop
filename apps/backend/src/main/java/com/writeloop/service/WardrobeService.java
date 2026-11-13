@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 /**
  * 라룹이 착용 아이템(캐릭터 꾸미기): 계정마다 가진 아이템과 부위별로 입은 아이템을 저장하고 돌려준다.
- * 서버는 아이템 종류마다 부위만 안다(이름·모델은 앱, 가격은 홈쇼핑). 부위마다 한 번에 하나만 입는다.
+ * 아이템 종류와 부위는 아이템 목록 파일(ItemCatalog)에서 읽는다. 부위마다 한 번에 하나만 입는다.
  * 아이템을 얻는 길(홈쇼핑·마을 가게)은 다음 단계에서 생긴다.
  */
 @Service
@@ -34,30 +34,13 @@ public class WardrobeService {
     static final String GOGGLES = "goggles";
     static final String INVALID_MESSAGE = "입을 수 없는 아이템이에요";
 
-    /** 아는 착용 아이템 종류와 그 부위(앱 착용 아이템 목록과 같다). */
-    static final Map<String, String> ITEM_SLOTS = itemSlots();
+    /** 아는 착용 아이템 종류와 그 부위: 아이템 목록 파일(ItemCatalog)의 옷. */
+    static final Map<String, String> ITEM_SLOTS = ItemCatalog.DEFAULT.wearableSlots();
 
-    private static Map<String, String> itemSlots() {
-        Map<String, String> slots = new LinkedHashMap<>();
-        slots.put(GOGGLES, "face");
-        slots.put("capOrange", "hat");
-        slots.put("tshirtOrange", "top");
-        slots.put("shortsNavy", "bottom");
-        slots.put("shoesBrown", "shoes");
-        // ⑤: 색만 다른 모자·상의·하의·신발과 새 부위(얼굴장식·등장식·액세서리)
-        slots.put("capBlue", "hat");
-        slots.put("capGreen", "hat");
-        slots.put("tshirtWhite", "top");
-        slots.put("tshirtYellow", "top");
-        slots.put("shortsBrown", "bottom");
-        slots.put("shortsRed", "bottom");
-        slots.put("shoesRed", "shoes");
-        slots.put("shoesWhite", "shoes");
-        slots.put("sunglassesBlack", "face");
-        slots.put("backpackRed", "back");
-        slots.put("mufflerRed", "accessory");
-        slots.put("necklaceGold", "accessory");
-        return slots;
+    static {
+        if (!ItemCatalog.DEFAULT.alwaysOwnedWearables().equals(Set.of(GOGGLES))) {
+            throw new IllegalStateException("아이템 목록의 늘 가진 옷은 고글 하나여야 한다");
+        }
     }
 
     private final WardrobeItemRepository itemRepository;

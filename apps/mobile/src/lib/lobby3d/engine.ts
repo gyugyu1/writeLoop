@@ -128,8 +128,8 @@ export const VILLAGE_MARKS: Record<VillageBuildingId, MarkInfo<VillageBuildingId
   ])
 ) as Record<VillageBuildingId, MarkInfo<VillageBuildingId>>;
 
-/** 옷장 말풍선(로그인했는지에 따라. 손님은 버튼 없이 안내만 한다). */
-export const CLOSET_PROMPT = { prompt: "옷장이야.\n옷을 갈아입어 볼까?", buttonLabel: "들어가기" } as const;
+/** 옷장 말풍선(로그인했는지에 따라). 로그인하면 대사 없이 '들어가기' 버튼만(2026-11-13 사용자 결정), 손님은 버튼 없이 안내만 한다. */
+export const CLOSET_PROMPT = { prompt: "", buttonLabel: "들어가기" } as const;
 export const CLOSET_GUEST_PROMPT = { prompt: "로그인하면 라룹이 옷을\n갈아입힐 수 있어", buttonLabel: "" } as const;
 
 /** 지금 배치의 옷장 장소(배치 순서). 배치를 바꾸면(applyLobbyLayout) 다시 만든다. */
@@ -151,6 +151,12 @@ const MISSING_CLOSET: MarkInfo<ClosetPlaceId> = {
   ...CLOSET_PROMPT,
   enterMessage: ""
 };
+
+/** 장소 안내 말풍선이 있는 장소인지(대사나 버튼 중 하나라도 있으면). */
+export function hasPlaceBubble(id: PlaceId): boolean {
+  const info = markInfo(id);
+  return info.prompt !== "" || info.buttonLabel !== "";
+}
 
 /** 장소 하나의 정보(방·마을 어느 쪽이든). */
 export function markInfo(id: PlaceId): MarkInfo<PlaceId> {
@@ -1258,6 +1264,7 @@ export class LobbySim {
     let bubbleText = "";
     let bubbleButton: string | null = null;
     let idleBubble = false;
+    let placeBubble = false;
     // 장소 구역 안에 있으면 걷거나 끌리는 중에도 그 장소 안내를 보인다. 구역 밖에서 움직이는 동안은 말풍선을 숨긴다.
     // 서 있으면 짧은 말 → 로비 인사 → 장소 안내 순서이고, 셋 다 없으면 말풍선이 없다(기본 말은 없앴다).
     // 장소에서 '들어가기'를 누른 뒤에는 말풍선을 거둔다
@@ -1268,13 +1275,14 @@ export class LobbySim {
     else if (!moving && this.greeting) {
       bubbleText = this.greeting;
       idleBubble = true;
-    } else if (place && markInfo(place).prompt) {
+    } else if (place && hasPlaceBubble(place)) {
       bubbleText = markInfo(place).prompt;
-      // 버튼 글이 없는 장소(마을의 닫힌 건물)는 버튼이 없다
+      // 버튼 글이 없는 장소(마을의 닫힌 건물)는 버튼이 없고, 대사가 없는 장소(옷장)는 버튼만 있다
       bubbleButton = markInfo(place).buttonLabel || null;
+      placeBubble = true;
     }
-    // 장소 안내를 보이는 중이면 그 장소(버튼이 없는 안내도)
-    const shownPlace = place && bubbleText !== "" && bubbleText === markInfo(place).prompt ? place : null;
+    // 장소 안내를 보이는 중이면 그 장소(버튼이 없는 안내, 대사가 없는 버튼도)
+    const shownPlace = placeBubble ? place : null;
     return {
       x: this.x,
       z: this.z,

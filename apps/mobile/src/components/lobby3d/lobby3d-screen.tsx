@@ -15,6 +15,7 @@ import {
   ROOM_MARK_IDS,
   VILLAGE_MARK_IDS,
   applyArea,
+  hasPlaceBubble,
   isClosetPlaceId,
   roomPlaceIds,
   setClosetSignedIn,
@@ -951,8 +952,8 @@ export default function Lobby3dScreen({
         </Animated.View>
       ))}
 
-      {/* 안내 글이 없는 장소(지금은 마을의 장소)는 말풍선이 없다 */}
-      {editing || !roomShown || returning ? null : placesOf(area).filter((id) => markInfo(id).prompt).map((id) => {
+      {/* 대사도 버튼도 없는 장소는 말풍선이 없다. 대사가 없는 장소(옷장)는 버튼만 있는 말풍선이다 */}
+      {editing || !roomShown || returning ? null : placesOf(area).filter((id) => hasPlaceBubble(id)).map((id) => {
         const active = view.place === id;
         return (
           <Animated.View
@@ -974,9 +975,11 @@ export default function Lobby3dScreen({
             ]}
           >
             <View style={styles.bubble} pointerEvents="box-none">
-              <View pointerEvents="none">
-                <Text style={styles.bubbleText}>{markInfo(id).prompt}</Text>
-              </View>
+              {markInfo(id).prompt ? (
+                <View pointerEvents="none">
+                  <Text style={styles.bubbleText}>{markInfo(id).prompt}</Text>
+                </View>
+              ) : null}
               {markInfo(id).buttonLabel ? (
               <Pressable
                 accessibilityRole="button"

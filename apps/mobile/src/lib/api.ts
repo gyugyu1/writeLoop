@@ -37,6 +37,7 @@ import type {
   FeedbackRequest,
   FeedbackSessionStatus,
   HomeShopping,
+  HomeShoppingAnyOrderResult,
   HomeShoppingOrderResult,
   HomeShoppingWearableOrderResult,
   Wardrobe,
@@ -1650,6 +1651,33 @@ export async function orderHomeShopping(request: { type: string; price: number }
     throw new Error("주문하지 못했어요. 다시 시도해 주세요");
   }
   return { ...payload, layout };
+}
+
+/**
+ * 앱이 모르는 상품의 주문(같은 주문 API): 서버가 새로 더한 가구나 옷. 응답 모양으로 가린다(배치가 null이면 옷, 아니면 가구).
+ * 옷이어도 룹은 이미 쓰였으므로 던지지 않고 결과를 돌려준다. 가구인데 배치를 읽지 못하면 가구 주문처럼 실패로 본다.
+ */
+export async function orderHomeShoppingAny(request: { type: string; price: number }): Promise<HomeShoppingAnyOrderResult> {
+  const response = await apiFetch("/api/home-shopping/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+  if (!response.ok) {
+    throw await parseApiError(response, "주문하지 못했어요. 다시 시도해 주세요");
+  }
+  const payload = (await response.json()) as { type: string; price: number; balance: number; owned: number; itemId?: string | null; layout?: unknown; wardrobe?: unknown };
+  if (payload.layout === null || payload.layout === undefined) {
+    const wardrobe = payload.wardrobe && typeof payload.wardrobe === "object" && !Array.isArray(payload.wardrobe) ? (payload.wardrobe as Wardrobe) : null;
+    return { type: payload.type, price: payload.price, balance: payload.balance, owned: payload.owned, itemId: null, layout: null, wardrobe };
+  }
+  const layout = parseLobbyLayoutPayload(payload.layout);
+  if (!layout || !payload.itemId) {
+    throw new Error("주문하지 못했어요. 다시 시도해 주세요");
+  }
+  return { type: payload.type, price: payload.price, balance: payload.balance, owned: payload.owned, itemId: payload.itemId, layout };
 }
 
 /**

@@ -14,7 +14,7 @@ import {
   useWindowDimensions
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ApiError, getHomeShopping, getWardrobe, orderHomeShopping, orderHomeShoppingWearable, saveWardrobeEquipped } from "@/lib/api";
+import { ApiError, getHomeShopping, getWardrobe, orderHomeShopping, orderHomeShoppingAny, orderHomeShoppingWearable, saveWardrobeEquipped } from "@/lib/api";
 import { closetEquipped } from "@/lib/lobby3d/closet";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
 import { WEARABLE_ITEMS } from "@/lib/lobby3d/wear";
@@ -23,6 +23,7 @@ import type { HomeShopping, HomeShoppingAnyOrderResult, HomeShoppingItem, HomeSh
 import {
   SHOP_CATEGORIES,
   inShopCategory,
+  isShopFurniture,
   isShopWearable,
   shopPlacement,
   shopProductDescription,
@@ -267,7 +268,12 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
     setOrdering(true);
     try {
       const request = { type: item.type, price: priceOf(item) };
-      const result: HomeShoppingAnyOrderResult = isShopWearable(item.type) ? await orderHomeShoppingWearable(request) : await orderHomeShopping(request);
+      // 앱이 아는 옷·가구는 그 함수로, 모르는 상품(서버가 나중에 더한 것)은 응답 모양으로 가린다(룹이 쓰였는데 실패로 보이지 않게)
+      const result: HomeShoppingAnyOrderResult = isShopWearable(item.type)
+        ? await orderHomeShoppingWearable(request)
+        : isShopFurniture(item.type)
+          ? await orderHomeShopping(request)
+          : await orderHomeShoppingAny(request);
       // 주문은 서버에서 됐으니 잔액·로비 배치는 늘 반영한다
       onBalance(result.balance);
       onOrdered(result);
@@ -447,16 +453,19 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
         >
           <Text style={styles.secondaryText}>계속 구경하기</Text>
         </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="바로 입기"
-          accessibilityState={{ disabled: wearing, busy: wearing }}
-          disabled={wearing}
-          style={[styles.primaryFlex, wearing && styles.primaryOff]}
-          onPress={() => void wearNow(result)}
-        >
-          {wearing ? <ActivityIndicator color={C.buttonText} /> : <Text style={styles.primaryText}>바로 입기</Text>}
-        </Pressable>
+        {/* 앱이 모르는 옷(서버가 나중에 더한 것)은 입힐 모델이 없어 '바로 입기'를 두지 않는다 */}
+        {isShopWearable(result.type) ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="바로 입기"
+            accessibilityState={{ disabled: wearing, busy: wearing }}
+            disabled={wearing}
+            style={[styles.primaryFlex, wearing && styles.primaryOff]}
+            onPress={() => void wearNow(result)}
+          >
+            {wearing ? <ActivityIndicator color={C.buttonText} /> : <Text style={styles.primaryText}>바로 입기</Text>}
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

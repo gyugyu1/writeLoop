@@ -40,6 +40,16 @@ const PRODUCT_INFO: Record<string, ShopProductInfo> = {
   shoesBrown: { name: WEARABLE_ITEMS.shoesBrown.label, category: "clothes", description: "폭신하게 걷기 좋은 갈색 운동화예요." }
 };
 
+/** 앱 가구 목록에 있는 가구인지. */
+export function isShopFurniture(type: string): boolean {
+  try {
+    furnitureType(type);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** 옷(라룹이 착용 아이템)인지. 앱 착용 아이템 목록에 있는 종류다. */
 export function isShopWearable(type: string): boolean {
   return type in WEARABLE_ITEMS;

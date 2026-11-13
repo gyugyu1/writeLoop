@@ -174,7 +174,11 @@ public class ItemCatalog {
         }
     }
 
-    /** 옷 검사: 부위가 있고, 그리기 정보가 있으면 모양이 맞고 모델 파일이 있어야 한다(그리기 정보가 없는 옷은 몸에 그려진 라룹이 고글뿐이고 파일도 없다). */
+    /**
+     * 옷 검사: 부위가 있고, 그리기 정보가 있으면 객체이고 붙이는 방식(attach)이 적혀 있고 맞춘 몸 판(body)이 1 이상의 정수이며 모델 파일이 있어야 한다.
+     * 붙이는 방식의 값은 막지 않는다(서버는 그대로 내려 주고, 앱이 모르는 방식이면 그 앱에서 그릴 줄 모르는 옷이 된다). bone이면 붙일 뼈 이름이 있어야 한다.
+     * 그리기 정보가 없는 옷은 몸에 그려진 라룹이 고글뿐이고 파일도 없다.
+     */
     private static void validateWearable(Item item) {
         if (item.slot() == null) {
             throw new IllegalStateException("부위가 없는 옷: " + item.id());
@@ -188,8 +192,9 @@ public class ItemCatalog {
         }
         String attach = draw.path("attach").asText();
         boolean shape = draw.isObject()
-                && ("skin".equals(attach) || ("bone".equals(attach) && !draw.path("bone").asText().isEmpty()))
-                && draw.path("body").canConvertToInt() && draw.path("body").asInt() >= 1;
+                && !attach.isEmpty()
+                && (!"bone".equals(attach) || !draw.path("bone").asText().isEmpty())
+                && draw.path("body").isIntegralNumber() && draw.path("body").asInt() >= 1;
         if (!shape) {
             throw new IllegalStateException("옷 그리기 정보가 맞지 않다: " + item.id());
         }

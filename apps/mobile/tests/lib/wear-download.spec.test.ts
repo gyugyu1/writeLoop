@@ -8,7 +8,7 @@
 // "Z"는 백엔드 목록 파일(apps/backend/src/main/resources/catalog/items.json)과 files/를 서버 응답 모양(assets: /api/catalog/files/<sha256>.<확장자>)으로
 // 바꿔 앱에 넣는다. 기준 커밋 be00aac의 앱 착용 모델 묶음·옷 그림과 견준다(git show).
 import { execFileSync } from "child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "fs";
+import { readdirSync, readFileSync, statSync } from "fs";
 import { join, relative } from "path";
 import { parseItemCatalog, setItemCatalog } from "@/lib/item-catalog-store";
 import { CLOSET_SLOTS, closetItems } from "@/lib/lobby3d/closet";
@@ -110,9 +110,8 @@ describe("[spec] 090-③ A: 앱에서 빠지는 옷 파일", () => {
     expect(requiredAssets().has("models/lobby-wearables.glb")).toBe(false);
   });
 
-  test("A1(파일) apps/mobile/assets/models/lobby-wearables.glb가 없다", () => {
-    expect(existsSync(join(MOBILE_DIR, "assets", "models", "lobby-wearables.glb"))).toBe(false);
-  });
+  // 09-main-decision(사용자 결정 "앱 폴더에 원본으로 둠"): 명세의 "뺀다"는 앱이 불러오지 않는 것(A1(부르기))으로 읽는다.
+  // lobby-wearables.glb는 서버 파일을 나누는 스크립트의 원본이라 앱 폴더에 남는다. 그래서 "파일이 없다" 단언(A1(파일))은 지웠다.
 
   test("A2 assets/icons/wearables에는 goggles.png 하나뿐이고, wardrobe-slots는 일곱 png 그대로이며, src가 require하는 icons/wearables/ 파일은 goggles.png뿐이다", () => {
     expect(readdirSync(join(MOBILE_DIR, "assets", "icons", "wearables")).sort()).toEqual(["goggles.png"]);

@@ -378,9 +378,9 @@ describe("[spec] 091 기대 동작: 장면 부분이 다시 만들어진 뒤(새
     "R1 바닥을 누르면 걷는다(누른 자리에 바닥 점이 있고 pointerUp이 walk)",
     async () => {
       await renderLobby();
-      // 전제: 다시 만들기 전에는 같은 바닥 점을 눌러 걷는다
-      const before = await tapAt(toScreen(FLOOR_POINT));
-      expect({ point: before.hit?.point !== null && before.hit?.point !== undefined, result: before.result }).toEqual({ point: true, result: "walk" });
+      // 전제: 다시 만들기 전에는 같은 바닥 점의 누른 자리에 바닥 점이 있다(걷지 않고 누른 자리만 본다. 걸으면 라룹이가 그 자리에 서서 뒤의 누르기가 라룹이를 누른 것이 된다)
+      const before = await probeAt(toScreen(FLOOR_POINT));
+      expect(before?.point !== null && before?.point !== undefined).toBe(true);
 
       await rebuildSceneNewFirst();
 

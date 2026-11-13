@@ -42,6 +42,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * </ul>
  * B19(모델·아이콘만 바뀐 목록의 version)는 구현에 다른 파일로 목록을 읽는 진입점이 없어 옮기지 않았다(가정 G6, 보고에 적음).
  * B28(앱 사본과 서버 파일 대조)은 결정 05에 따라 모바일 쪽 qa가 맡는다.
+ * 작업 090 ③ 옷 내려받기에서 B6·B11의 옷 쪽 단언을 새 동작에 맞췄다(05-옷-내려받기/05-main-decision.md 사용자 결정 2).
  */
 class CatalogFilesSpecTest extends IntegrationTestSupport {
 
@@ -141,10 +142,18 @@ class CatalogFilesSpecTest extends IntegrationTestSupport {
             }
             count++;
             String id = item.path("id").asText();
-            assertThat(item.has("assets") && item.get("assets").isNull()).as("B6 assets of %s is null: %s", id, item).isTrue();
-            assertThat(item.has("draw") && item.get("draw").isNull()).as("B6 draw of %s is null: %s", id, item).isTrue();
+            if ("goggles".equals(id)) {
+                // 작업 090 ③ 결정 05 1: 고글은 파일·그리기 정보가 없다
+                assertThat(item.has("assets") && item.get("assets").isNull()).as("B6 assets of %s is null: %s", id, item).isTrue();
+                assertThat(item.has("draw") && item.get("draw").isNull()).as("B6 draw of %s is null: %s", id, item).isTrue();
+            } else {
+                // 작업 090 ③(05-옷-내려받기/03-qa-scenarios.md W7·W9): 고글 밖의 옷은 assets·draw가 객체다
+                assertThat(item.has("assets") && item.get("assets").isObject()).as("B6 assets of %s is an object: %s", id, item).isTrue();
+                assertThat(item.has("draw") && item.get("draw").isObject()).as("B6 draw of %s is an object: %s", id, item).isTrue();
+            }
         }
-        assertThat(count).as("B6 wearable count").isEqualTo(17);
+        // 작업 090 ③: 옷 열일곱 + 시험 옷 하나
+        assertThat(count).as("B6 wearable count").isEqualTo(18);
     }
 
     @Test
@@ -239,7 +248,8 @@ class CatalogFilesSpecTest extends IntegrationTestSupport {
     @Test
     void b11_b13_everyListedFileIsServedWithoutLoginAtItsContentHash() throws Exception {
         List<JsonNode> entries = allFileEntries(catalog());
-        assertThat(entries).as("B11 file entries (15 models + 11 icons)").hasSize(26);
+        // 작업 090 ③: 가구(모델 15 + 아이콘 11)에 옷 열일곱(열여섯 + 시험 옷)의 모델·아이콘 34가 더해진다(고글은 파일 없음)
+        assertThat(entries).as("B11 file entries (furniture 15 models + 11 icons, wearables 17 models + 17 icons)").hasSize(60);
         for (JsonNode entry : entries) {
             String url = entry.path("url").asText();
             String sha = entry.path("sha256").asText();

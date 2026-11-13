@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
  *   <li>B27(일부): 처음 가진 가구는 wardrobe·rug·lamp 하나씩이고 시험 가구는 없다.</li>
  * </ul>
  * "시험 가구"는 가구 열넷 밖의 가구 하나다(결정 05: id armchair).
+ * 작업 090 ③ 옷 내려받기에서 B3을 새 동작에 맞췄다(05-옷-내려받기/05-main-decision.md 사용자 결정 2: 고글 밖의 옷은 draw가 있다).
  */
 public class ItemCatalogDrawSpecTest {
 
@@ -182,10 +183,18 @@ public class ItemCatalogDrawSpecTest {
         for (JsonNode item : catalogFile().get("items")) {
             if ("wearable".equals(item.path("kind").asText())) {
                 count++;
-                assertThat(item.has("draw")).as("B3 %s has no draw: %s", item.path("id").asText(), item).isFalse();
+                String id = item.path("id").asText();
+                if ("goggles".equals(id)) {
+                    // 작업 090 ③ 결정 05 1: 고글은 그리기 정보가 없다
+                    assertThat(item.hasNonNull("draw")).as("B3 %s has no draw: %s", id, item).isFalse();
+                } else {
+                    // 작업 090 ③(05-옷-내려받기/03-qa-scenarios.md W1): 고글 밖의 옷은 draw가 있다
+                    assertThat(item.path("draw").isObject()).as("B3 %s has a draw object: %s", id, item).isTrue();
+                }
             }
         }
-        assertThat(count).as("B3 wearable count").isEqualTo(17);
+        // 작업 090 ③: 옷 열일곱 + 시험 옷 하나
+        assertThat(count).as("B3 wearable count").isEqualTo(18);
     }
 
     @Test

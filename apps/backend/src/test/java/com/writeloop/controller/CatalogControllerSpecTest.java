@@ -33,6 +33,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *   <li>작업 090 ② 가구 내려받기에서 c2·c3을 새 동작에 맞췄다(04-가구-내려받기/05-main-decision.md 결정 3): 시험 가구(armchair,
  *       결정 05)가 더해지고, 아이템 칸에 draw가 더해져 열이 되고, 가구 assets가 채워진다(옷은 assets·draw null).
  *       값은 04-가구-내려받기/03-qa-scenarios.md B5·B6·B7이다.</li>
+ *   <li>작업 090 ③ 옷 내려받기에서 c2·c3을 새 동작에 맞췄다(05-옷-내려받기/05-main-decision.md 사용자 결정 2): 팔지 않는
+ *       시험 옷 하나(옷 열일곱 밖, 결정 4의 조끼)가 더해져 아이템이 33개가 되고, 고글 밖의 옷은 assets·draw가 채워진다
+ *       (고글은 결정 05 1로 assets·draw null). 값은 05-옷-내려받기/03-qa-scenarios.md W1·W4·W7·W8이다.</li>
  *   <li>아이템 순서는 명세에 없어 보지 않는다.</li>
  *   <li>명세가 정하지 않았던 값은 결정 파일 04-main-decision.md B를 따른다: shopName·description은 늘 글이고,
  *       팔지 않는 가구와 옷의 shopName은 name과 같으며, 팔지 않는 아이템의 description은 빈 글이다.</li>
@@ -129,8 +132,18 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
         FURNITURE.forEach(furniture -> expected.add(furniture.id()));
         expected.add(TEST_FURNITURE);
         WEARABLES.forEach(wearable -> expected.add(wearable.id()));
-        assertThat(items.size()).as("C2 item count").isEqualTo(32);
-        assertThat(ids).as("C2 ids (each once, any order)").containsExactlyInAnyOrderElementsOf(expected);
+        // 작업 090 ③: 옷 열일곱 밖의 시험 옷 하나(id는 명세에 없어 보지 않는다)가 더해진다
+        assertThat(items.size()).as("C2 item count").isEqualTo(33);
+        assertThat(new LinkedHashSet<>(ids)).as("C2 ids are distinct").hasSize(33);
+        assertThat(ids).as("C2 ids contain the known items").containsAll(expected);
+        List<JsonNode> others = new ArrayList<>();
+        for (JsonNode item : items) {
+            if (!expected.contains(item.path("id").asText())) {
+                others.add(item);
+            }
+        }
+        assertThat(others).as("C2 exactly one item outside the known items").hasSize(1);
+        assertThat(others.get(0).path("kind").asText()).as("C2 the extra item is a wearable: %s", others.get(0)).isEqualTo("wearable");
     }
 
     @Test
@@ -145,9 +158,18 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
                 assertThat(fieldNames(assets.get("model"))).as("C3 model keys of %s", id)
                         .isEqualTo(new LinkedHashSet<>(List.of("url", "sha256", "bytes")));
                 assertThat(item.get("draw").isObject()).as("C3 draw of furniture %s is an object: %s", id, item).isTrue();
-            } else {
+            } else if ("goggles".equals(id)) {
+                // 작업 090 ③ 결정 05 1: 고글은 파일·그리기 정보가 없다
                 assertThat(item.get("assets").isNull()).as("C3 assets of %s is null: %s", id, item).isTrue();
                 assertThat(item.get("draw").isNull()).as("C3 draw of %s is null: %s", id, item).isTrue();
+            } else {
+                // 작업 090 ③: 고글 밖의 옷은 가구와 같은 모양의 assets와 draw가 있다
+                JsonNode assets = item.get("assets");
+                assertThat(assets.isObject()).as("C3 assets of wearable %s is an object: %s", id, item).isTrue();
+                assertThat(fieldNames(assets)).as("C3 assets keys of %s", id).isEqualTo(new LinkedHashSet<>(List.of("model", "icon")));
+                assertThat(fieldNames(assets.get("model"))).as("C3 model keys of %s", id)
+                        .isEqualTo(new LinkedHashSet<>(List.of("url", "sha256", "bytes")));
+                assertThat(item.get("draw").isObject()).as("C3 draw of wearable %s is an object: %s", id, item).isTrue();
             }
         }
     }

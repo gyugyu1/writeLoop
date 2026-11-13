@@ -4,6 +4,8 @@
 // 구현 코드는 부르는 방법(parseLobbyLayoutPayload·toLobbyLayoutPayload·sameLobbyLayout, 배치의 stored 목록, getLobbyLayout·saveLobbyLayout)을 알려고만 읽었다.
 // 빈 보관함의 표현(stored가 없거나 빈 목록)은 명세가 정하지 않아(시나리오 A1) stored ?? []로 읽고, 보관함·방 목록의 순서는 보지 않는다.
 // 시험용 벽 종류(POSTER)가 필요한 D21은 카탈로그를 감싸야 해서 home-lobby-storage-wall.spec.test.tsx에 둔다.
+// 작업 090-①(private 작업 폴더 090-2026-11-13-아이템-목록-서버로/02-서버-아이템-목록/01-main-spec.md)의 "고칠 기존 테스트"대로 D10만 새 동작
+// (모르는 가구가 든 배치를 버리지 않고, 저장할 때 그대로 다시 보낸다)으로 고쳤다. 기대값은 그 명세에서만 가져왔다.
 // 네트워크는 전역 fetch를 가짜로 바꿔 실제 서버에 닿지 않는다. 로그인 토큰은 기기 저장소(expo-secure-store) 가짜가 돌려준다.
 import * as SecureStore from "expo-secure-store";
 import { getLobbyLayout, saveLobbyLayout } from "@/lib/api";
@@ -120,7 +122,7 @@ describe("[spec] 066-③ 명세 1: 보관함 규칙을 어긴 본문은 null", (
       ]
     ],
     ["D9 보관함 id가 방의 옷장 id와 같음", [{ id: "wardrobe", type: "wardrobe" }]],
-    ["D10 모르는 종류(sofa)", [{ id: "s1", type: "sofa" }]],
+    // 작업 090-① 명세 "고칠 기존 테스트": D10(모르는 종류 sofa → null)은 새 동작(모르는 가구만 건너뛰고 지킴)으로 바꿔 아래 따로 둔다
     ["D11 장소 가구 desk", [{ id: "s1", type: "desk" }]],
     ["D11 장소 가구 bookcase", [{ id: "s1", type: "bookcase" }]],
     ["D11 장소 가구 board", [{ id: "s1", type: "board" }]],
@@ -142,6 +144,17 @@ describe("[spec] 066-③ 명세 1: 보관함 규칙을 어긴 본문은 null", (
 
   test("D18 stored가 있어도 모르는 최상위 키(extra)가 있으면 → null", () => {
     expect(parseLobbyLayoutPayload(body([], defItems(), { extra: 1 }))).toBeNull();
+  });
+});
+
+describe("[spec] 090-① 고칠 기존 테스트: 보관함의 모르는 종류", () => {
+  test("D10(090) 보관함에 모르는 종류(sofa)가 있어도 배치를 버리지 않고, 다시 본문으로 만들면 방은 DEF, 보관함은 받은 s1 그대로다", () => {
+    const parsed = parseLobbyLayoutPayload(body([{ id: "s1", type: "sofa" }]));
+
+    expect(parsed).not.toBeNull();
+    const sent = JSON.parse(JSON.stringify(toLobbyLayoutPayload(parsed!))) as { items: { id: string }[]; stored?: Stored[] };
+    expect(byId(sent.items)).toEqual(byId(defItems() as unknown as { id: string }[]));
+    expect(byId(sent.stored ?? [])).toEqual([{ id: "s1", type: "sofa" }]);
   });
 });
 

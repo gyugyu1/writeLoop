@@ -394,8 +394,15 @@ describe("[spec] 066-⑤ 명세 4: 저장 본문 검사(V)", () => {
     expect(parseLobbyLayoutPayload(payload(n0Items(), stored(34)))).toBeNull();
   });
 
-  test("V11 모르는 종류 sofa는 거절한다", () => {
-    expect(parseLobbyLayoutPayload(payload([...n0Items(), floor("sofa-1", "sofa", 4.5, 9.5, 0)]))).toBeNull();
+  // 작업 090-①(private 작업 폴더 090-2026-11-13-아이템-목록-서버로/02-서버-아이템-목록/01-main-spec.md)의 "고칠 기존 테스트":
+  // "모르는 종류 sofa는 거절한다(null)"를 새 동작(모르는 가구가 든 배치를 버리지 않고, 저장할 때 그대로 다시 보낸다)으로 고쳤다. 기대값은 그 명세에서만 가져왔다.
+  test("V11(090) 모르는 종류 sofa가 방에 있어도 배치를 버리지 않고, 다시 본문으로 만들면 sofa-1이 받은 그대로다", () => {
+    const items = [...n0Items(), floor("sofa-1", "sofa", 4.5, 9.5, 0)];
+    const parsed = parseLobbyLayoutPayload(payload(items));
+
+    expect(parsed).not.toBeNull();
+    const sent = JSON.parse(JSON.stringify(toLobbyLayoutPayload(parsed!))) as { items: LayoutItem[] };
+    expect(byId(sent.items)).toEqual(byId(JSON.parse(JSON.stringify(items)) as LayoutItem[]));
   });
 });
 

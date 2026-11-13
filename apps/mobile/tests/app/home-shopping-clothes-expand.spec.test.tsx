@@ -820,25 +820,17 @@ describe("[spec] 089-⑤ S10~S14: 새 옷의 완료 판과 '바로 입기'", () 
 
 // ---------- S15. 앱이 모르는 옷 ----------
 
-describe("[spec] 089-⑤ S15: 앱이 모르는 옷(둥근 안경)은 6e2f069 그대로", () => {
-  test("S15 glassesRound를 사면 모르는 상품 주문으로 가고, 실패로 보이지 않고 완료 판이 뜨며 '바로 입기'가 없다", async () => {
+// 작업 090-①(private 작업 폴더 090-2026-11-13-아이템-목록-서버로/02-서버-아이템-목록/01-main-spec.md "홈쇼핑 목록: 그릴 줄 모르는 상품은 보이지 않는다")과
+// 같은 폴더 04-main-decision.md A(사용자 결정: qa가 새 동작에 맞게 고침)대로 고쳤다. 앞 기대값(모르는 상품 주문으로 가고 완료 판이 뜬다)은
+// 카드가 보이지 않아 더는 일어나지 않으므로, 기대값을 "카드가 없고 나머지 목록은 그대로, 주문하지 않는다"로 바꿨다. 준비 데이터는 그대로다.
+describe("[spec] 089-⑤ S15(090 고침): 앱이 모르는 옷(둥근 안경)은 홈쇼핑에 보이지 않는다", () => {
+  test("S15(090) 서버 목록에 glassesRound가 있어도 그 카드가 없고 나머지 카드는 그대로이며, 모르는 상품 주문은 일어나지 않는다", async () => {
     jest.mocked(getHomeShopping).mockResolvedValue(shop26({ extra: [["glassesRound", 90]] }));
-    jest.mocked(orderHomeShoppingAny).mockResolvedValueOnce({
-      type: "glassesRound",
-      price: 90,
-      balance: 110,
-      owned: 1,
-      itemId: null,
-      layout: null,
-      wardrobe: wardrobe({ items: [...H0_ITEMS, { type: "glassesRound", slot: "face", acquiredAt: "2026-11-13T03:00:00Z" }], equipped: H0_EQUIPPED })
-    } as never);
     await renderHome();
     await openShop();
-    await pressNode(cardOf("glassesRound"));
-    await pressNode(orderButton(90));
-    expect(jest.mocked(orderHomeShoppingAny).mock.calls.map((c) => c[0])).toEqual([{ type: "glassesRound", price: 90 }]);
+    expect(cardNames()).toEqual(NAMES26);
+    expect(screen.queryAllByText("glassesRound", ALL)).toHaveLength(0);
+    expect(orderHomeShoppingAny).not.toHaveBeenCalled();
     expect(orderHomeShoppingWearable).not.toHaveBeenCalled();
-    expect(successPanelOrNull()).not.toBeNull();
-    expect(screen.queryAllByRole("button", { name: WEAR_NOW, ...ALL })).toHaveLength(0);
   });
 });

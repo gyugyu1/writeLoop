@@ -6,6 +6,8 @@
 // 맞지 않는 본문은 parseLobbyLayoutPayload가 null을 돌려준다(지금 코드의 약속. 홈에서 null이 처음 배치로 보이는 것은 home-lobby-layout-load.spec이 본다).
 // 장소 가구가 둘 이상인 본문(X40)은 결정(같은 폴더 04-main-decision.md의 1: 장소 가구는 종류마다 정확히 하나)을 따른다.
 // 모두 바뀔 동작이다(지금 코드는 v1만 읽는다).
+// 작업 090-①(private 작업 폴더 090-2026-11-13-아이템-목록-서버로/02-서버-아이템-목록/01-main-spec.md)의 "고칠 기존 테스트"대로 X24만 새 동작
+// (앱이 모르는 가구가 든 배치를 버리지 않고, 저장할 때 그대로 다시 보낸다)으로 고쳤다. 기대값은 그 명세에서만 가져왔다.
 import { parseLobbyLayoutPayload, toLobbyLayoutPayload } from "@/lib/lobby3d/lobby-layout-payload";
 import type { LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 
@@ -160,7 +162,7 @@ function rejectedCases(): [string, unknown][] {
   // type(명세 4: 아는 종류)
   add("X22 type이 없음", withItem("wardrobe", (i) => ({ id: i.id, floor: i.floor })));
   add("X23 모르는 종류 lamp", body([...p0Items(), { id: "lamp", type: "lamp", floor: { x: 4.5, z: 4.5, facing: 0 } }]));
-  add("X24 대문자 종류 Wardrobe", withItem("wardrobe", (i) => ({ ...i, type: "Wardrobe" })));
+  // 작업 090-① 명세 "고칠 기존 테스트": X24(대문자 종류 Wardrobe = 앱이 모르는 종류 → null)는 새 동작으로 바꿔 아래 따로 둔다
   add("X25 type이 null", withItem("wardrobe", (i) => ({ ...i, type: null })));
 
   // 종류에 맞는 자리 하나(명세 4: 바닥형·덮개형은 floor만, 벽 부착형은 wall만)
@@ -201,5 +203,16 @@ function rejectedCases(): [string, unknown][] {
 describe("[spec] 066-① 명세 4·5: 맞지 않거나 v2가 아닌 본문은 배치로 받아들이지 않는다(null)", () => {
   test.each(rejectedCases())("%s → null", (_label, value) => {
     expect(parseLobbyLayoutPayload(value)).toBeNull();
+  });
+});
+
+describe("[spec] 090-① 고칠 기존 테스트: 앱이 모르는 종류", () => {
+  test("X24(090) 대문자 종류 Wardrobe(앱이 모르는 종류)가 든 본문도 배치를 버리지 않고, 다시 본문으로 만들면 그 가구가 받은 그대로다", () => {
+    const items = p0Items().map((i) => (i.id === "wardrobe" ? { ...i, type: "Wardrobe" } : i));
+    const parsed = parseLobbyLayoutPayload(body(items));
+
+    expect(parsed).not.toBeNull();
+    const sent = JSON.parse(JSON.stringify(toLobbyLayoutPayload(parsed!))) as Body;
+    expect(sortedItems(sent as { items: unknown[] })).toEqual(sortedItems({ items }));
   });
 });

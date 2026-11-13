@@ -16,6 +16,7 @@
 // 가짜로 두는 것: 앞 qa 테스트(home-lobby-layout-load.spec.test.tsx)와 같다(API, 로그인 상태, 앱 업데이트 안내 상태, 라우터, 포커스, 3D 그리기).
 // 로그인 상태 가짜는 진짜 로그인 상태가 하듯 기기 저장소의 주인(storage-owner)도 그 계정으로 맞춘다.
 // 구현 코드는 부르는 방법(홈 화면, 엔진의 배치, 불러오기·저장 함수 이름)을 알려고만 읽었다.
+// 작업 090-① 명세의 "고칠 기존 테스트"대로 R12의 "모르는 가구 종류가 든 배치"를 빼고 새 동작의 R12-090으로 바꿨다(나머지 R12 경우는 그대로).
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import HomeScreen from "@/app/index";
 import type { Lobby3dCanvasProps } from "@/components/lobby3d/lobby3d-canvas";
@@ -750,13 +751,7 @@ describe("기억해 둔 배치를 쓰지 못할 때(명세 '처음 짓기'의 �
   const brokenCases: [string, (hit: StoredHit) => string][] = [
     ["JSON이 아닌 깨진 값", () => "{\"items\": [깨짐"],
     ["옛 판의 배치(version 1, 바닥·벽 묶음, L1의 값)", () => JSON.stringify({ version: 1, floor: L1_FLOOR, wall: L1_WALL })],
-    [
-      "모르는 가구 종류가 든 배치",
-      (hit) => {
-        hit.holder.items = (hit.holder.items as Record<string, unknown>[]).map((item) => (item.id === "wardrobe" ? { ...item, type: "spaceship" } : item));
-        return JSON.stringify(hit.root);
-      }
-    ],
+    // 작업 090-① 명세 "고칠 기존 테스트": "모르는 가구 종류가 든 배치"는 새 동작(그 가구만 빼고 그 배치로 짓는다)으로 바꿔 아래 R12-090으로 따로 둔다
     [
       "장소 가구(책상)가 빠진 배치",
       (hit) => {
@@ -793,6 +788,32 @@ describe("기억해 둔 배치를 쓰지 못할 때(명세 '처음 짓기'의 �
     await renderHome();
     expectBuiltWith(P0);
     expect(activeLobbyLayout()).toEqual(DEFAULT_LOBBY_LAYOUT);
+    expect(screen.getByRole("button", { name: "질문에 답하기" })).toBeTruthy();
+
+    await act(async () => {
+      server.resolve(copy(L1));
+    });
+    await flushAsync();
+    expectBuiltWith(L1);
+  });
+
+  // 작업 090-①(private 작업 폴더 090-2026-11-13-아이템-목록-서버로/02-서버-아이템-목록/01-main-spec.md)의 "고칠 기존 테스트"로 고친 것.
+  // 기대값은 그 명세(방 배치: 모르는 가구가 들어 있어도 배치 전체를 버리지 않고, 그 가구는 그리지 않는다)에서만 가져왔다.
+  // 앱 안의 배치 값에 모르는 가구를 어디에 두는지는 명세가 정하지 않아, 3D 가구 자리(currentFurnitureLayout)로만 본다.
+  test("[spec] R12-090 [바뀔] 기억해 둔 배치에 모르는 가구 종류(옷장 자리의 spaceship)가 들어 있어도 처음 배치로 되돌리지 않고, 그 가구만 빼고 그 배치로 짓는다. 서버 배치가 오면 지금처럼 적용한다", async () => {
+    await receiveFromServerThenClose(userA, L1);
+    const hits = storedEntriesWith(L1);
+    expect(hits.length).toBeGreaterThan(0);
+    for (const target of hits) {
+      target.holder.items = (target.holder.items as Record<string, unknown>[]).map((item) => (item.id === "wardrobe" ? { ...item, type: "spaceship" } : item));
+      writeStored(target, JSON.stringify(target.root));
+    }
+
+    const server = deferred<LobbyLayout | null>();
+    jest.mocked(getLobbyLayout).mockReset().mockReturnValue(server.promise);
+    await renderHome();
+    expect(mockCanvas.props).not.toBeNull();
+    expect(currentFurnitureLayout()).toEqual(furniturePlacements({ items: L1.items.filter((item) => item.id !== "wardrobe") }));
     expect(screen.getByRole("button", { name: "질문에 답하기" })).toBeTruthy();
 
     await act(async () => {

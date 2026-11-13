@@ -326,6 +326,8 @@ export class VillageModelErrorBoundary extends Component<{ children: ReactNode; 
 
   componentDidCatch(error: unknown) {
     console.warn("[lobby3d] 마을 모델을 불러오지 못했습니다", error);
+    // 읽기 캐시에 남은 오류를 지운다(다음에 '나가기'를 누르면 다시 읽는다)
+    useLoader.clear(GLTFLoader, VILLAGE_ASSET as string);
     this.props.onFailed?.();
   }
 

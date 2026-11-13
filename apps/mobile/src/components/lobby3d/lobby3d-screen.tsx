@@ -242,6 +242,8 @@ export default function Lobby3dScreen({
   // 마을 모델이 장면에 들어온 적이 있는지(한 번 읽으면 다시 나갈 때 바로 뜬다)와, 다 뜨면 밝아질 전환
   const villageReadyRef = useRef(false);
   const waitingVillage = useRef<(() => void) | null>(null);
+  // 마을로 나가기 전에 방에서 서 있던 자리와 방향(마을을 못 읽어 방에 남을 때 되돌린다)
+  const travelFrom = useRef<{ x: number; z: number; heading: number } | null>(null);
   const loadingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stopLoadingText = () => {
     if (loadingTimer.current) clearTimeout(loadingTimer.current);
@@ -584,6 +586,7 @@ export default function Lobby3dScreen({
       Animated.timing(travelFade, { toValue: 0, duration: TRAVEL_FADE_MS, useNativeDriver: true }).start(finish);
     };
     const swap = () => {
+      if (next === "village") travelFrom.current = { x: sim.x, z: sim.z, heading: sim.heading };
       placeInArea(next);
       if (next === "village" && !villageReadyRef.current) {
         travelFade.setValue(1);
@@ -624,7 +627,11 @@ export default function Lobby3dScreen({
       showToast(VILLAGE_FAILED);
       return;
     }
+    // 방으로 되돌리고, 나가기 전 자리·방향 그대로 세운다
     placeInAreaRef.current("room");
+    const from = travelFrom.current;
+    if (from) sim.placeAt({ x: from.x, z: from.z }, from.heading, Date.now());
+    syncView();
     stopLoadingText();
     waiting();
     showToast(VILLAGE_FAILED);

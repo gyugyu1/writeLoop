@@ -63,8 +63,8 @@ const ALL_PLACE_IDS: readonly PlaceId[] = [...ROOM_MARK_IDS, ...VILLAGE_MARK_IDS
 /** 방↔마을 전환: 검게 어두워지는 시간과 밝아지는 시간(밀리초). */
 const TRAVEL_FADE_MS = 300;
 const VILLAGE_LOADING = "마을로 나가는 중…";
-/** 마을 모델을 이만큼 넘게 기다릴 때만 "마을로 나가는 중…"을 보인다(이미 읽었으면 바로 떠서 보이지 않는다). */
-const VILLAGE_LOADING_DELAY_MS = 300;
+/** 마을 모델을 이만큼 넘게 기다릴 때만 "마을로 나가는 중…"을 보인다(이미 읽었으면 바로 떠서 보이지 않는다. 어두워진 뒤 0.15초라 누른 뒤 약 0.45초). */
+const VILLAGE_LOADING_DELAY_MS = 150;
 const VILLAGE_FAILED = "마을을 불러오지 못했어요. 잠시 뒤 다시 나가 주세요";
 
 /** 시험판의 구역 버튼. */

@@ -41,11 +41,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * [spec] 작업 089 ④ 홈쇼핑 '옷' 분류, 백엔드. 시나리오 02-qa-scenarios.md(L, B, O, K, E, F, C, G, P)와
- * 결정 04-main-decision.md B(1: 이미 가진 옷이 먼저, 그다음 가격 → 룹. 2: 방송은 epochDay % 14)를 실제 서버로 확인한다.
+ * 결정 04-main-decision.md B(1: 이미 가진 옷이 먼저, 그다음 가격 → 룹. 2: 방송은 epochDay % 14, 작업 089 ⑤ 07-아이템-늘리기/04-main-decision.md A-1 사용자 결정으로 epochDay % 26)를 실제 서버로 확인한다.
  *
  * <ul>
  *   <li>로그인은 토큰 로그인(Bearer). 테스트마다 새 사용자를 만든다.</li>
- *   <li>서버 서울 날짜는 테스트용 시계 빈으로 고정한다(기본 T = 2026-11-14 서울 정오, 방송 상품 nightstand, 옷은 모두 정가).
+ *   <li>서버 서울 날짜는 테스트용 시계 빈으로 고정한다(기본 T = 2026-11-09 서울 정오, 방송 상품 nightstand, 옷은 모두 정가).
  *       O4만 시계를 고정하지 않는다(얻은 때가 실제 지금인지 본다).</li>
  *   <li>잔액은 GET /api/loop-points로 잔액 행을 만든 뒤 jdbc로 바꾼다. 가진 옷은 저장소로 wardrobe_items에 직접 넣는다.</li>
  *   <li>NC(아무것도 바뀌지 않음): 잔액 행, 장부 음수 줄, 주문 기록(종류·가격), 가진 옷(종류·얻은 때), GET /api/wardrobe 본문,
@@ -63,18 +63,21 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     private static final String ALREADY_OWNED_MESSAGE = "이미 가진 옷이에요.";
 
     /** 기본 날짜 T: 방송 상품 nightstand. */
-    private static final LocalDate T = LocalDate.of(2026, 11, 14);
+    private static final LocalDate T = LocalDate.of(2026, 11, 9);
 
-    /** 가격표(명세의 값), 이 순서가 목록 순서다. */
+    /** 가격표(명세의 값), 이 순서가 목록 순서다(작업 089 ⑤: 옷 열둘을 더해 스물여섯). */
     private static final List<String> TYPES = List.of(
-            "books", "smallPlant", "lamp", "capOrange", "frame", "shortsNavy", "plant", "tshirtOrange", "shoesBrown",
-            "nightstand", "floorLamp", "rug", "wardrobe", "bed");
-    private static final List<Integer> PRICES = List.of(40, 50, 60, 60, 70, 70, 80, 80, 90, 100, 110, 150, 180, 300);
-    private static final List<Integer> SALE_PRICES = List.of(32, 40, 48, 48, 56, 56, 64, 64, 72, 80, 88, 120, 144, 240);
+            "books", "smallPlant", "lamp", "capOrange", "capBlue", "capGreen", "frame", "shortsNavy", "shortsBrown", "shortsRed",
+            "plant", "tshirtOrange", "tshirtWhite", "tshirtYellow", "shoesBrown", "shoesRed", "shoesWhite", "mufflerRed",
+            "nightstand", "sunglassesBlack", "floorLamp", "necklaceGold", "backpackRed", "rug", "wardrobe", "bed");
+    private static final List<Integer> PRICES = List.of(
+            40, 50, 60, 60, 60, 60, 70, 70, 70, 70, 80, 80, 80, 80, 90, 90, 90, 90, 100, 100, 110, 110, 120, 150, 180, 300);
+    private static final List<Integer> SALE_PRICES = List.of(
+            32, 40, 48, 48, 48, 48, 56, 56, 56, 56, 64, 64, 64, 64, 72, 72, 72, 72, 80, 80, 88, 88, 96, 120, 144, 240);
     private static final List<String> CLOTHES = List.of("capOrange", "tshirtOrange", "shortsNavy", "shoesBrown");
 
-    /** 방송 날짜표: k번째 날의 방송 상품이 가격표 k번째(epochDay % 14). */
-    private static final LocalDate FIRST_DAY = LocalDate.of(2026, 11, 5);
+    /** 방송 날짜표: k번째 날의 방송 상품이 가격표 k번째(epochDay % 26). */
+    private static final LocalDate FIRST_DAY = LocalDate.of(2026, 10, 22);
 
     @TestConfiguration
     static class ClockConfig {
@@ -132,7 +135,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     // =====================================================================
 
     @Test
-    void l1_l2_fourteenItemsInPriceOrderWithOneSale() throws Exception {
+    void l1_l2_twentySixItemsInPriceOrderWithOneSale() throws Exception {
         TestUser user = newUser("l1");
 
         HttpResponse<String> response = shop(user.token());
@@ -141,14 +144,14 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
         JsonNode body = JSON.readTree(response.body());
         JsonNode items = body.path("items");
         assertThat(items.isArray()).as("L1 items is an array: %s", body).isTrue();
-        assertThat(items.size()).as("L1 items count").isEqualTo(14);
+        assertThat(items.size()).as("L1 items count").isEqualTo(26);
         assertThat(typesOf(items)).as("L1 item types in order").containsExactlyElementsOf(TYPES);
-        for (int i = 0; i < 14; i++) {
+        for (int i = 0; i < 26; i++) {
             assertThat(items.get(i).path("price").asInt()).as("L1 price of %s", TYPES.get(i)).isEqualTo(PRICES.get(i));
         }
         // L2
         assertBroadcast(body, "nightstand", 100, 80, "L2");
-        for (int i = 0; i < 14; i++) {
+        for (int i = 0; i < 26; i++) {
             JsonNode item = items.get(i);
             if (TYPES.get(i).equals("nightstand")) {
                 assertThat(item.path("salePrice").asInt()).as("L2 salePrice of nightstand").isEqualTo(80);
@@ -217,9 +220,9 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     // =====================================================================
 
     @Test
-    void b1_broadcastCyclesThroughTheFourteen() throws Exception {
+    void b1_broadcastCyclesThroughTheTwentySix() throws Exception {
         TestUser user = newUser("b1");
-        for (int day = 0; day < 14; day++) {
+        for (int day = 0; day < 26; day++) {
             LocalDate date = FIRST_DAY.plusDays(day);
             at(date);
             JsonNode body = JSON.readTree(shop(user.token()).body());
@@ -227,7 +230,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
             assertBroadcast(body, TYPES.get(day), PRICES.get(day), SALE_PRICES.get(day), label);
             JsonNode items = body.path("items");
             assertThat(typesOf(items)).as("%s item types in order", label).containsExactlyElementsOf(TYPES);
-            for (int i = 0; i < 14; i++) {
+            for (int i = 0; i < 26; i++) {
                 JsonNode item = items.get(i);
                 assertThat(item.path("price").asInt()).as("%s price of %s", label, TYPES.get(i)).isEqualTo(PRICES.get(i));
                 if (i == day) {
@@ -243,7 +246,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     @Test
     void b2_capOnAirAndTheSamePricedLampIsNot() throws Exception {
         TestUser user = newUser("b2");
-        at(LocalDate.of(2026, 11, 8));
+        at(LocalDate.of(2026, 10, 25));
 
         JsonNode body = JSON.readTree(shop(user.token()).body());
 
@@ -256,18 +259,18 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     void b3_otherClothesOnAir() throws Exception {
         TestUser user = newUser("b3");
 
-        at(LocalDate.of(2026, 11, 10));
-        assertBroadcast(JSON.readTree(shop(user.token()).body()), "shortsNavy", 70, 56, "B3 11-10");
-        at(LocalDate.of(2026, 11, 12));
-        assertBroadcast(JSON.readTree(shop(user.token()).body()), "tshirtOrange", 80, 64, "B3 11-12");
-        at(LocalDate.of(2026, 11, 13));
-        assertBroadcast(JSON.readTree(shop(user.token()).body()), "shoesBrown", 90, 72, "B3 11-13");
+        at(LocalDate.of(2026, 10, 29));
+        assertBroadcast(JSON.readTree(shop(user.token()).body()), "shortsNavy", 70, 56, "B3 10-29");
+        at(LocalDate.of(2026, 11, 2));
+        assertBroadcast(JSON.readTree(shop(user.token()).body()), "tshirtOrange", 80, 64, "B3 11-02");
+        at(LocalDate.of(2026, 11, 5));
+        assertBroadcast(JSON.readTree(shop(user.token()).body()), "shoesBrown", 90, 72, "B3 11-05");
     }
 
     @Test
-    void b4_fourteenDaysLaterStartsOver() throws Exception {
+    void b4_twentySixDaysLaterStartsOver() throws Exception {
         TestUser user = newUser("b4");
-        at(LocalDate.of(2026, 11, 19));
+        at(LocalDate.of(2026, 11, 17));
 
         assertBroadcast(JSON.readTree(shop(user.token()).body()), "books", 40, 32, "B4");
     }
@@ -276,13 +279,13 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     void b5_seoulMidnightSplitsTheBroadcast() throws Exception {
         TestUser user = newUser("b5");
 
-        FIXED_NOW.set(Instant.parse("2026-11-12T14:59:59Z"));
+        FIXED_NOW.set(Instant.parse("2026-11-02T14:59:59Z"));
         JsonNode before = JSON.readTree(shop(user.token()).body());
-        FIXED_NOW.set(Instant.parse("2026-11-12T15:00:00Z"));
+        FIXED_NOW.set(Instant.parse("2026-11-02T15:00:00Z"));
         JsonNode after = JSON.readTree(shop(user.token()).body());
 
         assertBroadcast(before, "tshirtOrange", 80, 64, "B5 before");
-        assertBroadcast(after, "shoesBrown", 90, 72, "B5 after");
+        assertBroadcast(after, "tshirtWhite", 80, 64, "B5 after");
     }
 
     // =====================================================================
@@ -379,7 +382,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     void o8_clothOnAirIsSoldAtTheSalePrice() throws Exception {
         TestUser user = newUser("o8");
         setBalance(user, 300);
-        at(LocalDate.of(2026, 11, 12));
+        at(LocalDate.of(2026, 11, 2));
 
         JsonNode body = JSON.readTree(assertOk(order(user.token(), "tshirtOrange", 64), "O8").body());
 
@@ -552,7 +555,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     void e5_fullPriceOnTheClothsBroadcastDay() throws Exception {
         TestUser user = newUser("e5");
         setBalance(user, 1000);
-        at(LocalDate.of(2026, 11, 12));
+        at(LocalDate.of(2026, 11, 2));
 
         assertRejectedNothingChanged(user, body("tshirtOrange", 80), 409, "PRICE_CHANGED", PRICE_CHANGED_MESSAGE, "E5");
     }
@@ -561,10 +564,10 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     void e6_clothSaleEndsWhenTheDateChanges() throws Exception {
         TestUser user = newUser("e6");
         setBalance(user, 1000);
-        at(LocalDate.of(2026, 11, 8));
+        at(LocalDate.of(2026, 10, 25));
         assertThat(itemOf(JSON.readTree(shop(user.token()).body()), "capOrange").path("salePrice").asInt())
-                .as("E6 setup capOrange salePrice on 11-08").isEqualTo(48);
-        at(LocalDate.of(2026, 11, 9));
+                .as("E6 setup capOrange salePrice on 10-25").isEqualTo(48);
+        at(LocalDate.of(2026, 10, 26));
 
         assertRejectedNothingChanged(user, body("capOrange", 48), 409, "PRICE_CHANGED", PRICE_CHANGED_MESSAGE, "E6 old sale price");
         HttpResponse<String> fullPrice = order(user.token(), "capOrange", 60);
@@ -763,7 +766,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
     void g4_furnitureOnItsBroadcastDay() throws Exception {
         TestUser user = newUser("g4");
         setBalance(user, 1000);
-        at(LocalDate.of(2026, 11, 18));
+        at(LocalDate.of(2026, 11, 16));
 
         assertRejectedNothingChanged(user, body("bed", 300), 409, "PRICE_CHANGED", PRICE_CHANGED_MESSAGE, "G4 full price");
         HttpResponse<String> sale = order(user.token(), "bed", 240);

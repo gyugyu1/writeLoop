@@ -198,10 +198,11 @@ const R1 = () =>
   wardrobe({ items: [{ type: "capOrange", slot: "hat", acquiredAt: "2026-11-13T12:00:00Z" }], equipped: { ...ALL_NULL, hat: "capOrange" } });
 const R4 = () => wardrobe({ items: R4_ITEMS, equipped: R4_EQUIPPED });
 const R4_NONE = () => wardrobe({ items: R4_ITEMS, equipped: ALL_NULL });
+// 작업 089 ⑤ 04-main-decision.md A-2(사용자 결정): capBlue가 앱 목록에 들어와, 모르는 종류의 예를 여전히 모르는 이름 capPurple로 바꿨다.
 const RX = () =>
   wardrobe({
     items: [
-      { type: "capBlue", slot: "hat", acquiredAt: "2026-11-13T08:00:00Z" },
+      { type: "capPurple", slot: "hat", acquiredAt: "2026-11-13T08:00:00Z" },
       { type: "capOrange", slot: "hat", acquiredAt: "2026-11-13T09:00:00Z" },
       { type: "glassesRound", slot: "face", acquiredAt: "2026-11-13T10:00:00Z" },
       { type: "tshirtOrange", slot: "top", acquiredAt: "2026-11-13T11:00:00Z" }
@@ -919,7 +920,7 @@ describe("[spec] 089-③ S-C: 부위 탭 일곱과 고른 탭의 칸", () => {
   );
 
   it(
-    "SC12: 앱이 모르는 종류(RX의 capBlue, glassesRound)는 칸이 없다: 모자는 벗기·주황 야구모자, 얼굴장식은 벗기와 빈 부위 문구, 상의는 벗기·주황 티셔츠",
+    "SC12: 앱이 모르는 종류(RX의 capPurple, glassesRound)는 칸이 없다: 모자는 벗기·주황 야구모자, 얼굴장식은 벗기와 빈 부위 문구, 상의는 벗기·주황 티셔츠",
     async () => {
       await openCloset(RX());
       const seen: Record<string, unknown> = { 모자: cellNames() };

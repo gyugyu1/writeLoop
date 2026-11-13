@@ -56,10 +56,28 @@ describe("[spec] 앱의 착용 아이템 목록(C1~C3)", () => {
     expect(WEARABLE_ITEMS.shoesBrown?.label).toBe("갈색 운동화");
   });
 
-  it("C2: 종류가 정확히 넷이고, 부위가 face·back·accessory인 아이템이 없다", () => {
-    expect(Object.keys(WEARABLE_ITEMS).sort()).toEqual(["capOrange", "shoesBrown", "shortsNavy", "tshirtOrange"]);
-    const slots = Object.values(WEARABLE_ITEMS).map((item) => item.slot);
-    expect(slots.filter((slot) => slot === "face" || slot === "back" || slot === "accessory")).toEqual([]);
+  // 작업 089 ⑤ 04-main-decision.md A-2(사용자 결정): 아이템이 열여섯이 되어 "넷이고 face·back·accessory가 없다"를 새 목록(⑤ 명세 표)으로 고쳤다.
+  it("C2: 종류가 정확히 열여섯이고, 부위가 명세 표와 같다", () => {
+    expect(Object.entries(WEARABLE_ITEMS).map(([type, item]) => [type, item.slot]).sort()).toEqual(
+      [
+        ["capOrange", "hat"],
+        ["capBlue", "hat"],
+        ["capGreen", "hat"],
+        ["tshirtOrange", "top"],
+        ["tshirtWhite", "top"],
+        ["tshirtYellow", "top"],
+        ["shortsNavy", "bottom"],
+        ["shortsBrown", "bottom"],
+        ["shortsRed", "bottom"],
+        ["shoesBrown", "shoes"],
+        ["shoesRed", "shoes"],
+        ["shoesWhite", "shoes"],
+        ["sunglassesBlack", "face"],
+        ["backpackRed", "back"],
+        ["mufflerRed", "accessory"],
+        ["necklaceGold", "accessory"]
+      ].sort()
+    );
   });
 
   it("C3: 부위는 hat·top·bottom·shoes·face·back·accessory 일곱이다", () => {

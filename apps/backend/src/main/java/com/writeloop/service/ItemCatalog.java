@@ -37,7 +37,8 @@ public class ItemCatalog {
 
     /**
      * 아이템 하나. 값이 없는 칸은 null(가구의 slot, 팔지 않는 아이템의 price·category 등).
-     * draw는 가구의 그리기 정보(앱 furniture-catalog의 값과 같은 모양), files는 목록 파일 옆 폴더 안의 모델·아이콘 파일 이름이다.
+     * draw는 그리기 정보(가구는 앱 furniture-catalog의 값과 같은 모양, 옷은 붙이는 방식·뼈·색·맞춘 몸),
+     * files는 목록 파일 옆 폴더 안의 모델·아이콘 파일 이름이다.
      */
     public record Item(
             String id,
@@ -173,6 +174,30 @@ public class ItemCatalog {
         }
     }
 
+    /** 옷 검사: 부위가 있고, 그리기 정보가 있으면 모양이 맞고 모델 파일이 있어야 한다(그리기 정보가 없는 옷은 몸에 그려진 라룹이 고글뿐이고 파일도 없다). */
+    private static void validateWearable(Item item) {
+        if (item.slot() == null) {
+            throw new IllegalStateException("부위가 없는 옷: " + item.id());
+        }
+        JsonNode draw = item.draw();
+        if (draw == null || draw.isNull()) {
+            if (item.files() != null) {
+                throw new IllegalStateException("그리기 정보 없이 파일만 있는 옷: " + item.id());
+            }
+            return;
+        }
+        String attach = draw.path("attach").asText();
+        boolean shape = draw.isObject()
+                && ("skin".equals(attach) || ("bone".equals(attach) && !draw.path("bone").asText().isEmpty()))
+                && draw.path("body").canConvertToInt() && draw.path("body").asInt() >= 1;
+        if (!shape) {
+            throw new IllegalStateException("옷 그리기 정보가 맞지 않다: " + item.id());
+        }
+        if (item.files() == null || item.files().model() == null) {
+            throw new IllegalStateException("모델 파일이 없는 옷: " + item.id());
+        }
+    }
+
     private void validate() {
         Integer last = null;
         for (Item item : items) {
@@ -188,8 +213,8 @@ public class ItemCatalog {
                 }
                 furnitureOf(item);
             }
-            if (item.isWearable() && item.slot() == null) {
-                throw new IllegalStateException("부위가 없는 옷: " + item.id());
+            if (item.isWearable()) {
+                validateWearable(item);
             }
             if (item.sold()) {
                 if (last != null && item.price() < last) {

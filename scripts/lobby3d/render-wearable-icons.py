@@ -1,9 +1,11 @@
 # 옷장(캐릭터 꾸미기) 아이템 칸에 보이는 착용 아이템 그림을 착용 모델(lobby-wearables.glb)에서 찍는다.
 # 쓰는 법: blender -b -P scripts/lobby3d/render-wearable-icons.py -- <라룹이 glb> <착용 모델 glb> <출력 폴더>
-#   (Blender 5.2에서 확인. 출력은 apps/mobile/assets/icons/wearables/에 <아이템 종류>.png로 넣는다)
+#   (Blender 5.2에서 확인. 출력은 서버 아이템 목록 폴더 apps/backend/src/main/resources/catalog/files/에 <아이템 종류>.png로 넣는다.
+#    앱에는 처음부터 가진 라룹이 고글 그림(goggles.png)만 apps/mobile/assets/icons/wearables/에 넣는다)
 # 가구 아이콘(render-icons.py)과 같은 조명·투명 배경의 정사각 그림이다. 상의·하의는 몸을 따라 휘는 껍질이라 홀로 찍으면 가장자리가
 # 거칠어서, 라룹이가 그 아이템만 입은 모습을 그 부위에 맞춰 찍는다. 신발은 한 짝뿐이라 좌우로 뒤집은 짝을 더해 두 발에 신긴다.
-# 아이템을 더하면 PIECES에 (모델 안 이름, 아이템 종류, 보는 각도 …, 색)을 더하고 다시 돌린다(앱의 wearable-icons.ts에도 한 줄 더한다).
+# 넘긴 착용 모델 glb에 없는 모델의 그림은 건너뛴다.
+# 아이템을 더하면 PIECES에 (모델 안 이름, 아이템 종류, 보는 각도 …, 색)을 더하고 다시 돌린다(목록 파일 items.json의 files.icon에 적는다).
 # 색만 다른 아이템(앱이 재질 색을 바꿔 그리는 것)은 마지막 칸에 앱 목록(wear.ts)과 같은 색을 적는다. 모자는 색을 바꾼 사본 모델이 따로 있다.
 # 라룹이 고글(goggles)은 라룹이 모델에 그려진 것이라 착용 모델 없이 라룹이 얼굴만 찍고(자리는 선글라스 모델에 맞춘다),
 # 다른 얼굴장식(선글라스)은 라룹이 고글을 끈 얼굴(모양 변형 noGoggles와 고글 없는 몸 그림)로 찍는다.
@@ -36,6 +38,8 @@ PIECES = [
     ("wear-backpack", "backpackRed", 165, 18, 1.15, 0.0, None),
     ("wear-muffler", "mufflerRed", 20, 18, 1.7, 0.0, None),
     ("wear-necklace", "necklaceGold", 15, 12, 1.8, 0.05, None),
+    # 서버 목록으로만 더한 옷(build-extra-wearables.py가 만든 glb를 착용 모델 자리에 넘겨 찍는다)
+    ("wear-vest", "vestGreen", 25, 10, 1.25, 0.18, None),
 ]
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -48,10 +52,12 @@ meshes = {o.name: o for o in scene.objects if o.type == "MESH" and o.name.starts
 # 오른쪽 신발: 왼쪽 신발을 좌우(x)로 뒤집은 짝
 from mathutils import Matrix
 
-shoe_r = meshes["wear-shoe-l"].copy()
-scene.collection.objects.link(shoe_r)
-shoe_r.matrix_world = Matrix.Scale(-1, 4, (1, 0, 0)) @ meshes["wear-shoe-l"].matrix_world
-companions = {"wear-shoe-l": [shoe_r]}
+companions = {}
+if "wear-shoe-l" in meshes:
+    shoe_r = meshes["wear-shoe-l"].copy()
+    scene.collection.objects.link(shoe_r)
+    shoe_r.matrix_world = Matrix.Scale(-1, 4, (1, 0, 0)) @ meshes["wear-shoe-l"].matrix_world
+    companions["wear-shoe-l"] = [shoe_r]
 
 # 라룹이 고글 끄기(add-goggles-toggle.py가 더한 것). 없으면 늘 고글을 쓴 얼굴로 찍는다
 BODY_ONLY = {"goggles"}
@@ -127,6 +133,9 @@ def tint(objs, hex_color):
 
 
 for piece, type_id, yaw, pitch, frame, drop, color in PIECES:
+    # 넘긴 glb에 없는 모델은 건너뛴다(서버 목록으로만 더한 옷은 그 glb만 넘겨 찍는다)
+    if piece not in meshes:
+        continue
     shown = {body} if type_id in BODY_ONLY else {body, meshes[piece], *companions.get(piece, [])}
     set_goggles(type_id not in HIDES_GOGGLES)
     for o in scene.objects:

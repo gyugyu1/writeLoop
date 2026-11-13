@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import LobbySheet from "@/components/home/lobby-sheet";
 import HomeShoppingSheet from "@/components/home/home-shopping-sheet";
+import ClosetSheet from "@/components/home/closet-sheet";
 import {
   DifficultySectionContent,
   FeaturedRecommendationContent,
@@ -43,7 +44,7 @@ import { buildLoginHref } from "@/lib/login-redirect";
 import { useAppOverlayStatus } from "@/lib/app-overlay-status";
 import { useSession } from "@/lib/session";
 import { getStreakMascotStage } from "@/lib/streak-mascot";
-import type { DailyDifficulty, DiaryCalendarSummary, HomeShoppingOrderResult } from "@/lib/types";
+import type { DailyDifficulty, DiaryCalendarSummary, HomeShoppingOrderResult, Wardrobe } from "@/lib/types";
 
 export default function HomeScreen() {
   const { currentUser, isHydrating, refreshSession } = useSession();
@@ -90,6 +91,8 @@ export default function HomeScreen() {
   const [lobbyWear, setLobbyWear] = useState<WearState>(NO_WEAR);
   const wardrobeRequest = useRef(0);
   const wardrobeUserId = useRef<string | number | null>(null);
+  // 옷장(캐릭터 꾸미기 화면): 방의 옷장 '들어가기'로 연다. 열린 동안 뒤의 방은 그리기를 멈춘다
+  const [isClosetOpen, setIsClosetOpen] = useState(false);
   const homeUserId = currentUser?.id ?? null;
   // 홈이 보일 때마다 잔액을 불러온다. 계정이 바뀌면 앞 계정의 늦은 응답은 버린다
   useFocusEffect(
@@ -135,6 +138,12 @@ export default function HomeScreen() {
         });
     }, [homeUserId])
   );
+  // 옷장에서 저장하면 닫고, 다시 불러오기를 기다리지 않고 저장한 옷을 바로 입힌다(불러오는 중이던 앞 응답은 버린다)
+  const handleClosetSaved = useCallback((wardrobe: Wardrobe) => {
+    wardrobeRequest.current += 1;
+    setLobbyWear(wearFromEquipped(wardrobe.equipped));
+    setIsClosetOpen(false);
+  }, []);
   const handleShopBalance = useCallback((balance: number) => {
     loopBalanceRequest.current += 1;
     setLoopBalance(balance);
@@ -465,10 +474,10 @@ export default function HomeScreen() {
           onEnterMark={handleEnterMark}
           idleButton={incompleteLoopRoute ? { label: "이어 쓰기", onPress: handleResumeLoop } : null}
           greeting={lobbyGreeting}
-          inputBlocked={openSheet !== null || isCalendarOpen || isShopOpen}
+          inputBlocked={openSheet !== null || isCalendarOpen || isShopOpen || isClosetOpen}
           onProjection={handleProjection}
           bottomInset={lobbyBottomInset}
-          paused={!isFocused}
+          paused={!isFocused || isClosetOpen}
           layout={lobbyLayout}
           layoutReady={lobbyLayoutReady}
           onSaveLayout={saveLobbyLayoutForHome}
@@ -477,9 +486,13 @@ export default function HomeScreen() {
           shopBalance={loopBalance}
           placeRequest={placeRequest}
           wear={lobbyWear}
+          onEnterCloset={() => setIsClosetOpen(true)}
+          signedIn={currentUser !== null}
         />
       </View>
       {isEditingLobby ? null : <MobileNavBar activeTab="home" />}
+
+      <ClosetSheet visible={isFocused && isClosetOpen} onClose={() => setIsClosetOpen(false)} onSaved={handleClosetSaved} />
 
       <HomeShoppingSheet
         visible={isFocused && isShopOpen}

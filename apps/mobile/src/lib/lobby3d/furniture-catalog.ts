@@ -275,7 +275,8 @@ function drawnType(item: CatalogItem): FurnitureType | null {
   if (!draw) return null;
   const { mount, size, height, blocksWalk, removable, model, place, closet, chair, surface, view } = draw;
   if (typeof mount !== "string" || !MOUNTS.includes(mount)) return null;
-  if (!isObj(size) || !isNum(size.width) || !isNum(size.depth) || size.width <= 0 || size.depth <= 0) return null;
+  // 벽 가구는 벽을 따라 차지하는 폭만 쓰고 깊이는 0이다
+  if (!isObj(size) || !isNum(size.width) || !isNum(size.depth) || size.width <= 0 || size.depth < 0 || (size.depth === 0 && mount !== "wall")) return null;
   if (!isObj(height) || !isNum(height.bottom) || !isNum(height.top)) return null;
   if (typeof blocksWalk !== "boolean" || typeof removable !== "boolean") return null;
   if (!isObj(model) || typeof model.piece !== "string" || !isNum(model.y)) return null;

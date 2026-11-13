@@ -3,7 +3,7 @@ package com.writeloop.controller;
 import com.writeloop.dto.CatalogDto;
 import com.writeloop.service.ItemCatalog;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,13 +11,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Duration;
-
 /** 아이템 목록(가구·옷)과 그 모델·아이콘 파일. 로그인하지 않아도 부른다. */
 @RestController
 @RequestMapping("/api/catalog")
 @RequiredArgsConstructor
 public class CatalogController {
+
+    /** 파일 응답의 캐시 지시(1년, 공용, 바뀌지 않음). */
+    static final String FILE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
     private final ItemCatalog itemCatalog;
 
@@ -41,7 +42,7 @@ public class CatalogController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable())
+                .header(HttpHeaders.CACHE_CONTROL, FILE_CACHE_CONTROL)
                 .contentType(MediaType.parseMediaType(file.contentType()))
                 .body(file.content());
     }

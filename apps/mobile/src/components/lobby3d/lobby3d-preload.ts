@@ -19,8 +19,10 @@ const VILLAGE_MODEL_ASSET = require("../../../assets/models/lobby-village.glb") 
  * 읽지 못해도 여기서는 아무 일도 하지 않는다(로비에서 그 부분만 대신 그린다).
  */
 export function preloadLobbyModels(): void {
-  for (const asset of [...LOBBY_MODEL_ASSETS, ...(bundledFurnitureModels() as unknown as string[])]) {
+  for (const asset of LOBBY_MODEL_ASSETS) {
     useLoader.preload(GLTFLoader, asset);
   }
+  // 앱에 든 처음 방 가구 일곱은 로비 가구(lobby3d-furniture)가 읽는 것과 같은 목록 하나로 읽는다(같은 목록이어야 같은 것을 함께 쓴다)
+  useLoader.preload(GLTFLoader, bundledFurnitureModels() as unknown as string[]);
   useLoader.preload(GLTFLoader, VILLAGE_MODEL_ASSET);
 }

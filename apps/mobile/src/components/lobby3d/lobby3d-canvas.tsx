@@ -944,8 +944,9 @@ function Scene({
     [world]
   );
 
+  // 누르기 판정. 장면 부분이 다시 만들어질 때 새 것이 먼저 넣고 옛 것의 정리가 뒤에 돌 수 있어, 정리는 자기가 넣은 판정일 때만 지운다
   useEffect(() => {
-    pickRef.current = (x: number, y: number) => {
+    const pick = (x: number, y: number): PointerHit | null => {
       if (size.width <= 0 || size.height <= 0) return null;
       const ndc = new THREE.Vector2((x / size.width) * 2 - 1, -(y / size.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
@@ -992,8 +993,9 @@ function Scene({
       if (first?.blocker) return { point: null, mark: null, onCharacter: false };
       return { point: floorPoint(), mark, onCharacter };
     };
+    pickRef.current = pick;
     return () => {
-      pickRef.current = null;
+      if (pickRef.current === pick) pickRef.current = null;
     };
   }, [camera, size, raycaster, world, pickRef, villageLabels]);
 

@@ -353,7 +353,8 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
     const hipsRestY = built.hips ? built.hips.getWorldPosition(new THREE.Vector3()).y : 0;
     handleRef.current = handle;
     return () => {
-      handleRef.current = null;
+      // 다시 만들어질 때 새 라룹이가 먼저 넣고 옛 것의 정리가 뒤에 돌 수 있어, 자기가 넣은 손잡이일 때만 지운다
+      if (handleRef.current === handle) handleRef.current = null;
       built.mixer.stopAllAction();
       built.materials.forEach((m) => m.dispose());
       built.shellMaterials.forEach((m) => m.dispose());

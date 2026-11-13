@@ -97,10 +97,15 @@ export function Wearables({ host, wear, look }: { host: WearHost; wear: WearStat
   );
 }
 
-/** 옷 하나를 라룹이에 붙인다(사라지면 떼고 버린다). */
+/**
+ * 옷 하나를 라룹이에 붙인다(사라지면 떼고 버린다).
+ * 메시는 그리기 중(useMemo)에 만들기만 하고, 라룹이에 붙이고 떼는 일은 화면에 들어간 뒤(useEffect)에만 한다.
+ * React가 그리기를 버리고 다시 하면(동시 그리기·Suspense 등) 그리기 중에 붙인 메시는 떼어지지 않고 남기 때문이다.
+ */
 function WearPiece({ host, draw, gltf }: { host: WearHost; draw: WearDraw; gltf: GLTF }) {
   const built = useMemo(() => {
-    const objects: THREE.Object3D[] = [];
+    /** 붙일 곳과 붙일 것(useEffect가 붙이고 뗀다). */
+    const objects: { parent: THREE.Object3D; object: THREE.Object3D }[] = [];
     const materials: THREE.MeshToonMaterial[] = [];
     const disposables: (THREE.Material | THREE.BufferGeometry)[] = [];
     const skeleton = host.body.skeleton;
@@ -151,8 +156,7 @@ function WearPiece({ host, draw, gltf }: { host: WearHost; draw: WearDraw; gltf:
             group.add(part);
           }
         }
-        bone.add(group);
-        objects.push(group);
+        objects.push({ parent: bone, object: group });
       };
       if (draw.bone) attach(draw.bone, false);
       if (draw.mirror) attach(draw.mirror, true);
@@ -177,27 +181,28 @@ function WearPiece({ host, draw, gltf }: { host: WearHost; draw: WearDraw; gltf:
         if (!geometry.attributes.normal) geometry.computeVertexNormals();
         const mesh = new THREE.SkinnedMesh(geometry, toon(source.material as THREE.Material));
         const shell = new THREE.SkinnedMesh(geometry, outline());
+        const parent = host.body.parent;
         for (const m of [mesh, shell]) {
           m.bind(skeleton, host.body.bindMatrix);
           m.raycast = () => {};
           m.frustumCulled = false;
-          host.body.parent?.add(m);
-          objects.push(m);
+          if (parent) objects.push({ parent, object: m });
         }
       }
     }
     return { objects, materials, disposables };
   }, [host, draw, gltf]);
 
-  // 카툰 명암 단계를 바꾸면 라룹이와 함께 바뀌게 명암 목록에 넣고, 사라지면 떼고 버린다
+  // 라룹이에 붙이고, 카툰 명암 단계를 바꾸면 라룹이와 함께 바뀌게 명암 목록에 넣는다. 사라지면 떼고 버린다
   useEffect(() => {
+    for (const { parent, object } of built.objects) parent.add(object);
     host.kit.toonMaterials.push(...built.materials);
     return () => {
       for (const m of built.materials) {
         const i = host.kit.toonMaterials.indexOf(m);
         if (i >= 0) host.kit.toonMaterials.splice(i, 1);
       }
-      for (const o of built.objects) o.removeFromParent();
+      for (const { object } of built.objects) object.removeFromParent();
       built.disposables.forEach((d) => d.dispose());
     };
   }, [built, host]);

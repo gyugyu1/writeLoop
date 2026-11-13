@@ -3,6 +3,7 @@
 #   (Blender 5.2에서 확인. 출력은 apps/mobile/assets/icons/furniture/에 <가구 종류 id>.png로 넣는다)
 # 가구마다 같은 각도(앞 오른쪽 위에서 비스듬히)·조명·투명 배경의 정사각 그림이다. 벽에 거는 가구는 앞에서, 깔개는 위에서 더 내려다본다.
 # 가구를 더하면 PIECES에 (묶음 안 이름, 종류 id, 보는 각도)를 더하고 다시 돌린다(앱의 furniture-icons.ts에도 한 줄 더한다).
+# 서버 목록으로만 더하는 가구(build-extra-furniture.py가 만든 가구 하나짜리 glb)도 같은 각도로 찍는다. 불러온 glb에 없는 조각은 건너뛴다.
 import math
 import os
 import sys
@@ -25,6 +26,8 @@ PIECES = [
     ("smallPlant", "smallPlant", 35, 25),
     ("booksStack", "books", 35, 28),
     ("frame", "frame", 15, 8),
+    # 서버 목록으로만 더하는 가구
+    ("armchair", "armchair", 35, 25),
 ]
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -77,6 +80,8 @@ def world_bounds(root):
 
 os.makedirs(out, exist_ok=True)
 for piece, type_id, yaw, pitch in PIECES:
+    if piece not in roots:
+        continue
     for name, root in roots.items():
         hidden = name != piece
         for o in [root, *root.children_recursive]:

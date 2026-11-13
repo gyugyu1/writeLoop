@@ -1,6 +1,7 @@
 package com.writeloop.service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
@@ -19,19 +20,25 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 라이트루프 아이템 목록(가구·옷): 서버의 한곳. 백엔드 목록 파일 {@code catalog/items.json}을 시작할 때 한 번 읽는다
- * (DB가 아니다. 아이템을 더할 때 이 파일을 고쳐 배포한다).
- * 홈쇼핑 가격표·옷 부위·배치 검사의 가구 종류·처음 가진 가구와 {@code GET /api/catalog}가 모두 이것을 읽는다.
+ * 라이트루프 아이템 목록(가구·옷): 서버의 한곳. 백엔드 목록 파일 {@code catalog/items.json}과 그 옆의 모델·아이콘 파일
+ * ({@code catalog/files/})을 시작할 때 한 번 읽는다(DB가 아니다. 아이템을 더할 때 이 파일들을 고쳐 배포한다).
+ * 홈쇼핑 가격표·옷 부위·배치 검사의 가구 종류·처음 가진 가구와 {@code GET /api/catalog}·파일 API가 모두 이것을 읽는다.
  */
 @Component
 public class ItemCatalog {
 
     static final String RESOURCE = "catalog/items.json";
+    static final String FILES_DIR = "catalog/files/";
+    /** 파일 API의 주소 앞부분. 뒤에 내용 SHA-256(64글자)과 확장자가 붙는다. */
+    public static final String FILES_PATH = "/api/catalog/files/";
 
     /** 앱과 같은 목록. 정적 값으로도 쓴다(서비스의 상수가 이것에서 만들어진다). */
     public static final ItemCatalog DEFAULT = load();
 
-    /** 아이템 하나. 값이 없는 칸은 null(가구의 slot, 팔지 않는 아이템의 price·category 등). */
+    /**
+     * 아이템 하나. 값이 없는 칸은 null(가구의 slot, 팔지 않는 아이템의 price·category 등).
+     * draw는 가구의 그리기 정보(앱 furniture-catalog의 값과 같은 모양), files는 목록 파일 옆 폴더 안의 모델·아이콘 파일 이름이다.
+     */
     public record Item(
             String id,
             String kind,
@@ -41,10 +48,10 @@ public class ItemCatalog {
             String category,
             Integer price,
             String slot,
-            Furniture furniture,
+            JsonNode draw,
+            Files files,
             Integer starter,
-            Boolean alwaysOwned,
-            Object assets
+            Boolean alwaysOwned
     ) {
         public boolean isFurniture() {
             return "furniture".equals(kind);
@@ -59,8 +66,24 @@ public class ItemCatalog {
         }
     }
 
-    /** 서버 검사에 쓰는 가구 정보: 두는 곳(floor·wall·tabletop), 장소가 딸려 배치에 정확히 하나 있어야 하는지, 윗면 소품 자리 수. */
+    /** 목록 파일 옆 폴더 안의 파일 이름(아이콘은 없을 수 있다). */
+    public record Files(String model, String icon) {
+    }
+
+    /** 서버 검사에 쓰는 가구 정보(그리기 정보에서 만든다): 두는 곳(floor·wall·tabletop), 장소가 딸렸는지, 윗면 소품 자리 수. */
     public record Furniture(String mount, boolean place, int slots) {
+    }
+
+    /** 내려받을 파일 하나: 주소, 내용 SHA-256(소문자 16진수 전체), 크기. */
+    public record Asset(String url, String sha256, long bytes) {
+    }
+
+    /** 아이템의 모델·아이콘 파일(아이콘은 없을 수 있다). */
+    public record Assets(Asset model, Asset icon) {
+    }
+
+    /** 파일 API가 주는 파일 하나. */
+    public record StoredFile(byte[] content, String contentType) {
     }
 
     private record Document(List<Item> items) {
@@ -68,9 +91,12 @@ public class ItemCatalog {
 
     private final List<Item> items;
     private final Map<String, Item> byId;
+    private final Map<String, Assets> assetsById;
+    /** 파일 API 주소의 마지막 부분(해시.확장자) → 파일. */
+    private final Map<String, StoredFile> filesByName;
     private final String version;
 
-    private ItemCatalog(List<Item> items, String version) {
+    private ItemCatalog(List<Item> items, Map<String, Assets> assetsById, Map<String, StoredFile> filesByName, String version) {
         this.items = List.copyOf(items);
         Map<String, Item> map = new LinkedHashMap<>();
         for (Item item : items) {
@@ -79,34 +105,69 @@ public class ItemCatalog {
             }
         }
         this.byId = map;
+        this.assetsById = Map.copyOf(assetsById);
+        this.filesByName = Map.copyOf(filesByName);
         this.version = version;
         validate();
     }
 
     /** Spring 빈은 정적 목록을 그대로 쓴다. */
     public ItemCatalog() {
-        this(DEFAULT.items, DEFAULT.version);
+        this(DEFAULT.items, DEFAULT.assetsById, DEFAULT.filesByName, DEFAULT.version);
     }
 
     private static ItemCatalog load() {
-        try (InputStream in = ItemCatalog.class.getClassLoader().getResourceAsStream(RESOURCE)) {
-            if (in == null) {
-                throw new IllegalStateException("아이템 목록 파일이 없다: " + RESOURCE);
-            }
-            byte[] bytes = in.readAllBytes();
+        byte[] catalogBytes = readResource(RESOURCE);
+        Document document;
+        try {
             ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            Document document = mapper.readValue(new String(bytes, StandardCharsets.UTF_8), Document.class);
-            return new ItemCatalog(document.items(), versionOf(bytes));
+            document = mapper.readValue(new String(catalogBytes, StandardCharsets.UTF_8), Document.class);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        Map<String, Assets> assets = new LinkedHashMap<>();
+        Map<String, StoredFile> files = new LinkedHashMap<>();
+        MessageDigest versionDigest = sha256();
+        versionDigest.update(catalogBytes);
+        for (Item item : document.items()) {
+            if (item.files() == null) {
+                continue;
+            }
+            Asset model = asset(item.id(), item.files().model(), files, versionDigest);
+            Asset icon = item.files().icon() == null ? null : asset(item.id(), item.files().icon(), files, versionDigest);
+            assets.put(item.id(), new Assets(model, icon));
+        }
+        String version = HexFormat.of().formatHex(versionDigest.digest()).substring(0, 16);
+        return new ItemCatalog(document.items(), assets, files, version);
+    }
+
+    private static Asset asset(String itemId, String fileName, Map<String, StoredFile> files, MessageDigest versionDigest) {
+        if (fileName == null || !fileName.matches("[A-Za-z0-9_-]+\\.(glb|png)")) {
+            throw new IllegalStateException("파일 이름이 맞지 않다: " + itemId + " " + fileName);
+        }
+        byte[] content = readResource(FILES_DIR + fileName);
+        String sha256 = HexFormat.of().formatHex(sha256().digest(content));
+        String extension = fileName.substring(fileName.lastIndexOf('.') + 1);
+        String name = sha256 + "." + extension;
+        files.put(name, new StoredFile(content, extension.equals("glb") ? "model/gltf-binary" : "image/png"));
+        versionDigest.update(sha256.getBytes(StandardCharsets.US_ASCII));
+        return new Asset(FILES_PATH + name, sha256, content.length);
+    }
+
+    private static byte[] readResource(String path) {
+        try (InputStream in = ItemCatalog.class.getClassLoader().getResourceAsStream(path)) {
+            if (in == null) {
+                throw new IllegalStateException("아이템 목록 파일이 없다: " + path);
+            }
+            return in.readAllBytes();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    /** 목록 내용이 바뀌면 바뀌는 글(파일 내용의 SHA-256 앞 16글자). */
-    private static String versionOf(byte[] bytes) {
+    private static MessageDigest sha256() {
         try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(bytes);
-            return HexFormat.of().formatHex(digest).substring(0, 16);
+            return MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
@@ -118,8 +179,14 @@ public class ItemCatalog {
             if (!item.isFurniture() && !item.isWearable()) {
                 throw new IllegalStateException("모르는 아이템 종류: " + item.id() + " " + item.kind());
             }
-            if (item.isFurniture() && item.furniture() == null) {
-                throw new IllegalStateException("가구 정보가 없는 가구: " + item.id());
+            if (item.isFurniture()) {
+                if (item.draw() == null || !item.draw().isObject()) {
+                    throw new IllegalStateException("그리기 정보가 없는 가구: " + item.id());
+                }
+                if (item.files() == null || item.files().model() == null) {
+                    throw new IllegalStateException("모델 파일이 없는 가구: " + item.id());
+                }
+                furnitureOf(item);
             }
             if (item.isWearable() && item.slot() == null) {
                 throw new IllegalStateException("부위가 없는 옷: " + item.id());
@@ -133,6 +200,27 @@ public class ItemCatalog {
         }
     }
 
+    /** 그리기 정보에서 서버 검사용 가구 정보를 만든다(덮개 cover는 바닥 floor로 본다). */
+    static Furniture furnitureOf(Item item) {
+        JsonNode draw = item.draw();
+        String mount = draw.path("mount").asText();
+        String serverMount = switch (mount) {
+            case "floor", "cover" -> "floor";
+            case "wall", "tabletop" -> mount;
+            default -> throw new IllegalStateException("모르는 가구 두는 곳: " + item.id() + " " + mount);
+        };
+        boolean place = draw.hasNonNull("place");
+        int slots = 0;
+        JsonNode surface = draw.get("surface");
+        if (surface != null && surface.isObject()) {
+            JsonNode cells = surface.get("cells");
+            slots = cells != null && cells.isArray()
+                    ? cells.size()
+                    : draw.path("size").path("width").asInt() * draw.path("size").path("depth").asInt();
+        }
+        return new Furniture(serverMount, place, slots);
+    }
+
     public List<Item> items() {
         return items;
     }
@@ -143,6 +231,16 @@ public class ItemCatalog {
 
     public String version() {
         return version;
+    }
+
+    /** 아이템의 모델·아이콘 파일. 파일이 없는 아이템(옷 등)은 null. */
+    public Assets assetsOf(String id) {
+        return assetsById.get(id);
+    }
+
+    /** 파일 API 주소의 마지막 부분(해시.확장자)의 파일. 목록에 없으면 null. */
+    public StoredFile file(String name) {
+        return name == null ? null : filesByName.get(name);
     }
 
     /** 홈쇼핑에서 파는 아이템(가격이 낮은 것부터 파일 순서). */
@@ -178,12 +276,12 @@ public class ItemCatalog {
         return set;
     }
 
-    /** 가구 종류 → 서버 검사용 가구 정보. */
+    /** 가구 종류 → 서버 검사용 가구 정보(그리기 정보에서 만든다). */
     public Map<String, Furniture> furnitureKinds() {
         Map<String, Furniture> kinds = new LinkedHashMap<>();
         for (Item item : items) {
             if (item.isFurniture()) {
-                kinds.put(item.id(), item.furniture());
+                kinds.put(item.id(), furnitureOf(item));
             }
         }
         return kinds;

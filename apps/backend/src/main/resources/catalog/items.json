@@ -1,5 +1,5 @@
 {
-  "_comment": "라이트루프 아이템 목록(가구·옷). 서버의 홈쇼핑 가격표·옷 부위·배치 검사·처음 가진 가구와 GET /api/catalog가 모두 이 파일을 읽는다. 파는 아이템은 가격이 낮은 것부터 이 파일 순서로 홈쇼핑에 나오고 오늘의 방송도 이 순서를 돈다. 아이템을 더하면 이 파일을 고쳐 배포한다.",
+  "_comment": "라이트루프 아이템 목록(가구·옷). 서버의 홈쇼핑 가격표·옷 부위·배치 검사·처음 가진 가구와 GET /api/catalog가 모두 이 파일을 읽는다. 파는 아이템은 가격이 낮은 것부터 적고(같은 가격이면 적은 순서), 오늘의 방송도 이 순서로 돈다. 가구의 draw는 앱이 그리는 값(앱 furniture-catalog와 같은 모양)이고 서버 검사(두는 곳·장소·소품 자리 수)도 여기서 만든다. files는 옆 폴더 files/ 안의 모델(glb)·아이콘(png) 이름이다(가구 묶음에서 나누는 스크립트: scripts/lobby3d/split-furniture.py). 아이템을 더하거나 고치면 이 파일과 files/를 고쳐 배포한다.",
   "items": [
     {
       "id": "books",
@@ -9,10 +9,31 @@
       "description": "책 몇 권을 쌓아 나만의 독서 분위기를 만들어요.",
       "category": "decor",
       "price": 40,
-      "furniture": {
+      "draw": {
         "mount": "tabletop",
-        "place": false,
-        "slots": 0
+        "size": {
+          "width": 1,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 0.29
+        },
+        "blocksWalk": false,
+        "removable": true,
+        "model": {
+          "piece": "booksStack",
+          "box": {
+            "width": 0.419,
+            "height": 0.29,
+            "depth": 0.265
+          },
+          "y": 0
+        }
+      },
+      "files": {
+        "model": "books.glb",
+        "icon": "books.png"
       }
     },
     {
@@ -23,10 +44,31 @@
       "description": "작은 초록 하나로 책상이 산뜻해져요.",
       "category": "plants",
       "price": 50,
-      "furniture": {
+      "draw": {
         "mount": "tabletop",
-        "place": false,
-        "slots": 0
+        "size": {
+          "width": 1,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 0.41
+        },
+        "blocksWalk": false,
+        "removable": true,
+        "model": {
+          "piece": "smallPlant",
+          "box": {
+            "width": 0.25,
+            "height": 0.37,
+            "depth": 0.249
+          },
+          "y": 0
+        }
+      },
+      "files": {
+        "model": "smallPlant.glb",
+        "icon": "smallPlant.png"
       }
     },
     {
@@ -37,12 +79,33 @@
       "description": "책상이나 협탁 위를 따뜻하게 밝혀 줘요.",
       "category": "lighting",
       "price": 60,
-      "furniture": {
+      "starter": 1,
+      "draw": {
         "mount": "tabletop",
-        "place": false,
-        "slots": 0
+        "size": {
+          "width": 1,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 0.88
+        },
+        "blocksWalk": false,
+        "removable": true,
+        "model": {
+          "piece": "tableLamp",
+          "box": {
+            "width": 0.418,
+            "height": 0.88,
+            "depth": 0.475
+          },
+          "y": 0
+        }
       },
-      "starter": 1
+      "files": {
+        "model": "lamp.glb",
+        "icon": "lamp.png"
+      }
     },
     {
       "id": "capOrange",
@@ -82,10 +145,39 @@
       "description": "허전한 벽을 채우는 작은 그림이에요.",
       "category": "decor",
       "price": 70,
-      "furniture": {
+      "draw": {
         "mount": "wall",
-        "place": false,
-        "slots": 0
+        "size": {
+          "width": 1,
+          "depth": 0
+        },
+        "height": {
+          "bottom": 1.6,
+          "top": 2.4
+        },
+        "blocksWalk": false,
+        "removable": true,
+        "model": {
+          "piece": "frame",
+          "box": {
+            "width": 1,
+            "height": 0.8,
+            "depth": 0.084
+          },
+          "y": 2,
+          "wallDepth": 0.042,
+          "shadow": {
+            "wall": [
+              1.15,
+              0.95,
+              0.3
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "frame.glb",
+        "icon": "frame.png"
       }
     },
     {
@@ -126,10 +218,38 @@
       "description": "빈 공간에 싱그러운 초록을 더해 보세요.",
       "category": "plants",
       "price": 80,
-      "furniture": {
+      "draw": {
         "mount": "floor",
-        "place": false,
-        "slots": 0
+        "size": {
+          "width": 1,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 1.83
+        },
+        "blocksWalk": true,
+        "removable": true,
+        "model": {
+          "piece": "plant",
+          "box": {
+            "width": 0.486,
+            "height": 1.636,
+            "depth": 0.574
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              0.7,
+              0.75,
+              0.45
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "plant.glb",
+        "icon": "plant.png"
       }
     },
     {
@@ -210,10 +330,39 @@
       "description": "윗면에 조명이나 작은 소품을 올려 보세요.",
       "category": "furniture",
       "price": 100,
-      "furniture": {
+      "draw": {
         "mount": "floor",
-        "place": false,
-        "slots": 1
+        "size": {
+          "width": 1,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 0.74
+        },
+        "blocksWalk": true,
+        "surface": {},
+        "removable": true,
+        "model": {
+          "piece": "nightstand",
+          "box": {
+            "width": 0.745,
+            "height": 0.737,
+            "depth": 0.608
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              0.95,
+              0.85,
+              0.45
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "nightstand.glb",
+        "icon": "nightstand.png"
       }
     },
     {
@@ -234,10 +383,38 @@
       "description": "침대 옆이나 방 구석에 작은 빛을 더해요.",
       "category": "lighting",
       "price": 110,
-      "furniture": {
+      "draw": {
         "mount": "floor",
-        "place": false,
-        "slots": 0
+        "size": {
+          "width": 1,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 2.41
+        },
+        "blocksWalk": true,
+        "removable": true,
+        "model": {
+          "piece": "floorLamp",
+          "box": {
+            "width": 0.418,
+            "height": 2.408,
+            "depth": 0.475
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              0.6,
+              0.65,
+              0.45
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "floorLamp.glb",
+        "icon": "floorLamp.png"
       }
     },
     {
@@ -268,12 +445,33 @@
       "description": "가구 아래에 깔아 공간을 아늑하게 묶어 줘요.",
       "category": "decor",
       "price": 150,
-      "furniture": {
-        "mount": "floor",
-        "place": false,
-        "slots": 0
+      "starter": 1,
+      "draw": {
+        "mount": "cover",
+        "size": {
+          "width": 3,
+          "depth": 3
+        },
+        "height": {
+          "bottom": 0,
+          "top": 0.028
+        },
+        "blocksWalk": false,
+        "removable": true,
+        "model": {
+          "piece": "rug",
+          "box": {
+            "width": 2.576,
+            "height": 0.028,
+            "depth": 2.576
+          },
+          "y": 0.004
+        }
       },
-      "starter": 1
+      "files": {
+        "model": "rug.glb",
+        "icon": "rug.png"
+      }
     },
     {
       "id": "wardrobe",
@@ -283,12 +481,57 @@
       "description": "방 한쪽을 차분하게 채우는 기본 옷장이에요.",
       "category": "furniture",
       "price": 180,
-      "furniture": {
+      "starter": 1,
+      "draw": {
         "mount": "floor",
-        "place": false,
-        "slots": 0
+        "size": {
+          "width": 1,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 2.38
+        },
+        "blocksWalk": true,
+        "closet": {
+          "approach": [
+            {
+              "x": 0,
+              "z": 0.9
+            }
+          ],
+          "faceTo": {
+            "x": 0,
+            "z": -0.5
+          },
+          "label": {
+            "x": 0,
+            "y": 2.25,
+            "z": 0.4
+          }
+        },
+        "removable": true,
+        "model": {
+          "piece": "wardrobe",
+          "box": {
+            "width": 1.12,
+            "height": 2.38,
+            "depth": 0.876
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              1.4,
+              1.2,
+              0.52
+            ]
+          }
+        }
       },
-      "starter": 1
+      "files": {
+        "model": "wardrobe.glb",
+        "icon": "wardrobe.png"
+      }
     },
     {
       "id": "bed",
@@ -298,10 +541,38 @@
       "description": "하루를 마무리하는 포근한 자리예요.",
       "category": "furniture",
       "price": 300,
-      "furniture": {
+      "draw": {
         "mount": "floor",
-        "place": false,
-        "slots": 0
+        "size": {
+          "width": 2,
+          "depth": 3
+        },
+        "height": {
+          "bottom": 0,
+          "top": 1.05
+        },
+        "blocksWalk": true,
+        "removable": true,
+        "model": {
+          "piece": "bed",
+          "box": {
+            "width": 1.599,
+            "height": 1.05,
+            "depth": 3.15
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              1.95,
+              3.35,
+              0.5
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "bed.glb",
+        "icon": "bed.png"
       }
     },
     {
@@ -312,10 +583,84 @@
       "description": "",
       "category": null,
       "price": null,
-      "furniture": {
+      "draw": {
         "mount": "floor",
-        "place": true,
-        "slots": 3
+        "size": {
+          "width": 3,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 1.292
+        },
+        "blocksWalk": true,
+        "place": {
+          "id": "desk",
+          "approach": [
+            {
+              "x": 0,
+              "z": 1.25
+            }
+          ],
+          "faceTo": {
+            "x": 0,
+            "z": 0
+          },
+          "label": {
+            "x": 0,
+            "y": 2.1,
+            "z": 0
+          }
+        },
+        "chair": {
+          "piece": "chair",
+          "at": {
+            "x": 0,
+            "z": 0.45
+          },
+          "pull": 0.5,
+          "seat": {
+            "x": 0,
+            "z": 0.95
+          },
+          "side": {
+            "x": 0.65,
+            "z": 1.05
+          },
+          "seatHeight": 0.67,
+          "box": {
+            "width": 0.56,
+            "height": 1.316,
+            "depth": 0.56
+          },
+          "shadow": [
+            0.75,
+            0.75,
+            0.42
+          ]
+        },
+        "surface": {},
+        "removable": false,
+        "model": {
+          "piece": "desk",
+          "box": {
+            "width": 2.468,
+            "height": 1.292,
+            "depth": 1.318
+          },
+          "fillWidth": true,
+          "y": 0,
+          "shadow": {
+            "floor": [
+              2.8,
+              1.65,
+              0.5
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "desk.glb"
       }
     },
     {
@@ -326,10 +671,55 @@
       "description": "",
       "category": null,
       "price": null,
-      "furniture": {
+      "draw": {
         "mount": "floor",
-        "place": true,
-        "slots": 0
+        "size": {
+          "width": 1,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 2.464
+        },
+        "blocksWalk": true,
+        "place": {
+          "id": "bookcase",
+          "approach": [
+            {
+              "x": 0,
+              "z": 0.9
+            }
+          ],
+          "faceTo": {
+            "x": 0,
+            "z": -0.5
+          },
+          "label": {
+            "x": 0,
+            "y": 2.3,
+            "z": 0.4
+          }
+        },
+        "removable": false,
+        "model": {
+          "piece": "bookcase",
+          "box": {
+            "width": 1.12,
+            "height": 2.464,
+            "depth": 0.876
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              1.4,
+              1.2,
+              0.52
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "bookcase.glb"
       }
     },
     {
@@ -340,10 +730,60 @@
       "description": "",
       "category": null,
       "price": null,
-      "furniture": {
+      "draw": {
         "mount": "wall",
-        "place": true,
-        "slots": 0
+        "size": {
+          "width": 1.8,
+          "depth": 0
+        },
+        "height": {
+          "bottom": 1.05,
+          "top": 2.45
+        },
+        "blocksWalk": false,
+        "place": {
+          "id": "board",
+          "approach": [
+            {
+              "x": -0.2,
+              "z": 1.3
+            },
+            {
+              "x": 0.4,
+              "z": 1.3
+            }
+          ],
+          "faceTo": {
+            "x": 0,
+            "z": 0
+          },
+          "label": {
+            "x": 0,
+            "y": 2.75,
+            "z": 0.3
+          }
+        },
+        "removable": false,
+        "model": {
+          "piece": "board",
+          "box": {
+            "width": 1.792,
+            "height": 1.4,
+            "depth": 0.126
+          },
+          "y": 1.75,
+          "wallDepth": 0.06,
+          "shadow": {
+            "wall": [
+              2,
+              1.6,
+              0.3
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "board.glb"
       }
     },
     {
@@ -354,10 +794,103 @@
       "description": "",
       "category": null,
       "price": null,
-      "furniture": {
+      "draw": {
         "mount": "wall",
-        "place": true,
-        "slots": 0
+        "size": {
+          "width": 2.3,
+          "depth": 0
+        },
+        "height": {
+          "bottom": 1.112,
+          "top": 2.988
+        },
+        "blocksWalk": false,
+        "place": {
+          "id": "window",
+          "approach": [
+            {
+              "x": -0.3,
+              "z": 1.55
+            },
+            {
+              "x": 0.3,
+              "z": 1.55
+            }
+          ],
+          "faceTo": {
+            "x": 0,
+            "z": 0
+          },
+          "label": {
+            "x": 0,
+            "y": 3.05,
+            "z": 0.3
+          }
+        },
+        "removable": false,
+        "view": true,
+        "model": {
+          "piece": "window",
+          "box": {
+            "width": 2.3,
+            "height": 1.876,
+            "depth": 0.35
+          },
+          "y": 2.05,
+          "wallDepth": 0.17,
+          "shadow": {
+            "wall": [
+              2.55,
+              2.15,
+              0.3
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "window.glb"
+      }
+    },
+    {
+      "id": "armchair",
+      "kind": "furniture",
+      "name": "안락의자",
+      "shopName": "안락의자",
+      "description": "",
+      "category": null,
+      "price": null,
+      "draw": {
+        "mount": "floor",
+        "size": {
+          "width": 2,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 1.288
+        },
+        "blocksWalk": true,
+        "removable": true,
+        "model": {
+          "piece": "armchair",
+          "box": {
+            "width": 1.372,
+            "height": 1.288,
+            "depth": 1.148
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              1.6,
+              1.25,
+              0.5
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "armchair.glb",
+        "icon": "armchair.png"
       }
     },
     {

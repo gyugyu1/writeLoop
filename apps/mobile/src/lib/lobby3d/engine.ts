@@ -1218,9 +1218,11 @@ export class LobbySim {
       idleBubble = true;
     } else if (place && markInfo(place).prompt) {
       bubbleText = markInfo(place).prompt;
-      bubbleButton = markInfo(place).buttonLabel;
+      // 버튼 글이 없는 장소(마을의 닫힌 건물)는 버튼이 없다
+      bubbleButton = markInfo(place).buttonLabel || null;
     }
-    const shownPlace = bubbleButton !== null ? place : null;
+    // 장소 안내를 보이는 중이면 그 장소(버튼이 없는 안내도)
+    const shownPlace = place && bubbleText !== "" && bubbleText === markInfo(place).prompt ? place : null;
     return {
       x: this.x,
       z: this.z,

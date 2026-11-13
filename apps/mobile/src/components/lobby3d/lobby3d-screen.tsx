@@ -63,6 +63,8 @@ const ALL_PLACE_IDS: readonly PlaceId[] = [...ROOM_MARK_IDS, ...VILLAGE_MARK_IDS
 /** 방↔마을 전환: 검게 어두워지는 시간과 밝아지는 시간(밀리초). */
 const TRAVEL_FADE_MS = 300;
 const VILLAGE_LOADING = "마을로 나가는 중…";
+/** 마을 모델을 이만큼 넘게 기다릴 때만 "마을로 나가는 중…"을 보인다(이미 읽었으면 바로 떠서 보이지 않는다). */
+const VILLAGE_LOADING_DELAY_MS = 300;
 const VILLAGE_FAILED = "마을을 불러오지 못했어요. 잠시 뒤 다시 나가 주세요";
 
 /** 시험판의 구역 버튼. */
@@ -240,6 +242,18 @@ export default function Lobby3dScreen({
   // 마을 모델이 장면에 들어온 적이 있는지(한 번 읽으면 다시 나갈 때 바로 뜬다)와, 다 뜨면 밝아질 전환
   const villageReadyRef = useRef(false);
   const waitingVillage = useRef<(() => void) | null>(null);
+  const loadingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopLoadingText = () => {
+    if (loadingTimer.current) clearTimeout(loadingTimer.current);
+    loadingTimer.current = null;
+    setVillageLoading(false);
+  };
+  useEffect(
+    () => () => {
+      if (loadingTimer.current) clearTimeout(loadingTimer.current);
+    },
+    []
+  );
 
   const [view, setView] = useState<ViewState>({ bubbleText: "", bubbleButton: null, place: null, actionType: null, idleBubble: false });
   // 초당 프레임 표시. 값이 바뀔 때만 다시 그린다(이름표·말풍선 자리는 아래 Animated 값으로 옮긴다).
@@ -573,8 +587,17 @@ export default function Lobby3dScreen({
       placeInArea(next);
       if (next === "village" && !villageReadyRef.current) {
         travelFade.setValue(1);
-        setVillageLoading(true);
         waitingVillage.current = reveal;
+        // 마을 모델이 뜰 때까지 검은 채 기다린다. 조금 넘게 걸리면 "마을로 나가는 중…"을 보인다(동작 줄이기면 어두워지는 움직임이 없으니 바로 보인다)
+        if (loadingTimer.current) clearTimeout(loadingTimer.current);
+        if (sim.reduceMotion) {
+          setVillageLoading(true);
+          return;
+        }
+        loadingTimer.current = setTimeout(() => {
+          loadingTimer.current = null;
+          if (waitingVillage.current) setVillageLoading(true);
+        }, VILLAGE_LOADING_DELAY_MS);
         return;
       }
       reveal();
@@ -588,7 +611,9 @@ export default function Lobby3dScreen({
     villageReadyRef.current = true;
     const waiting = waitingVillage.current;
     waitingVillage.current = null;
-    waiting?.();
+    if (!waiting) return;
+    stopLoadingText();
+    waiting();
   }, []);
   // 마을 모델을 읽지 못하면 방으로 돌아와 밝아지고 안내한다(전환 중이 아니면 안내만)
   const onVillageFailed = useCallback(() => {
@@ -600,7 +625,7 @@ export default function Lobby3dScreen({
       return;
     }
     placeInAreaRef.current("room");
-    setVillageLoading(false);
+    stopLoadingText();
     waiting();
     showToast(VILLAGE_FAILED);
   }, [showToast]);

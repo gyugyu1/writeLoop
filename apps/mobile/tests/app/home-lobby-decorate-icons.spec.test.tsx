@@ -36,6 +36,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { createHash } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 import { BackHandler, StyleSheet } from "react-native";
@@ -72,6 +73,12 @@ type UiNode = ReturnType<typeof screen.getByRole>;
 const mockFocus = { focused: true, listeners: new Set<() => void>() };
 const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
 
+// 090-② 05 결정 3: 일곱 밖 가구의 모델·아이콘은 서버 목록의 파일을 받아 쓴다. 이 테스트는 그 파일을 기기에 이미 받아 둔 것으로 둔다
+// (기기에 있는 파일이면 그 파일의 기기 주소를 준다. 받기·기기 저장 자체는 090-② 테스트 furniture-download*.spec이 본다).
+jest.mock("@/lib/item-files", () => ({
+  ...jest.requireActual<typeof import("@/lib/item-files")>("@/lib/item-files"),
+  cachedItemFile: (ref: { url: string } | null | undefined) => (ref ? `file:///qa-received/${ref.url.split("/").pop()}` : null)
+}));
 jest.mock("expo-router", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   return {
@@ -147,6 +154,37 @@ jest.mock("@/lib/now-in-english", () => ({
 jest.mock("@/lib/practice-feedback-state", () => ({ hydratePracticeFeedbackState: jest.fn() }));
 jest.mock("@/lib/session", () => ({ useSession: jest.fn() }));
 jest.mock("@/lib/writing-drafts", () => ({ getLocalWritingDraft: jest.fn() }));
+
+// ---------- 090-② 05 결정 3: 일곱 밖 가구는 서버 목록의 받은 파일 ----------
+// 앱에 든 가구 파일은 처음 방 일곱(모델)과 옷장·깔개·스탠드(아이콘)뿐이다. 그 밖의 가구는 서버 아이템 목록(assets)의 파일을 받아 그린다.
+// 그래서 테스트마다 일곱 밖 가구의 파일이 든 목록을 지금 목록으로 둔다. 이름·홈쇼핑 이름·설명·분류는 앱에 든 값 그대로이고 그리기 정보는 없다(앱 값).
+const RECEIVED_FURNITURE = ["bed", "nightstand", "floorLamp", "plant", "smallPlant", "books", "frame"];
+const RECEIVED_CATEGORIES = ["furniture", "lighting", "decor", "plants"] as const;
+function receivedFile(ext: "glb" | "png", digit: string) {
+  const sha256 = digit.repeat(64);
+  return { url: `/api/catalog/files/${sha256}.${ext}`, sha256, bytes: 1000 };
+}
+/** 일곱 밖 가구의 파일이 든 목록을 지금 목록으로 둔다. */
+function setReceivedFurnitureCatalog() {
+  const store = jest.requireActual<typeof import("@/lib/item-catalog-store")>("@/lib/item-catalog-store");
+  const kinds = jest.requireActual<typeof import("@/lib/lobby3d/furniture-catalog")>("@/lib/lobby3d/furniture-catalog");
+  const shop = jest.requireActual<typeof import("@/components/home/home-shopping-catalog")>("@/components/home/home-shopping-catalog");
+  store.setItemCatalog({
+    version: "qa-received-furniture",
+    items: RECEIVED_FURNITURE.map((id, index) => ({
+      id,
+      kind: "furniture" as const,
+      name: kinds.furnitureType(id).name,
+      shopName: shop.shopProductName(id),
+      description: shop.shopProductDescription(id),
+      category: RECEIVED_CATEGORIES.find((category) => shop.inShopCategory(id, category)) ?? null,
+      slot: null,
+      price: null,
+      draw: null,
+      assets: { model: receivedFile("glb", String(index + 1)), icon: receivedFile("png", "abcdef9"[index]) }
+    }))
+  });
+}
 
 // ---------- 글(명세·지금 화면 그대로) ----------
 
@@ -501,6 +539,41 @@ function imageFileOf(image: UiNode): string | null {
   return path.resolve(transformerDir, testUri);
 }
 
+/** 090-② 05 결정 3: 앱에 든 아이콘(처음 방의 치울 수 있는 셋). 나머지 가구 아이콘은 서버 아이템 목록의 파일을 받아 쓴다. */
+const APP_ICON_IDS = ["wardrobe", "rug", "lamp"];
+/** 서버 아이콘 파일 폴더(백엔드 아이템 목록 파일 옆). */
+const SERVER_FILES = path.resolve(__dirname, "..", "..", "..", "backend", "src", "main", "resources", "catalog", "files");
+
+/** 서버 아이콘 파일(그 가구의 png)과 그 내용 해시·크기. */
+function serverIcon(id: string): { file: string; sha256: string; bytes: number } {
+  const file = path.join(SERVER_FILES, `${id}.png`);
+  const data = fs.readFileSync(file);
+  return { file, sha256: createHash("sha256").update(data).digest("hex"), bytes: data.length };
+}
+
+/** 받아 둔 그 가구 아이콘(지금 목록의 아이콘 해시)과, 그 해시를 가진 서버 파일. */
+function receivedIcon(id: string): { file: string; sha256: string } {
+  const store = jest.requireActual<typeof import("@/lib/item-catalog-store")>("@/lib/item-catalog-store");
+  const sha256 = store.catalogItem(id)?.assets?.icon?.sha256 ?? "";
+  const server = serverIcon(id);
+  expect({ id, sameAsServer: server.sha256 === sha256 }).toEqual({ id, sameAsServer: true });
+  return { file: server.file, sha256 };
+}
+
+/** 일곱 밖 가구의 아이콘이 서버 아이콘 파일 그대로인 목록을 지금 목록으로 둔다(이름 등은 받은 목록 그대로). */
+function setReceivedServerIcons() {
+  const store = jest.requireActual<typeof import("@/lib/item-catalog-store")>("@/lib/item-catalog-store");
+  const now = store.currentItemCatalog()!;
+  store.setItemCatalog({
+    ...now,
+    items: now.items.map((item) => {
+      if (!item.assets) return item;
+      const icon = serverIcon(item.id);
+      return { ...item, assets: { ...item.assets, icon: { url: `/api/catalog/files/${icon.sha256}.png`, sha256: icon.sha256, bytes: icon.bytes } } };
+    })
+  });
+}
+
 /** 칸에 "×N"이 있으면 그 글, 없으면 null. */
 function countText(cell: UiNode): string | null {
   const found = within(cell).queryAllByText(/×/);
@@ -584,6 +657,8 @@ beforeEach(async () => {
     return { remove: () => backHandlers.delete(handler) } as ReturnType<typeof BackHandler.addEventListener>;
   });
   jest.mocked(router.push).mockReset();
+  // 090-② 05 결정 3: 일곱 밖 가구의 파일이 든 서버 목록
+  setReceivedFurnitureCatalog();
   jest.mocked(getLobbyLayout).mockReset().mockResolvedValue(null);
   // 저장 성공 때 서버는 보낸 배치를 그대로 돌려준다
   jest.mocked(saveLobbyLayout).mockReset().mockImplementation(async (value: LobbyLayout) => JSON.parse(JSON.stringify(value)));
@@ -940,6 +1015,8 @@ describe("[spec] 070 명세 3: 가구 모양 그림", () => {
   test("P1 [바뀔] 치울 수 있는 열 종류 모두 칸에 그림이 있고, 그림은 앱 에셋(apps/mobile/assets) 안의 서로 다른 정사각 PNG이며 왼쪽 위 모서리가 투명하다", async () => {
     // 카탈로그의 치울 수 있는 종류가 명세의 열 종류와 같은지(전제)
     expect(FURNITURE_TYPES.filter((type) => type.removable).map((type) => type.id)).toEqual(REMOVABLE_IDS);
+    // 090-② 05 결정 3: 일곱 밖 가구의 아이콘은 서버 아이콘 파일 그대로(내용 해시·크기)를 받아 둔 것으로 둔다
+    setReceivedServerIcons();
     const stored = REMOVABLE_IDS.map((type) => ({ id: `${type}-9`, type }));
     const start = layout(N0_ITEMS, stored);
     expect(parseLobbyLayoutPayload(JSON.parse(JSON.stringify(toLobbyLayoutPayload(start))))).not.toBeNull();
@@ -956,9 +1033,18 @@ describe("[spec] 070 명세 3: 가구 모양 그림", () => {
       const name = cellName(cell);
       const images = imagesIn(cell);
       expect({ name, images: images.length }).toEqual({ name, images: 1 });
-      const file = imageFileOf(images[0]);
-      expect({ name, file: file !== null }).toEqual({ name, file: true });
-      expect({ name, inAssets: path.relative(assetsDir, file!).startsWith("..") }).toEqual({ name, inAssets: false });
+      const id = REMOVABLE_IDS[REMOVABLE_NAMES.indexOf(name)];
+      let file: string | null;
+      if (APP_ICON_IDS.includes(id)) {
+        file = imageFileOf(images[0]);
+        expect({ name, file: file !== null }).toEqual({ name, file: true });
+        expect({ name, inAssets: path.relative(assetsDir, file!).startsWith("..") }).toEqual({ name, inAssets: false });
+      } else {
+        // 090-② 05 결정 3: 일곱 밖 가구의 그림은 받은 파일(기기 주소)이다. 그 파일은 서버 아이콘 파일이므로 PNG 검사는 서버 파일로 한다
+        const icon = receivedIcon(id);
+        expect({ name, source: (images[0].props as { source?: unknown }).source }).toEqual({ name, source: { uri: `file:///qa-received/${icon.sha256}.png` } });
+        file = icon.file;
+      }
       expect({ name, png: path.extname(file!).toLowerCase() }).toEqual({ name, png: ".png" });
       expect({ name, exists: fs.existsSync(file!) }).toEqual({ name, exists: true });
       const png = readPng(file!);

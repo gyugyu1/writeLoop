@@ -59,6 +59,12 @@ type UiNode = ReturnType<typeof screen.getByRole>;
 const mockFocus = { focused: true, listeners: new Set<() => void>() };
 const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
 
+// 090-② 05 결정 3: 일곱 밖 가구의 모델·아이콘은 서버 목록의 파일을 받아 쓴다. 이 테스트는 그 파일을 기기에 이미 받아 둔 것으로 둔다
+// (기기에 있는 파일이면 그 파일의 기기 주소를 준다. 받기·기기 저장 자체는 090-② 테스트 furniture-download*.spec이 본다).
+jest.mock("@/lib/item-files", () => ({
+  ...jest.requireActual<typeof import("@/lib/item-files")>("@/lib/item-files"),
+  cachedItemFile: (ref: { url: string } | null | undefined) => (ref ? `file:///qa-received/${ref.url.split("/").pop()}` : null)
+}));
 jest.mock("expo-router", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   return {
@@ -134,6 +140,37 @@ jest.mock("@/lib/now-in-english", () => ({
 jest.mock("@/lib/practice-feedback-state", () => ({ hydratePracticeFeedbackState: jest.fn() }));
 jest.mock("@/lib/session", () => ({ useSession: jest.fn() }));
 jest.mock("@/lib/writing-drafts", () => ({ getLocalWritingDraft: jest.fn() }));
+
+// ---------- 090-② 05 결정 3: 일곱 밖 가구는 서버 목록의 받은 파일 ----------
+// 앱에 든 가구 파일은 처음 방 일곱(모델)과 옷장·깔개·스탠드(아이콘)뿐이다. 그 밖의 가구는 서버 아이템 목록(assets)의 파일을 받아 그린다.
+// 그래서 테스트마다 일곱 밖 가구의 파일이 든 목록을 지금 목록으로 둔다. 이름·홈쇼핑 이름·설명·분류는 앱에 든 값 그대로이고 그리기 정보는 없다(앱 값).
+const RECEIVED_FURNITURE = ["bed", "nightstand", "floorLamp", "plant", "smallPlant", "books", "frame"];
+const RECEIVED_CATEGORIES = ["furniture", "lighting", "decor", "plants"] as const;
+function receivedFile(ext: "glb" | "png", digit: string) {
+  const sha256 = digit.repeat(64);
+  return { url: `/api/catalog/files/${sha256}.${ext}`, sha256, bytes: 1000 };
+}
+/** 일곱 밖 가구의 파일이 든 목록을 지금 목록으로 둔다. */
+function setReceivedFurnitureCatalog() {
+  const store = jest.requireActual<typeof import("@/lib/item-catalog-store")>("@/lib/item-catalog-store");
+  const kinds = jest.requireActual<typeof import("@/lib/lobby3d/furniture-catalog")>("@/lib/lobby3d/furniture-catalog");
+  const shop = jest.requireActual<typeof import("@/components/home/home-shopping-catalog")>("@/components/home/home-shopping-catalog");
+  store.setItemCatalog({
+    version: "qa-received-furniture",
+    items: RECEIVED_FURNITURE.map((id, index) => ({
+      id,
+      kind: "furniture" as const,
+      name: kinds.furnitureType(id).name,
+      shopName: shop.shopProductName(id),
+      description: shop.shopProductDescription(id),
+      category: RECEIVED_CATEGORIES.find((category) => shop.inShopCategory(id, category)) ?? null,
+      slot: null,
+      price: null,
+      draw: null,
+      assets: { model: receivedFile("glb", String(index + 1)), icon: receivedFile("png", "abcdef9"[index]) }
+    }))
+  });
+}
 
 // ---------- 글(시나리오 0절, 명세 그대로) ----------
 
@@ -416,6 +453,8 @@ beforeEach(async () => {
   await AsyncStorage.clear();
   mockFocus.focused = true;
   mockCanvas.props = null;
+  // 090-② 05 결정 3: 일곱 밖 가구의 파일이 든 서버 목록
+  setReceivedFurnitureCatalog();
   jest.spyOn(BackHandler, "addEventListener").mockImplementation(
     () => ({ remove: () => undefined }) as ReturnType<typeof BackHandler.addEventListener>
   );

@@ -22,7 +22,20 @@ import type { ComponentType } from "react";
 
 // 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침"): 앱이 시작될 때 읽는 모델은 마을(lobby-village.glb)을 더한 넷이다
 // (② 02-qa-scenarios L1). 이 목록과 마을 모델 파일을 이름 문자열로 바꾸는 가짜만 더했고, 단언은 그대로다.
-const MODEL_FILES = ["lobby-furniture.glb", "lobby-room.glb", "lobby-village.glb", "writeloop.glb"];
+// 090-② 05 결정 3(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침"): 가구 묶음(lobby-furniture.glb) 대신 앱에 든 처음 방 가구 일곱의
+// 파일(assets/models/furniture/<id>.glb)을 읽는다. 이 목록과 일곱 파일을 이름 문자열로 바꾸는 가짜만 바꿨고, 단언은 그대로다.
+const MODEL_FILES = [
+  "furniture/board.glb",
+  "furniture/bookcase.glb",
+  "furniture/desk.glb",
+  "furniture/lamp.glb",
+  "furniture/rug.glb",
+  "furniture/wardrobe.glb",
+  "furniture/window.glb",
+  "lobby-room.glb",
+  "lobby-village.glb",
+  "writeloop.glb"
+];
 
 const mockLoads: string[] = [];
 const mockSession = { mode: "pending" as "pending" | "loggedOut" | "loggedIn" };
@@ -94,7 +107,13 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
 });
 jest.mock("@/assets/models/lobby-room.glb", () => "lobby-room.glb");
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
-jest.mock("@/assets/models/lobby-furniture.glb", () => "lobby-furniture.glb");
+jest.mock("@/assets/models/furniture/desk.glb", () => "furniture/desk.glb");
+jest.mock("@/assets/models/furniture/bookcase.glb", () => "furniture/bookcase.glb");
+jest.mock("@/assets/models/furniture/board.glb", () => "furniture/board.glb");
+jest.mock("@/assets/models/furniture/window.glb", () => "furniture/window.glb");
+jest.mock("@/assets/models/furniture/wardrobe.glb", () => "furniture/wardrobe.glb");
+jest.mock("@/assets/models/furniture/rug.glb", () => "furniture/rug.glb");
+jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");

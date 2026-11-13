@@ -30,6 +30,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * <ul>
  *   <li>로그인 없이 부른다(명세: 로그인 없이도 된다).</li>
  *   <li>본문은 {version, items}. 아이템 칸은 id, kind, name, shopName, description, category, slot, price, assets 아홉이다.</li>
+ *   <li>작업 090 ② 가구 내려받기에서 c2·c3을 새 동작에 맞췄다(04-가구-내려받기/05-main-decision.md 결정 3): 시험 가구(armchair,
+ *       결정 05)가 더해지고, 아이템 칸에 draw가 더해져 열이 되고, 가구 assets가 채워진다(옷은 assets·draw null).
+ *       값은 04-가구-내려받기/03-qa-scenarios.md B5·B6·B7이다.</li>
  *   <li>아이템 순서는 명세에 없어 보지 않는다.</li>
  *   <li>명세가 정하지 않았던 값은 결정 파일 04-main-decision.md B를 따른다: shopName·description은 늘 글이고,
  *       팔지 않는 가구와 옷의 shopName은 name과 같으며, 팔지 않는 아이템의 description은 빈 글이다.</li>
@@ -41,7 +44,10 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
     private static final String PATH = "/api/catalog";
 
     private static final List<String> ITEM_KEYS = List.of(
-            "id", "kind", "name", "shopName", "description", "category", "slot", "price", "assets");
+            "id", "kind", "name", "shopName", "description", "category", "slot", "price", "assets", "draw");
+
+    /** 작업 090 ②에서 더한 팔지 않는 시험 가구(결정 05). */
+    private static final String TEST_FURNITURE = "armchair";
 
     /** 가구 한 종류의 기대값. category·price는 팔지 않으면 null이다(팔지 않으면 shopName은 name, description은 빈 글로 본다. 결정 04 B). */
     private record Furniture(String id, String name, String shopName, String category, Integer price, String description) {
@@ -112,7 +118,7 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
     }
 
     @Test
-    void c2_itemsAreTheFourteenFurnitureAndSeventeenWearablesOnce() throws Exception {
+    void c2_itemsAreTheFourteenFurnitureTheTestFurnitureAndSeventeenWearablesOnce() throws Exception {
         JsonNode items = catalog().get("items");
 
         List<String> ids = new ArrayList<>();
@@ -121,17 +127,28 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
         }
         List<String> expected = new ArrayList<>();
         FURNITURE.forEach(furniture -> expected.add(furniture.id()));
+        expected.add(TEST_FURNITURE);
         WEARABLES.forEach(wearable -> expected.add(wearable.id()));
-        assertThat(items.size()).as("C2 item count").isEqualTo(31);
+        assertThat(items.size()).as("C2 item count").isEqualTo(32);
         assertThat(ids).as("C2 ids (each once, any order)").containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
-    void c3_everyItemHasExactlyTheNineAppFieldsAndNullAssets() throws Exception {
+    void c3_everyItemHasExactlyTheTenFieldsAndOnlyFurnitureHasAssets() throws Exception {
         for (JsonNode item : catalog().get("items")) {
             String id = item.path("id").asText();
             assertThat(fieldNames(item)).as("C3 keys of %s", id).isEqualTo(new LinkedHashSet<>(ITEM_KEYS));
-            assertThat(item.get("assets").isNull()).as("C3 assets of %s is null: %s", id, item).isTrue();
+            if ("furniture".equals(item.path("kind").asText())) {
+                JsonNode assets = item.get("assets");
+                assertThat(assets.isObject()).as("C3 assets of furniture %s is an object: %s", id, item).isTrue();
+                assertThat(fieldNames(assets)).as("C3 assets keys of %s", id).isEqualTo(new LinkedHashSet<>(List.of("model", "icon")));
+                assertThat(fieldNames(assets.get("model"))).as("C3 model keys of %s", id)
+                        .isEqualTo(new LinkedHashSet<>(List.of("url", "sha256", "bytes")));
+                assertThat(item.get("draw").isObject()).as("C3 draw of furniture %s is an object: %s", id, item).isTrue();
+            } else {
+                assertThat(item.get("assets").isNull()).as("C3 assets of %s is null: %s", id, item).isTrue();
+                assertThat(item.get("draw").isNull()).as("C3 draw of %s is null: %s", id, item).isTrue();
+            }
         }
     }
 

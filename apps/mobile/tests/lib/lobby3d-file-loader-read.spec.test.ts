@@ -193,7 +193,14 @@ jest.mock("three/examples/jsm/utils/SkeletonUtils.js", () => ({ clone: (o: { clo
 jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => ({ RoundedBoxGeometry: class {} }));
 jest.mock("@/assets/models/lobby-room.glb", () => 9001);
 jest.mock("@/assets/models/writeloop.glb", () => 9002);
-jest.mock("@/assets/models/lobby-furniture.glb", () => 9003);
+// 090-② 05 결정 3(사용자 2026-11-13 "qa가 새 동작에 맞게 고침"): 가구 묶음(lobby-furniture.glb) 대신 앱에 든 처음 방 가구 일곱의 파일이다(준비 변경. 단언은 그대로다)
+jest.mock("@/assets/models/furniture/desk.glb", () => 9011);
+jest.mock("@/assets/models/furniture/bookcase.glb", () => 9012);
+jest.mock("@/assets/models/furniture/board.glb", () => 9013);
+jest.mock("@/assets/models/furniture/window.glb", () => 9014);
+jest.mock("@/assets/models/furniture/wardrobe.glb", () => 9015);
+jest.mock("@/assets/models/furniture/rug.glb", () => 9016);
+jest.mock("@/assets/models/furniture/lamp.glb", () => 9017);
 // 088 ② 06 결정 2(사용자 2026-11-13 "둘 다 qa가 고침"): 미리 읽기에 마을 모델이 더해져, 그 파일의 가짜만 더했다(준비 변경. 단언은 그대로다)
 jest.mock("@/assets/models/lobby-village.glb", () => 9004);
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => ({ createOutdoor: () => ({}) }));
@@ -480,7 +487,8 @@ describe("[그대로] 로비 모델 파일 읽기(THREE.FileLoader.prototype.loa
 
   test("로비의 세 모델 파일(진짜 파일 바이트)을 읽으면 각각 파일과 같은 바이트의 ArrayBuffer를 준다", async () => {
     const dir = nodePath.join(__dirname, "..", "..", "assets", "models");
-    const files = ["lobby-room.glb", "writeloop.glb", "lobby-furniture.glb"];
+    // 090-② 05 결정 3: 가구 묶음 대신 앱에 든 처음 방 가구 일곱의 파일(furniture/<id>.glb)을 읽는다
+    const files = ["lobby-room.glb", "writeloop.glb", "furniture/desk.glb", "furniture/bookcase.glb", "furniture/board.glb", "furniture/window.glb", "furniture/wardrobe.glb", "furniture/rug.glb", "furniture/lamp.glb"];
     const contents = files.map((f) => new Uint8Array(nodeFs.readFileSync(nodePath.join(dir, f))));
     files.forEach((f, i) => {
       mockAssets.byInput.set(201 + i, { localUri: `file:///bundle/${f}`, uri: `file:///bundle/${f}`, hash: `h${i}`, type: "glb" });

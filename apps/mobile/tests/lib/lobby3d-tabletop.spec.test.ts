@@ -147,13 +147,18 @@ describe("[spec] 066-④ 명세 1·2: 카탈로그", () => {
     expect(placementOf(N0(), "lamp").box).toEqual(fit.box);
   });
 
+  // 090-② 05 결정 3(사용자 2026-11-13 "qa가 새 동작에 맞게 고침"): 가구 묶음 대신 앱에 든 처음 방 가구마다 파일(assets/models/furniture/<id>.glb)이라,
+  // 그 노드를 그 가구의 파일에서 찾는다(책상 파일에 의자, 창문 파일에 창밖 판). 읽는 파일만 바꿨고 찾는 노드는 그대로다.
   test("C5 가구 묶음 lobby-furniture.glb에 스탠드 모델 노드가 있고, 기존 가구 노드도 그대로 있다", () => {
-    const buffer = readFileSync(join(__dirname, "..", "..", "assets", "models", "lobby-furniture.glb"));
-    expect(buffer.toString("ascii", 16, 20)).toBe("JSON");
-    const gltf = JSON.parse(buffer.toString("utf8", 20, 20 + buffer.readUInt32LE(12))) as { nodes?: { name?: string }[] };
-    const names = new Set((gltf.nodes ?? []).map((node) => node.name));
-    expect(names.has(furnitureType("lamp").model.piece)).toBe(true);
-    for (const name of ["desk", "chair", "bookcase", "wardrobe", "rug", "board", "window", "windowView"]) expect(names.has(name)).toBe(true);
+    const namesIn = (id: string) => {
+      const buffer = readFileSync(join(__dirname, "..", "..", "assets", "models", "furniture", `${id}.glb`));
+      expect(buffer.toString("ascii", 16, 20)).toBe("JSON");
+      const gltf = JSON.parse(buffer.toString("utf8", 20, 20 + buffer.readUInt32LE(12))) as { nodes?: { name?: string }[] };
+      return new Set((gltf.nodes ?? []).map((node) => node.name));
+    };
+    expect(namesIn("lamp").has(furnitureType("lamp").model.piece)).toBe(true);
+    const existing: [string, string][] = [["desk", "desk"], ["desk", "chair"], ["bookcase", "bookcase"], ["wardrobe", "wardrobe"], ["rug", "rug"], ["board", "board"], ["window", "window"], ["window", "windowView"]];
+    for (const [id, name] of existing) expect(namesIn(id).has(name)).toBe(true);
   });
 });
 

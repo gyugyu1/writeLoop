@@ -90,6 +90,23 @@ const mockOutdoor = { created: 0 };
 /** primitive를 r3f 장면에 붙이는 일(테스트가 정의한다). */
 const mockAttach: { sync: () => void } = { sync: () => {} };
 
+/** 090-② 05 결정 3: 가구 일곱 파일 목록에 주는 가짜 모델 배열(같은 모델이면 같은 배열). */
+const mockFurnitureLists = new Map<unknown, unknown[]>();
+function mockFurnitureListOf(value: unknown, length: number): unknown[] {
+  let list = mockFurnitureLists.get(value);
+  if (!list || list.length !== length) {
+    list = Array.from({ length }, () => value);
+    mockFurnitureLists.set(value, list);
+  }
+  return list;
+}
+
+// 090-② 05 결정 3: 일곱 밖 가구의 모델·아이콘은 서버 목록의 파일을 받아 쓴다. 이 테스트는 그 파일을 기기에 이미 받아 둔 것으로 둔다
+// (기기에 있는 파일이면 그 파일의 기기 주소를 준다. 받기·기기 저장 자체는 090-② 테스트 furniture-download*.spec이 본다).
+jest.mock("@/lib/item-files", () => ({
+  ...jest.requireActual<typeof import("@/lib/item-files")>("@/lib/item-files"),
+  cachedItemFile: (ref: { url: string } | null | undefined) => (ref ? `file:///qa-received/${ref.url.split("/").pop()}` : null)
+}));
 // three는 ES 모듈만 있어 Jest를 거치지 않는 Node의 require로 읽는다(082 테스트와 같다)
 jest.mock("three", () => {
   const nodeModule = (process as unknown as { getBuiltinModule: (id: string) => typeof import("module") }).getBuiltinModule("module");
@@ -119,14 +136,27 @@ jest.mock("@react-three/fiber/native", () => {
       }, []);
     },
     // 모든 모델은 로비를 열기 전에 읽혀 있다
-    useLoader: (_loader: unknown, url: unknown) => {
-      const model = mockModels.get(String(url));
-      if (!model) throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
-      return model;
+    // 090-② 05 결정 3: 가구는 앱에 든 처음 방 일곱 파일을 목록으로 한 번에 읽는다. 그 목록은 FURNITURE_FILE("furniture/처음-방-일곱") 하나로 보고,
+    // 읽은 값은 파일마다 같은 가짜 모델의 배열이다(진짜 useLoader처럼 같은 모델이면 같은 배열)
+    useLoader: (_loader: unknown, input: unknown) => {
+      const furnitureList = Array.isArray(input);
+      const value = ((url: unknown) => {
+        const model = mockModels.get(String(url));
+        if (!model) throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
+        return model;
+      })(furnitureList ? "furniture/처음-방-일곱" : input);
+      return furnitureList ? mockFurnitureListOf(value, (input as unknown[]).length) : value;
     }
   };
 });
-jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({ GLTFLoader: class {} }));
+// 090-② 05 결정 3: 일곱 밖 가구는 기기에 받은 모델 파일을 GLTFLoader.loadAsync로 읽는다(가구 가짜 모델을 준다)
+jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
+  GLTFLoader: class {
+    loadAsync() {
+      return Promise.resolve(mockModels.get("furniture/처음-방-일곱"));
+    }
+  }
+}));
 jest.mock("three/examples/jsm/utils/SkeletonUtils.js", () => ({
   clone: (object: { clone: (recursive: boolean) => unknown }) => object.clone(true)
 }));
@@ -140,7 +170,14 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
 });
 jest.mock("@/assets/models/lobby-room.glb", () => "lobby-room.glb");
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
-jest.mock("@/assets/models/lobby-furniture.glb", () => "lobby-furniture.glb");
+// 090-② 05 결정 3: 가구 묶음 대신 앱에 든 처음 방 가구 일곱의 파일이다(Jest가 읽지 못하는 파일이라 이름만 준다)
+jest.mock("@/assets/models/furniture/desk.glb", () => "furniture/desk.glb");
+jest.mock("@/assets/models/furniture/bookcase.glb", () => "furniture/bookcase.glb");
+jest.mock("@/assets/models/furniture/board.glb", () => "furniture/board.glb");
+jest.mock("@/assets/models/furniture/window.glb", () => "furniture/window.glb");
+jest.mock("@/assets/models/furniture/wardrobe.glb", () => "furniture/wardrobe.glb");
+jest.mock("@/assets/models/furniture/rug.glb", () => "furniture/rug.glb");
+jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 // 창밖 풍경: 판 하나가 든 장면. 만든 수를 센다
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");
@@ -192,6 +229,37 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   jest.requireActual("@react-native-async-storage/async-storage/jest/async-storage-mock")
 );
 
+// ---------- 090-② 05 결정 3: 일곱 밖 가구는 서버 목록의 받은 파일 ----------
+// 앱에 든 가구 파일은 처음 방 일곱(모델)과 옷장·깔개·스탠드(아이콘)뿐이다. 그 밖의 가구는 서버 아이템 목록(assets)의 파일을 받아 그린다.
+// 그래서 테스트마다 일곱 밖 가구의 파일이 든 목록을 지금 목록으로 둔다. 이름·홈쇼핑 이름·설명·분류는 앱에 든 값 그대로이고 그리기 정보는 없다(앱 값).
+const RECEIVED_FURNITURE = ["bed", "nightstand", "floorLamp", "plant", "smallPlant", "books", "frame"];
+const RECEIVED_CATEGORIES = ["furniture", "lighting", "decor", "plants"] as const;
+function receivedFile(ext: "glb" | "png", digit: string) {
+  const sha256 = digit.repeat(64);
+  return { url: `/api/catalog/files/${sha256}.${ext}`, sha256, bytes: 1000 };
+}
+/** 일곱 밖 가구의 파일이 든 목록을 지금 목록으로 둔다. */
+function setReceivedFurnitureCatalog() {
+  const store = jest.requireActual<typeof import("@/lib/item-catalog-store")>("@/lib/item-catalog-store");
+  const kinds = jest.requireActual<typeof import("@/lib/lobby3d/furniture-catalog")>("@/lib/lobby3d/furniture-catalog");
+  const shop = jest.requireActual<typeof import("@/components/home/home-shopping-catalog")>("@/components/home/home-shopping-catalog");
+  store.setItemCatalog({
+    version: "qa-received-furniture",
+    items: RECEIVED_FURNITURE.map((id, index) => ({
+      id,
+      kind: "furniture" as const,
+      name: kinds.furnitureType(id).name,
+      shopName: shop.shopProductName(id),
+      description: shop.shopProductDescription(id),
+      category: RECEIVED_CATEGORIES.find((category) => shop.inShopCategory(id, category)) ?? null,
+      slot: null,
+      price: null,
+      draw: null,
+      assets: { model: receivedFile("glb", String(index + 1)), icon: receivedFile("png", "abcdef9"[index]) }
+    }))
+  });
+}
+
 // ---------- 고정 값 ----------
 
 const NOW = new Date("2026-11-12T03:00:00.000Z");
@@ -205,7 +273,8 @@ const NAME_TAGS = ["오늘의 질문", "생각 창가", "일기 책상", "밖으
 const GREETING_LINE = "오늘도 해냈어!";
 const ROOM_FILE = "lobby-room.glb";
 const CHARACTER_FILE = "writeloop.glb";
-const FURNITURE_FILE = "lobby-furniture.glb";
+// 090-② 05 결정 3: 가구 묶음(lobby-furniture.glb) 대신 앱에 든 처음 방 가구 일곱 파일(목록)이다. 그 목록을 이 이름 하나로 본다
+const FURNITURE_FILE = "furniture/처음-방-일곱";
 const SLOW_TEST_MS = 120_000;
 
 /** 명세의 값: 고르게 그려졌다고 보는 프레임 사이 간격(이하)과 연달아 그려야 할 프레임 수, 상한. */
@@ -861,6 +930,8 @@ beforeEach(async () => {
   mockModels.clear();
   for (const file of [ROOM_FILE, CHARACTER_FILE, FURNITURE_FILE]) mockModels.set(file, fakeModelFor(file));
   host.setLayout = null;
+  // 090-② 05 결정 3: 일곱 밖 가구의 파일이 든 서버 목록
+  setReceivedFurnitureCatalog();
   saveImpl = async (value) => copy(value);
   onSaveLayout.mockClear();
   errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});

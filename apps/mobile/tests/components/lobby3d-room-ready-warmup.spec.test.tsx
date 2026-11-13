@@ -92,6 +92,17 @@ const mockOutdoor: { scene: THREE.Scene | null; texture: THREE.Texture | null } 
 /** primitive를 r3f 장면에 붙이는 일(테스트가 정의한다). */
 const mockAttach: { sync: () => void } = { sync: () => {} };
 
+/** 090-② 05 결정 3: 가구 일곱 파일 목록에 주는 가짜 모델 배열(같은 모델이면 같은 배열). */
+const mockFurnitureLists = new Map<unknown, unknown[]>();
+function mockFurnitureListOf(value: unknown, length: number): unknown[] {
+  let list = mockFurnitureLists.get(value);
+  if (!list || list.length !== length) {
+    list = Array.from({ length }, () => value);
+    mockFurnitureLists.set(value, list);
+  }
+  return list;
+}
+
 // three는 ES 모듈만 있어 Jest를 거치지 않는 Node의 require로 읽는다(lobby3d-edit-scene-rebuild.spec과 같다)
 jest.mock("three", () => {
   const nodeModule = (process as unknown as { getBuiltinModule: (id: string) => typeof import("module") }).getBuiltinModule("module");
@@ -122,12 +133,18 @@ jest.mock("@react-three/fiber/native", () => {
       }, []);
     },
     // 파일마다 테스트가 정한 상태대로: 읽는 중이면 기다리게 하고(Suspense), 읽었으면 모델을, 읽지 못했으면 오류를 던진다
-    useLoader: (_loader: unknown, url: unknown) => {
-      const model = mockModels.get(String(url));
-      if (!model) throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
-      if (model.status === "loaded") return model.value;
-      if (model.status === "failed") throw model.error;
-      throw model.promise;
+    // 090-② 05 결정 3: 가구는 앱에 든 처음 방 일곱 파일을 목록으로 한 번에 읽는다. 그 목록은 FURNITURE_FILE("furniture/처음-방-일곱") 하나로 보고,
+    // 읽은 값은 파일마다 같은 가짜 모델의 배열이다(진짜 useLoader처럼 같은 모델이면 같은 배열)
+    useLoader: (_loader: unknown, input: unknown) => {
+      const furnitureList = Array.isArray(input);
+      const value = ((url: unknown) => {
+        const model = mockModels.get(String(url));
+        if (!model) throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
+        if (model.status === "loaded") return model.value;
+        if (model.status === "failed") throw model.error;
+        throw model.promise;
+      })(furnitureList ? "furniture/처음-방-일곱" : input);
+      return furnitureList ? mockFurnitureListOf(value, (input as unknown[]).length) : value;
     }
   };
 });
@@ -145,7 +162,14 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
 });
 jest.mock("@/assets/models/lobby-room.glb", () => "lobby-room.glb");
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
-jest.mock("@/assets/models/lobby-furniture.glb", () => "lobby-furniture.glb");
+// 090-② 05 결정 3: 가구 묶음 대신 앱에 든 처음 방 가구 일곱의 파일이다(Jest가 읽지 못하는 파일이라 이름만 준다)
+jest.mock("@/assets/models/furniture/desk.glb", () => "furniture/desk.glb");
+jest.mock("@/assets/models/furniture/bookcase.glb", () => "furniture/bookcase.glb");
+jest.mock("@/assets/models/furniture/board.glb", () => "furniture/board.glb");
+jest.mock("@/assets/models/furniture/window.glb", () => "furniture/window.glb");
+jest.mock("@/assets/models/furniture/wardrobe.glb", () => "furniture/wardrobe.glb");
+jest.mock("@/assets/models/furniture/rug.glb", () => "furniture/rug.glb");
+jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 // 창밖 풍경: 그림(map) 하나를 쓰는 판 하나가 든 장면
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");
@@ -207,7 +231,8 @@ const STREAK = "연속 3일";
 const HEADER_BUTTONS = [STREAK, "꾸미기", "카메라 거리 설정"];
 const ROOM_FILE = "lobby-room.glb";
 const CHARACTER_FILE = "writeloop.glb";
-const FURNITURE_FILE = "lobby-furniture.glb";
+// 090-② 05 결정 3: 가구 묶음(lobby-furniture.glb) 대신 앱에 든 처음 방 가구 일곱 파일(목록)이다. 그 목록을 이 이름 하나로 본다
+const FURNITURE_FILE = "furniture/처음-방-일곱";
 const ALL_FILES = [ROOM_FILE, CHARACTER_FILE, FURNITURE_FILE];
 const SLOW_TEST_MS = 60_000;
 

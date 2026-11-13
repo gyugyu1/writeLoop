@@ -131,9 +131,26 @@ const NEW_IDS = ["bed", "nightstand", "floorLamp", "plant", "smallPlant", "books
 type GltfNode = { name?: string; mesh?: number; children?: number[]; matrix?: number[]; translation?: number[]; rotation?: number[]; scale?: number[] };
 type Gltf = { nodes?: GltfNode[]; meshes?: { primitives: { attributes: { POSITION: number } }[] }[]; accessors?: { min?: number[]; max?: number[] }[] };
 
-function readFurnitureGltf(): Gltf {
-  const buffer = readFileSync(join(__dirname, "..", "..", "assets", "models", "lobby-furniture.glb"));
+// 090-② 05 결정 3(사용자 2026-11-13 "qa가 새 동작에 맞게 고침"): 가구 묶음(lobby-furniture.glb) 대신 가구마다 모델 파일이다.
+// 처음 방 일곱은 앱에 든 파일(assets/models/furniture/<id>.glb), 일곱 밖 가구는 앱이 받는 서버 파일(백엔드 catalog/files/<id>.glb)을 읽는다.
+// 읽는 파일만 바꿨고, 잰 크기와 견주는 단언은 그대로다.
+const APP_FURNITURE_FILES = ["desk", "bookcase", "board", "window", "wardrobe", "rug", "lamp"];
+
+function furnitureModelPath(id: string): string {
+  return APP_FURNITURE_FILES.includes(id)
+    ? join(__dirname, "..", "..", "assets", "models", "furniture", `${id}.glb`)
+    : join(__dirname, "..", "..", "..", "backend", "src", "main", "resources", "catalog", "files", `${id}.glb`);
+}
+
+function readGlbJson(path: string): Gltf {
+  const buffer = readFileSync(path);
+  expect(buffer.toString("ascii", 16, 20)).toBe("JSON");
   return JSON.parse(buffer.toString("utf8", 20, 20 + buffer.readUInt32LE(12))) as Gltf;
+}
+
+/** 그 가구의 모델 파일. */
+function readFurnitureGltf(id: string): Gltf {
+  return readGlbJson(furnitureModelPath(id));
 }
 
 /** 열 우선 4×4 행렬 곱 a·b. */
@@ -255,12 +272,11 @@ describe("[spec] 066-⑤ 명세 1: 카탈로그(A)", () => {
 
   // 08 결정으로 기대값을 명세 표의 대략 크기에서 가구 묶음에서 잰 크기로 바꿨다(이 테스트가 glb에서 직접 잰다)
   test("A7b 모델 가로×깊이는 가구 묶음에서 잰 그 모델의 크기다(bed·nightstand·floorLamp·plant·smallPlant·books)", () => {
-    const gltf = readFurnitureGltf();
     const ids = ["bed", "nightstand", "floorLamp", "plant", "smallPlant", "books"];
     // 한 번에 모두 보이게 종류마다 맞는지(둘째 자리까지 같은지)를 모아 견준다
     const got = ids.map((id) => {
       const box = furnitureType(id).model.box;
-      const measured = measuredModel(gltf, furnitureType(id).model.piece);
+      const measured = measuredModel(readFurnitureGltf(id), furnitureType(id).model.piece);
       return { id, width: Math.abs(box.width - measured.width) < 0.005, depth: Math.abs(box.depth - measured.depth) < 0.005 };
     });
     expect(got).toEqual(ids.map((id) => ({ id, width: true, depth: true })));
@@ -286,8 +302,7 @@ describe("[spec] 066-⑤ 명세 1: 카탈로그(A)", () => {
 
   // 08 결정으로 기대 깊이를 명세 표 값(0.61·0.49·0.68)에서 가구 묶음에서 잰 깊이로 바꿨다. 규칙(뒷면을 칸 뒤 끝에)은 그대로다
   test("A9 nightstand·floorLamp·plant: 비율 (1, 1)이고 뒷면을 칸 뒤 끝에 붙인다(drawAt.z = −(1 − 잰 깊이)/2)", () => {
-    const gltf = readFurnitureGltf();
-    const want: [string, number][] = ["nightstand", "floorLamp", "plant"].map((id) => [id, -(1 - measuredModel(gltf, furnitureType(id).model.piece).depth) / 2]);
+    const want: [string, number][] = ["nightstand", "floorLamp", "plant"].map((id) => [id, -(1 - measuredModel(readFurnitureGltf(id), furnitureType(id).model.piece).depth) / 2]);
     for (const [id] of want) {
       const fit = fittedModel(furnitureType(id));
       expect(fit.scale).toEqual({ x: 1, z: 1 });
@@ -318,14 +333,13 @@ describe("[spec] 066-⑤ 명세 1: 카탈로그(A)", () => {
     expect(y + box.height / 2).toBeCloseTo(2.4, 2);
   });
 
+  // 090-② 05 결정 3: 가구 묶음 대신 가구마다 파일이라, 그 노드를 그 가구의 파일에서 찾는다(책상 파일에 의자, 창문 파일에 창밖 판)
   test("A12 가구 묶음 glb에 일곱 종류의 모델 노드가 있고 기존 노드도 그대로 있다", () => {
-    const buffer = readFileSync(join(__dirname, "..", "..", "assets", "models", "lobby-furniture.glb"));
-    expect(buffer.toString("ascii", 16, 20)).toBe("JSON");
-    const gltf = JSON.parse(buffer.toString("utf8", 20, 20 + buffer.readUInt32LE(12))) as { nodes?: { name?: string }[] };
-    const names = new Set((gltf.nodes ?? []).map((node) => node.name));
-    for (const id of NEW_IDS) expect(`${id}:${names.has(furnitureType(id).model.piece)}`).toBe(`${id}:true`);
-    for (const name of ["desk", "chair", "bookcase", "wardrobe", "rug", "tableLamp", "board", "window", "windowView"]) {
-      expect(`${name}:${names.has(name)}`).toBe(`${name}:true`);
+    const namesIn = (id: string) => new Set((readFurnitureGltf(id).nodes ?? []).map((node) => node.name));
+    for (const id of NEW_IDS) expect(`${id}:${namesIn(id).has(furnitureType(id).model.piece)}`).toBe(`${id}:true`);
+    const existing: [string, string][] = [["desk", "desk"], ["desk", "chair"], ["bookcase", "bookcase"], ["wardrobe", "wardrobe"], ["rug", "rug"], ["lamp", "tableLamp"], ["board", "board"], ["window", "window"], ["window", "windowView"]];
+    for (const [id, name] of existing) {
+      expect(`${name}:${namesIn(id).has(name)}`).toBe(`${name}:true`);
     }
   });
 

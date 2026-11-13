@@ -105,9 +105,14 @@ describe("[spec] 착용 모델 파일(M1~M7)", () => {
     expect(wear).toHaveLength(1);
     expect(wear[0]).toContain("Tripo");
     expect(wear[0]).toContain("WriteLoop");
-    expect(lines).toContain(
-      "| `lobby-furniture.glb` | [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) 2.0의 가구(책상, 의자, 책장, 닫힌 책장, 러그, 책, 미닫이 창, 둥근 탁상 스탠드, 1인 침대, 협탁, 둥근 바닥 스탠드, 화분, 작은 화분)를 `scripts/lobby3d/build-furniture.py`로 골라 크기·모서리를 다듬고 한 파일로 묶었다. 게시판·창틀·액자는 같은 모양새로 새로 만들었다 | CC0 1.0(출처 표기 의무 없음) |"
-    );
+    // 090-② 05 결정 3(사용자 2026-11-13 "qa가 새 동작에 맞게 고침"): 가구 묶음을 가구마다 나눠 앱·서버에 두게 되어 lobby-furniture.glb 줄에
+    // 그 설명이 더해질 수 있다. 그 줄이 하나이고, 기존 줄의 글(출처·만든 스크립트·라이선스)이 앞뒤 그대로인지 본다.
+    const furnitureLines = lines.filter((line) => line.includes("`lobby-furniture.glb`"));
+    expect(furnitureLines).toHaveLength(1);
+    expect(furnitureLines[0].startsWith(
+      "| `lobby-furniture.glb` | [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) 2.0의 가구(책상, 의자, 책장, 닫힌 책장, 러그, 책, 미닫이 창, 둥근 탁상 스탠드, 1인 침대, 협탁, 둥근 바닥 스탠드, 화분, 작은 화분)를 `scripts/lobby3d/build-furniture.py`로 골라 크기·모서리를 다듬고 한 파일로 묶었다. "
+    )).toBe(true);
+    expect(furnitureLines[0].endsWith(" 게시판·창틀·액자는 같은 모양새로 새로 만들었다 | CC0 1.0(출처 표기 의무 없음) |")).toBe(true);
     expect(lines).toContain(
       "| `lobby-village.glb` | [Kenney Fantasy Town Kit](https://kenney.nl/assets/fantasy-town-kit) 2.0의 벽·문·창·지붕(건물 넷으로 조립), 분수, 가로등, 노점, 벤치, 바위, 길, 생울타리, 나무 울타리를 `scripts/lobby3d/build-village.py`로 골라 배치하고 한 파일로 묶었다(색 그림의 회벽·벽 아래 띠 색을 바꿨다). 밤 불빛 판은 새로 만들었다 | CC0 1.0(출처 표기 의무 없음) |"
     );

@@ -33,6 +33,8 @@ const mockThree: { camera: THREE.PerspectiveCamera | null; scene: THREE.Scene | 
 };
 const mockFrames = new Set<FramePart>();
 const mockGltf: { value: unknown } = { value: null };
+/** 090-② 05 결정 3: 가구 일곱 파일 목록에 주는 가짜 모델 배열(같은 가짜 모델이면 같은 배열). */
+const mockGltfList: { source: unknown; value: unknown[] } = { source: undefined, value: [] };
 const mockHits: { phase: string; hit: PointerHit | null }[] = [];
 const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
 /** 3D 그리기가 마지막 프레임에 화면에 넘긴 이름표 화면 좌표. */
@@ -60,7 +62,16 @@ jest.mock("@react-three/fiber/native", () => {
         };
       }, []);
     },
-    useLoader: () => mockGltf.value
+    // 090-② 05 결정 3: 가구는 앱에 든 처음 방 일곱 파일을 한 번에(목록으로) 읽는다. 목록이면 파일마다 같은 가짜 모델을 준다
+    // (진짜 useLoader처럼 같은 파일 목록에는 같은 배열을 준다)
+    useLoader: (_loader: unknown, input: unknown) => {
+      if (!Array.isArray(input)) return mockGltf.value;
+      if (mockGltfList.source !== mockGltf.value || mockGltfList.value.length !== input.length) {
+        mockGltfList.source = mockGltf.value;
+        mockGltfList.value = input.map(() => mockGltf.value);
+      }
+      return mockGltfList.value;
+    }
   };
 });
 jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
@@ -71,8 +82,22 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
     }
   };
 });
-jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({ GLTFLoader: class {} }));
-jest.mock("@/assets/models/lobby-furniture.glb", () => "lobby-furniture.glb");
+// 090-② 05 결정 3: 일곱 밖 가구는 기기에 받은 모델 파일을 GLTFLoader.loadAsync로 읽는다(같은 가짜 모델을 준다)
+jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
+  GLTFLoader: class {
+    loadAsync() {
+      return Promise.resolve(mockGltf.value);
+    }
+  }
+}));
+// 090-② 05 결정 3: 가구 묶음(lobby-furniture.glb) 대신 앱에 든 처음 방 가구 일곱의 파일이다(Jest가 읽지 못하는 파일이라 이름만 준다)
+jest.mock("@/assets/models/furniture/desk.glb", () => "furniture/desk.glb");
+jest.mock("@/assets/models/furniture/bookcase.glb", () => "furniture/bookcase.glb");
+jest.mock("@/assets/models/furniture/board.glb", () => "furniture/board.glb");
+jest.mock("@/assets/models/furniture/window.glb", () => "furniture/window.glb");
+jest.mock("@/assets/models/furniture/wardrobe.glb", () => "furniture/wardrobe.glb");
+jest.mock("@/assets/models/furniture/rug.glb", () => "furniture/rug.glb");
+jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");
   return {

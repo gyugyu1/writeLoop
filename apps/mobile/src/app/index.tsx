@@ -89,6 +89,7 @@ export default function HomeScreen() {
   // 라룹이가 입은 것(서버에 저장된 입은 아이템). 불러오지 못했거나 손님이면 아무것도 입지 않는다
   const [lobbyWear, setLobbyWear] = useState<WearState>(NO_WEAR);
   const wardrobeRequest = useRef(0);
+  const wardrobeUserId = useRef<string | number | null>(null);
   const homeUserId = currentUser?.id ?? null;
   // 홈이 보일 때마다 잔액을 불러온다. 계정이 바뀌면 앞 계정의 늦은 응답은 버린다
   useFocusEffect(
@@ -115,6 +116,11 @@ export default function HomeScreen() {
     useCallback(() => {
       wardrobeRequest.current += 1;
       const request = wardrobeRequest.current;
+      // 홈이 보이지 않는 동안 계정이 바뀌었으면 앞 계정이 입힌 것을 응답 전에 먼저 벗긴다
+      if (wardrobeUserId.current !== homeUserId) {
+        wardrobeUserId.current = homeUserId;
+        setLobbyWear(NO_WEAR);
+      }
       if (homeUserId === null) {
         setLobbyWear(NO_WEAR);
         return;

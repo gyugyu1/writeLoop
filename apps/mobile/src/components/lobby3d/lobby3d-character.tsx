@@ -6,7 +6,7 @@ import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js
 import { characterClipState } from "@/lib/lobby3d/character-clips";
 import { outlineAttributes, type OutlineAttributeChoice } from "@/lib/lobby3d/outline-attributes";
 import type { LobbySim } from "@/lib/lobby3d/engine";
-import { NO_WEAR, wearsAnything, type WearState } from "@/lib/lobby3d/wear";
+import { NO_WEAR, wearsAnything, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type * as WearablesModule from "./lobby3d-wearables";
 
 // 로비의 라이트루프 3D 모델(규격: docs/guides/character-3d-model-spec.ko.md).
@@ -133,12 +133,14 @@ interface CharacterProps {
   kit: ToonKit;
   outline: number;
   handleRef: MutableRefObject<CharacterHandle | null>;
-  /** 입은 착용 아이템(캐릭터 꾸미기 기술 시험). 없으면 아무것도 입지 않는다. */
+  /** 입은 착용 아이템(①의 부위 넷, 참·거짓). 없으면 아무것도 입지 않는다. */
   wear?: WearState;
+  /** 부위 일곱마다 입은 아이템 종류(⑤). 주면 이 값으로 모델·색을 고르고, 없으면 wear의 넷을 기본 아이템으로 그린다. */
+  look?: WearLook | null;
 }
 
 /** 모델을 불러와 장면에 붙인다. 다 불러올 때까지는 아무것도 그리지 않는다(Suspense). */
-export function Character({ kit, outline, handleRef, wear = NO_WEAR }: CharacterProps) {
+export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null }: CharacterProps) {
   // 모델 자산은 require로 받은 번들 자산 번호다. R3F 네이티브가 expo-asset으로 파일을 찾아 읽는다.
   const gltf = useLoader(GLTFLoader, MODEL_ASSET as string) as GLTF;
   const built = useMemo(() => {
@@ -339,28 +341,28 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR }: Character
   // 배치를 다시 지어 명암 목록(kit)이 새로 생기면, 착용 재질도 새 목록에 넣도록 다시 붙인다
   useEffect(() => {
     if (!built.body) return;
-    if (wearHost ? wearHost.kit === kit && wearHost.body === built.body : !wearsAnything(wear)) return;
+    if (wearHost ? wearHost.kit === kit && wearHost.body === built.body : !wearsAnything(wear, look)) return;
     setWearHost({ model: built.model, body: built.body, uniforms: built.uniforms, kit });
-  }, [built, kit, wear, wearHost]);
+  }, [built, kit, wear, look, wearHost]);
 
   return (
     <>
       {/* react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다. */}
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={built.group} />
-      {wearHost ? <WearLayer host={wearHost} wear={wear} /> : null}
+      {wearHost ? <WearLayer host={wearHost} wear={wear} look={look} /> : null}
     </>
   );
 }
 
 /** 착용 모듈(착용 모델·도형 도구)은 처음 입을 때 불러온다. */
-function WearLayer({ host, wear }: { host: WearablesModule.WearHost; wear: WearState }) {
+function WearLayer({ host, wear, look }: { host: WearablesModule.WearHost; wear: WearState; look: WearLook | null }) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const mod = require("./lobby3d-wearables") as typeof WearablesModule;
   return (
     <mod.WearablesErrorBoundary>
       <Suspense fallback={null}>
-        <mod.Wearables host={host} wear={wear} />
+        <mod.Wearables host={host} wear={wear} look={look} />
       </Suspense>
     </mod.WearablesErrorBoundary>
   );

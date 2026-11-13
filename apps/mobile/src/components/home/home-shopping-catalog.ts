@@ -37,7 +37,19 @@ const PRODUCT_INFO: Record<string, ShopProductInfo> = {
   capOrange: { name: WEARABLE_ITEMS.capOrange.label, category: "clothes", description: "발바닥 무늬가 들어간 산뜻한 주황 모자예요." },
   tshirtOrange: { name: WEARABLE_ITEMS.tshirtOrange.label, category: "clothes", description: "어디에나 잘 어울리는 편한 주황 티셔츠예요." },
   shortsNavy: { name: WEARABLE_ITEMS.shortsNavy.label, category: "clothes", description: "가볍게 움직이기 좋은 남색 반바지예요." },
-  shoesBrown: { name: WEARABLE_ITEMS.shoesBrown.label, category: "clothes", description: "폭신하게 걷기 좋은 갈색 운동화예요." }
+  shoesBrown: { name: WEARABLE_ITEMS.shoesBrown.label, category: "clothes", description: "폭신하게 걷기 좋은 갈색 운동화예요." },
+  capBlue: { name: WEARABLE_ITEMS.capBlue.label, category: "clothes", description: "발바닥 무늬가 들어간 시원한 파랑 모자예요." },
+  capGreen: { name: WEARABLE_ITEMS.capGreen.label, category: "clothes", description: "발바닥 무늬가 들어간 싱그러운 초록 모자예요." },
+  tshirtWhite: { name: WEARABLE_ITEMS.tshirtWhite.label, category: "clothes", description: "무엇과도 잘 어울리는 깔끔한 흰 티셔츠예요." },
+  tshirtYellow: { name: WEARABLE_ITEMS.tshirtYellow.label, category: "clothes", description: "기분까지 밝아지는 노랑 티셔츠예요." },
+  shortsBrown: { name: WEARABLE_ITEMS.shortsBrown.label, category: "clothes", description: "차분한 갈색이라 어디에나 잘 맞는 반바지예요." },
+  shortsRed: { name: WEARABLE_ITEMS.shortsRed.label, category: "clothes", description: "눈에 확 띄는 빨강 반바지예요." },
+  shoesRed: { name: WEARABLE_ITEMS.shoesRed.label, category: "clothes", description: "한 걸음마다 신나는 빨강 운동화예요." },
+  shoesWhite: { name: WEARABLE_ITEMS.shoesWhite.label, category: "clothes", description: "어떤 옷에도 잘 어울리는 흰 운동화예요." },
+  sunglassesBlack: { name: WEARABLE_ITEMS.sunglassesBlack.label, category: "clothes", description: "햇살 좋은 날 멋을 더하는 동그란 선글라스예요." },
+  backpackRed: { name: WEARABLE_ITEMS.backpackRed.label, category: "clothes", description: "어디든 함께 떠날 수 있는 작은 빨강 백팩이에요." },
+  mufflerRed: { name: WEARABLE_ITEMS.mufflerRed.label, category: "clothes", description: "목을 포근하게 감싸는 빨강 머플러예요." },
+  necklaceGold: { name: WEARABLE_ITEMS.necklaceGold.label, category: "clothes", description: "동그란 펜던트가 반짝이는 금 목걸이예요." }
 };
 
 /** 앱 가구 목록에 있는 가구인지. */

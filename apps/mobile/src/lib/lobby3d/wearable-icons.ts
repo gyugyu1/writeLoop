@@ -8,7 +8,19 @@ const ITEM_ICONS: Readonly<Record<string, ImageSourcePropType>> = {
   capOrange: require("../../../assets/icons/wearables/capOrange.png"),
   tshirtOrange: require("../../../assets/icons/wearables/tshirtOrange.png"),
   shortsNavy: require("../../../assets/icons/wearables/shortsNavy.png"),
-  shoesBrown: require("../../../assets/icons/wearables/shoesBrown.png")
+  shoesBrown: require("../../../assets/icons/wearables/shoesBrown.png"),
+  capBlue: require("../../../assets/icons/wearables/capBlue.png"),
+  capGreen: require("../../../assets/icons/wearables/capGreen.png"),
+  tshirtWhite: require("../../../assets/icons/wearables/tshirtWhite.png"),
+  tshirtYellow: require("../../../assets/icons/wearables/tshirtYellow.png"),
+  shortsBrown: require("../../../assets/icons/wearables/shortsBrown.png"),
+  shortsRed: require("../../../assets/icons/wearables/shortsRed.png"),
+  shoesRed: require("../../../assets/icons/wearables/shoesRed.png"),
+  shoesWhite: require("../../../assets/icons/wearables/shoesWhite.png"),
+  sunglassesBlack: require("../../../assets/icons/wearables/sunglassesBlack.png"),
+  backpackRed: require("../../../assets/icons/wearables/backpackRed.png"),
+  mufflerRed: require("../../../assets/icons/wearables/mufflerRed.png"),
+  necklaceGold: require("../../../assets/icons/wearables/necklaceGold.png")
 };
 
 const SLOT_ICONS: Readonly<Record<WardrobeSlot, ImageSourcePropType>> = {

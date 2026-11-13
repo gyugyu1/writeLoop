@@ -4,7 +4,7 @@ import { PanResponder, StyleSheet, View } from "react-native";
 import * as THREE from "three";
 import { Character, CharacterErrorBoundary, MODEL_SCALE, type CharacterHandle, type ToonKit } from "@/components/lobby3d/lobby3d-character";
 import { LobbySim } from "@/lib/lobby3d/engine";
-import type { WearState } from "@/lib/lobby3d/wear";
+import type { WearLook, WearState } from "@/lib/lobby3d/wear";
 
 // 옷장 화면 위쪽의 라룹이 미리보기: 따로 그리는 작은 3D 장면에 라룹이만 크게, 정면으로 세운다.
 // 좌우로 끌면 몸을 돌리고, 손을 떼면 그 방향에 머문다. 동작 줄이기면 숨 쉬는 동작을 멈춘다.
@@ -17,6 +17,8 @@ const TURN_PER_PX = 0.012;
 
 export interface ClosetPreviewProps {
   wear: WearState;
+  /** 부위 일곱마다 입은 아이템 종류(모델·색을 고른다). */
+  look?: WearLook | null;
   /** 동작 줄이기: 숨 쉬는 동작을 멈춘다. */
   reduceMotion: boolean;
 }
@@ -33,7 +35,7 @@ function toonKit(): ToonKit {
   return { gradient, toonMaterials: [] };
 }
 
-function PreviewScene({ wear, reduceMotion, heading }: ClosetPreviewProps & { heading: MutableRefObject<number> }) {
+function PreviewScene({ wear, look, reduceMotion, heading }: ClosetPreviewProps & { heading: MutableRefObject<number> }) {
   const kit = useMemo(toonKit, []);
   const sim = useMemo(() => new LobbySim({ x: 0, z: 0, reduceMotion }), [reduceMotion]);
   const handle = useRef<CharacterHandle | null>(null);
@@ -69,14 +71,14 @@ function PreviewScene({ wear, reduceMotion, heading }: ClosetPreviewProps & { he
       <primitive object={stage} />
       <CharacterErrorBoundary>
         <Suspense fallback={null}>
-          <Character kit={kit} outline={1} handleRef={handle} wear={wear} />
+          <Character kit={kit} outline={1} handleRef={handle} wear={wear} look={look} />
         </Suspense>
       </CharacterErrorBoundary>
     </>
   );
 }
 
-export default function ClosetPreview({ wear, reduceMotion }: ClosetPreviewProps) {
+export default function ClosetPreview({ wear, look, reduceMotion }: ClosetPreviewProps) {
   const heading = useRef(0);
   const start = useRef(0);
   const pan = useMemo(
@@ -96,7 +98,7 @@ export default function ClosetPreview({ wear, reduceMotion }: ClosetPreviewProps
   return (
     <View style={styles.fill} {...pan.panHandlers} accessibilityLabel="라룹이 미리보기. 좌우로 끌면 돌아요">
       <Canvas style={styles.fill} camera={{ position: [0, MODEL_SCALE * 0.62, 7.2], fov: 30, near: 0.5, far: 50 }} gl={{ antialias: true }}>
-        <PreviewScene wear={wear} reduceMotion={reduceMotion} heading={heading} />
+        <PreviewScene wear={wear} look={look} reduceMotion={reduceMotion} heading={heading} />
       </Canvas>
     </View>
   );

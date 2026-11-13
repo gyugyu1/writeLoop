@@ -11,7 +11,7 @@ import {
   sameEquipped,
   type ClosetEquipped
 } from "@/lib/lobby3d/closet";
-import { wearFromEquipped } from "@/lib/lobby3d/wear";
+import { lookFromEquipped, wearFromEquipped } from "@/lib/lobby3d/wear";
 import { wardrobeSlotIcon, wearableIcon } from "@/lib/lobby3d/wearable-icons";
 import type { Wardrobe, WardrobeSlot } from "@/lib/types";
 import type { ClosetPreviewProps } from "./closet-preview";
@@ -137,6 +137,7 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
   const selection = closetSelection(selected, items, tab);
   const tabInfo = CLOSET_SLOTS.find((entry) => entry.slot === tab)!;
   const wear = useMemo(() => wearFromEquipped(selected), [selected]);
+  const look = useMemo(() => lookFromEquipped(selected), [selected]);
 
   const choose = (type: string | null) => {
     if (!ready || saving) return;
@@ -215,7 +216,7 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
         </View>
 
         <View style={styles.stage}>
-          {ready && Preview ? <Preview wear={wear} reduceMotion={reduceMotion} /> : null}
+          {ready && Preview ? <Preview wear={wear} look={look} reduceMotion={reduceMotion} /> : null}
           {status === "loading" ? (
             <View style={styles.center}>
               <ActivityIndicator color={C.accent} />

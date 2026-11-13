@@ -35,7 +35,8 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_START } from "@/lib/lobby3d/village";
-import { NO_WEAR, WEAR_SLOTS, type WearState } from "@/lib/lobby3d/wear";
+import { EXTRA_WEAR_SLOTS, NO_LOOK, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
+import type { WardrobeSlot } from "@/lib/types";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
@@ -207,6 +208,8 @@ export interface Lobby3dScreenProps {
   placeRequest?: { key: number; itemId: string; type: string } | null;
   /** 홈: 라룹이가 입은 것(서버에 저장된 입은 아이템). 개발 화면(시험판)은 이 값 대신 '착용 시험' 버튼을 쓴다. */
   wear?: WearState;
+  /** 홈: 부위 일곱마다 입은 아이템 종류(⑤). 없으면 wear의 넷을 기본 아이템으로 그린다. */
+  look?: WearLook | null;
   /** 옷장의 '들어가기'(홈이 꾸미기 화면을 연다). 없으면(개발 화면) 아무것도 열지 않는다. */
   onEnterCloset?: () => void;
   /** 로그인했는지. 손님이면 옷장 말풍선이 로그인 안내만 하고 버튼이 없다. 주지 않으면 로그인한 것으로 본다(개발 화면). */
@@ -250,6 +253,7 @@ export default function Lobby3dScreen({
   shopBalance = null,
   placeRequest = null,
   wear: wearProp,
+  look: lookProp = null,
   onEnterCloset,
   signedIn = true
 }: Lobby3dScreenProps = {}) {
@@ -271,8 +275,18 @@ export default function Lobby3dScreen({
   const [area, setArea] = useState<LobbyArea>("room");
   const areaRef = useRef<LobbyArea>("room");
   // 라룹이가 입은 것: 개발 화면 시험판은 '착용 시험' 버튼으로(서버와 상관없이), 홈은 받은 값(wear)으로
-  const [testWear, setTestWear] = useState<WearState>(NO_WEAR);
-  const wear = devPanel ? testWear : wearProp ?? NO_WEAR;
+  // 시험판은 부위 일곱마다 아이템을 고른다(①의 넷 버튼은 켜면 그 부위의 첫 아이템, ⑤의 '바꾸기'는 그 부위 아이템을 차례로)
+  const [testLook, setTestLook] = useState<WearLook>(NO_LOOK);
+  const wear = devPanel ? wearOfLook(testLook) : wearProp ?? NO_WEAR;
+  const look = devPanel ? testLook : lookProp;
+  const toggleTestSlot = (slot: WardrobeSlot) =>
+    setTestLook((current) => ({ ...current, [slot]: current[slot] ? null : itemsInSlot(slot)[0] ?? null }));
+  const cycleTestSlot = (slot: WardrobeSlot) =>
+    setTestLook((current) => {
+      const list = itemsInSlot(slot);
+      const at = current[slot] ? list.indexOf(current[slot]!) : -1;
+      return { ...current, [slot]: list[(at + 1) % list.length] ?? null };
+    });
   // 전환 중(어두워지는 동안·마을을 읽는 동안·밝아지는 동안)에는 로비를 누르지 못한다
   const travelFade = useRef(new Animated.Value(0)).current;
   const [traveling, setTraveling] = useState(false);
@@ -915,6 +929,7 @@ export default function Lobby3dScreen({
         onVillageReady={onVillageReady}
         onVillageFailed={onVillageFailed}
         wear={wear}
+        look={look}
       />
       ) : null}
 
@@ -1227,16 +1242,35 @@ export default function Lobby3dScreen({
               ))}
             </View>
             <Text style={styles.panelLabel}>착용 시험</Text>
-            <View style={styles.row}>
+            <View style={[styles.row, styles.rowWrap]}>
               {WEAR_SLOTS.map(({ slot, label }) => (
                 <Pressable
                   key={slot}
                   accessibilityRole="button"
                   accessibilityState={{ selected: wear[slot] }}
                   style={[styles.stepButton, wear[slot] && styles.stepButtonOn]}
-                  onPress={() => setTestWear((current) => ({ ...current, [slot]: !current[slot] }))}
+                  onPress={() => toggleTestSlot(slot)}
                 >
                   <Text style={[styles.stepText, wear[slot] && styles.stepTextOn]}>{label}</Text>
+                </Pressable>
+              ))}
+              {EXTRA_WEAR_SLOTS.map(({ slot, label }) => (
+                <Pressable
+                  key={slot}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: testLook[slot] !== null }}
+                  style={[styles.stepButton, testLook[slot] !== null && styles.stepButtonOn]}
+                  onPress={() => toggleTestSlot(slot)}
+                >
+                  <Text style={[styles.stepText, testLook[slot] !== null && styles.stepTextOn]}>{label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.panelLabel}>착용 바꾸기</Text>
+            <View style={[styles.row, styles.rowWrap]}>
+              {[...WEAR_SLOTS, ...EXTRA_WEAR_SLOTS].map(({ slot, label }) => (
+                <Pressable key={slot} accessibilityRole="button" style={styles.stepButton} onPress={() => cycleTestSlot(slot)}>
+                  <Text style={styles.stepText}>{label} 바꾸기</Text>
                 </Pressable>
               ))}
             </View>
@@ -1578,6 +1612,7 @@ const styles = StyleSheet.create({
   popValue: { fontSize: 13, color: "#5B6472" },
   smallMuted: { fontSize: 12, color: "#5B6472" },
   row: { flexDirection: "row", gap: 8 },
+  rowWrap: { flexWrap: "wrap" },
   rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   popButton: { flex: 1, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   popGhost: { borderWidth: 1.5, borderColor: "#D3DAE3", backgroundColor: "#F7F9FB" },

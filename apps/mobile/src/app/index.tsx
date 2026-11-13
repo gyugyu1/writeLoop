@@ -38,7 +38,7 @@ import { useLobbyGreeting } from "@/components/home/use-lobby-greeting";
 import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
 import { getLoopPoints, getWardrobe, trackDailyPromptClick } from "@/lib/api";
-import { NO_WEAR, wearFromEquipped, type WearState } from "@/lib/lobby3d/wear";
+import { NO_LOOK, NO_WEAR, lookFromEquipped, wearFromEquipped, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import { getDifficultyMeta } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useAppOverlayStatus } from "@/lib/app-overlay-status";
@@ -89,6 +89,8 @@ export default function HomeScreen() {
   const loopBalanceRequest = useRef(0);
   // 라룹이가 입은 것(서버에 저장된 입은 아이템). 불러오지 못했거나 손님이면 아무것도 입지 않는다
   const [lobbyWear, setLobbyWear] = useState<WearState>(NO_WEAR);
+  // 부위 일곱마다 입은 아이템(모델·색을 고른다). lobbyWear와 늘 함께 바꾼다
+  const [lobbyLook, setLobbyLook] = useState<WearLook>(NO_LOOK);
   const wardrobeRequest = useRef(0);
   const wardrobeUserId = useRef<string | number | null>(null);
   // 옷장(캐릭터 꾸미기 화면): 방의 옷장 '들어가기'로 연다. 열린 동안 뒤의 방은 그리기를 멈춘다
@@ -123,18 +125,26 @@ export default function HomeScreen() {
       if (wardrobeUserId.current !== homeUserId) {
         wardrobeUserId.current = homeUserId;
         setLobbyWear(NO_WEAR);
+        setLobbyLook(NO_LOOK);
       }
       if (homeUserId === null) {
         setLobbyWear(NO_WEAR);
+        setLobbyLook(NO_LOOK);
         return;
       }
       Promise.resolve()
         .then(() => getWardrobe())
         .then((wardrobe) => {
-          if (request === wardrobeRequest.current) setLobbyWear(wearFromEquipped(wardrobe?.equipped));
+          if (request === wardrobeRequest.current) {
+            setLobbyWear(wearFromEquipped(wardrobe?.equipped));
+            setLobbyLook(lookFromEquipped(wardrobe?.equipped));
+          }
         })
         .catch(() => {
-          if (request === wardrobeRequest.current) setLobbyWear(NO_WEAR);
+          if (request === wardrobeRequest.current) {
+            setLobbyWear(NO_WEAR);
+            setLobbyLook(NO_LOOK);
+          }
         });
     }, [homeUserId])
   );
@@ -143,6 +153,7 @@ export default function HomeScreen() {
   const handleClosetSaved = useCallback((wardrobe: Wardrobe) => {
     wardrobeRequest.current += 1;
     setLobbyWear(wearFromEquipped(wardrobe.equipped));
+    setLobbyLook(lookFromEquipped(wardrobe.equipped));
     setIsClosetOpen(false);
   }, []);
   const handleShopBalance = useCallback((balance: number) => {
@@ -164,6 +175,7 @@ export default function HomeScreen() {
   const handleShopWore = useCallback((wardrobe: Wardrobe) => {
     wardrobeRequest.current += 1;
     setLobbyWear(wearFromEquipped(wardrobe.equipped));
+    setLobbyLook(lookFromEquipped(wardrobe.equipped));
     setIsShopOpen(false);
   }, []);
   // 로비 편집 모드('꾸미기') 동안은 아래 탭바를 숨긴다
@@ -494,6 +506,7 @@ export default function HomeScreen() {
           shopBalance={loopBalance}
           placeRequest={placeRequest}
           wear={lobbyWear}
+          look={lobbyLook}
           onEnterCloset={() => setIsClosetOpen(true)}
           signedIn={currentUser !== null}
         />

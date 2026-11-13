@@ -336,8 +336,10 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR }: Character
 
   // 착용 아이템: 한 번이라도 입으면 착용 모듈을 불러와 붙인다(벗어도 붙인 채 숨긴다)
   const [wearHost, setWearHost] = useState<WearablesModule.WearHost | null>(null);
+  // 배치를 다시 지어 명암 목록(kit)이 새로 생기면, 착용 재질도 새 목록에 넣도록 다시 붙인다
   useEffect(() => {
-    if (wearHost || !built.body || !wearsAnything(wear)) return;
+    if (!built.body) return;
+    if (wearHost ? wearHost.kit === kit && wearHost.body === built.body : !wearsAnything(wear)) return;
     setWearHost({ model: built.model, body: built.body, uniforms: built.uniforms, kit });
   }, [built, kit, wear, wearHost]);
 

@@ -39,6 +39,7 @@ import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearO
 import type { WardrobeSlot } from "@/lib/types";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
+import { catalogItem, useItemCatalog } from "@/lib/item-catalog-store";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
 import { sameLobbyLayout, storedItems, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
@@ -218,7 +219,9 @@ export interface Lobby3dScreenProps {
 
 /** 꾸미기 보관함 줄의 가구 한 칸: 가구 모양 그림(없으면 이름 첫 글자)과 이름. 보관함은 가구 하나마다 한 칸이다. */
 function FurnitureTile({ type, label, onPress }: { type: string; label?: string; onPress: () => void }) {
-  const { name } = furnitureType(type);
+  // 이름은 아이템 목록의 name(목록이 바뀌면 다시 그린다). 목록에 없으면 앱 가구 목록의 이름
+  useItemCatalog();
+  const name = catalogItem(type)?.name ?? furnitureType(type).name;
   const icon = furnitureIcon(type);
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label ?? name} style={styles.tile} onPress={onPress}>
@@ -836,7 +839,7 @@ export default function Lobby3dScreen({
     setSaving(true);
     savingRef.current = true;
     try {
-      const saved = await onSaveLayout(editor.layout);
+      const saved = await onSaveLayout(editor.result);
       if (aliveRef.current) finishEdit(saved, true);
     } catch {
       if (!aliveRef.current) return;

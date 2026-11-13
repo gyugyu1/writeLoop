@@ -38,6 +38,7 @@ import { useLobbyGreeting } from "@/components/home/use-lobby-greeting";
 import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
 import { getLoopPoints, getWardrobe, trackDailyPromptClick } from "@/lib/api";
+import { refreshItemCatalog } from "@/lib/item-catalog";
 import { NO_WEAR, lookFromEquipped, wearFromEquipped, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import { getDifficultyMeta } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
@@ -97,6 +98,12 @@ export default function HomeScreen() {
   // 옷장(캐릭터 꾸미기 화면): 방의 옷장 '들어가기'로 연다. 열린 동안 뒤의 방은 그리기를 멈춘다
   const [isClosetOpen, setIsClosetOpen] = useState(false);
   const homeUserId = currentUser?.id ?? null;
+  // 홈이 보일 때 아이템 목록(이름·설명·분류)을 서울 날짜로 하루 한 번 받는다. 로그인했으면 기기에 저장한다(손님은 기기에 적지 않는다)
+  useFocusEffect(
+    useCallback(() => {
+      void refreshItemCatalog({ store: homeUserId !== null });
+    }, [homeUserId])
+  );
   // 홈이 보일 때마다 잔액을 불러온다. 계정이 바뀌면 앞 계정의 늦은 응답은 버린다
   useFocusEffect(
     useCallback(() => {

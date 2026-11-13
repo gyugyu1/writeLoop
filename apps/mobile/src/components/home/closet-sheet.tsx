@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType }
 import { AccessibilityInfo, ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ApiError, getWardrobe, saveWardrobeEquipped } from "@/lib/api";
+import { useItemCatalog } from "@/lib/item-catalog-store";
 import {
   CLOSET_SLOTS,
   NO_EQUIPPED,
@@ -133,7 +134,9 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
 
   const ready = status === "ready";
   const dirty = ready && !sameEquipped(original, selected);
-  const items = useMemo(() => closetItems(wardrobe, tab), [wardrobe, tab]);
+  // 칸 이름은 아이템 목록에서 읽는다(목록이 바뀌면 다시 만든다)
+  const catalog = useItemCatalog();
+  const items = useMemo(() => closetItems(wardrobe, tab), [wardrobe, tab, catalog]); // eslint-disable-line react-hooks/exhaustive-deps
   const selection = closetSelection(selected, items, tab);
   const tabInfo = CLOSET_SLOTS.find((entry) => entry.slot === tab)!;
   const wear = useMemo(() => wearFromEquipped(selected), [selected]);

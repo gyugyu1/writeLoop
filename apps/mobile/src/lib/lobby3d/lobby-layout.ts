@@ -49,10 +49,21 @@ export interface StoredItem {
   type: string;
 }
 
+/**
+ * 앱이 그릴 줄 모르는 가구(서버 아이템 목록에 나중에 더해진 종류): 받은 본문 그대로의 방 가구(그 위에 올린 소품 포함)와 보관함 가구.
+ * 그리지 않고 보관함에도 보이지 않지만, 배치를 저장할 때 그대로 다시 보내 서버에서 지워지지 않게 한다.
+ */
+export interface KeptFurniture {
+  items: Record<string, unknown>[];
+  stored: StoredItem[];
+}
+
 export interface LobbyLayout {
   items: FurnitureItem[];
   /** 보관함. 없으면 빈 보관함이다(빈 목록은 두지 않는다). */
   stored?: StoredItem[];
+  /** 앱이 그릴 줄 모르는 가구. 없으면 두지 않는다. */
+  kept?: KeptFurniture;
 }
 
 /** 처음 배치. 로비를 처음 만들 때의 자리와 같다. */
@@ -82,9 +93,22 @@ export function storedItems(layout: LobbyLayout): StoredItem[] {
   return layout.stored ?? [];
 }
 
-/** 방의 가구와 보관함으로 배치를 만든다. 빈 보관함은 두지 않는다. */
-export function makeLayout(items: FurnitureItem[], stored: StoredItem[]): LobbyLayout {
-  return stored.length > 0 ? { items, stored } : { items };
+/** 방의 가구와 보관함으로 배치를 만든다. 빈 보관함은 두지 않는다. 앱이 그릴 줄 모르는 가구는 주면 붙인다(비었으면 두지 않는다). */
+export function makeLayout(items: FurnitureItem[], stored: StoredItem[], kept?: KeptFurniture): LobbyLayout {
+  const layout: LobbyLayout = stored.length > 0 ? { items, stored } : { items };
+  return withKept(layout, kept);
+}
+
+/** 그 배치에 앱이 그릴 줄 모르는 가구를 붙인 배치(비었거나 없으면 떼어 낸 배치). */
+export function withKept(layout: LobbyLayout, kept: KeptFurniture | undefined): LobbyLayout {
+  const { kept: _old, ...rest } = layout;
+  return kept && keptIds(kept).length > 0 ? { ...rest, kept } : rest;
+}
+
+/** 앱이 그릴 줄 모르는 가구의 id(방과 보관함). */
+export function keptIds(kept: KeptFurniture | undefined): string[] {
+  if (!kept) return [];
+  return [...kept.items.map((item) => item.id as string), ...kept.stored.map((item) => item.id)];
 }
 
 /** 그 가구의 id를 자리만 바꾼 새 배치. */
@@ -95,12 +119,14 @@ export function withItemPlacement(
 ): LobbyLayout {
   return makeLayout(
     layout.items.map((item) => (item.id === id ? { ...item, ...placement } : item)),
-    storedItems(layout)
+    storedItems(layout),
+    layout.kept
   );
 }
 
-/** 두 배치의 가구(id·종류)와 자리·방향·벽, 보관함(id·종류)이 모두 같은지. 순서는 보지 않는다. */
+/** 두 배치의 가구(id·종류)와 자리·방향·벽, 보관함(id·종류), 그릴 줄 모르는 가구(받은 그대로)가 모두 같은지. 순서는 보지 않는다. */
 export function sameLobbyLayout(a: LobbyLayout, b: LobbyLayout): boolean {
+  if (!sameKept(a.kept, b.kept)) return false;
   const storedA = storedItems(a);
   const storedB = storedItems(b);
   if (storedA.length !== storedB.length || !storedA.every((p) => storedB.some((q) => q.id === p.id && q.type === p.type))) return false;
@@ -112,6 +138,12 @@ export function sameLobbyLayout(a: LobbyLayout, b: LobbyLayout): boolean {
     if (p.on || q.on) return Boolean(p.on && q.on) && p.on!.parent === q.on!.parent && p.on!.slot === q.on!.slot && p.on!.facing === q.on!.facing;
     return Boolean(p.wall && q.wall) && p.wall!.wall === q.wall!.wall && p.wall!.along === q.wall!.along;
   });
+}
+
+function sameKept(a: KeptFurniture | undefined, b: KeptFurniture | undefined): boolean {
+  const key = (kept: KeptFurniture | undefined) =>
+    kept ? [...kept.items.map((item) => JSON.stringify(item)), ...kept.stored.map((item) => `stored:${item.id}:${item.type}`)].sort().join("\n") : "";
+  return key(a) === key(b);
 }
 
 /** 방향마다의 회전(rotY)과 그 cos·sin. 정확한 값을 써서 처음 배치의 좌표가 소수 오차 없이 나오게 한다. */

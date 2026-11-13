@@ -6,15 +6,18 @@ import {
   floorPieceSize,
   layoutGeometry,
   layoutItem,
+  keptIds,
   makeLayout,
   sameLobbyLayout,
   storedItems,
   surfaceSlotsOf,
   tabletopPose,
   withItemPlacement,
+  withKept,
   type Facing,
   type FloorPlacementData,
   type FurnitureItem,
+  type KeptFurniture,
   type LobbyLayout,
   type StoredItem,
   type TabletopPlacementData,
@@ -225,7 +228,7 @@ export function fitLayoutToRoom(layout: LobbyLayout, room: RoomSpec): LobbyLayou
   // 방에 남는 가구는 원래 배치 순서를 지킨다(꺼낼 때 빈자리를 찾는 순서가 배치 순서다)
   const at = new Map(layout.items.map((item, i) => [item.id, i]));
   placed.sort((a, b) => at.get(a.id)! - at.get(b.id)!);
-  return makeLayout(placed, [...storedItems(layout), ...stored]);
+  return makeLayout(placed, [...storedItems(layout), ...stored], layout.kept);
 }
 
 /** 바닥 점에서 가장 가까운 받침 가구의 소품 자리(같은 거리면 배치의 가구 순서, 자리 번호 순서로 앞선 것). 받침 가구가 없으면 null. */
@@ -373,10 +376,18 @@ export class LobbyEditor {
   red: string | null = null;
   private press: Press | null = null;
   private drag: Drag | null = null;
+  /** 앱이 그릴 줄 모르는 가구(편집하지 않고 그대로 둔다). 저장할 배치(result)에 다시 붙는다. */
+  private readonly kept: KeptFurniture | undefined;
 
   constructor(original: LobbyLayout) {
     this.original = original;
     this.layout = original;
+    this.kept = original.kept;
+  }
+
+  /** 저장할 배치: 편집한 배치에 그릴 줄 모르는 가구를 그대로 붙인 것. */
+  get result(): LobbyLayout {
+    return withKept(this.layout, this.kept);
   }
 
   get dragging(): string | null {
@@ -385,7 +396,7 @@ export class LobbyEditor {
 
   /** 편집 전 배치에서 바뀐 것이 있는지. */
   get changed(): boolean {
-    return !sameLobbyLayout(this.layout, this.original);
+    return !sameLobbyLayout(this.result, this.original);
   }
 
   /** 저장할 수 있는지(빨간 가구가 없어야 한다). */
@@ -430,8 +441,9 @@ export class LobbyEditor {
   addNew(type: string): EditNotice {
     if (this.drag) return null;
     if (this.red) return "red-first";
-    if (this.layout.items.length + this.stored.length >= MAX_LAYOUT_ITEMS) return "limit";
-    const used = new Set([...this.layout.items, ...this.stored].map((p) => p.id));
+    // 그릴 줄 모르는 가구도 한도와 id에 센다(서버 검사와 같다)
+    if (this.layout.items.length + this.stored.length + keptIds(this.kept).length >= MAX_LAYOUT_ITEMS) return "limit";
+    const used = new Set([...[...this.layout.items, ...this.stored].map((p) => p.id), ...keptIds(this.kept)]);
     let n = 1;
     while (used.has(`${type}-${n}`)) n += 1;
     const placed = freeSpotFor(this.layout, { id: `${type}-${n}`, type });

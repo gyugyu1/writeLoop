@@ -1,9 +1,11 @@
+import { catalogItem } from "@/lib/item-catalog-store";
 import { CLOSET_SLOTS } from "@/lib/lobby3d/closet";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
 import { WEARABLE_ITEMS } from "@/lib/lobby3d/wear";
 
 // 라룹 홈쇼핑에서만 쓰는 상품 표시 값: 홈쇼핑 이름, 분류, 짧은 설명. 가격·할인·방송 상품은 서버 목록을 따른다.
-// 꾸미기 보관함의 이름(furniture-catalog의 name)은 그대로 둔다.
+// 이름·분류·설명은 서버 아이템 목록(item-catalog)의 shopName·category·description이고, 목록에 없는 종류는 아래 표(앱에 든 기본값)다.
+// 꾸미기 보관함의 이름(목록의 name, 없으면 furniture-catalog의 name)은 따로다.
 
 export type ShopCategory = "all" | "furniture" | "lighting" | "decor" | "plants" | "clothes";
 
@@ -83,20 +85,26 @@ function catalogName(type: string): string {
   }
 }
 
-/** 홈쇼핑 이름. 표에 없는 종류는 앱 가구 목록의 이름이다. */
+/** 홈쇼핑에 보일 수 있는 상품인지: 앱이 그릴 줄 아는 가구나 옷. 그릴 줄 모르는 상품(서버가 새로 더한 것)은 보이지 않는다. */
+export function isShopKnown(type: string): boolean {
+  return isShopFurniture(type) || isShopWearable(type);
+}
+
+/** 홈쇼핑 이름: 아이템 목록의 shopName. 목록에 없으면 표, 표에도 없으면 앱 가구 목록의 이름이다. */
 export function shopProductName(type: string): string {
-  return PRODUCT_INFO[type]?.name ?? catalogName(type);
+  return catalogItem(type)?.shopName ?? PRODUCT_INFO[type]?.name ?? catalogName(type);
 }
 
-/** 짧은 설명. 표에 없는 종류는 빈 글이다. */
+/** 짧은 설명: 아이템 목록의 description. 목록에 없으면 표, 표에도 없으면 빈 글이다. */
 export function shopProductDescription(type: string): string {
-  return PRODUCT_INFO[type]?.description ?? "";
+  return catalogItem(type)?.description ?? PRODUCT_INFO[type]?.description ?? "";
 }
 
-/** 그 종류가 그 분류에 드는지. 표에 없는 종류는 '전체'에만 든다. */
+/** 그 종류가 그 분류에 드는지(아이템 목록의 category, 목록에 없으면 표). 분류가 없는 종류는 '전체'에만 든다. */
 export function inShopCategory(type: string, category: ShopCategory): boolean {
   if (category === "all") return true;
-  return PRODUCT_INFO[type]?.category === category;
+  const item = catalogItem(type);
+  return (item ? item.category : PRODUCT_INFO[type]?.category) === category;
 }
 
 /** 놓는 위치와 차지하는 크기(앱 가구 목록의 mount·size 규칙). 목록에 없는 종류면 null. */

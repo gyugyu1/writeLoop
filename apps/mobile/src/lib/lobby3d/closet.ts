@@ -1,3 +1,4 @@
+import { catalogItem } from "@/lib/item-catalog-store";
 import type { Wardrobe, WardrobeSlot } from "@/lib/types";
 import { WEARABLE_ITEMS } from "./wear";
 
@@ -51,7 +52,8 @@ export function closetItems(wardrobe: Pick<Wardrobe, "items"> | null | undefined
     const info = item && typeof item.type === "string" ? WEARABLE_ITEMS[item.type] : undefined;
     if (!info || info.slot !== slot || item.slot !== slot || seen.has(item.type)) continue;
     seen.add(item.type);
-    list.push({ type: item.type, label: info.label });
+    // 이름은 아이템 목록의 name, 목록에 없으면 앱 착용 아이템 이름
+    list.push({ type: item.type, label: catalogItem(item.type)?.name ?? info.label });
   }
   return list;
 }

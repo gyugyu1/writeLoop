@@ -1624,6 +1624,15 @@ export async function saveWardrobeEquipped(equipped: Record<WardrobeSlot, string
   return (await response.json()) as Wardrobe;
 }
 
+/** 아이템 목록(가구·옷, 로그인하지 않아도 된다). 모양은 부르는 쪽(item-catalog)이 본다. */
+export async function getItemCatalog(): Promise<unknown> {
+  const response = await apiFetch("/api/catalog");
+  if (!response.ok) {
+    throw await parseApiError(response, "아이템 목록을 불러오지 못했어요");
+  }
+  return response.json();
+}
+
 /** 라룹 홈쇼핑 목록(잔액, 오늘의 방송 상품, 가구마다 가격·가진 개수). */
 export async function getHomeShopping(): Promise<HomeShopping> {
   const response = await apiFetch("/api/home-shopping");

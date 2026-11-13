@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ApiError, getHomeShopping, getWardrobe, orderHomeShopping, orderHomeShoppingAny, orderHomeShoppingWearable, saveWardrobeEquipped } from "@/lib/api";
+import { useItemCatalog } from "@/lib/item-catalog-store";
 import { closetEquipped } from "@/lib/lobby3d/closet";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
 import { WEARABLE_ITEMS } from "@/lib/lobby3d/wear";
@@ -24,6 +25,7 @@ import {
   SHOP_CATEGORIES,
   inShopCategory,
   isShopFurniture,
+  isShopKnown,
   isShopWearable,
   shopPlacement,
   shopProductDescription,
@@ -134,6 +136,8 @@ function LiveDot({ reduceMotion }: { reduceMotion: boolean }) {
 export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrdered, onPlaceNow, onWore }: HomeShoppingSheetProps) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
+  // 아이템 목록이 바뀌면(받으면) 이름·설명·분류를 다시 그린다
+  useItemCatalog();
   const [shop, setShop] = useState<HomeShopping | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -344,8 +348,10 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   };
 
   const balance = shop?.balance ?? null;
-  const broadcastItem = shop ? shop.items.find((item) => item.type === shop.broadcast.type) ?? null : null;
-  const visibleItems = shop ? shop.items.filter((item) => inShopCategory(item.type, category)) : [];
+  // 앱이 그릴 줄 모르는 상품(서버가 새로 더한 것)은 보이지 않는다. 방송 상품이 그런 것이면 방송 칸을 숨긴다
+  const knownItems = shop ? shop.items.filter((item) => isShopKnown(item.type)) : [];
+  const broadcastItem = shop ? knownItems.find((item) => item.type === shop.broadcast.type) ?? null : null;
+  const visibleItems = knownItems.filter((item) => inShopCategory(item.type, category));
   const categoryInfo = SHOP_CATEGORIES.find((entry) => entry.id === category) ?? SHOP_CATEGORIES[0];
   const detailItem = shop && detailType ? shop.items.find((item) => item.type === detailType) ?? null : null;
   const sheetOpen = detailItem !== null || ordered !== null;

@@ -42,7 +42,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *
  * <ul>
  *   <li>로그인은 토큰 로그인(Bearer). 테스트마다 새 사용자를 만든다.</li>
- *   <li>서버의 서울 날짜는 테스트용 시계 빈으로 고정한다(기본은 D9 = 2026-11-12 서울 정오, 방송 상품 bed).</li>
+ *   <li>서버의 서울 날짜는 테스트용 시계 빈으로 고정한다(기본은 D13 = 2026-11-18 서울 정오, 방송 상품 bed).</li>
+ *   <li>작업 089 ④(옷 넷을 더해 방송이 열넷을 돎, 04-main-decision.md A 사용자 결정)에 맞춰 날짜별 방송 상품·목록 개수·주기만 열넷 순환으로 바꿨다.</li>
  *   <li>잔액은 GET /api/loop-points로 잔액 행을 만든 뒤 jdbc로 바꾼다. 40개·39개 같은 배치는 jdbc로 lobby_layouts에 바로 넣는다.</li>
  *   <li>NC(아무것도 바뀌지 않음): 잔액, 장부 음수 줄 수, 산 기록 수, GET /api/lobby-layout(상태와 본문)이 요청 전후로 같다.</li>
  * </ul>
@@ -53,24 +54,25 @@ class HomeShoppingControllerSpecTest extends IntegrationTestSupport {
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
     private static final AtomicReference<Instant> FIXED_NOW = new AtomicReference<>();
 
-    private static final LocalDate D0 = LocalDate.of(2026, 11, 3);
-    private static final LocalDate D3 = LocalDate.of(2026, 11, 6);
-    private static final LocalDate D5 = LocalDate.of(2026, 11, 8);
-    private static final LocalDate D7 = LocalDate.of(2026, 11, 10);
-    private static final LocalDate D8 = LocalDate.of(2026, 11, 11);
-    private static final LocalDate D9 = LocalDate.of(2026, 11, 12);
+    /** Dk는 방송 상품이 가격표 k번째인 날(epochDay % 14 == k). D0 books, D9 nightstand, D12 wardrobe, D13 bed. */
+    private static final LocalDate D0 = LocalDate.of(2026, 11, 5);
+    private static final LocalDate D9 = LocalDate.of(2026, 11, 14);
+    private static final LocalDate D12 = LocalDate.of(2026, 11, 17);
+    private static final LocalDate D13 = LocalDate.of(2026, 11, 18);
 
-    /** 가격표(PT), 이 순서가 목록 순서다. */
+    /** 가격표(PT), 이 순서가 목록 순서다(작업 089 ④: 같은 가격이면 가구 다음에 옷). */
     private static final List<String> TYPES = List.of(
-            "books", "smallPlant", "lamp", "frame", "plant", "nightstand", "floorLamp", "rug", "wardrobe", "bed");
-    private static final List<Integer> PRICES = List.of(40, 50, 60, 70, 80, 100, 110, 150, 180, 300);
-    private static final List<Integer> SALE_PRICES = List.of(32, 40, 48, 56, 64, 80, 88, 120, 144, 240);
+            "books", "smallPlant", "lamp", "capOrange", "frame", "shortsNavy", "plant", "tshirtOrange", "shoesBrown",
+            "nightstand", "floorLamp", "rug", "wardrobe", "bed");
+    private static final List<Integer> PRICES = List.of(40, 50, 60, 60, 70, 70, 80, 80, 90, 100, 110, 150, 180, 300);
+    private static final List<Integer> SALE_PRICES = List.of(32, 40, 48, 48, 56, 56, 64, 64, 72, 80, 88, 120, 144, 240);
 
-    /** 시나리오 표의 D0~D9 방송 상품(epochDay % 10). */
-    private static final List<LocalDate> TEN_DAYS = List.of(
-            LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 4), LocalDate.of(2026, 11, 5), LocalDate.of(2026, 11, 6),
-            LocalDate.of(2026, 11, 7), LocalDate.of(2026, 11, 8), LocalDate.of(2026, 11, 9), LocalDate.of(2026, 11, 10),
-            LocalDate.of(2026, 11, 11), LocalDate.of(2026, 11, 12));
+    /** D0~D13 방송 상품(epochDay % 14). */
+    private static final List<LocalDate> FOURTEEN_DAYS = List.of(
+            LocalDate.of(2026, 11, 5), LocalDate.of(2026, 11, 6), LocalDate.of(2026, 11, 7), LocalDate.of(2026, 11, 8),
+            LocalDate.of(2026, 11, 9), LocalDate.of(2026, 11, 10), LocalDate.of(2026, 11, 11), LocalDate.of(2026, 11, 12),
+            LocalDate.of(2026, 11, 13), LocalDate.of(2026, 11, 14), LocalDate.of(2026, 11, 15), LocalDate.of(2026, 11, 16),
+            LocalDate.of(2026, 11, 17), LocalDate.of(2026, 11, 18));
 
     @TestConfiguration
     static class ClockConfig {
@@ -112,7 +114,7 @@ class HomeShoppingControllerSpecTest extends IntegrationTestSupport {
 
     @BeforeEach
     void fixDate() {
-        at(D9);
+        at(D13);
     }
 
     @AfterEach
@@ -132,7 +134,7 @@ class HomeShoppingControllerSpecTest extends IntegrationTestSupport {
     }
 
     @Test
-    void l2_l3_l4_l5_firstListHasGiftBroadcastAndTenItems() throws Exception {
+    void l2_l3_l4_l5_firstListHasGiftBroadcastAndFourteenItems() throws Exception {
         TestUser user = newUser("l2");
 
         HttpResponse<String> response = shop(user.token());
@@ -143,12 +145,12 @@ class HomeShoppingControllerSpecTest extends IntegrationTestSupport {
         assertBroadcast(body, "bed", 300, 240, "L2");
         JsonNode items = body.path("items");
         assertThat(items.isArray()).as("L2 items is an array: %s", body).isTrue();
-        assertThat(items.size()).as("L2 items count").isEqualTo(10);
+        assertThat(items.size()).as("L2 items count").isEqualTo(14);
         List<String> types = new ArrayList<>();
         items.forEach(item -> types.add(item.path("type").asText()));
         // L2 순서, L5 팔지 않는 가구 없음
         assertThat(types).as("L2/L5 item types in order").containsExactlyElementsOf(TYPES);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 14; i++) {
             JsonNode item = items.get(i);
             assertThat(item.path("price").asInt()).as("L2 price of %s", TYPES.get(i)).isEqualTo(PRICES.get(i));
             if (TYPES.get(i).equals("bed")) {
@@ -244,13 +246,13 @@ class HomeShoppingControllerSpecTest extends IntegrationTestSupport {
     @Test
     void b1_b3_broadcastCyclesThroughThePriceTable() throws Exception {
         TestUser user = newUser("b1");
-        for (int day = 0; day < 10; day++) {
-            at(TEN_DAYS.get(day));
+        for (int day = 0; day < 14; day++) {
+            at(FOURTEEN_DAYS.get(day));
             JsonNode body = JSON.readTree(shop(user.token()).body());
-            String label = "B1 " + TEN_DAYS.get(day);
+            String label = "B1 " + FOURTEEN_DAYS.get(day);
             assertBroadcast(body, TYPES.get(day), PRICES.get(day), SALE_PRICES.get(day), label);
             JsonNode items = body.path("items");
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 14; i++) {
                 JsonNode item = items.get(i);
                 assertThat(item.path("type").asText()).as("%s B3 type %d", label, i).isEqualTo(TYPES.get(i));
                 assertThat(item.path("price").asInt()).as("%s B3 price of %s", label, TYPES.get(i)).isEqualTo(PRICES.get(i));
@@ -265,9 +267,9 @@ class HomeShoppingControllerSpecTest extends IntegrationTestSupport {
     }
 
     @Test
-    void b2_tenDaysLaterStartsOver() throws Exception {
+    void b2_fourteenDaysLaterStartsOver() throws Exception {
         TestUser user = newUser("b2");
-        at(LocalDate.of(2026, 11, 13));
+        at(LocalDate.of(2026, 11, 19));
 
         JsonNode body = JSON.readTree(shop(user.token()).body());
 
@@ -278,7 +280,7 @@ class HomeShoppingControllerSpecTest extends IntegrationTestSupport {
     void b4_sameDaySameBroadcastForEveryone() throws Exception {
         TestUser x = newUser("b4x");
         TestUser y = newUser("b4y");
-        at(D5);
+        at(D9);
 
         JsonNode bx = JSON.readTree(shop(x.token()).body()).path("broadcast");
         JsonNode by = JSON.readTree(shop(y.token()).body()).path("broadcast");
@@ -293,9 +295,9 @@ class HomeShoppingControllerSpecTest extends IntegrationTestSupport {
     void b5_b6_seoulMidnightSplitsTheBroadcast() throws Exception {
         TestUser user = newUser("b5");
 
-        FIXED_NOW.set(Instant.parse("2026-11-11T14:59:59Z"));
+        FIXED_NOW.set(Instant.parse("2026-11-17T14:59:59Z"));
         JsonNode before = JSON.readTree(shop(user.token()).body());
-        FIXED_NOW.set(Instant.parse("2026-11-11T15:00:00Z"));
+        FIXED_NOW.set(Instant.parse("2026-11-17T15:00:00Z"));
         JsonNode after = JSON.readTree(shop(user.token()).body());
 
         assertBroadcast(before, "wardrobe", 180, 144, "B5");
@@ -556,10 +558,10 @@ class HomeShoppingControllerSpecTest extends IntegrationTestSupport {
     @Test
     void e7_saleEndsWhenTheDateChanges() throws Exception {
         TestUser user = newUser("e7");
-        at(D8);
+        at(D12);
         JsonNode list = JSON.readTree(shop(user.token()).body());
-        assertBroadcast(list, "wardrobe", 180, 144, "E7 setup D8");
-        at(D9);
+        assertBroadcast(list, "wardrobe", 180, 144, "E7 setup D12");
+        at(D13);
 
         assertRejectedNothingChanged(user, body("wardrobe", 144), 409, "PRICE_CHANGED", "가격이 바뀌었어요. 다시 확인해 주세요.", "E7 old sale price");
         HttpResponse<String> fullPrice = order(user.token(), "wardrobe", 180);

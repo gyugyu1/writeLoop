@@ -18,6 +18,10 @@ import com.writeloop.persistence.HomeShoppingOrderEntity;
 import com.writeloop.persistence.HomeShoppingOrderRepository;
 import com.writeloop.persistence.LobbyLayoutEntity;
 import com.writeloop.persistence.LobbyLayoutRepository;
+import com.writeloop.persistence.WardrobeItemEntity;
+import com.writeloop.persistence.WardrobeItemRepository;
+import com.writeloop.persistence.WardrobeOutfitEntity;
+import com.writeloop.persistence.WardrobeOutfitRepository;
 import com.writeloop.persistence.LoopPointBalanceEntity;
 import com.writeloop.persistence.LoopPointBalanceRepository;
 import com.writeloop.persistence.LoopPointEntryEntity;
@@ -72,7 +76,9 @@ public class AccountDataPurgeService {
             PromptRecommendationTimingLogEntity.class,
             RememberLoginTokenEntity.class,
             SavedExpressionEntity.class,
-            UserFeedbackEntity.class
+            UserFeedbackEntity.class,
+            WardrobeItemEntity.class,
+            WardrobeOutfitEntity.class
     );
 
     private final AnswerAttemptRepository answerAttemptRepository;
@@ -104,6 +110,12 @@ public class AccountDataPurgeService {
     @Autowired(required = false)
     private LoopPointBalanceRepository loopPointBalanceRepository;
 
+    @Autowired(required = false)
+    private WardrobeItemRepository wardrobeItemRepository;
+
+    @Autowired(required = false)
+    private WardrobeOutfitRepository wardrobeOutfitRepository;
+
     @Transactional
     public void purgeUserData(Long userId) {
         // 하위 기록을 먼저 지운다. DB에 ON DELETE CASCADE가 없어도 고아 행이 남지 않게 한다.
@@ -127,6 +139,13 @@ public class AccountDataPurgeService {
         // 홈쇼핑에서 산 기록
         if (homeShoppingOrderRepository != null) {
             homeShoppingOrderRepository.deleteAllByUserId(userId);
+        }
+        // 라룹이 착용 아이템(가진 것·입은 것)
+        if (wardrobeItemRepository != null) {
+            wardrobeItemRepository.deleteAllByUserId(userId);
+        }
+        if (wardrobeOutfitRepository != null) {
+            wardrobeOutfitRepository.deleteAllByUserId(userId);
         }
         userFeedbackRepository.purgeByUserId(userId);
 

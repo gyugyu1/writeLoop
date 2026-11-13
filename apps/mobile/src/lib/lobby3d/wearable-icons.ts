@@ -17,6 +17,7 @@ const ITEM_ICONS: Readonly<Record<string, ImageSourcePropType>> = {
   shortsRed: require("../../../assets/icons/wearables/shortsRed.png"),
   shoesRed: require("../../../assets/icons/wearables/shoesRed.png"),
   shoesWhite: require("../../../assets/icons/wearables/shoesWhite.png"),
+  goggles: require("../../../assets/icons/wearables/goggles.png"),
   sunglassesBlack: require("../../../assets/icons/wearables/sunglassesBlack.png"),
   backpackRed: require("../../../assets/icons/wearables/backpackRed.png"),
   mufflerRed: require("../../../assets/icons/wearables/mufflerRed.png"),

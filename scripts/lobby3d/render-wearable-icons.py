@@ -5,6 +5,8 @@
 # 거칠어서, 라룹이가 그 아이템만 입은 모습을 그 부위에 맞춰 찍는다. 신발은 한 짝뿐이라 좌우로 뒤집은 짝을 더해 두 발에 신긴다.
 # 아이템을 더하면 PIECES에 (모델 안 이름, 아이템 종류, 보는 각도 …, 색)을 더하고 다시 돌린다(앱의 wearable-icons.ts에도 한 줄 더한다).
 # 색만 다른 아이템(앱이 재질 색을 바꿔 그리는 것)은 마지막 칸에 앱 목록(wear.ts)과 같은 색을 적는다. 모자는 색을 바꾼 사본 모델이 따로 있다.
+# 라룹이 고글(goggles)은 라룹이 모델에 그려진 것이라 착용 모델 없이 라룹이 얼굴만 찍고(자리는 선글라스 모델에 맞춘다),
+# 다른 얼굴장식(선글라스)은 라룹이 고글을 끈 얼굴(모양 변형 noGoggles와 고글 없는 몸 그림)로 찍는다.
 import math
 import os
 import sys
@@ -29,6 +31,7 @@ PIECES = [
     ("wear-bottom", "shortsRed", 25, 12, 1.45, 0.0, "#C8443A"),
     ("wear-shoe-l", "shoesRed", 30, 22, 1.7, -0.1, "#C8443A"),
     ("wear-shoe-l", "shoesWhite", 30, 22, 1.7, -0.1, "#DCD8CF"),
+    ("wear-sunglasses", "goggles", 20, 8, 1.6, 0.0, None),
     ("wear-sunglasses", "sunglassesBlack", 20, 8, 1.6, 0.0, None),
     ("wear-backpack", "backpackRed", 165, 18, 1.15, 0.0, None),
     ("wear-muffler", "mufflerRed", 20, 18, 1.7, 0.0, None),
@@ -49,6 +52,22 @@ shoe_r = meshes["wear-shoe-l"].copy()
 scene.collection.objects.link(shoe_r)
 shoe_r.matrix_world = Matrix.Scale(-1, 4, (1, 0, 0)) @ meshes["wear-shoe-l"].matrix_world
 companions = {"wear-shoe-l": [shoe_r]}
+
+# 라룹이 고글 끄기(add-goggles-toggle.py가 더한 것). 없으면 늘 고글을 쓴 얼굴로 찍는다
+BODY_ONLY = {"goggles"}
+HIDES_GOGGLES = {"sunglassesBlack"}
+nog_obj = next((o for o in scene.objects if o.name.startswith("writeloop_nogoggles")), None)
+if nog_obj:
+    nog_obj.hide_render = True
+body_material = body.data.materials[0]
+nog_material = nog_obj.data.materials[0] if nog_obj and nog_obj.data.materials else None
+goggle_key = body.data.shape_keys.key_blocks.get("noGoggles") if body.data.shape_keys else None
+
+
+def set_goggles(visible):
+    if goggle_key is not None and nog_material is not None:
+        goggle_key.value = 0.0 if visible else 1.0
+        body.data.materials[0] = body_material if visible else nog_material
 
 scene.render.engine = "CYCLES"
 scene.cycles.samples = 48
@@ -108,7 +127,8 @@ def tint(objs, hex_color):
 
 
 for piece, type_id, yaw, pitch, frame, drop, color in PIECES:
-    shown = {body, meshes[piece], *companions.get(piece, [])}
+    shown = {body} if type_id in BODY_ONLY else {body, meshes[piece], *companions.get(piece, [])}
+    set_goggles(type_id not in HIDES_GOGGLES)
     for o in scene.objects:
         if o.type == "MESH":
             o.hide_render = o not in shown

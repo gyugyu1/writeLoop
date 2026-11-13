@@ -32,8 +32,11 @@ export const EXTRA_WEAR_SLOTS: readonly { slot: Exclude<WardrobeSlot, WearSlot>;
 /** 아무것도 입지 않은 상태. */
 export const NO_WEAR: WearState = { hat: false, top: false, bottom: false, shoes: false };
 
-/** 아무것도 입지 않은 일곱 부위. */
+/** 아무것도 입지 않은 일곱 부위(맨얼굴). */
 export const NO_LOOK: WearLook = { hat: null, top: null, bottom: null, shoes: null, face: null, back: null, accessory: null };
+
+/** 라룹이 기본 모습: 고글만 쓴 상태(개발 화면 시험판이 이 모습으로 시작한다). */
+export const DEFAULT_LOOK: WearLook = { ...NO_LOOK, face: "goggles" };
 
 const LOOK_SLOTS: readonly WardrobeSlot[] = ["hat", "top", "bottom", "shoes", "face", "back", "accessory"];
 
@@ -62,6 +65,8 @@ export const WEARABLE_ITEMS: Readonly<Record<string, WearableItemInfo>> = {
   shortsRed: { slot: "bottom", label: "빨강 반바지", wear: "bottom", model: "wear-bottom", color: "#C8443A" },
   shoesRed: { slot: "shoes", label: "빨강 운동화", wear: "shoes", model: "wear-shoe", color: "#C8443A" },
   shoesWhite: { slot: "shoes", label: "흰 운동화", wear: "shoes", model: "wear-shoe", color: "#DCD8CF" },
+  // 라룹이 고글: 라룹이 모델에 원래 그려진 고글(착용 모델이 아니다). 얼굴장식이 고글이 아니면 라룹이 쪽에서 감춘다
+  goggles: { slot: "face", label: "라룹이 고글", model: "body-goggles" },
   sunglassesBlack: { slot: "face", label: "검정 선글라스", model: "wear-sunglasses" },
   backpackRed: { slot: "back", label: "빨강 백팩", model: "wear-backpack" },
   mufflerRed: { slot: "accessory", label: "빨강 머플러", model: "wear-muffler" },
@@ -107,8 +112,8 @@ export function lookOfWear(wear: WearState): WearLook {
   return look;
 }
 
-/** 입은 것이 하나라도 있는지(그릴 아이템을 주면 새 부위도 본다). */
+/** 착용 모델로 그릴 것이 하나라도 있는지(그릴 아이템을 주면 새 부위도 본다). 라룹이 고글은 라룹이 모델에 있어 세지 않는다. */
 export function wearsAnything(wear: WearState, look?: WearLook | null): boolean {
-  if (look) return LOOK_SLOTS.some((slot) => look[slot] !== null);
+  if (look) return LOOK_SLOTS.some((slot) => look[slot] !== null && look[slot] !== "goggles");
   return wear.hat || wear.top || wear.bottom || wear.shoes;
 }

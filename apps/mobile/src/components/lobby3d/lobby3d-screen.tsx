@@ -35,7 +35,7 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_START } from "@/lib/lobby3d/village";
-import { EXTRA_WEAR_SLOTS, NO_LOOK, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
+import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type { WardrobeSlot } from "@/lib/types";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
@@ -276,7 +276,7 @@ export default function Lobby3dScreen({
   const areaRef = useRef<LobbyArea>("room");
   // 라룹이가 입은 것: 개발 화면 시험판은 '착용 시험' 버튼으로(서버와 상관없이), 홈은 받은 값(wear)으로
   // 시험판은 부위 일곱마다 아이템을 고른다(①의 넷 버튼은 켜면 그 부위의 첫 아이템, ⑤의 '바꾸기'는 그 부위 아이템을 차례로)
-  const [testLook, setTestLook] = useState<WearLook>(NO_LOOK);
+  const [testLook, setTestLook] = useState<WearLook>(DEFAULT_LOOK);
   const wear = devPanel ? wearOfLook(testLook) : wearProp ?? NO_WEAR;
   const look = devPanel ? testLook : lookProp;
   const toggleTestSlot = (slot: WardrobeSlot) =>

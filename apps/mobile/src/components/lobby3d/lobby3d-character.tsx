@@ -159,6 +159,8 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
     model.traverse((o) => {
       if ((o as THREE.SkinnedMesh).isSkinnedMesh) skinned.push(o as THREE.SkinnedMesh);
     });
+    // 몸의 외곽선 껍질(고글을 감출 때 몸과 함께 모양 변형을 준다)
+    const goggleShells: THREE.SkinnedMesh[] = [];
     for (const mesh of skinned) {
       const source = mesh.material as THREE.MeshStandardMaterial;
       // 꼬리 뿌리처럼 면이 접혀 겹친 자리에서 몇 장이 뒤를 보여 틈이 생긴다. 닫힌 몸이라 양면으로 그려도 뒷면은 가려진다.
@@ -183,7 +185,14 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
       shell.frustumCulled = false;
       shell.raycast = () => {};
       mesh.parent?.add(shell);
+      if (mesh === skinned[0]) goggleShells.push(shell);
     }
+    // 고글 끄기(라룹이 고글은 얼굴장식 아이템): 모델의 모양 변형 "noGoggles"와, 숨긴 작은 메시에 든 고글 없는 몸 그림
+    // (scripts/lobby3d/add-goggles-toggle.py). 둘 다 없는 모델이면 고글을 끌 수 없다(늘 보인다).
+    const noGogglesNode = model.getObjectByName("writeloop_nogoggles") as THREE.Mesh | undefined;
+    const noGogglesMap = (noGogglesNode?.material as THREE.MeshStandardMaterial | undefined)?.map ?? null;
+    if (noGogglesNode) noGogglesNode.visible = false;
+    const goggleMorph = skinned[0]?.morphTargetDictionary?.noGoggles;
     // 누르기 판정용 보이지 않는 통. 라룹이와 함께 움직이고 돈다. 점프로 몸이 들려도 귀 끝까지 들게 키보다 조금 높다.
     // (Raycaster는 보이지 않는 물체도 맞힌다.)
     const hit = new THREE.Mesh(new THREE.CapsuleGeometry(0.75 * SIZE, 1.9 * SIZE, 4, 12), new THREE.MeshBasicMaterial());
@@ -208,8 +217,26 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
     book.group.visible = false;
     group.add(book.group);
     materials.push(...book.materials);
-    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips, hit, handR, handL, book, body: skinned[0] ?? null };
+    const goggles =
+      skinned[0] && goggleMorph !== undefined && noGogglesMap
+        ? { body: skinned[0], shells: goggleShells, morph: goggleMorph, map: (skinned[0].material as THREE.MeshToonMaterial).map, noGogglesMap }
+        : null;
+    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips, hit, handR, handL, book, goggles, body: skinned[0] ?? null };
   }, [gltf]);
+
+  // 라룹이 고글: 얼굴장식이 고글이면(또는 입은 것을 모르면, look이 없으면) 보이고, 다른 얼굴장식이나 맨얼굴이면 감춘다
+  const showGoggles = look ? look.face === "goggles" : true;
+  useEffect(() => {
+    const g = built.goggles;
+    if (!g) return;
+    const weight = showGoggles ? 0 : 1;
+    for (const m of [g.body, ...g.shells]) {
+      if (m.morphTargetInfluences) m.morphTargetInfluences[g.morph] = weight;
+    }
+    const material = g.body.material as THREE.MeshToonMaterial;
+    material.map = showGoggles ? g.map : g.noGogglesMap;
+    material.needsUpdate = true;
+  }, [built, showGoggles]);
 
   // 카툰 명암 단계·외곽선 굵기 설정을 따른다.
   useEffect(() => {

@@ -38,7 +38,7 @@ import { useLobbyGreeting } from "@/components/home/use-lobby-greeting";
 import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
 import { getLoopPoints, getWardrobe, trackDailyPromptClick } from "@/lib/api";
-import { NO_LOOK, NO_WEAR, lookFromEquipped, wearFromEquipped, type WearLook, type WearState } from "@/lib/lobby3d/wear";
+import { NO_WEAR, lookFromEquipped, wearFromEquipped, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import { getDifficultyMeta } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useAppOverlayStatus } from "@/lib/app-overlay-status";
@@ -89,8 +89,9 @@ export default function HomeScreen() {
   const loopBalanceRequest = useRef(0);
   // 라룹이가 입은 것(서버에 저장된 입은 아이템). 불러오지 못했거나 손님이면 아무것도 입지 않는다
   const [lobbyWear, setLobbyWear] = useState<WearState>(NO_WEAR);
-  // 부위 일곱마다 입은 아이템(모델·색을 고른다). lobbyWear와 늘 함께 바꾼다
-  const [lobbyLook, setLobbyLook] = useState<WearLook>(NO_LOOK);
+  // 부위 일곱마다 입은 아이템(모델·색을 고른다). lobbyWear와 늘 함께 바꾼다. 입은 것을 모르면(불러오기 전·실패·손님) null이라
+  // 라룹이는 기본 모습(고글)으로 보인다
+  const [lobbyLook, setLobbyLook] = useState<WearLook | null>(null);
   const wardrobeRequest = useRef(0);
   const wardrobeUserId = useRef<string | number | null>(null);
   // 옷장(캐릭터 꾸미기 화면): 방의 옷장 '들어가기'로 연다. 열린 동안 뒤의 방은 그리기를 멈춘다
@@ -125,11 +126,11 @@ export default function HomeScreen() {
       if (wardrobeUserId.current !== homeUserId) {
         wardrobeUserId.current = homeUserId;
         setLobbyWear(NO_WEAR);
-        setLobbyLook(NO_LOOK);
+        setLobbyLook(null);
       }
       if (homeUserId === null) {
         setLobbyWear(NO_WEAR);
-        setLobbyLook(NO_LOOK);
+        setLobbyLook(null);
         return;
       }
       Promise.resolve()
@@ -143,7 +144,7 @@ export default function HomeScreen() {
         .catch(() => {
           if (request === wardrobeRequest.current) {
             setLobbyWear(NO_WEAR);
-            setLobbyLook(NO_LOOK);
+            setLobbyLook(null);
           }
         });
     }, [homeUserId])

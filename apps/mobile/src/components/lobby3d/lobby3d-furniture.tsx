@@ -1,19 +1,37 @@
 import { useFrame, useLoader } from "@react-three/fiber/native";
-import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useState, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { useItemCatalog } from "@/lib/item-catalog-store";
+import { useItemFiles } from "@/lib/item-files";
 import { ROOM, activeLobbyLayout } from "@/lib/lobby3d/engine";
-import { buildPlacements, currentFurnitureLayout, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
+import { BUNDLED_FURNITURE_TYPES, bundledFurnitureModels, furnitureModelSource, requestFurnitureModel, type FurnitureModelSource } from "@/lib/lobby3d/furniture-files";
+import { buildPlacements, currentFurnitureLayout, placedItemType, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
 import { viewWindow, wallPiecePose, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
 
-// 라룹이 방의 가구. Kenney Furniture Kit(CC0)에서 고른 가구를 scripts/lobby3d/build-furniture.py가 한 glb로 묶는다.
-// 묶음마다 이름(카탈로그의 모델 이름)이 있고, 놓는 자리는 지금 배치(currentFurnitureLayout)가 정한다.
+// 라룹이 방의 가구. 가구마다 모델 파일(glb) 하나이고, 그 안의 이름(카탈로그의 모델 이름) 붙은 묶음을 복제해 놓는다.
+// 처음 방 가구 일곱은 앱에 든 파일이라 바로 그리고, 그 밖의 가구는 서버 아이템 목록의 파일을 받아 그린다(furniture-files).
+// 받기 전이거나 받지 못한 가구는 코드로 만든 대체 상자(lobby3d-canvas의 대체 가구)를 복제해 자리를 보이고, 받으면 모델로 바꾼다.
+// 보관함 가구는 꺼내져 보이게 되면 그때 모델을 받는다. 놓는 자리는 지금 배치(currentFurnitureLayout)가 정한다.
 // 누르기 판정은 코드로 만든 대체 모양이 보이지 않는 채로 맡으므로, 여기서는 판정을 받지 않는다.
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const FURNITURE_ASSET = require("../../../assets/models/lobby-furniture.glb");
+/** 기기에 받은 모델 파일을 읽은 것(파일마다 한 번, 앱 전체에서 함께 쓴다). */
+const REMOTE_MODELS = new Map<string, Promise<GLTF | null>>();
+
+function loadRemoteModel(source: FurnitureModelSource): Promise<GLTF | null> {
+  let job = REMOTE_MODELS.get(source.key);
+  if (!job) {
+    job = new GLTFLoader().loadAsync(source.url as string).catch((error: unknown) => {
+      console.warn("[lobby3d] 받은 가구 모델을 읽지 못했습니다", error);
+      REMOTE_MODELS.delete(source.key);
+      return null;
+    }) as Promise<GLTF | null>;
+    REMOTE_MODELS.set(source.key, job);
+  }
+  return job;
+}
 
 /** 창밖이 보이는 판을 창 기준점에서 뒤로 미는 거리(칸). 미닫이 유리와 벽 사이다. */
 const VIEW_DEPTH = 0.15;
@@ -65,7 +83,19 @@ interface BakedFurnitureProps {
 }
 
 export function BakedFurniture({ layout, added, fallback, daylight, lightLayout, windowLift, outdoorRef }: BakedFurnitureProps) {
-  const gltf = useLoader(GLTFLoader, FURNITURE_ASSET as string) as GLTF;
+  // 앱에 든 처음 방 가구 일곱은 미리 읽어 둔 것을 함께 쓴다(로비가 처음 그릴 때 기다린다)
+  const starterModules = useMemo(() => bundledFurnitureModels() as unknown as string[], []);
+  const starters = useLoader(GLTFLoader, starterModules) as GLTF[];
+  // 받은 목록이나 받은 파일이 바뀌면 가구마다 그릴 모델을 다시 고른다
+  const catalog = useItemCatalog();
+  const filesTick = useItemFiles();
+  // 받은 모델 파일을 다 읽으면 1씩 는다(그 가구를 대체 상자에서 모델로 바꾼다)
+  const [remoteTick, setRemoteTick] = useState(0);
+  const models = useMemo(() => {
+    const map = new Map<string, GLTF>();
+    BUNDLED_FURNITURE_TYPES.forEach((type, i) => map.set(`bundled:${type}`, starters[i]));
+    return map;
+  }, [starters]);
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판.
   // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 그릴 때마다 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
   const outdoor = useMemo(() => createOutdoor(0, 0), []);
@@ -81,7 +111,7 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
     const materials = new Map<string, THREE.MeshLambertMaterial>();
     // 유리: 창밖 풍경이 비치게 살짝 하늘빛 도는 반투명으로 한다.
     const glass = new THREE.MeshBasicMaterial({ color: 0xe6f6ff, transparent: true, opacity: 0.18, depthWrite: false, toneMapped: false });
-    // 가구 묶음에는 구석 어둠이 꼭짓점 색으로 구워져 있다(테두리 없이 명암으로 모양이 보이게). 그 색을 곱해 칠한다.
+    // 가구 모델에는 구석 어둠이 꼭짓점 색으로 구워져 있다(테두리 없이 명암으로 모양이 보이게). 그 색을 곱해 칠한다.
     const soft = (source: THREE.Material, shaded: boolean) => {
       if (source.name.startsWith("glass")) return glass;
       const color = (source as THREE.MeshStandardMaterial).color ?? new THREE.Color(0xffffff);
@@ -93,33 +123,33 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
       }
       return m;
     };
-    // 창 안쪽 크기: 가구 묶음의 windowView 판에서 잰다
+    // 창 안쪽 크기: 앱에 든 창문 모델의 windowView 판에서 잰다
     const viewBox = new THREE.Box3();
-    const viewSource = gltf.scene.getObjectByName("windowView");
+    const viewSource = models.get("bundled:window")?.scene.getObjectByName("windowView") ?? null;
     if (viewSource) viewBox.setFromObject(viewSource);
     const viewSize = viewBox.getSize(new THREE.Vector3());
     // 바닥의 창문 빛도 같은 창 안쪽 크기를 따른다(창 모델 크기가 바뀌면 함께 바뀐다)
     if (viewSource) daylight.opening = { width: viewSize.x, height: viewSize.y };
-    const views: { piece: THREE.Object3D; halfWidth: number; halfHeight: number }[] = [];
-    const builtKeys = new Set<string>();
-    /** 가구 하나를 묶음에서 복제해 더한다. 이미 만든 자리는 건너뛴다. */
-    const addPiece = (place: FurniturePlacement) => {
-      const key = placementKey(place);
-      if (builtKeys.has(key)) return;
-      builtKeys.add(key);
+    // 창밖 그림판(창 하나에만 붙인다. 창문 모델이 바뀌면 새 모델로 옮겨 붙인다)
+    const viewPlane = viewSource
+      ? new THREE.Mesh(new THREE.PlaneGeometry(viewSize.x, viewSize.y), new THREE.MeshBasicMaterial({ map: target.texture, toneMapped: false }))
+      : null;
+    if (viewPlane) {
+      viewPlane.position.set(0, 0, -VIEW_DEPTH);
+      viewPlane.raycast = () => {};
+    }
+    const view: { current: { piece: THREE.Object3D; halfWidth: number; halfHeight: number } | null } = { current: null };
+    /** 만든 가구 자리마다: 자리, 가구 종류, 지금 그린 모델(null이면 대체 상자), 3D 물체. */
+    const entries = new Map<string, { place: FurniturePlacement; type: string | undefined; sourceKey: string | null; object: THREE.Object3D }>();
+
+    /** 그 자리의 모델을 복제해 만든다. 모델 안에 그 이름이 없으면 null. */
+    const modelPiece = (place: FurniturePlacement, gltf: GLTF): THREE.Object3D | null => {
       const source = gltf.scene.getObjectByName(place.piece);
-      if (!source) return;
-      // useLoader가 준 장면은 앱 전체에서 함께 쓰므로 복제해서 쓴다(창문처럼 같은 가구를 여러 번 놓기도 한다).
+      if (!source) return null;
+      // 읽은 장면은 앱 전체에서 함께 쓰므로 복제해서 쓴다(창문처럼 같은 가구를 여러 번 놓기도 한다).
       const piece = source.clone(true);
-      piece.position.set(place.x, place.y, place.z);
-      piece.rotation.set(0, place.rotY, 0);
       // 모델을 칸에 맞게 줄이거나 늘린다(가로·깊이만, 카탈로그의 공통 규칙)
       if (place.scale) piece.scale.set(place.scale.x, 1, place.scale.z);
-      // 일기 책상 의자는 '들어가기' 때 뒤로 뺀다(3D 화면이 이 자리에서 옮긴다)
-      if (place.companion) piece.userData.chairBase = { x: place.x, z: place.z };
-      // 편집 모드에서 3D 화면이 이 가구를 편집 중인 자리로 옮기고, 고르면 띄운다
-      piece.userData.furnitureOf = placementKey(place);
-      piece.userData.view = Boolean(place.view);
       const meshes: THREE.Mesh[] = [];
       piece.traverse((o) => {
         if (o instanceof THREE.Mesh) meshes.push(o);
@@ -129,27 +159,107 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
         o.material = Array.isArray(o.material) ? o.material.map((m) => soft(m, shaded)) : soft(o.material, shaded);
         o.raycast = () => {};
       }
-      if (place.view && viewSource && views.length === 0) {
-        // 창 안쪽에 창밖 그림판을 둔다. 창밖 장면을 들여다본 모습을 그린다(아래 useFrame. 0.1초마다, 카메라·창이 움직이는 동안은 매 프레임).
-        const view = new THREE.Mesh(new THREE.PlaneGeometry(viewSize.x, viewSize.y), new THREE.MeshBasicMaterial({ map: target.texture, toneMapped: false }));
-        view.position.set(0, 0, -VIEW_DEPTH);
-        view.raycast = () => {};
-        piece.add(view);
-        views.push({ piece, halfWidth: viewSize.x / 2, halfHeight: viewSize.y / 2 });
+      return piece;
+    };
+    /** 모델을 아직 그릴 수 없는 자리의 표시: 코드로 만든 대체 가구 상자를 복제한다(누르기 판정은 대체 가구가 그대로 맡는다). */
+    const placeholderPiece = (place: FurniturePlacement): THREE.Object3D => {
+      const key = placementKey(place);
+      const original = fallback.children.find((child) => child.userData.furnitureOf === key);
+      const piece = original ? original.clone(true) : new THREE.Group();
+      piece.traverse((o) => {
+        if (o instanceof THREE.Mesh) {
+          o.raycast = () => {};
+          // 재질은 대체 가구 것을 빌려 쓴다(이 가구를 치울 때 지우지 않는다)
+          o.userData.borrowed = true;
+        }
+      });
+      return piece;
+    };
+    /** 그 자리를 지금 그릴 3D 물체로 만든다. fetch가 참이면(보이는 가구) 모델이 없을 때 받기를 시작한다. */
+    const make = (place: FurniturePlacement, type: string | undefined, fetch: boolean) => {
+      const source = type ? furnitureModelSource(type, { fetch }) : null;
+      const gltf = source ? models.get(source.key) : undefined;
+      if (source && !gltf && !source.bundled) {
+        void loadRemoteModel(source).then((loaded) => {
+          if (!loaded) return;
+          models.set(source.key, loaded);
+          setRemoteTick((n) => n + 1);
+        });
       }
-      if (place.stowed) {
-        piece.visible = false;
-        piece.userData.stowed = true;
-      }
+      const piece = gltf ? modelPiece(place, gltf) : null;
+      return { object: piece ?? placeholderPiece(place), sourceKey: piece && source ? source.key : null };
+    };
+    /** 창문이면 창밖 그림판을 붙인다(아직 붙인 창이 없거나, 붙였던 창이 방에서 빠졌을 때). */
+    const attachView = (place: FurniturePlacement, piece: THREE.Object3D) => {
+      if (!place.view || !viewPlane) return;
+      if (view.current && view.current.piece !== piece && view.current.piece.parent) return;
+      piece.add(viewPlane);
+      view.current = { piece, halfWidth: viewSize.x / 2, halfHeight: viewSize.y / 2 };
+    };
+    /** 가구 하나를 더한다. 이미 만든 자리는 건너뛴다. */
+    const addPiece = (place: FurniturePlacement) => {
+      const key = placementKey(place);
+      if (entries.has(key)) return;
+      const type = placedItemType(place.item);
+      const { object: piece, sourceKey } = make(place, type, !place.stowed);
+      piece.position.set(place.x, place.y, place.z);
+      piece.rotation.set(0, place.rotY, 0);
+      // 일기 책상 의자는 '들어가기' 때 뒤로 뺀다(3D 화면이 이 자리에서 옮긴다)
+      if (place.companion) piece.userData.chairBase = { x: place.x, z: place.z };
+      // 편집 모드에서 3D 화면이 이 가구를 편집 중인 자리로 옮기고, 고르면 띄운다
+      piece.userData.furnitureOf = key;
+      piece.userData.view = Boolean(place.view);
+      piece.visible = !place.stowed;
+      piece.userData.stowed = Boolean(place.stowed);
+      attachView(place, piece);
       root.add(piece);
+      entries.set(key, { place, type, sourceKey, object: piece });
+    };
+    /**
+     * 그릴 모델이 바뀐 가구(받은 파일을 다 읽음, 서버 파일이 바뀜)를 바꿔 끼운다. 자리·방향·숨김은 지금 물체의 것을 그대로 옮긴다
+     * (편집 중 옮긴 자리를 잃지 않게). 보이는 대체 상자는 모델 받기를 시작한다.
+     */
+    const refresh = () => {
+      for (const [key, entry] of entries) {
+        const next = make(entry.place, entry.type, !entry.object.userData.stowed);
+        if (next.sourceKey === entry.sourceKey) continue;
+        const old = entry.object;
+        const piece = next.object;
+        piece.position.copy(old.position);
+        piece.rotation.copy(old.rotation);
+        piece.visible = old.visible;
+        piece.userData = { ...piece.userData, ...old.userData };
+        if (old === view.current?.piece) {
+          old.remove(viewPlane!);
+          view.current = null;
+        }
+        attachView(entry.place, piece);
+        root.remove(old);
+        root.add(piece);
+        entries.set(key, { ...entry, sourceKey: next.sourceKey, object: piece });
+      }
+    };
+    /** 보이게 된 대체 상자(보관함에서 꺼냄 등)의 모델 받기를 시작한다. 같은 가구는 받은 파일이 바뀌기 전까지 한 번만 부탁한다. */
+    const requested = new Set<string>();
+    const requestShown = () => {
+      for (const entry of entries.values()) {
+        if (entry.sourceKey !== null || entry.object.userData.stowed || !entry.type || requested.has(entry.type)) continue;
+        requested.add(entry.type);
+        requestFurnitureModel(entry.type);
+      }
     };
     // 보관함 가구도 만들어 숨겨 둔다(꾸미기에서 꺼내면 3D 화면이 보인다)
     for (const place of buildPlacements(layout ?? activeLobbyLayout())) addPiece(place);
-    return { root, view: views[0] ?? null, addPiece };
-  }, [gltf, target, daylight, layout]);
+    return { root, view, addPiece, refresh, requested, requestShown };
+  }, [models, target, daylight, layout, fallback]);
   const group = built.root;
   // 꾸미기 중 붙일 가구: 이미 만든 묶음에 그 가구만 더한다(여러 번 불러도 같다)
   useMemo(() => added?.forEach(built.addPiece), [built, added]);
+  // 받은 목록·파일이 바뀌거나 받은 모델을 다 읽으면 그 가구를 바꿔 끼운다. 받은 파일이 바뀌면 실패했던 받기도 다시 부탁할 수 있다
+  useEffect(() => {
+    built.requested.clear();
+    built.refresh();
+  }, [built, catalog, filesTick, remoteTick]);
 
   // 창밖 그리기: 창 정면에서 창 안쪽을 화면 삼아 들여다본다(눈이 창 정면에서 비껴 있어도 창 네 모서리가 그림 네 모서리에 맞는 비스듬한 원근).
   const eye = useMemo(() => new THREE.Vector3(), []);
@@ -157,7 +267,9 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
   const drawn = useMemo(() => ({ at: -Infinity, camera: new THREE.Matrix4(), place: new THREE.Vector4(), piece: new THREE.Matrix4() }), []);
   const place = useMemo(() => new THREE.Vector4(), []);
   useFrame((state, frameDelta) => {
-    const view = built.view;
+    // 꾸미기에서 꺼내 보이게 된 대체 상자는 그때 모델을 받는다
+    built.requestShown();
+    const view = built.view.current;
     if (!view) return;
     const hung = viewWindow(lightLayout?.current ?? activeLobbyLayout());
     if (!hung) return;
@@ -221,7 +333,7 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
       fallback.visible = true;
       const seen = new Set<THREE.Material>();
       group.traverse((o) => {
-        if (!(o instanceof THREE.Mesh)) return;
+        if (!(o instanceof THREE.Mesh) || o.userData.borrowed) return;
         for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
           if (!seen.has(m)) {
             seen.add(m);

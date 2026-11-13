@@ -40,6 +40,7 @@ import type { WardrobeSlot } from "@/lib/types";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
 import { catalogItem, useItemCatalog } from "@/lib/item-catalog-store";
+import { useItemFiles } from "@/lib/item-files";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
 import { sameLobbyLayout, storedItems, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
@@ -221,6 +222,8 @@ export interface Lobby3dScreenProps {
 function FurnitureTile({ type, label, onPress }: { type: string; label?: string; onPress: () => void }) {
   // 이름은 아이템 목록의 name(목록이 바뀌면 다시 그린다). 목록에 없으면 앱 가구 목록의 이름
   useItemCatalog();
+  // 아이콘을 받으면 다시 그린다(받기 전에는 이름 첫 글자 칸)
+  useItemFiles();
   const name = catalogItem(type)?.name ?? furnitureType(type).name;
   const icon = furnitureIcon(type);
   return (

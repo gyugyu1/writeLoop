@@ -1,6 +1,9 @@
-// 라이트루프 방에 놓는 가구 종류(카탈로그). 가구마다의 값을 이 한 곳에 두고, 배치 규칙·3D·장소·편집 모드는 이 값만 읽는다.
-// 가구를 더할 때는 여기에 한 줄을 더하고 가구 묶음(lobby-furniture.glb)에 모델을 넣는다(코드에 가구 이름을 따로 적지 않는다).
-// 치울 수 있는 가구면 꾸미기 보관함 아이콘 그림도 scripts/lobby3d/render-icons.py로 찍어 furniture-icons.ts에 더한다(없으면 이름 첫 글자 칸으로 보인다).
+import { catalogItem, type CatalogItem } from "@/lib/item-catalog-store";
+
+// 라이트루프 방에 놓는 가구 종류(카탈로그). 배치 규칙·3D·장소·편집 모드는 이 값만 읽는다.
+// 가구마다의 값은 서버 아이템 목록(GET /api/catalog의 draw)이 먼저이고, 목록에 없으면 아래 앱에 든 값을 쓴다.
+// 그래서 서버가 기존 두는 방식 안의 가구를 더하면 앱을 다시 내지 않고 그려진다(모델·아이콘은 furniture-files가 받는다).
+// 아래 표는 서버 목록(apps/backend/src/main/resources/catalog/items.json의 draw)과 같은 값이다.
 // 좌표는 가구 기준이다: 앞면이 +z(방 앞쪽)를 보고, 칸 모양의 가운데가 원점이다. 벽 가구는 벽 면 위 자리가 원점이고 앞면이 방 안쪽을 본다.
 
 /** 가구 기준 바닥 좌표(칸). */
@@ -57,7 +60,7 @@ export interface FurnitureType {
   /** 창밖 장면과 바닥 창문 빛을 내는 창문인지. */
   view?: boolean;
   model: {
-    /** 가구 묶음(lobby-furniture.glb) 안의 이름. */
+    /** 가구 모델 파일(가구마다 glb 하나) 안의 이름. */
     piece: string;
     /** 모델 실제 크기(칸): 가로·높이·깊이. 칸보다 크면 칸에 맞춰 줄여 그린다(fittedModel). */
     box: { width: number; height: number; depth: number };
@@ -256,14 +259,51 @@ const BY_ID = new Map(CATALOG.map((t) => [t.id, t]));
 /** 아는 가구 종류 전부. */
 export const FURNITURE_TYPES: readonly FurnitureType[] = CATALOG;
 
-/** 가구 종류. 모르는 종류면 undefined. */
+const MOUNTS: readonly string[] = ["floor", "cover", "wall", "tabletop"];
+const PLACE_IDS: readonly string[] = ["board", "window", "desk", "bookcase"];
+
+/** 서버 목록 아이템마다 읽은 그리기 정보(목록이 바뀌면 아이템 객체가 바뀌어 다시 읽는다). 읽을 수 없으면 null. */
+const DRAWN = new WeakMap<CatalogItem, FurnitureType | null>();
+
+const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const isPoint = (v: unknown) => isObj(v) && isNum(v.x) && isNum(v.z);
+
+/** 서버 목록의 그리기 정보를 가구 종류로 읽는다. 앱이 그릴 수 없는 값(모르는 두는 방식·장소, 빠진 크기 등)이면 null. */
+function drawnType(item: CatalogItem): FurnitureType | null {
+  const draw = item.draw;
+  if (!draw) return null;
+  const { mount, size, height, blocksWalk, removable, model, place, closet, chair, surface, view } = draw;
+  if (typeof mount !== "string" || !MOUNTS.includes(mount)) return null;
+  if (!isObj(size) || !isNum(size.width) || !isNum(size.depth) || size.width <= 0 || size.depth <= 0) return null;
+  if (!isObj(height) || !isNum(height.bottom) || !isNum(height.top)) return null;
+  if (typeof blocksWalk !== "boolean" || typeof removable !== "boolean") return null;
+  if (!isObj(model) || typeof model.piece !== "string" || !isNum(model.y)) return null;
+  if (!isObj(model.box) || !isNum(model.box.width) || !isNum(model.box.height) || !isNum(model.box.depth)) return null;
+  if (place !== undefined && place !== null && (!isObj(place) || typeof place.id !== "string" || !PLACE_IDS.includes(place.id) || !Array.isArray(place.approach) || !place.approach.every(isPoint) || !isPoint(place.faceTo))) return null;
+  if (closet !== undefined && closet !== null && (!isObj(closet) || !Array.isArray(closet.approach) || !closet.approach.every(isPoint) || !isPoint(closet.faceTo))) return null;
+  if (chair !== undefined && chair !== null && (!isObj(chair) || typeof chair.piece !== "string" || !isPoint(chair.at))) return null;
+  if (surface !== undefined && surface !== null && !isObj(surface)) return null;
+  return { ...(draw as unknown as Omit<FurnitureType, "id" | "name">), id: item.id, name: item.name, ...(view === true ? { view: true } : {}) };
+}
+
+/** 가구 종류: 서버 목록의 그리기 정보, 없으면 앱에 든 값. 모르는 종류면 undefined. */
 export function findFurnitureType(id: string): FurnitureType | undefined {
+  const item = catalogItem(id);
+  if (item?.kind === "furniture" && item.draw) {
+    let drawn = DRAWN.get(item);
+    if (drawn === undefined) {
+      drawn = drawnType(item);
+      DRAWN.set(item, drawn);
+    }
+    if (drawn) return drawn;
+  }
   return BY_ID.get(id);
 }
 
 /** 가구 종류(아는 종류여야 한다. 배치는 불러올 때 아는 종류만 받는다). */
 export function furnitureType(id: string): FurnitureType {
-  const type = BY_ID.get(id);
+  const type = findFurnitureType(id);
   if (!type) throw new Error(`unknown furniture type: ${id}`);
   return type;
 }

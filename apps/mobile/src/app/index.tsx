@@ -39,6 +39,7 @@ import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
 import { getLoopPoints, getWardrobe, trackDailyPromptClick } from "@/lib/api";
 import { refreshItemCatalog } from "@/lib/item-catalog";
+import { retryFailedItemFiles } from "@/lib/item-files";
 import { NO_WEAR, lookFromEquipped, wearFromEquipped, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import { getDifficultyMeta } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
@@ -102,6 +103,8 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       void refreshItemCatalog({ store: homeUserId !== null });
+      // 지난번에 받지 못한 모델·아이콘은 홈이 다시 보일 때 다시 받는다(필요한 화면이 다시 부탁한다)
+      retryFailedItemFiles();
     }, [homeUserId])
   );
   // 홈이 보일 때마다 잔액을 불러온다. 계정이 바뀌면 앞 계정의 늦은 응답은 버린다

@@ -37,7 +37,7 @@ describe("parseItemCatalog", () => {
 
     expect(parsed).toEqual({
       version: "v2",
-      items: [{ id: "bed", kind: "furniture", name: "침대", shopName: "침대", description: "하루를 마무리하는 포근한 자리예요.", category: "furniture", slot: null, price: 300 }]
+      items: [{ id: "bed", kind: "furniture", name: "침대", shopName: "침대", description: "하루를 마무리하는 포근한 자리예요.", category: "furniture", slot: null, price: 300, draw: null, assets: null }]
     });
   });
 });

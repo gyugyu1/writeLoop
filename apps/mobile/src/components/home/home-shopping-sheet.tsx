@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ApiError, getHomeShopping, getWardrobe, orderHomeShopping, orderHomeShoppingAny, orderHomeShoppingWearable, saveWardrobeEquipped } from "@/lib/api";
 import { useItemCatalog } from "@/lib/item-catalog-store";
+import { useItemFiles } from "@/lib/item-files";
 import { closetEquipped } from "@/lib/lobby3d/closet";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
 import { WEARABLE_ITEMS } from "@/lib/lobby3d/wear";
@@ -105,6 +106,8 @@ function seoulDayOf(nowMs: number): number {
 }
 
 function ProductImage({ type, size }: { type: string; size: number }) {
+  // 가구 아이콘은 홈쇼핑을 열 때 받는다(받으면 다시 그린다. 그 전에는 이름 첫 글자 칸)
+  useItemFiles();
   const icon = furnitureIcon(type) ?? wearableIcon(type);
   return icon ? (
     <Image source={icon} style={{ width: size, height: size }} resizeMode="contain" accessibilityIgnoresInvertColors />

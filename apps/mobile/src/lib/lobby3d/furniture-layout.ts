@@ -42,6 +42,14 @@ export interface FurniturePlacement {
   blocker?: boolean;
 }
 
+/** 자리를 만든 가구 id → 가구 종류(마지막으로 만든 배치 기준). 3D 가구가 그 가구의 모델 파일을 고를 때 쓴다. */
+const ITEM_TYPES = new Map<string, string>();
+
+/** 자리를 만든 적 있는 가구의 종류. 없으면 undefined. */
+export function placedItemType(itemId: string): string | undefined {
+  return ITEM_TYPES.get(itemId);
+}
+
 /** 창 안쪽(햇빛이 지나는 곳)의 크기와 창살 굵기. 창문(미닫이 창 두 벌)의 안쪽이다. 바닥의 창문 빛이 이 크기를 따른다. */
 export const WINDOW_OPENING = { z: 0.05, width: 1.87, height: 1.66, bar: 0.08 } as const;
 
@@ -53,6 +61,7 @@ export const WINDOW_OPENING = { z: 0.05, width: 1.87, height: 1.66, bar: 0.08 } 
 export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
   const list: FurniturePlacement[] = layoutGeometry(layout, ROOM.width).pieces.map((p) => {
     const item = layout.items.find((it) => it.id === p.item)!;
+    ITEM_TYPES.set(item.id, item.type);
     const type = furnitureType(item.type);
     // 탁상형 소품을 누르면 받침 가구를 누른 것과 같다(꾸미기 밖에서 책상 위 스탠드를 누르면 책상 장소로 간다)
     const ownerItem = item.on ? layout.items.find((it) => it.id === item.on!.parent)! : item;

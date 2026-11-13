@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getItemCatalog } from "./api";
 import { currentItemCatalog, parseItemCatalog, setItemCatalog, type ItemCatalogData } from "./item-catalog-store";
+import { pruneItemFiles } from "./item-files";
 
 // 아이템 목록 받기와 기기 저장. 홈이 보일 때 서울 날짜로 하루 한 번 서버 목록(GET /api/catalog)을 받는다.
 // 로그인했으면 받은 목록을 기기에 저장해, 못 받을 때(다음에 켰을 때 포함) 저장해 둔 목록을 쓴다. 손님은 기기에 적지 않는다.
@@ -10,6 +11,16 @@ export { useItemCatalog } from "./item-catalog-store";
 
 const STORAGE_KEY = "writeloop.item-catalog.v1";
 const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+/** 목록이 가리키는 모델·아이콘 파일의 해시. */
+function catalogFileHashes(data: ItemCatalogData): Set<string> {
+  const keep = new Set<string>();
+  for (const item of data.items) {
+    if (item.assets?.model) keep.add(item.assets.model.sha256);
+    if (item.assets?.icon) keep.add(item.assets.icon.sha256);
+  }
+  return keep;
+}
 
 /** 마지막으로 받으러 간 서울 날짜. */
 let fetchedDay: string | null = null;
@@ -53,6 +64,8 @@ export async function refreshItemCatalog(options: { store: boolean }): Promise<v
     return;
   }
   setItemCatalog(received);
+  // 새 목록에 없는 모델·아이콘 파일은 기기에서 지운다(받지 못했을 때는 지우지 않는다)
+  pruneItemFiles(catalogFileHashes(received));
   if (!options.store) return;
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(received));

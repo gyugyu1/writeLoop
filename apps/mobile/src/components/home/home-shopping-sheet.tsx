@@ -14,15 +14,20 @@ import {
   useWindowDimensions
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ApiError, getHomeShopping, orderHomeShopping } from "@/lib/api";
+import { ApiError, getHomeShopping, getWardrobe, orderHomeShopping, orderHomeShoppingWearable, saveWardrobeEquipped } from "@/lib/api";
+import { closetEquipped } from "@/lib/lobby3d/closet";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
-import type { HomeShopping, HomeShoppingItem, HomeShoppingOrderResult } from "@/lib/types";
+import { WEARABLE_ITEMS } from "@/lib/lobby3d/wear";
+import { wearableIcon } from "@/lib/lobby3d/wearable-icons";
+import type { HomeShopping, HomeShoppingAnyOrderResult, HomeShoppingItem, HomeShoppingOrderResult, HomeShoppingWearableOrderResult, Wardrobe } from "@/lib/types";
 import {
   SHOP_CATEGORIES,
   inShopCategory,
+  isShopWearable,
   shopPlacement,
   shopProductDescription,
   shopProductName,
+  shopWearPlace,
   type ShopCategory
 } from "./home-shopping-catalog";
 
@@ -44,6 +49,8 @@ const C = {
   live: "#D93A2B"
 };
 const ORDER_FAILED = "주문하지 못했어요. 다시 시도해 주세요";
+const WEAR_FAILED = "입지 못했어요. 다시 시도해 주세요";
+const OWNED_LABEL = "가진 옷";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
 /** 오늘의 방송 상품을 소개하는 라룹이 쇼호스트 말. 화면을 열 때마다 하나를 고른다. */
@@ -54,10 +61,17 @@ interface HomeShoppingSheetProps {
   onClose: () => void;
   /** 홈쇼핑 목록이나 주문으로 알게 된 잔액(로비 칩). */
   onBalance: (balance: number) => void;
-  /** 주문에 성공했을 때(홈이 배치를 주문 결과로 바꾼다). */
-  onOrdered: (result: HomeShoppingOrderResult) => void;
+  /** 주문에 성공했을 때(가구면 홈이 배치를 주문 결과로 바꾼다. 옷은 배치가 null이다). */
+  onOrdered: (result: HomeShoppingAnyOrderResult) => void;
   /** 완료 판의 '바로 놓기'(홈이 홈쇼핑을 닫고 꾸미기를 그 가구를 꺼낸 채로 연다). */
   onPlaceNow: (result: HomeShoppingOrderResult) => void;
+  /** 옷 완료 판의 '바로 입기'가 저장됐을 때(홈이 홈쇼핑을 닫고 라룹이에게 바로 입힌다). */
+  onWore?: (wardrobe: Wardrobe) => void;
+}
+
+/** 가진 옷인지(가구는 늘 false). */
+function ownedWearable(item: HomeShoppingItem): boolean {
+  return isShopWearable(item.type) && item.owned > 0;
 }
 
 /** 그 가구를 지금 사는 가격(방송 상품이면 할인 가격). */
@@ -88,7 +102,7 @@ function seoulDayOf(nowMs: number): number {
 }
 
 function ProductImage({ type, size }: { type: string; size: number }) {
-  const icon = furnitureIcon(type);
+  const icon = furnitureIcon(type) ?? wearableIcon(type);
   return icon ? (
     <Image source={icon} style={{ width: size, height: size }} resizeMode="contain" accessibilityIgnoresInvertColors />
   ) : (
@@ -116,7 +130,7 @@ function LiveDot({ reduceMotion }: { reduceMotion: boolean }) {
   return <Animated.View style={[styles.liveDot, { opacity }]} />;
 }
 
-export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrdered, onPlaceNow }: HomeShoppingSheetProps) {
+export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrdered, onPlaceNow, onWore }: HomeShoppingSheetProps) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const [shop, setShop] = useState<HomeShopping | null>(null);
@@ -128,7 +142,10 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   const [detailType, setDetailType] = useState<string | null>(null);
   const [ordering, setOrdering] = useState(false);
   /** 주문 성공 결과(있으면 상세창 자리에 완료 판이 보인다). */
-  const [ordered, setOrdered] = useState<HomeShoppingOrderResult | null>(null);
+  const [ordered, setOrdered] = useState<HomeShoppingAnyOrderResult | null>(null);
+  /** 옷 완료 판의 '바로 입기'를 저장하는 중(그동안 닫기·뒤로 가기를 받지 않는다). */
+  const [wearing, setWearing] = useState(false);
+  const wearingRef = useRef(false);
   const [toast, setToast] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -208,6 +225,8 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
       setDetailType(null);
       setOrdered(null);
       setOrdering(false);
+      setWearing(false);
+      wearingRef.current = false;
       // 기다리던 주문의 응답은 openRef로 버리므로, 다시 열면 바로 주문할 수 있게 막기도 푼다
       orderingRef.current = false;
       setCategory("all");
@@ -236,7 +255,7 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   };
   /** 상세창(또는 완료 판)을 닫는다. 목록·분류·스크롤은 그대로다. 주문 중이면 닫지 않는다. */
   const closeDetail = () => {
-    if (ordering) return;
+    if (ordering || wearingRef.current) return;
     setDetailType(null);
     setOrdered(null);
   };
@@ -247,7 +266,8 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
     const opened = openRef.current;
     setOrdering(true);
     try {
-      const result = await orderHomeShopping({ type: item.type, price: priceOf(item) });
+      const request = { type: item.type, price: priceOf(item) };
+      const result: HomeShoppingAnyOrderResult = isShopWearable(item.type) ? await orderHomeShoppingWearable(request) : await orderHomeShopping(request);
       // 주문은 서버에서 됐으니 잔액·로비 배치는 늘 반영한다
       onBalance(result.balance);
       onOrdered(result);
@@ -266,8 +286,8 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
     } catch (error) {
       if (opened !== openRef.current) return;
       showToast(error instanceof ApiError && error.message ? error.message : ORDER_FAILED);
-      // 가격이 바뀌었으면 목록을 다시 불러온다. 상세창은 열린 채 새 가격으로 바뀐다
-      if (error instanceof ApiError && error.code === "PRICE_CHANGED") void load();
+      // 가격이 바뀌었거나 이미 가진 옷이면 목록을 다시 불러온다. 상세창은 열린 채 새 값으로 바뀐다
+      if (error instanceof ApiError && (error.code === "PRICE_CHANGED" || error.code === "ALREADY_OWNED")) void load();
     } finally {
       // 그사이 닫혔으면 막기는 닫을 때 이미 풀었다(다시 연 화면의 새 주문 막기를 풀지 않는다)
       if (opened === openRef.current) {
@@ -280,6 +300,7 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   // 기기 뒤로 가기: 주문을 기다리는 중이면 홈쇼핑을 닫고(늦은 응답은 openRef로 버린다),
   // 상세창(완료 판)이 열려 있으면 그것만 닫고, 아니면 홈쇼핑을 닫는다
   const handleBack = () => {
+    if (wearingRef.current) return;
     if (ordering) {
       onClose();
       return;
@@ -289,6 +310,31 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
       return;
     }
     onClose();
+  };
+
+  /** 옷 완료 판의 '바로 입기': 주문 결과의 입은 것(없거나 깨졌으면 옷장을 불러와서)에서 그 옷의 부위만 바꿔 저장한다. */
+  const wearNow = async (result: HomeShoppingWearableOrderResult) => {
+    const info = WEARABLE_ITEMS[result.type];
+    if (!info || wearingRef.current) return;
+    wearingRef.current = true;
+    const opened = openRef.current;
+    setWearing(true);
+    try {
+      const base = result.wardrobe && result.wardrobe.equipped && typeof result.wardrobe.equipped === "object" ? result.wardrobe : await getWardrobe();
+      if (!base) throw new Error(WEAR_FAILED);
+      const saved = await saveWardrobeEquipped({ ...closetEquipped(base), [info.slot]: result.type });
+      if (opened !== openRef.current) return;
+      wearingRef.current = false;
+      setWearing(false);
+      setOrdered(null);
+      setDetailType(null);
+      onWore?.(saved);
+    } catch {
+      if (opened !== openRef.current) return;
+      wearingRef.current = false;
+      setWearing(false);
+      showToast(WEAR_FAILED);
+    }
   };
 
   const balance = shop?.balance ?? null;
@@ -308,10 +354,14 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
   const renderDetail = (item: HomeShoppingItem) => {
     const price = priceOf(item);
     const shortage = balance === null ? 0 : Math.max(0, price - balance);
-    const placement = shopPlacement(item.type);
+    const wearPlace = shopWearPlace(item.type);
+    const placement = wearPlace ? null : shopPlacement(item.type);
     const description = shopProductDescription(item.type);
     const discount = discountOf(item);
-    const orderLabel = shortage > 0 ? `${shortage}룹 더 필요해요` : `${price}룹에 주문하기`;
+    const owned = ownedWearable(item);
+    // 가진 옷이면 룹이 모자라도 이 글이 먼저다
+    const orderLabel = owned ? "이미 가진 옷이에요" : shortage > 0 ? `${shortage}룹 더 필요해요` : `${price}룹에 주문하기`;
+    const orderOff = owned || shortage > 0 || ordering;
     return (
       <>
         <View style={styles.detailArt}>
@@ -321,11 +371,24 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
               <Text style={styles.saleBadgeText}>{discount}%</Text>
             </View>
           ) : null}
+          {owned ? (
+            <View style={styles.ownedBadge}>
+              <Text style={styles.ownedBadgeText}>{OWNED_LABEL}</Text>
+            </View>
+          ) : null}
         </View>
         <Text accessibilityRole="header" style={styles.detailTitle}>
           {shopProductName(item.type)}
         </Text>
         {description ? <Text style={styles.detailDescription}>{description}</Text> : null}
+        {wearPlace ? (
+          <View style={styles.facts}>
+            <View style={styles.fact}>
+              <Text style={styles.factLabel}>입는 곳</Text>
+              <Text style={styles.factValue}>{wearPlace}</Text>
+            </View>
+          </View>
+        ) : null}
         {placement ? (
           <View style={styles.facts}>
             <View style={styles.fact}>
@@ -340,17 +403,17 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
         ) : null}
         <View style={styles.checkout}>
           <View style={styles.balanceLine}>
-            <Text style={styles.balanceLabel}>{shortage > 0 ? "조금만 더 모으면 살 수 있어요" : "주문 후 남는 룹"}</Text>
-            <Text style={[styles.balanceValue, shortage > 0 && styles.shortValue]}>
-              {shortage > 0 ? `${shortage}룹 부족` : balance === null ? "" : `${balance - price}룹`}
+            <Text style={styles.balanceLabel}>{owned ? "옷장에 있는 옷이에요" : shortage > 0 ? "조금만 더 모으면 살 수 있어요" : "주문 후 남는 룹"}</Text>
+            <Text style={[styles.balanceValue, !owned && shortage > 0 && styles.shortValue]}>
+              {owned ? "" : shortage > 0 ? `${shortage}룹 부족` : balance === null ? "" : `${balance - price}룹`}
             </Text>
           </View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={orderLabel}
-            accessibilityState={{ disabled: shortage > 0 || ordering, busy: ordering }}
-            disabled={shortage > 0 || ordering}
-            style={[styles.primary, (shortage > 0 || ordering) && styles.primaryOff]}
+            accessibilityState={{ disabled: orderOff, busy: ordering }}
+            disabled={orderOff}
+            style={[styles.primary, orderOff && styles.primaryOff]}
             onPress={() => void order(item)}
           >
             {ordering ? <ActivityIndicator color={C.buttonText} /> : <Text style={styles.primaryText}>{orderLabel}</Text>}
@@ -360,7 +423,45 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
     );
   };
 
-  const renderSuccess = (result: HomeShoppingOrderResult) => (
+  const renderSuccess = (result: HomeShoppingAnyOrderResult) => (result.layout === null ? renderWearableSuccess(result) : renderFurnitureSuccess(result));
+
+  // 옷 완료 판: 옷장에 도착, '계속 구경하기'와 '바로 입기'(저장하는 동안 둘 다 쓸 수 없다)
+  const renderWearableSuccess = (result: HomeShoppingWearableOrderResult) => (
+    <View style={styles.success}>
+      <View style={styles.detailArt}>
+        <ProductImage type={result.type} size={150} />
+      </View>
+      <Text accessibilityRole="header" style={styles.successTitle}>
+        옷장에 도착했어요
+      </Text>
+      <Text style={styles.successMessage}>
+        {shopProductName(result.type)} · 남은 룹 {result.balance}
+      </Text>
+      <View style={styles.successActions}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: wearing }}
+          disabled={wearing}
+          style={[styles.secondary, wearing && styles.primaryOff]}
+          onPress={closeDetail}
+        >
+          <Text style={styles.secondaryText}>계속 구경하기</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="바로 입기"
+          accessibilityState={{ disabled: wearing, busy: wearing }}
+          disabled={wearing}
+          style={[styles.primaryFlex, wearing && styles.primaryOff]}
+          onPress={() => void wearNow(result)}
+        >
+          {wearing ? <ActivityIndicator color={C.buttonText} /> : <Text style={styles.primaryText}>바로 입기</Text>}
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  const renderFurnitureSuccess = (result: HomeShoppingOrderResult) => (
     <View style={styles.success}>
       <View style={styles.detailArt}>
         <ProductImage type={result.type} size={150} />
@@ -395,7 +496,9 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
       <View style={styles.root}>
         {/* 위 줄: 스크롤해도 늘 보인다 */}
         <View style={[styles.header, { paddingTop: insets.top + 8, paddingLeft: Math.max(8, insets.left + 4), paddingRight: Math.max(14, insets.right + 10) }]}>
-          <Pressable accessibilityRole="button" accessibilityLabel="홈쇼핑 닫기" hitSlop={6} style={styles.iconButton} onPress={onClose}>
+          <Pressable accessibilityRole="button" accessibilityLabel="홈쇼핑 닫기" hitSlop={6} style={styles.iconButton} onPress={() => {
+              if (!wearingRef.current) onClose();
+            }}>
             <Text style={styles.iconText}>✕</Text>
           </Pressable>
           <Text accessibilityRole="header" numberOfLines={1} style={styles.title}>
@@ -435,9 +538,15 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
                   <View style={[styles.featureArt, { width: featureArt, height: featureArt }]}>
                     <View style={[styles.featureHalo, { width: featureArt - 18, height: featureArt - 18, borderRadius: (featureArt - 18) / 2 }]} />
                     <ProductImage type={broadcastItem.type} size={featureArt - 10} />
-                    <View style={styles.soldOutSoon}>
-                      <Text style={styles.soldOutSoonText}>품절 임박</Text>
-                    </View>
+                    {ownedWearable(broadcastItem) ? (
+                      <View style={styles.ownedBadge}>
+                        <Text style={styles.ownedBadgeText}>{OWNED_LABEL}</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.soldOutSoon}>
+                        <Text style={styles.soldOutSoonText}>품절 임박</Text>
+                      </View>
+                    )}
                   </View>
                   <View style={styles.featureInfo}>
                     <Text style={styles.featureLabel}>오늘의 방송 상품</Text>
@@ -499,6 +608,11 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
                       {discount !== null ? (
                         <View style={styles.saleBadge}>
                           <Text style={styles.saleBadgeText}>{discount}%</Text>
+                        </View>
+                      ) : null}
+                      {ownedWearable(item) ? (
+                        <View style={styles.ownedBadge}>
+                          <Text style={styles.ownedBadgeText}>{OWNED_LABEL}</Text>
                         </View>
                       ) : null}
                     </View>
@@ -605,6 +719,8 @@ const styles = StyleSheet.create({
   cardName: { marginHorizontal: 2, fontSize: 14, fontWeight: "700", color: C.ink },
   cardPrice: { marginHorizontal: 2, marginTop: 1, fontSize: 14, fontWeight: "800", color: C.accent, fontVariant: ["tabular-nums"] },
   saleBadge: { position: "absolute", top: 8, left: 8, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 7, backgroundColor: C.accent },
+  ownedBadge: { position: "absolute", top: 8, right: 8, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 7, backgroundColor: C.ink },
+  ownedBadgeText: { fontSize: 11, fontWeight: "700", color: C.buttonText },
   saleBadgeText: { fontSize: 11, fontWeight: "800", color: C.buttonText },
   initial: { fontWeight: "800", color: C.ink },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },

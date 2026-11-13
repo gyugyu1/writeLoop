@@ -1,16 +1,19 @@
+import { CLOSET_SLOTS } from "@/lib/lobby3d/closet";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
+import { WEARABLE_ITEMS } from "@/lib/lobby3d/wear";
 
 // 라룹 홈쇼핑에서만 쓰는 상품 표시 값: 홈쇼핑 이름, 분류, 짧은 설명. 가격·할인·방송 상품은 서버 목록을 따른다.
 // 꾸미기 보관함의 이름(furniture-catalog의 name)은 그대로 둔다.
 
-export type ShopCategory = "all" | "furniture" | "lighting" | "decor" | "plants";
+export type ShopCategory = "all" | "furniture" | "lighting" | "decor" | "plants" | "clothes";
 
 export const SHOP_CATEGORIES: { id: ShopCategory; label: string }[] = [
   { id: "all", label: "전체" },
   { id: "furniture", label: "가구" },
   { id: "lighting", label: "조명" },
   { id: "decor", label: "장식" },
-  { id: "plants", label: "식물" }
+  { id: "plants", label: "식물" },
+  { id: "clothes", label: "옷" }
 ];
 
 interface ShopProductInfo {
@@ -29,8 +32,25 @@ const PRODUCT_INFO: Record<string, ShopProductInfo> = {
   rug: { name: "러그", category: "decor", description: "가구 아래에 깔아 공간을 아늑하게 묶어 줘요." },
   books: { name: "책", category: "decor", description: "책 몇 권을 쌓아 나만의 독서 분위기를 만들어요." },
   smallPlant: { name: "작은 화분", category: "plants", description: "작은 초록 하나로 책상이 산뜻해져요." },
-  plant: { name: "큰 화분", category: "plants", description: "빈 공간에 싱그러운 초록을 더해 보세요." }
+  plant: { name: "큰 화분", category: "plants", description: "빈 공간에 싱그러운 초록을 더해 보세요." },
+  // 옷(라룹이 착용 아이템): 이름은 앱 착용 아이템 이름과 같다
+  capOrange: { name: WEARABLE_ITEMS.capOrange.label, category: "clothes", description: "발바닥 무늬가 들어간 산뜻한 주황 모자예요." },
+  tshirtOrange: { name: WEARABLE_ITEMS.tshirtOrange.label, category: "clothes", description: "어디에나 잘 어울리는 편한 주황 티셔츠예요." },
+  shortsNavy: { name: WEARABLE_ITEMS.shortsNavy.label, category: "clothes", description: "가볍게 움직이기 좋은 남색 반바지예요." },
+  shoesBrown: { name: WEARABLE_ITEMS.shoesBrown.label, category: "clothes", description: "폭신하게 걷기 좋은 갈색 운동화예요." }
 };
+
+/** 옷(라룹이 착용 아이템)인지. 앱 착용 아이템 목록에 있는 종류다. */
+export function isShopWearable(type: string): boolean {
+  return type in WEARABLE_ITEMS;
+}
+
+/** 옷의 입는 곳(모자·상의·하의·신발 …). 옷이 아니면 null. */
+export function shopWearPlace(type: string): string | null {
+  const info = WEARABLE_ITEMS[type];
+  if (!info) return null;
+  return CLOSET_SLOTS.find((entry) => entry.slot === info.slot)?.label ?? null;
+}
 
 /** 앱 가구 목록에 있는 종류면 그 이름, 없으면 종류 id(서버가 새 종류를 보낸 경우). */
 function catalogName(type: string): string {

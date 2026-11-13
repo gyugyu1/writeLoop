@@ -417,7 +417,7 @@ export interface HomeShopping {
   items: HomeShoppingItem[];
 }
 
-/** POST /api/home-shopping/orders 결과. layout은 주문 뒤 저장된 배치다. */
+/** POST /api/home-shopping/orders의 가구 주문 결과. layout은 주문 뒤 저장된 배치다(서버의 wardrobe는 null). */
 export interface HomeShoppingOrderResult {
   type: string;
   price: number;
@@ -425,7 +425,22 @@ export interface HomeShoppingOrderResult {
   owned: number;
   itemId: string;
   layout: LobbyLayout;
+  wardrobe?: null;
 }
+
+/** POST /api/home-shopping/orders의 옷 주문 결과. 배치를 바꾸지 않아 itemId·layout이 null이고, wardrobe는 주문 뒤 옷장이다(읽지 못했으면 null). */
+export interface HomeShoppingWearableOrderResult {
+  type: string;
+  price: number;
+  balance: number;
+  owned: number;
+  itemId: null;
+  layout: null;
+  wardrobe: Wardrobe | null;
+}
+
+/** 주문 결과(가구나 옷). layout이 null이면 옷 주문이다. */
+export type HomeShoppingAnyOrderResult = HomeShoppingOrderResult | HomeShoppingWearableOrderResult;
 
 /** 라룹이 착용 부위(캐릭터 꾸미기). 부위마다 한 번에 하나만 입는다. */
 export type WardrobeSlot = "hat" | "top" | "bottom" | "shoes" | "face" | "back" | "accessory";

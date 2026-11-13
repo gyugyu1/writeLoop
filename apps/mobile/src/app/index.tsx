@@ -44,7 +44,7 @@ import { buildLoginHref } from "@/lib/login-redirect";
 import { useAppOverlayStatus } from "@/lib/app-overlay-status";
 import { useSession } from "@/lib/session";
 import { getStreakMascotStage } from "@/lib/streak-mascot";
-import type { DailyDifficulty, DiaryCalendarSummary, HomeShoppingOrderResult, Wardrobe } from "@/lib/types";
+import type { DailyDifficulty, DiaryCalendarSummary, HomeShoppingAnyOrderResult, HomeShoppingOrderResult, Wardrobe } from "@/lib/types";
 
 export default function HomeScreen() {
   const { currentUser, isHydrating, refreshSession } = useSession();
@@ -150,14 +150,21 @@ export default function HomeScreen() {
     setLoopBalance(balance);
   }, []);
   const handleShopOrdered = useCallback(
-    (result: HomeShoppingOrderResult) => {
-      applyLobbyLayoutForHome(result.layout);
+    (result: HomeShoppingAnyOrderResult) => {
+      // 옷 주문은 방 배치를 바꾸지 않는다(배치가 null)
+      if (result.layout) applyLobbyLayoutForHome(result.layout);
     },
     [applyLobbyLayoutForHome]
   );
   const handlePlaceNow = useCallback((result: HomeShoppingOrderResult) => {
     setIsShopOpen(false);
     setPlaceRequest((current) => ({ key: (current?.key ?? 0) + 1, itemId: result.itemId, type: result.type }));
+  }, []);
+  // 홈쇼핑 옷 '바로 입기': 홈쇼핑을 닫고, 다시 불러오기를 기다리지 않고 저장한 옷을 바로 입힌다(불러오는 중이던 앞 응답은 버린다)
+  const handleShopWore = useCallback((wardrobe: Wardrobe) => {
+    wardrobeRequest.current += 1;
+    setLobbyWear(wearFromEquipped(wardrobe.equipped));
+    setIsShopOpen(false);
   }, []);
   // 로비 편집 모드('꾸미기') 동안은 아래 탭바를 숨긴다
   const [isEditingLobby, setIsEditingLobby] = useState(false);
@@ -501,6 +508,7 @@ export default function HomeScreen() {
         onBalance={handleShopBalance}
         onOrdered={handleShopOrdered}
         onPlaceNow={handlePlaceNow}
+        onWore={handleShopWore}
       />
 
       <LobbySheet visible={isFocused && openSheet === "question"} title="질문에 답하기" onClose={closeSheet}>

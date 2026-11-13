@@ -38,6 +38,7 @@ import type {
   FeedbackSessionStatus,
   HomeShopping,
   HomeShoppingOrderResult,
+  HomeShoppingWearableOrderResult,
   Wardrobe,
   WardrobeSlot,
   HistorySession,
@@ -1649,6 +1650,26 @@ export async function orderHomeShopping(request: { type: string; price: number }
     throw new Error("주문하지 못했어요. 다시 시도해 주세요");
   }
   return { ...payload, layout };
+}
+
+/**
+ * 라룹 홈쇼핑 옷 주문(같은 주문 API). 옷은 배치를 바꾸지 않아 배치가 null이고, 주문 뒤 옷장을 함께 받는다(읽지 못해도 주문은 된 것이다).
+ * 이미 가진 옷이면 409 ALREADY_OWNED.
+ */
+export async function orderHomeShoppingWearable(request: { type: string; price: number }): Promise<HomeShoppingWearableOrderResult> {
+  const response = await apiFetch("/api/home-shopping/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+  if (!response.ok) {
+    throw await parseApiError(response, "주문하지 못했어요. 다시 시도해 주세요");
+  }
+  const payload = (await response.json()) as { type: string; price: number; balance: number; owned: number; wardrobe?: unknown };
+  const wardrobe = payload.wardrobe && typeof payload.wardrobe === "object" && !Array.isArray(payload.wardrobe) ? (payload.wardrobe as Wardrobe) : null;
+  return { type: payload.type, price: payload.price, balance: payload.balance, owned: payload.owned, itemId: null, layout: null, wardrobe };
 }
 
 export async function getTodayWritingStatus(): Promise<TodayWritingStatus | null> {

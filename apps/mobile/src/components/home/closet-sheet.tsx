@@ -72,6 +72,11 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
   const request = useRef(0);
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
+  // 홈이 다시 그려질 때마다 새 함수가 와도 불러오기·여는 효과가 다시 돌지 않게 ref로 든다(고른 것이 버려지지 않게)
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const onSavedRef = useRef(onSaved);
+  onSavedRef.current = onSaved;
   const Preview = useMemo(() => (visible ? loadPreview() : null), [visible]);
 
   useEffect(() => {
@@ -96,7 +101,7 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
       .then((result) => {
         if (mine !== request.current || !visibleRef.current) return;
         if (!result) {
-          onClose();
+          onCloseRef.current();
           return;
         }
         const equipped = closetEquipped(result);
@@ -108,9 +113,9 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
       .catch(() => {
         if (mine === request.current && visibleRef.current) setStatus("error");
       });
-  }, [onClose]);
+  }, []);
 
-  // 열 때마다 처음 상태로 시작한다(모자 탭, 서버 값)
+  // 열 때마다 처음 상태로 시작한다(모자 탭, 서버 값). 열려 있는 동안에는 다시 돌지 않는다
   useEffect(() => {
     if (!visible) {
       request.current += 1;
@@ -161,13 +166,13 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
       .then((result) => {
         if (!visibleRef.current) return;
         setSaving(false);
-        onSaved(result);
+        onSavedRef.current(result);
       })
       .catch((error: unknown) => {
         if (!visibleRef.current) return;
         setSaving(false);
         if (error instanceof ApiError && error.status === 401) {
-          onClose();
+          onCloseRef.current();
           return;
         }
         if (error instanceof ApiError && error.code === "WARDROBE_INVALID") {

@@ -139,6 +139,7 @@ export default function HomeScreen() {
     }, [homeUserId])
   );
   // 옷장에서 저장하면 닫고, 다시 불러오기를 기다리지 않고 저장한 옷을 바로 입힌다(불러오는 중이던 앞 응답은 버린다)
+  const handleClosetClose = useCallback(() => setIsClosetOpen(false), []);
   const handleClosetSaved = useCallback((wardrobe: Wardrobe) => {
     wardrobeRequest.current += 1;
     setLobbyWear(wearFromEquipped(wardrobe.equipped));
@@ -492,7 +493,7 @@ export default function HomeScreen() {
       </View>
       {isEditingLobby ? null : <MobileNavBar activeTab="home" />}
 
-      <ClosetSheet visible={isFocused && isClosetOpen} onClose={() => setIsClosetOpen(false)} onSaved={handleClosetSaved} />
+      <ClosetSheet visible={isFocused && isClosetOpen} onClose={handleClosetClose} onSaved={handleClosetSaved} />
 
       <HomeShoppingSheet
         visible={isFocused && isShopOpen}

@@ -31,7 +31,7 @@ public class HomeShoppingService {
     static final String PURCHASE_REASON = "PURCHASE";
 
     /**
-     * 팔 수 있는 가구(치울 수 있는 종류)·옷과 가격(룹). 순서는 가격이 낮은 것부터(같은 가격이면 가구 다음에 옷)이고,
+     * 팔 수 있는 가구(치울 수 있는 종류)·옷과 가격(룹). 순서는 가격이 낮은 것부터이고, 같은 가격이면 가구, 처음 옷 넷, ⑤에서 더한 옷 순서다.
      * 오늘의 방송 상품도 이 순서로 돈다.
      */
     static final List<Product> PRODUCTS = List.of(
@@ -39,13 +39,25 @@ public class HomeShoppingService {
             new Product("smallPlant", 50),
             new Product("lamp", 60),
             new Product("capOrange", 60),
+            new Product("capBlue", 60),
+            new Product("capGreen", 60),
             new Product("frame", 70),
             new Product("shortsNavy", 70),
+            new Product("shortsBrown", 70),
+            new Product("shortsRed", 70),
             new Product("plant", 80),
             new Product("tshirtOrange", 80),
+            new Product("tshirtWhite", 80),
+            new Product("tshirtYellow", 80),
             new Product("shoesBrown", 90),
+            new Product("shoesRed", 90),
+            new Product("shoesWhite", 90),
+            new Product("mufflerRed", 90),
             new Product("nightstand", 100),
+            new Product("sunglassesBlack", 100),
             new Product("floorLamp", 110),
+            new Product("necklaceGold", 110),
+            new Product("backpackRed", 120),
             new Product("rug", 150),
             new Product("wardrobe", 180),
             new Product("bed", 300)

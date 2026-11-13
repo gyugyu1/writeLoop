@@ -39,6 +39,19 @@ public class WardrobeService {
         slots.put("tshirtOrange", "top");
         slots.put("shortsNavy", "bottom");
         slots.put("shoesBrown", "shoes");
+        // ⑤: 색만 다른 모자·상의·하의·신발과 새 부위(얼굴장식·등장식·액세서리)
+        slots.put("capBlue", "hat");
+        slots.put("capGreen", "hat");
+        slots.put("tshirtWhite", "top");
+        slots.put("tshirtYellow", "top");
+        slots.put("shortsBrown", "bottom");
+        slots.put("shortsRed", "bottom");
+        slots.put("shoesRed", "shoes");
+        slots.put("shoesWhite", "shoes");
+        slots.put("sunglassesBlack", "face");
+        slots.put("backpackRed", "back");
+        slots.put("mufflerRed", "accessory");
+        slots.put("necklaceGold", "accessory");
         return slots;
     }
 

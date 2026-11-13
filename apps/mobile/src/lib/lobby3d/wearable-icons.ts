@@ -1,27 +1,14 @@
 import type { ImageSourcePropType } from "react-native";
+import { catalogItem } from "@/lib/item-catalog-store";
+import { cachedItemFile, fetchItemFile, itemFileFailed } from "@/lib/item-files";
 import type { WardrobeSlot } from "@/lib/types";
 
-// 옷장 화면의 그림: 착용 아이템 칸 그림(scripts/lobby3d/render-wearable-icons.py로 찍음)과
-// 부위 탭 아이콘(scripts/lobby3d/draw-wardrobe-slot-icons.py로 그림).
+// 옷장 화면의 그림: 착용 아이템 칸 그림과 부위 탭 아이콘(scripts/lobby3d/draw-wardrobe-slot-icons.py로 그림).
+// 칸 그림은 서버 아이템 목록(assets.icon)의 파일을 처음 보일 때 받아 기기에 둔다(item-files. 받으면 다시 그리게 알린다).
+// 앱에 든 칸 그림은 처음부터 가진 라룹이 고글뿐이다. 그림은 scripts/lobby3d/render-wearable-icons.py로 찍어 서버 목록 폴더에 둔다.
 
-const ITEM_ICONS: Readonly<Record<string, ImageSourcePropType>> = {
-  capOrange: require("../../../assets/icons/wearables/capOrange.png"),
-  tshirtOrange: require("../../../assets/icons/wearables/tshirtOrange.png"),
-  shortsNavy: require("../../../assets/icons/wearables/shortsNavy.png"),
-  shoesBrown: require("../../../assets/icons/wearables/shoesBrown.png"),
-  capBlue: require("../../../assets/icons/wearables/capBlue.png"),
-  capGreen: require("../../../assets/icons/wearables/capGreen.png"),
-  tshirtWhite: require("../../../assets/icons/wearables/tshirtWhite.png"),
-  tshirtYellow: require("../../../assets/icons/wearables/tshirtYellow.png"),
-  shortsBrown: require("../../../assets/icons/wearables/shortsBrown.png"),
-  shortsRed: require("../../../assets/icons/wearables/shortsRed.png"),
-  shoesRed: require("../../../assets/icons/wearables/shoesRed.png"),
-  shoesWhite: require("../../../assets/icons/wearables/shoesWhite.png"),
-  goggles: require("../../../assets/icons/wearables/goggles.png"),
-  sunglassesBlack: require("../../../assets/icons/wearables/sunglassesBlack.png"),
-  backpackRed: require("../../../assets/icons/wearables/backpackRed.png"),
-  mufflerRed: require("../../../assets/icons/wearables/mufflerRed.png"),
-  necklaceGold: require("../../../assets/icons/wearables/necklaceGold.png")
+const BUNDLED_ICONS: Readonly<Record<string, ImageSourcePropType>> = {
+  goggles: require("../../../assets/icons/wearables/goggles.png")
 };
 
 const SLOT_ICONS: Readonly<Record<WardrobeSlot, ImageSourcePropType>> = {
@@ -34,9 +21,20 @@ const SLOT_ICONS: Readonly<Record<WardrobeSlot, ImageSourcePropType>> = {
   accessory: require("../../../assets/icons/wardrobe-slots/accessory.png")
 };
 
-/** 착용 아이템 칸 그림. 그림이 없는 종류면 null. */
+/**
+ * 착용 아이템 칸 그림. 앱에 든 것(라룹이 고글)이 아니면 받은 목록의 그림 파일이고, 아직 기기에 없으면 받기를 시작하고 null을 돌려준다
+ * (부르는 쪽은 이름 첫 글자 칸을 보이고, useItemFiles로 받은 뒤 다시 그린다). 목록에 그림이 없으면 null.
+ */
 export function wearableIcon(type: string): ImageSourcePropType | null {
-  return ITEM_ICONS[type] ?? null;
+  const bundled = BUNDLED_ICONS[type];
+  if (bundled) return bundled;
+  const item = catalogItem(type);
+  const ref = item?.kind === "wearable" ? item.assets?.icon ?? null : null;
+  if (!ref) return null;
+  const uri = cachedItemFile(ref);
+  if (uri) return { uri };
+  if (!itemFileFailed(ref)) void fetchItemFile(ref);
+  return null;
 }
 
 /** 부위 탭 아이콘. */

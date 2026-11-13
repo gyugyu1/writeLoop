@@ -1,6 +1,5 @@
-import { catalogItem } from "@/lib/item-catalog-store";
 import type { Wardrobe, WardrobeSlot } from "@/lib/types";
-import { WEARABLE_ITEMS } from "./wear";
+import { isWearableDrawable, wearableLabel, wearableSlotOf } from "./wear";
 
 // 옷장(캐릭터 꾸미기 화면)의 규칙: 부위 탭, 부위마다 고를 수 있는 아이템 칸, 고른 것이 처음과 다른지.
 // 화면(components/home/closet-sheet)과 떨어져 있어 테스트에서 바로 부를 수 있다.
@@ -41,7 +40,8 @@ export interface ClosetItem {
 }
 
 /**
- * 그 부위에서 고를 수 있는 가진 아이템(얻은 순서 = 서버 목록 순서). 앱이 모르는 종류, 앱 목록과 부위가 다르게 온 아이템은 칸을 만들지 않는다.
+ * 그 부위에서 고를 수 있는 가진 아이템(얻은 순서 = 서버 목록 순서). 그릴 줄 모르는 옷(받은 목록에 그리기 정보·모델이 없거나 몸 판이 다름.
+ * 몸에 그려진 라룹이 고글은 뺀다), 아이템 목록과 부위가 다르게 온 아이템은 칸을 만들지 않는다.
  * 같은 종류가 두 번 오면 한 칸만 둔다.
  */
 export function closetItems(wardrobe: Pick<Wardrobe, "items"> | null | undefined, slot: WardrobeSlot): ClosetItem[] {
@@ -49,11 +49,11 @@ export function closetItems(wardrobe: Pick<Wardrobe, "items"> | null | undefined
   const seen = new Set<string>();
   const list: ClosetItem[] = [];
   for (const item of items) {
-    const info = item && typeof item.type === "string" ? WEARABLE_ITEMS[item.type] : undefined;
-    if (!info || info.slot !== slot || item.slot !== slot || seen.has(item.type)) continue;
+    const known = item && typeof item.type === "string" && isWearableDrawable(item.type) ? wearableSlotOf(item.type) : null;
+    if (known !== slot || item.slot !== slot || seen.has(item.type)) continue;
     seen.add(item.type);
     // 이름은 아이템 목록의 name, 목록에 없으면 앱 착용 아이템 이름
-    list.push({ type: item.type, label: catalogItem(item.type)?.name ?? info.label });
+    list.push({ type: item.type, label: wearableLabel(item.type) });
   }
   return list;
 }

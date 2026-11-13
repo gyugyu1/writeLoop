@@ -19,7 +19,7 @@ import { useItemCatalog } from "@/lib/item-catalog-store";
 import { useItemFiles } from "@/lib/item-files";
 import { closetEquipped } from "@/lib/lobby3d/closet";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
-import { WEARABLE_ITEMS } from "@/lib/lobby3d/wear";
+import { wearableSlotOf } from "@/lib/lobby3d/wear";
 import { wearableIcon } from "@/lib/lobby3d/wearable-icons";
 import type { HomeShopping, HomeShoppingAnyOrderResult, HomeShoppingItem, HomeShoppingOrderResult, HomeShoppingWearableOrderResult, Wardrobe } from "@/lib/types";
 import {
@@ -327,15 +327,15 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
 
   /** 옷 완료 판의 '바로 입기': 주문 결과의 입은 것(없거나 깨졌으면 옷장을 불러와서)에서 그 옷의 부위만 바꿔 저장한다. */
   const wearNow = async (result: HomeShoppingWearableOrderResult) => {
-    const info = WEARABLE_ITEMS[result.type];
-    if (!info || wearingRef.current) return;
+    const slot = wearableSlotOf(result.type);
+    if (!slot || wearingRef.current) return;
     wearingRef.current = true;
     const opened = openRef.current;
     setWearing(true);
     try {
       const base = result.wardrobe && result.wardrobe.equipped && typeof result.wardrobe.equipped === "object" ? result.wardrobe : await getWardrobe();
       if (!base) throw new Error(WEAR_FAILED);
-      const saved = await saveWardrobeEquipped({ ...closetEquipped(base), [info.slot]: result.type });
+      const saved = await saveWardrobeEquipped({ ...closetEquipped(base), [slot]: result.type });
       if (opened !== openRef.current) return;
       wearingRef.current = false;
       setWearing(false);
@@ -462,7 +462,7 @@ export default function HomeShoppingSheet({ visible, onClose, onBalance, onOrder
         >
           <Text style={styles.secondaryText}>계속 구경하기</Text>
         </Pressable>
-        {/* 앱이 모르는 옷(서버가 나중에 더한 것)은 입힐 모델이 없어 '바로 입기'를 두지 않는다 */}
+        {/* 앱이 그릴 줄 모르는 옷(받은 목록에 그리기 정보가 없거나 몸 판이 다름)은 '바로 입기'를 두지 않는다 */}
         {isShopWearable(result.type) ? (
           <Pressable
             accessibilityRole="button"

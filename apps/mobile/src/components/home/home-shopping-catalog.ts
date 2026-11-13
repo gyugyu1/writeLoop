@@ -1,7 +1,7 @@
 import { catalogItem } from "@/lib/item-catalog-store";
 import { CLOSET_SLOTS } from "@/lib/lobby3d/closet";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
-import { WEARABLE_ITEMS } from "@/lib/lobby3d/wear";
+import { WEARABLE_ITEMS, wearDraw, wearableSlotOf } from "@/lib/lobby3d/wear";
 
 // 라룹 홈쇼핑에서만 쓰는 상품 표시 값: 홈쇼핑 이름, 분류, 짧은 설명. 가격·할인·방송 상품은 서버 목록을 따른다.
 // 이름·분류·설명은 서버 아이템 목록(item-catalog)의 shopName·category·description이고, 목록에 없는 종류는 아래 표(앱에 든 기본값)다.
@@ -64,16 +64,16 @@ export function isShopFurniture(type: string): boolean {
   }
 }
 
-/** 옷(라룹이 착용 아이템)인지. 앱 착용 아이템 목록에 있는 종류다. */
+/** 앱이 라룹이에 입힐 수 있는 옷인지: 받은 아이템 목록에 그리기 정보와 모델이 있고 이 앱의 몸 판에 맞는 옷이다(wearDraw). */
 export function isShopWearable(type: string): boolean {
-  return type in WEARABLE_ITEMS;
+  return wearDraw(type) !== null;
 }
 
 /** 옷의 입는 곳(모자·상의·하의·신발 …). 옷이 아니면 null. */
 export function shopWearPlace(type: string): string | null {
-  const info = WEARABLE_ITEMS[type];
-  if (!info) return null;
-  return CLOSET_SLOTS.find((entry) => entry.slot === info.slot)?.label ?? null;
+  const slot = wearableSlotOf(type);
+  if (!slot) return null;
+  return CLOSET_SLOTS.find((entry) => entry.slot === slot)?.label ?? null;
 }
 
 /** 앱 가구 목록에 있는 종류면 그 이름, 없으면 종류 id(서버가 새 종류를 보낸 경우). */

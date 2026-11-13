@@ -3,6 +3,7 @@ import { AccessibilityInfo, ActivityIndicator, Image, Modal, Pressable, ScrollVi
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ApiError, getWardrobe, saveWardrobeEquipped } from "@/lib/api";
 import { useItemCatalog } from "@/lib/item-catalog-store";
+import { useItemFiles } from "@/lib/item-files";
 import {
   CLOSET_SLOTS,
   NO_EQUIPPED,
@@ -136,11 +137,14 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
   const dirty = ready && !sameEquipped(original, selected);
   // 칸 이름은 아이템 목록에서 읽는다(목록이 바뀌면 다시 만든다)
   const catalog = useItemCatalog();
+  // 옷 칸 그림은 처음 보일 때 받는다(받으면 다시 그린다)
+  useItemFiles();
   const items = useMemo(() => closetItems(wardrobe, tab), [wardrobe, tab, catalog]); // eslint-disable-line react-hooks/exhaustive-deps
   const selection = closetSelection(selected, items, tab);
   const tabInfo = CLOSET_SLOTS.find((entry) => entry.slot === tab)!;
-  const wear = useMemo(() => wearFromEquipped(selected), [selected]);
-  const look = useMemo(() => lookFromEquipped(selected), [selected]);
+  // 받은 목록이 바뀌면(서버가 더한 옷의 부위 등) 다시 만든다
+  const wear = useMemo(() => wearFromEquipped(selected), [selected, catalog]); // eslint-disable-line react-hooks/exhaustive-deps
+  const look = useMemo(() => lookFromEquipped(selected), [selected, catalog]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const choose = (type: string | null) => {
     if (!ready || saving) return;
@@ -264,7 +268,7 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
           </ScrollView>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cells}>
-            <Cell label="벗기" selected={selection === null} disabled={!ready || saving} onPress={() => choose(null)} />
+            <Cell label="벗기" none selected={selection === null} disabled={!ready || saving} onPress={() => choose(null)} />
             {items.map((item) => (
               <Cell
                 key={item.type}
@@ -313,12 +317,15 @@ export default function ClosetSheet({ visible, onClose, onSaved }: ClosetSheetPr
 function Cell({
   label,
   icon,
+  none,
   selected,
   disabled,
   onPress
 }: {
   label: string;
   icon?: ReturnType<typeof wearableIcon>;
+  /** '벗기' 칸(그림 대신 ✕). */
+  none?: boolean;
   selected: boolean;
   disabled: boolean;
   onPress: () => void;
@@ -333,7 +340,14 @@ function Cell({
       onPress={onPress}
     >
       <View style={styles.cellArt}>
-        {icon ? <Image source={icon} style={styles.cellImage} resizeMode="contain" /> : <Text style={styles.cellNone}>✕</Text>}
+        {icon ? (
+          <Image source={icon} style={styles.cellImage} resizeMode="contain" />
+        ) : none ? (
+          <Text style={styles.cellNone}>✕</Text>
+        ) : (
+          // 칸 그림을 받기 전이나 받지 못했으면 이름 첫 글자
+          <Text style={styles.cellInitial}>{label.slice(0, 1)}</Text>
+        )}
       </View>
       <Text numberOfLines={1} style={[styles.cellText, selected && styles.cellTextOn]}>
         {label}
@@ -372,6 +386,7 @@ const styles = StyleSheet.create({
   cellArt: { width: 76, height: 76, borderRadius: 14, backgroundColor: C.bg, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   cellImage: { width: 72, height: 72 },
   cellNone: { fontSize: 26, color: C.muted },
+  cellInitial: { fontSize: 28, fontWeight: "700", color: C.muted },
   cellText: { fontSize: 13, color: C.ink },
   cellTextOn: { fontWeight: "700", color: C.accent },
   empty: { justifyContent: "center", height: 92, paddingHorizontal: 8 },

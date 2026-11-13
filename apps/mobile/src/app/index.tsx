@@ -39,6 +39,7 @@ import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
 import { getLoopPoints, getWardrobe, trackDailyPromptClick } from "@/lib/api";
 import { refreshItemCatalog } from "@/lib/item-catalog";
+import { useItemCatalog } from "@/lib/item-catalog-store";
 import { retryFailedItemFiles } from "@/lib/item-files";
 import { NO_WEAR, lookFromEquipped, wearFromEquipped, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import { getDifficultyMeta } from "@/lib/difficulty";
@@ -89,11 +90,14 @@ export default function HomeScreen() {
   const [loopBalance, setLoopBalance] = useState<number | null>(null);
   const [placeRequest, setPlaceRequest] = useState<{ key: number; itemId: string; type: string } | null>(null);
   const loopBalanceRequest = useRef(0);
-  // 라룹이가 입은 것(서버에 저장된 입은 아이템). 불러오지 못했거나 손님이면 아무것도 입지 않는다
-  const [lobbyWear, setLobbyWear] = useState<WearState>(NO_WEAR);
-  // 부위 일곱마다 입은 아이템(모델·색을 고른다). lobbyWear와 늘 함께 바꾼다. 입은 것을 모르면(불러오기 전·실패·손님) null이라
-  // 라룹이는 기본 모습(고글)으로 보인다
-  const [lobbyLook, setLobbyLook] = useState<WearLook | null>(null);
+  // 라룹이가 입은 것(서버에 저장된 입은 아이템의 응답 값). 입은 것을 모르면(불러오기 전·실패·손님) null이다
+  const [lobbyEquipped, setLobbyEquipped] = useState<{ value: Wardrobe["equipped"] | null | undefined } | null>(null);
+  // 입힐 것은 받은 아이템 목록으로 고르므로(서버가 더한 옷의 부위 등) 목록이 바뀌면 다시 만든다.
+  // lobbyWear: 불러오지 못했거나 손님이면 아무것도 입지 않는다. lobbyLook: 부위 일곱마다 입은 아이템(모델·색을 고른다).
+  // 입은 것을 모르면 null이라 라룹이는 기본 모습(고글)으로 보인다
+  const itemCatalog = useItemCatalog();
+  const lobbyWear = useMemo<WearState>(() => (lobbyEquipped ? wearFromEquipped(lobbyEquipped.value) : NO_WEAR), [lobbyEquipped, itemCatalog]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lobbyLook = useMemo<WearLook | null>(() => (lobbyEquipped ? lookFromEquipped(lobbyEquipped.value) : null), [lobbyEquipped, itemCatalog]); // eslint-disable-line react-hooks/exhaustive-deps
   const wardrobeRequest = useRef(0);
   const wardrobeUserId = useRef<string | number | null>(null);
   // 옷장(캐릭터 꾸미기 화면): 방의 옷장 '들어가기'로 연다. 열린 동안 뒤의 방은 그리기를 멈춘다
@@ -135,26 +139,22 @@ export default function HomeScreen() {
       // 홈이 보이지 않는 동안 계정이 바뀌었으면 앞 계정이 입힌 것을 응답 전에 먼저 벗긴다
       if (wardrobeUserId.current !== homeUserId) {
         wardrobeUserId.current = homeUserId;
-        setLobbyWear(NO_WEAR);
-        setLobbyLook(null);
+        setLobbyEquipped(null);
       }
       if (homeUserId === null) {
-        setLobbyWear(NO_WEAR);
-        setLobbyLook(null);
+        setLobbyEquipped(null);
         return;
       }
       Promise.resolve()
         .then(() => getWardrobe())
         .then((wardrobe) => {
           if (request === wardrobeRequest.current) {
-            setLobbyWear(wearFromEquipped(wardrobe?.equipped));
-            setLobbyLook(lookFromEquipped(wardrobe?.equipped));
+            setLobbyEquipped({ value: wardrobe?.equipped });
           }
         })
         .catch(() => {
           if (request === wardrobeRequest.current) {
-            setLobbyWear(NO_WEAR);
-            setLobbyLook(null);
+            setLobbyEquipped(null);
           }
         });
     }, [homeUserId])
@@ -163,8 +163,7 @@ export default function HomeScreen() {
   const handleClosetClose = useCallback(() => setIsClosetOpen(false), []);
   const handleClosetSaved = useCallback((wardrobe: Wardrobe) => {
     wardrobeRequest.current += 1;
-    setLobbyWear(wearFromEquipped(wardrobe.equipped));
-    setLobbyLook(lookFromEquipped(wardrobe.equipped));
+    setLobbyEquipped({ value: wardrobe.equipped });
     setIsClosetOpen(false);
   }, []);
   const handleShopBalance = useCallback((balance: number) => {
@@ -185,8 +184,7 @@ export default function HomeScreen() {
   // 홈쇼핑 옷 '바로 입기': 홈쇼핑을 닫고, 다시 불러오기를 기다리지 않고 저장한 옷을 바로 입힌다(불러오는 중이던 앞 응답은 버린다)
   const handleShopWore = useCallback((wardrobe: Wardrobe) => {
     wardrobeRequest.current += 1;
-    setLobbyWear(wearFromEquipped(wardrobe.equipped));
-    setLobbyLook(lookFromEquipped(wardrobe.equipped));
+    setLobbyEquipped({ value: wardrobe.equipped });
     setIsShopOpen(false);
   }, []);
   // 로비 편집 모드('꾸미기') 동안은 아래 탭바를 숨긴다

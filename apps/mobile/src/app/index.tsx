@@ -36,7 +36,8 @@ import { useHomeMonthCalendar } from "@/components/home/use-home-month-calendar"
 import { useLobbyGreeting } from "@/components/home/use-lobby-greeting";
 import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
-import { getLoopPoints, trackDailyPromptClick } from "@/lib/api";
+import { getLoopPoints, getWardrobe, trackDailyPromptClick } from "@/lib/api";
+import { NO_WEAR, wearFromEquipped, type WearState } from "@/lib/lobby3d/wear";
 import { getDifficultyMeta } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useAppOverlayStatus } from "@/lib/app-overlay-status";
@@ -85,6 +86,9 @@ export default function HomeScreen() {
   const [loopBalance, setLoopBalance] = useState<number | null>(null);
   const [placeRequest, setPlaceRequest] = useState<{ key: number; itemId: string; type: string } | null>(null);
   const loopBalanceRequest = useRef(0);
+  // 라룹이가 입은 것(서버에 저장된 입은 아이템). 불러오지 못했거나 손님이면 아무것도 입지 않는다
+  const [lobbyWear, setLobbyWear] = useState<WearState>(NO_WEAR);
+  const wardrobeRequest = useRef(0);
   const homeUserId = currentUser?.id ?? null;
   // 홈이 보일 때마다 잔액을 불러온다. 계정이 바뀌면 앞 계정의 늦은 응답은 버린다
   useFocusEffect(
@@ -103,6 +107,25 @@ export default function HomeScreen() {
         })
         .catch(() => {
           if (request === loopBalanceRequest.current) setLoopBalance(null);
+        });
+    }, [homeUserId])
+  );
+  // 홈이 보일 때마다 입은 것을 불러온다. 계정이 바뀌면 앞 계정의 늦은 응답은 버린다
+  useFocusEffect(
+    useCallback(() => {
+      wardrobeRequest.current += 1;
+      const request = wardrobeRequest.current;
+      if (homeUserId === null) {
+        setLobbyWear(NO_WEAR);
+        return;
+      }
+      Promise.resolve()
+        .then(() => getWardrobe())
+        .then((wardrobe) => {
+          if (request === wardrobeRequest.current) setLobbyWear(wearFromEquipped(wardrobe?.equipped));
+        })
+        .catch(() => {
+          if (request === wardrobeRequest.current) setLobbyWear(NO_WEAR);
         });
     }, [homeUserId])
   );
@@ -447,6 +470,7 @@ export default function HomeScreen() {
           onOpenShop={() => setIsShopOpen(true)}
           shopBalance={loopBalance}
           placeRequest={placeRequest}
+          wear={lobbyWear}
         />
       </View>
       {isEditingLobby ? null : <MobileNavBar activeTab="home" />}

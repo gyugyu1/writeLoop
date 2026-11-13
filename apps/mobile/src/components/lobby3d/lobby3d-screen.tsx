@@ -181,6 +181,8 @@ export interface Lobby3dScreenProps {
    * 홈이 주문 뒤 배치(layout)를 먼저 넘긴 다음 렌더에서 함께 바꾼다.
    */
   placeRequest?: { key: number; itemId: string; type: string } | null;
+  /** 홈: 라룹이가 입은 것(서버에 저장된 입은 아이템). 개발 화면(시험판)은 이 값 대신 '착용 시험' 버튼을 쓴다. */
+  wear?: WearState;
 }
 
 /** 꾸미기 보관함 줄의 가구 한 칸: 가구 모양 그림(없으면 이름 첫 글자)과 이름. 보관함은 가구 하나마다 한 칸이다. */
@@ -218,7 +220,8 @@ export default function Lobby3dScreen({
   onEditingChange,
   onOpenShop,
   shopBalance = null,
-  placeRequest = null
+  placeRequest = null,
+  wear: wearProp
 }: Lobby3dScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const bottomPad = bottomInset ?? insets.bottom;
@@ -235,8 +238,9 @@ export default function Lobby3dScreen({
   // 지금 구역(방·마을). 방의 '나가기'·마을 집의 '들어가기'(검게 어두워지는 전환)와 개발 화면 시험판(바로 바뀜)에서 바꾼다
   const [area, setArea] = useState<LobbyArea>("room");
   const areaRef = useRef<LobbyArea>("room");
-  // 착용 시험(개발 화면 시험판): 라룹이가 입은 것
-  const [wear, setWear] = useState<WearState>(NO_WEAR);
+  // 라룹이가 입은 것: 개발 화면 시험판은 '착용 시험' 버튼으로(서버와 상관없이), 홈은 받은 값(wear)으로
+  const [testWear, setTestWear] = useState<WearState>(NO_WEAR);
+  const wear = devPanel ? testWear : wearProp ?? NO_WEAR;
   // 전환 중(어두워지는 동안·마을을 읽는 동안·밝아지는 동안)에는 로비를 누르지 못한다
   const travelFade = useRef(new Animated.Value(0)).current;
   const [traveling, setTraveling] = useState(false);
@@ -1196,7 +1200,7 @@ export default function Lobby3dScreen({
                   accessibilityRole="button"
                   accessibilityState={{ selected: wear[slot] }}
                   style={[styles.stepButton, wear[slot] && styles.stepButtonOn]}
-                  onPress={() => setWear((current) => ({ ...current, [slot]: !current[slot] }))}
+                  onPress={() => setTestWear((current) => ({ ...current, [slot]: !current[slot] }))}
                 >
                   <Text style={[styles.stepText, wear[slot] && styles.stepTextOn]}>{label}</Text>
                 </Pressable>

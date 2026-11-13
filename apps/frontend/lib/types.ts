@@ -413,6 +413,22 @@ export interface PreviousMissionResult {
   message: string;
 }
 
+/** 라룹이 착용 부위(캐릭터 꾸미기). 부위마다 한 번에 하나만 입는다. */
+export type WardrobeSlot = "hat" | "top" | "bottom" | "shoes" | "face" | "back" | "accessory";
+
+/** 가진 착용 아이템 하나. */
+export interface WardrobeItem {
+  type: string;
+  slot: WardrobeSlot;
+  acquiredAt: string;
+}
+
+/** GET /api/wardrobe, PUT /api/wardrobe/equipped 응답. equipped는 부위별 입은 아이템 종류(입지 않은 부위는 null)다. */
+export interface Wardrobe {
+  items: WardrobeItem[];
+  equipped: Record<WardrobeSlot, string | null>;
+}
+
 /** 완료 응답에 붙는 이번 룹 적립 결과(라룹 홈쇼핑에서 쓰는 포인트). 적립 시점이 아니면 null이다. */
 export interface LoopPointsReward {
   activity: "question" | "diary" | "nowInEnglish";

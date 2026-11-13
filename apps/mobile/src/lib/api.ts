@@ -38,6 +38,8 @@ import type {
   FeedbackSessionStatus,
   HomeShopping,
   HomeShoppingOrderResult,
+  Wardrobe,
+  WardrobeSlot,
   HistorySession,
   LoginRequest,
   LoopPointsSummary,
@@ -1591,6 +1593,33 @@ export async function getLoopPoints(): Promise<LoopPointsSummary | null> {
     throw await parseApiError(response, "룹을 불러오지 못했어요.");
   }
   return (await response.json()) as LoopPointsSummary;
+}
+
+/** 라룹이 착용 아이템(가진 것·입은 것). 로그인하지 않았으면 null. */
+export async function getWardrobe(): Promise<Wardrobe | null> {
+  const response = await apiFetch("/api/wardrobe");
+  if (response.status === 401) {
+    return null;
+  }
+  if (!response.ok) {
+    throw await parseApiError(response, "옷장을 불러오지 못했어요");
+  }
+  return (await response.json()) as Wardrobe;
+}
+
+/** 부위별 입을 아이템을 한꺼번에 바꾼다(가지지 않았거나 다른 부위 아이템이면 400 WARDROBE_INVALID). */
+export async function saveWardrobeEquipped(equipped: Record<WardrobeSlot, string | null>): Promise<Wardrobe> {
+  const response = await apiFetch("/api/wardrobe/equipped", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(equipped)
+  });
+  if (!response.ok) {
+    throw await parseApiError(response, "입지 못했어요. 다시 시도해 주세요");
+  }
+  return (await response.json()) as Wardrobe;
 }
 
 /** 라룹 홈쇼핑 목록(잔액, 오늘의 방송 상품, 가구마다 가격·가진 개수). */

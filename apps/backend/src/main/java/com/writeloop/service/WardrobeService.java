@@ -45,6 +45,25 @@ public class WardrobeService {
     private final WardrobeItemRepository itemRepository;
     private final WardrobeOutfitRepository outfitRepository;
 
+    /** 착용 아이템 종류인지(홈쇼핑이 옷 주문을 가구 주문과 가른다). */
+    public static boolean isWearable(String type) {
+        return type != null && ITEM_SLOTS.containsKey(type);
+    }
+
+    /** 가진 착용 아이템 종류들. */
+    @Transactional(readOnly = true)
+    public Set<String> ownedTypes(Long userId) {
+        return itemRepository.findAllByUserIdOrderByAcquiredAtAscIdAsc(userId).stream()
+                .map(WardrobeItemEntity::getItemType)
+                .collect(Collectors.toSet());
+    }
+
+    /** 착용 아이템 하나를 가진 것에 더한다(홈쇼핑 주문). 같은 종류를 이미 가졌는지는 부르는 쪽이 먼저 본다(표의 유일 키가 한 번 더 막는다). */
+    @Transactional
+    public void addItem(Long userId, String type, Instant acquiredAt) {
+        itemRepository.saveAndFlush(new WardrobeItemEntity(userId, type, acquiredAt));
+    }
+
     @Transactional(readOnly = true)
     public WardrobeDto getWardrobe(Long userId) {
         List<WardrobeItemEntity> items = itemRepository.findAllByUserIdOrderByAcquiredAtAscIdAsc(userId);

@@ -1,7 +1,7 @@
-import { ROOM, activeLobbyLayout, type MarkId } from "./engine";
+import { ROOM, activeLobbyLayout, type PlaceId } from "./engine";
 import { currentRoom, outsideExit } from "./room";
 import { TABLETOP_PICK_MIN, fittedModel, furnitureType, surfaceSlots, type FurnitureMount } from "./furniture-catalog";
-import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, makeLayout, storedItems, type FurnitureItem, type LobbyLayout } from "./lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, closetPlaceId, layoutGeometry, makeLayout, storedItems, type FurnitureItem, type LobbyLayout } from "./lobby-layout";
 
 // 라룹이 방의 가구를 놓는 자리. Kenney 가구 묶음(lobby3d-furniture)과 코드로 만든 대체 모양(lobby3d-canvas)이 함께 쓴다.
 // 자리는 배치 데이터(lobby-layout)에서, 장소·막는 가구인지는 카탈로그(furniture-catalog)에서 계산한다.
@@ -36,8 +36,8 @@ export interface FurniturePlacement {
   y: number;
   z: number;
   rotY: number;
-  /** 누르면 이 장소로 간다. */
-  mark?: MarkId;
+  /** 누르면 이 장소로 간다(옷장은 그 옷장의 장소). */
+  mark?: PlaceId;
   /** 장소가 아닌, 길을 막는 가구. 누르면 움직이지 않는다(engine의 SOLID_TILES와 칸이 맞아야 한다). */
   blocker?: boolean;
 }
@@ -55,8 +55,9 @@ export function furniturePlacements(layout: LobbyLayout): FurniturePlacement[] {
     const item = layout.items.find((it) => it.id === p.item)!;
     const type = furnitureType(item.type);
     // 탁상형 소품을 누르면 받침 가구를 누른 것과 같다(꾸미기 밖에서 책상 위 스탠드를 누르면 책상 장소로 간다)
-    const owner = item.on ? furnitureType(layout.items.find((it) => it.id === item.on!.parent)!.type) : type;
-    const mark = owner.place?.id;
+    const ownerItem = item.on ? layout.items.find((it) => it.id === item.on!.parent)! : item;
+    const owner = furnitureType(ownerItem.type);
+    const mark: PlaceId | undefined = owner.place?.id ?? (owner.closet ? closetPlaceId(ownerItem.id) : undefined);
     const blocker = !mark && owner.mount === "floor" && owner.blocksWalk;
     const chair = p.companion ? type.chair : undefined;
     const fit = fittedModel(type);

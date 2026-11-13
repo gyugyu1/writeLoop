@@ -30,6 +30,11 @@ export interface FurnitureType {
   blocksWalk: boolean;
   /** 딸린 장소: 서는 자리들, 바라볼 지점, 이름표(가구 기준 바닥 좌표와 높이). */
   place?: { id: FurniturePlaceId; approach: LocalPoint[]; faceTo: LocalPoint; label: { x: number; y: number; z: number } };
+  /**
+   * 옷장 장소(캐릭터 꾸미기 입구): place와 같은 모양이지만 배치에 몇 개든 있을 수 있고, 가구마다 따로 장소가 된다
+   * (장소 id는 closetPlaceId(가구 id)). place와 달리 배치를 불러오거나 꾸밀 때 검사하지 않는다.
+   */
+  closet?: { approach: LocalPoint[]; faceTo: LocalPoint; label: { x: number; y: number; z: number } };
   /** 딸린 의자(일기 책상): 책상 밑 자리, '들어가기' 때 앞으로 빼는 거리, 앉는 자리, 앉기 전에 비켜서는 자리, 앉은 높이. */
   chair?: {
     piece: string;
@@ -122,6 +127,8 @@ const CATALOG: FurnitureType[] = [
     size: { width: 1, depth: 1 },
     height: { bottom: 0, top: 2.38 },
     blocksWalk: true,
+    // 책장처럼 앞에 서서 옷장을 본다. 이름표는 방 쪽으로 조금 옮긴다
+    closet: { approach: [{ x: 0, z: 0.9 }], faceTo: { x: 0, z: -0.5 }, label: { x: 0, y: 2.25, z: 0.4 } },
     removable: true,
     model: { piece: "wardrobe", box: { width: 1.12, height: 2.38, depth: 0.876 }, y: 0, shadow: { floor: [1.4, 1.2, 0.52] } }
   },

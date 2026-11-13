@@ -15,6 +15,9 @@ import {
   ROOM_MARK_IDS,
   VILLAGE_MARK_IDS,
   applyArea,
+  isClosetPlaceId,
+  roomPlaceIds,
+  setClosetSignedIn,
   markInfo,
   VIEW_WIDTH_DEFAULT,
   VIEW_WIDTH_MAX,
@@ -71,9 +74,29 @@ const VILLAGE_FAILED = "마을을 불러오지 못했어요. 잠시 뒤 다시 �
 /** 시험판의 구역 버튼. */
 const AREA_LABELS: Record<LobbyArea, string> = { room: "방", village: "마을" };
 
-/** 그 구역의 장소들. */
+/** 그 구역의 장소들(방은 지금 배치의 옷장 포함). */
 function placesOf(area: LobbyArea): readonly PlaceId[] {
-  return area === "village" ? VILLAGE_MARK_IDS : ROOM_MARK_IDS;
+  return area === "village" ? VILLAGE_MARK_IDS : roomPlaceIds();
+}
+
+/** 장소마다 만들어 두는 값. 고정 장소는 처음에 만들고, 옷장 장소는 처음 쓸 때 만든다(옷장은 배치에 따라 늘고 준다). */
+function placeValues<T>(make: () => T): Record<PlaceId, T> {
+  const values = new Map<PlaceId, T>(ALL_PLACE_IDS.map((id) => [id, make()]));
+  return new Proxy({} as Record<PlaceId, T>, {
+    get(_target, key) {
+      if (typeof key !== "string") return undefined;
+      const id = key as PlaceId;
+      let value = values.get(id);
+      if (value === undefined) {
+        value = make();
+        values.set(id, value);
+      }
+      return value;
+    },
+    ownKeys: () => [...values.keys()],
+    getOwnPropertyDescriptor: (_target, key) =>
+      typeof key === "string" && values.has(key as PlaceId) ? { enumerable: true, configurable: true, value: values.get(key as PlaceId) } : undefined
+  });
 }
 
 /** 방의 장소인지(홈이 들어가기를 맡는 장소). */
@@ -183,6 +206,10 @@ export interface Lobby3dScreenProps {
   placeRequest?: { key: number; itemId: string; type: string } | null;
   /** 홈: 라룹이가 입은 것(서버에 저장된 입은 아이템). 개발 화면(시험판)은 이 값 대신 '착용 시험' 버튼을 쓴다. */
   wear?: WearState;
+  /** 옷장의 '들어가기'(홈이 꾸미기 화면을 연다). 없으면(개발 화면) 아무것도 열지 않는다. */
+  onEnterCloset?: () => void;
+  /** 로그인했는지. 손님이면 옷장 말풍선이 로그인 안내만 하고 버튼이 없다. 주지 않으면 로그인한 것으로 본다(개발 화면). */
+  signedIn?: boolean;
 }
 
 /** 꾸미기 보관함 줄의 가구 한 칸: 가구 모양 그림(없으면 이름 첫 글자)과 이름. 보관함은 가구 하나마다 한 칸이다. */
@@ -221,8 +248,12 @@ export default function Lobby3dScreen({
   onOpenShop,
   shopBalance = null,
   placeRequest = null,
-  wear: wearProp
+  wear: wearProp,
+  onEnterCloset,
+  signedIn = true
 }: Lobby3dScreenProps = {}) {
+  // 옷장 말풍선(로그인 안내인지)은 그리기 전에 맞춘다
+  setClosetSignedIn(signedIn);
   const insets = useSafeAreaInsets();
   const bottomPad = bottomInset ?? insets.bottom;
   const inputBlockedRef = useRef(inputBlocked);
@@ -455,13 +486,12 @@ export default function Lobby3dScreen({
   // 장소 안내 말풍선은 장소마다 미리 만들어 두고, 지금 장소의 것만 네이티브 쪽 투명도로 보인다. 아래 메뉴 강조도 같다.
   // 손을 떼지 않고 끄는 동안에는 3D 그리기와 누르기 처리가 자바스크립트 일꾼을 차지해 화면 다시 그리기가 밀리므로(손을 떼거나
   // 몇 초 뒤에야 반영됐다), 다시 그리기를 기다리지 않고 바꿀 수 있게 한다.
-  const placeOpacity = useRef(
-    Object.fromEntries(ALL_PLACE_IDS.map((id) => [id, nativeValue(0)])) as Record<PlaceId, Animated.Value>
-  ).current;
+  const placeOpacity = useRef(placeValues(() => nativeValue(0))).current;
   const menuLitOpacity = useRef(
     Object.fromEntries(MENU.map((item) => [item.id, nativeValue(0)])) as Record<LobbyMenuId, Animated.Value>
   ).current;
-  const [placeHeights, setPlaceHeights] = useState<Record<PlaceId, number>>(
+  // 재지 않은 장소(처음 보이는 옷장)는 80으로 본다
+  const [placeHeights, setPlaceHeights] = useState<Partial<Record<PlaceId, number>>>(
     () => Object.fromEntries(ALL_PLACE_IDS.map((id) => [id, 80])) as Record<PlaceId, number>
   );
   // 화면에 그려 둔 인사·짧은 말 말풍선의 글. 다시 그리기가 밀려 글이 지금 말과 다르면 그 말풍선을 보이지 않는다.
@@ -493,12 +523,7 @@ export default function Lobby3dScreen({
   const screenWidthRef = useRef(screenWidth);
   screenWidthRef.current = screenWidth;
   // 장소 이름표 자리도 같은 까닭으로 매 프레임 값만 바꾼다(카메라가 움직여도 화면 전체를 다시 그리지 않는다)
-  const labelPos = useRef(
-    Object.fromEntries(ALL_PLACE_IDS.map((id) => [id, { left: nativeValue(0), top: nativeValue(0) }])) as Record<
-      PlaceId,
-      { left: Animated.Value; top: Animated.Value }
-    >
-  ).current;
+  const labelPos = useRef(placeValues(() => ({ left: nativeValue(0), top: nativeValue(0) }))).current;
   const onOverlayFrame = useCallback(
     (bubble: { x: number; y: number }, labels: Partial<Record<PlaceId, { x: number; y: number }>>) => {
       const left = Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8));
@@ -517,7 +542,7 @@ export default function Lobby3dScreen({
       }
       for (const id of Object.keys(labels) as PlaceId[]) {
         const at = labels[id];
-        if (!at || !labelPos[id]) continue;
+        if (!at) continue;
         send(labelPos[id].left, at.x, 0.5);
         send(labelPos[id].top, at.y, 0.5);
       }
@@ -529,7 +554,9 @@ export default function Lobby3dScreen({
   const applyOverlay = useCallback(
     (snap: LobbySnapshot) => {
       const place = snap.place;
-      for (const id of ALL_PLACE_IDS) send(placeOpacity[id], place === id ? 1 : 0, 0);
+      // 만들어 둔 장소 모두(처음 보는 지금 장소는 여기서 만든다)
+      if (place) send(placeOpacity[place], 1, 0);
+      for (const id of Object.keys(placeOpacity) as PlaceId[]) if (id !== place) send(placeOpacity[id], 0, 0);
       const lineShown = place === null && snap.bubbleText !== "" && snap.bubbleText === renderedLine.current;
       send(bubbleOpacity, lineShown ? 1 : 0, 0);
       const lit = place ? MENU_FOR_MARK[place] ?? null : null;
@@ -542,10 +569,14 @@ export default function Lobby3dScreen({
   const enterPlace = useCallback(
     (id: PlaceId) => {
       if (isRoomMark(id) && onEnterMark?.(id)) return true;
+      if (isClosetPlaceId(id)) {
+        onEnterCloset?.();
+        return Boolean(onEnterCloset);
+      }
       showToast(markInfo(id).enterMessage);
       return false;
     },
-    [onEnterMark, showToast]
+    [onEnterMark, onEnterCloset, showToast]
   );
   const enterPlaceRef = useRef(enterPlace);
   enterPlaceRef.current = enterPlace;
@@ -932,13 +963,13 @@ export default function Lobby3dScreen({
             importantForAccessibility={active ? "auto" : "no-hide-descendants"}
             onLayout={(e) => {
               const h = Math.round(e.nativeEvent.layout.height);
-              if (h > 0 && h !== placeHeights[id]) setPlaceHeights((prev) => ({ ...prev, [id]: h }));
+              if (h > 0 && h !== (placeHeights[id] ?? 80)) setPlaceHeights((prev) => ({ ...prev, [id]: h }));
             }}
             style={[
               styles.bubbleWrap,
               {
                 opacity: placeOpacity[id],
-                transform: [{ translateX: bubbleLeft }, { translateY: bubbleTop }, { translateY: -placeHeights[id] - 12 }]
+                transform: [{ translateX: bubbleLeft }, { translateY: bubbleTop }, { translateY: -(placeHeights[id] ?? 80) - 12 }]
               }
             ]}
           >

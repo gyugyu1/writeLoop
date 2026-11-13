@@ -11,13 +11,12 @@ import {
   CHAIR,
   LobbySim,
   ROOM,
-  ROOM_MARK_IDS,
   VILLAGE_MARK_IDS,
   activeLobbyLayout,
   cameraPose,
+  roomPlaceIds,
   type FloorPoint,
   type LobbyArea,
-  type MarkId,
   type PlaceId,
   type PointerHit
 } from "@/lib/lobby3d/engine";
@@ -394,17 +393,20 @@ function placeWallShadow(m: THREE.Object3D, place: { x: number; y: number; z: nu
 
 // ---------- 방과 라이트루프 ----------
 
-/** 이름표 자리: 장소 가구는 배치를 따라가고, 밖으로 가는 입구 발판은 고정이다. */
-function computeLabelPoints(layout: LobbyLayout): Record<MarkId, THREE.Vector3> {
-  const places = layoutGeometry(layout, ROOM.width).places;
+/** 이름표 자리: 장소 가구(옷장 포함)는 배치를 따라가고, 밖으로 가는 입구 발판은 고정이다. */
+function computeLabelPoints(layout: LobbyLayout): Partial<Record<PlaceId, THREE.Vector3>> {
+  const geometry = layoutGeometry(layout, ROOM.width);
+  const places = geometry.places;
   const at = (p: { x: number; y: number; z: number }) => new THREE.Vector3(p.x, p.y, p.z);
-  return {
+  const points: Partial<Record<PlaceId, THREE.Vector3>> = {
     board: at(places.board.label),
     window: at(places.window.label),
     door: new THREE.Vector3(outsideExit(currentRoom()).x, 0.4, ROOM.depth + ROOM.stepDepth / 2),
     desk: at(places.desk.label),
     bookcase: at(places.bookcase.label)
   };
+  for (const closet of geometry.closets) points[closet.id] = at(closet.label);
+  return points;
 }
 
 interface World {
@@ -414,8 +416,9 @@ interface World {
   kit: WorldKit;
   /** 라이트루프 발밑 그림자. 모델은 따로 불러와 붙인다(lobby3d-character). */
   shadow: THREE.Mesh;
-  markObjects: { id: MarkId; object: THREE.Object3D }[];
-  labelPoints: Record<MarkId, THREE.Vector3>;
+  markObjects: { id: PlaceId; object: THREE.Object3D }[];
+  /** 방의 장소 이름표 자리(옷장은 놓인 것만). 배치를 바꾸면 통째로 다시 계산한다. */
+  labelPoints: Partial<Record<PlaceId, THREE.Vector3>>;
   floor: THREE.Mesh;
   /** 바닥 크기(칸). 바닥 그림은 처음 그릴 때 만드니, 그림의 반복은 방을 지을 때의 크기로 정한다. */
   floorSize: { width: number; depth: number };
@@ -877,7 +880,9 @@ function Scene({
   const labelLayout = edit ? null : live;
   useMemo(() => {
     if (!labelLayout || labelLayout === furnitureLayout) return;
-    Object.assign(world.labelPoints, computeLabelPoints(labelLayout));
+    const nextLabels = computeLabelPoints(labelLayout);
+    for (const id of Object.keys(world.labelPoints) as PlaceId[]) if (!(id in nextLabels)) delete world.labelPoints[id];
+    Object.assign(world.labelPoints, nextLabels);
   }, [world, labelLayout, furnitureLayout]);
   // 시각에 따른 빛: 지금 보이는 색감(부드럽게 넘어가는 중인 값)과 구운 방에 곱하는 색
   const daylightState = useMemo(() => createDaylightState(daylight), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -975,9 +980,9 @@ function Scene({
       // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).
       const objects: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...world.markObjects.map((m) => m.object), ...world.blockers];
       const hits = raycaster.intersectObjects(objects, true).filter((h) => !h.object.userData.stowed && !h.object.userData.widePick);
-      let mark: MarkId | null = null;
+      let mark: PlaceId | null = null;
       let onCharacter = false;
-      const first = hits[0]?.object.userData as { mark?: MarkId; isCharacter?: boolean; blocker?: boolean } | undefined;
+      const first = hits[0]?.object.userData as { mark?: PlaceId; isCharacter?: boolean; blocker?: boolean } | undefined;
       if (first?.isCharacter) onCharacter = true;
       else if (first?.mark) mark = first.mark;
       // 장소가 아닌 가구(화분)를 누르면 그 뒤 바닥으로 걸어가지 않게 바닥 점을 주지 않는다.
@@ -1216,7 +1221,10 @@ function Scene({
     if (areaRef.current === "village") {
       for (const id of VILLAGE_MARK_IDS) labels[id] = toScreen(villageLabels[id]);
     } else {
-      for (const id of ROOM_MARK_IDS as readonly MarkId[]) labels[id] = toScreen(world.labelPoints[id]);
+      for (const id of roomPlaceIds()) {
+        const point = world.labelPoints[id];
+        if (point) labels[id] = toScreen(point);
+      }
     }
     onOverlayFrame?.(bubble, labels);
 

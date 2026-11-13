@@ -1,4 +1,4 @@
-import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type LobbyLayout, type WallSide } from "./lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, isClosetPlaceId, layoutGeometry, type ClosetPlaceId, type LobbyLayout, type WallSide } from "./lobby-layout";
 import { currentRoom, outsideExit, outsidePlace, setCurrentRoom, type RoomSpec } from "./room";
 import { VILLAGE, VILLAGE_PLACES, VILLAGE_SOLID_TILES, type VillageBuildingId } from "./village";
 
@@ -8,8 +8,13 @@ import { VILLAGE, VILLAGE_PLACES, VILLAGE_SOLID_TILES, type VillageBuildingId } 
 
 /** 방의 장소 다섯. */
 export type MarkId = "board" | "window" | "desk" | "door" | "bookcase";
-/** 방의 장소 다섯과 마을의 장소 넷(건물 문 앞). 지금 구역(currentArea)의 장소만 쓴다(activePlaceIds). */
-export type PlaceId = MarkId | VillageBuildingId;
+/**
+ * 방의 장소 다섯, 방에 놓인 옷장마다의 장소(ClosetPlaceId), 마을의 장소 넷(건물 문 앞).
+ * 지금 구역(currentArea)의 장소만 쓴다(activePlaceIds).
+ */
+export type PlaceId = MarkId | ClosetPlaceId | VillageBuildingId;
+export type { ClosetPlaceId };
+export { isClosetPlaceId };
 /** 로비의 구역: 라룹이 방, 바깥 마을. */
 export type LobbyArea = "room" | "village";
 export type ActionType = "wave" | "jump" | "hop" | "point" | "spin" | "look" | "poke";
@@ -123,13 +128,45 @@ export const VILLAGE_MARKS: Record<VillageBuildingId, MarkInfo<VillageBuildingId
   ])
 ) as Record<VillageBuildingId, MarkInfo<VillageBuildingId>>;
 
+/** 옷장 말풍선(로그인했는지에 따라. 손님은 버튼 없이 안내만 한다). */
+export const CLOSET_PROMPT = { prompt: "옷장이야.\n옷을 갈아입어 볼까?", buttonLabel: "들어가기" } as const;
+export const CLOSET_GUEST_PROMPT = { prompt: "로그인하면 라룹이 옷을\n갈아입힐 수 있어", buttonLabel: "" } as const;
+
+/** 지금 배치의 옷장 장소(배치 순서). 배치를 바꾸면(applyLobbyLayout) 다시 만든다. */
+const closetMarks = new Map<ClosetPlaceId, MarkInfo<ClosetPlaceId>>();
+let closetSignedIn = true;
+
+/** 옷장 말풍선을 로그인한 사용자용으로 할지(손님이면 false). 홈이 로그인 상태가 바뀔 때 알린다. */
+export function setClosetSignedIn(signedIn: boolean): void {
+  closetSignedIn = signedIn;
+  for (const mark of closetMarks.values()) Object.assign(mark, signedIn ? CLOSET_PROMPT : CLOSET_GUEST_PROMPT);
+}
+
+/** 이름표·누르기·서는 자리를 아직 모르는(배치에 없는) 옷장 장소에 쓰는 빈 정보. */
+const MISSING_CLOSET: MarkInfo<ClosetPlaceId> = {
+  id: "closet:",
+  label: "옷장",
+  faceTo: { x: 0, z: 0 },
+  approach: [],
+  ...CLOSET_PROMPT,
+  enterMessage: ""
+};
+
 /** 장소 하나의 정보(방·마을 어느 쪽이든). */
 export function markInfo(id: PlaceId): MarkInfo<PlaceId> {
+  if (isClosetPlaceId(id)) return closetMarks.get(id) ?? MISSING_CLOSET;
   return id in VILLAGE_MARKS ? VILLAGE_MARKS[id as VillageBuildingId] : MARKS[id as MarkId];
 }
 
-/** 방의 장소. */
+/** 방의 장소(옷장은 뺀 고정 장소). */
 export const ROOM_MARK_IDS: readonly MarkId[] = ["board", "window", "desk", "door", "bookcase"];
+
+let roomPlaces: readonly PlaceId[] = ROOM_MARK_IDS;
+
+/** 방의 장소: 고정 장소 다섯과 지금 배치의 옷장들. 배치가 바뀔 때만 새 목록이 된다. */
+export function roomPlaceIds(): readonly PlaceId[] {
+  return roomPlaces;
+}
 /** 마을의 장소. */
 export const VILLAGE_MARK_IDS: readonly PlaceId[] = ["home", "furnitureShop", "cafe", "library"];
 
@@ -142,7 +179,7 @@ export function currentArea(): LobbyArea {
 
 /** 지금 구역의 장소들. */
 export function activePlaceIds(): readonly PlaceId[] {
-  return area === "village" ? VILLAGE_MARK_IDS : ROOM_MARK_IDS;
+  return area === "village" ? VILLAGE_MARK_IDS : roomPlaces;
 }
 
 /** 걸어 다닐 바닥의 크기(칸). 길 찾기가 쓰는 값만 담는다. */
@@ -169,7 +206,7 @@ const ZONE_REACHES_WALL: ReadonlySet<PlaceId> = new Set<PlaceId>(["board", "wind
 
 /** 장소 구역이 바라볼 지점(벽)까지 이어지는 장소인지. */
 export function zoneReachesWall(id: PlaceId): boolean {
-  return ZONE_REACHES_WALL.has(id);
+  return ZONE_REACHES_WALL.has(id) || isClosetPlaceId(id);
 }
 
 /** 장소 구역의 가운데(서는 자리들의 가운데). */
@@ -196,7 +233,7 @@ function zoneAmong(x: number, z: number, ids: readonly PlaceId[]): PlaceId | nul
   let bestDistance = Infinity;
   for (const id of ids) {
     const c = markZoneCenter(id);
-    const end = ZONE_REACHES_WALL.has(id) ? markInfo(id).faceTo : c;
+    const end = zoneReachesWall(id) ? markInfo(id).faceTo : c;
     const distance = distanceToSegment(x, z, c, end);
     if (distance <= MARK_ZONE_RADIUS && distance < bestDistance) {
       best = id;
@@ -629,6 +666,18 @@ export function applyLobbyLayout(layout: LobbyLayout): void {
     markInfo(id).approach = geometry.places[id].approach;
     markInfo(id).faceTo = geometry.places[id].faceTo;
   }
+  closetMarks.clear();
+  for (const spot of geometry.closets) {
+    closetMarks.set(spot.id, {
+      id: spot.id,
+      label: "옷장",
+      faceTo: spot.faceTo,
+      approach: spot.approach,
+      ...(closetSignedIn ? CLOSET_PROMPT : CLOSET_GUEST_PROMPT),
+      enterMessage: ""
+    });
+  }
+  roomPlaces = geometry.closets.length > 0 ? [...ROOM_MARK_IDS, ...geometry.closets.map((spot) => spot.id)] : ROOM_MARK_IDS;
   solidTiles.clear();
   for (const key of geometry.solidTiles) solidTiles.add(key);
   Object.assign(CHAIR, geometry.chair);

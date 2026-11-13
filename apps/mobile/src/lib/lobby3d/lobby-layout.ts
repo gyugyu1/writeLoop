@@ -169,6 +169,27 @@ export function floorPieceBounds(type: string, placement: FloorPlacementData): {
 
 type PlaceId = Exclude<MarkId, "door">;
 
+/** 옷장 장소 id(옷장 가구마다 하나). */
+export type ClosetPlaceId = `closet:${string}`;
+
+/** 옷장 가구 id의 장소 id. */
+export function closetPlaceId(itemId: string): ClosetPlaceId {
+  return `closet:${itemId}`;
+}
+
+/** 옷장 장소인지. */
+export function isClosetPlaceId(id: string): id is ClosetPlaceId {
+  return id.startsWith("closet:");
+}
+
+/** 옷장 장소 하나(배치에 놓인 옷장 가구마다). */
+export interface ClosetSpot {
+  id: ClosetPlaceId;
+  approach: FloorPoint[];
+  faceTo: FloorPoint;
+  label: { x: number; y: number; z: number };
+}
+
 export interface PlacedPiece {
   /** 배치한 가구 id. 딸린 의자는 그 책상의 id다. */
   item: string;
@@ -188,6 +209,8 @@ export interface LayoutGeometry {
   /** 가구가 있어 지나갈 수 없는 칸("열,행"). */
   solidTiles: Set<string>;
   places: Record<PlaceId, { approach: FloorPoint[]; faceTo: FloorPoint; label: { x: number; y: number; z: number } }>;
+  /** 방에 놓인 옷장 장소(배치 순서). 없으면 빈 목록. */
+  closets: ClosetSpot[];
   chair: {
     /** 책상 밑 의자 자리. */
     home: FloorPoint;
@@ -251,6 +274,7 @@ export function layoutGeometry(layout: LobbyLayout, roomWidth: number): LayoutGe
   const pieces: PlacedPiece[] = [];
   const solidTiles = new Set<string>();
   const places = {} as LayoutGeometry["places"];
+  const closets: ClosetSpot[] = [];
   let chair: LayoutGeometry["chair"] | null = null;
 
   const typed = layout.items.filter((item) => !item.on).map((item) => ({ item, type: furnitureType(item.type), pose: poseOf(item, roomWidth) }));
@@ -268,6 +292,7 @@ export function layoutGeometry(layout: LobbyLayout, roomWidth: number): LayoutGe
     if (type.chair) chair = placeChair(item.id, type, pose, pieces);
     if (type.blocksWalk && type.mount !== "wall") addSolid(type, pose, solidTiles);
     if (type.place) places[type.place.id as PlaceId] = placeSpot(type, pose);
+    if (type.closet) closets.push({ id: closetPlaceId(item.id), ...placeSpot({ ...type, place: { id: "bookcase", ...type.closet } }, pose) });
   }
   for (const item of layout.items) {
     const pose = item.on ? tabletopPose(layout, item) : null;
@@ -277,7 +302,7 @@ export function layoutGeometry(layout: LobbyLayout, roomWidth: number): LayoutGe
     pieces.push({ item: item.id, piece: type.model.piece, companion: false, x: drawn.x, y: pose.y + type.model.y, z: drawn.z, rotY: FACING_ROT[pose.facing].rotY });
   }
 
-  return { pieces, solidTiles, places, chair: chair ?? NO_CHAIR };
+  return { pieces, solidTiles, places, closets, chair: chair ?? NO_CHAIR };
 }
 
 /** 책상이 없을 때의 의자 값(장소 가구는 늘 있으므로 실제로는 쓰이지 않는다). */

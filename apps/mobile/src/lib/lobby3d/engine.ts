@@ -888,14 +888,17 @@ export class LobbySim {
     this.checkZoneWhenStopped = true;
   }
 
-  /** 구역을 바꿀 때: 하던 일을 모두 멈추고 point에 heading을 보고 선다(장소 도착은 없다). */
-  placeAt(point: FloorPoint, heading: number, nowMs: number): void {
+  /**
+   * 구역을 바꿀 때: 하던 일을 모두 멈추고 point에 heading을 보고 선다(장소 도착은 없다).
+   * checkZone이면 선 자리가 장소 구역 안인지 다음 프레임에 본다(마을을 못 읽어 방의 '밖으로'에 되돌아왔을 때 그 안내가 다시 뜨게).
+   */
+  placeAt(point: FloorPoint, heading: number, nowMs: number, checkZone = false): void {
     this.relayout(nowMs);
     this.x = point.x;
     this.z = point.z;
     this.heading = heading;
     this.goalHeading = heading;
-    this.checkZoneWhenStopped = false;
+    this.checkZoneWhenStopped = checkZone;
   }
 
   /** 들어가기 동작 중에 왔던 인사를 한다(앞을 보고 동작한다). */

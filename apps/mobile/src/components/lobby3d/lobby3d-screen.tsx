@@ -630,12 +630,12 @@ export default function Lobby3dScreen({
     // 방으로 되돌리고, 나가기 전 자리·방향 그대로 세운다
     placeInAreaRef.current("room");
     const from = travelFrom.current;
-    if (from) sim.placeAt({ x: from.x, z: from.z }, from.heading, Date.now());
+    if (from) sim.placeAt({ x: from.x, z: from.z }, from.heading, Date.now(), true);
     syncView();
     stopLoadingText();
     waiting();
     showToast(VILLAGE_FAILED);
-  }, [showToast]);
+  }, [showToast, sim, syncView]);
   const placeInAreaRef = useRef(placeInArea);
   placeInAreaRef.current = placeInArea;
 

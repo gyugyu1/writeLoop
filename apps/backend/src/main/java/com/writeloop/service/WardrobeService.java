@@ -6,6 +6,8 @@ import com.writeloop.persistence.WardrobeItemEntity;
 import com.writeloop.persistence.WardrobeItemRepository;
 import com.writeloop.persistence.WardrobeOutfitEntity;
 import com.writeloop.persistence.WardrobeOutfitRepository;
+import com.writeloop.persistence.UserEntity;
+import com.writeloop.persistence.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
 public class WardrobeService {
 
     static final String INVALID_CODE = "WARDROBE_INVALID";
+    /** 라룹이 고글: 모든 계정이 처음부터 가지고(DB 행 없이), 입은 것을 저장한 적 없으면 입고 있는 얼굴장식. */
+    static final String GOGGLES = "goggles";
     static final String INVALID_MESSAGE = "입을 수 없는 아이템이에요";
 
     /** 아는 착용 아이템 종류와 그 부위(앱 착용 아이템 목록과 같다). */
@@ -35,6 +39,7 @@ public class WardrobeService {
 
     private static Map<String, String> itemSlots() {
         Map<String, String> slots = new LinkedHashMap<>();
+        slots.put(GOGGLES, "face");
         slots.put("capOrange", "hat");
         slots.put("tshirtOrange", "top");
         slots.put("shortsNavy", "bottom");
@@ -57,13 +62,14 @@ public class WardrobeService {
 
     private final WardrobeItemRepository itemRepository;
     private final WardrobeOutfitRepository outfitRepository;
+    private final UserRepository userRepository;
 
     /** 착용 아이템 종류인지(홈쇼핑이 옷 주문을 가구 주문과 가른다). */
     public static boolean isWearable(String type) {
         return type != null && ITEM_SLOTS.containsKey(type);
     }
 
-    /** 가진 착용 아이템 종류들. */
+    /** 가진 착용 아이템 종류들(홈쇼핑에서 산 것. 늘 가진 고글은 넣지 않는다). */
     @Transactional(readOnly = true)
     public Set<String> ownedTypes(Long userId) {
         return itemRepository.findAllByUserIdOrderByAcquiredAtAscIdAsc(userId).stream()
@@ -81,7 +87,12 @@ public class WardrobeService {
     public WardrobeDto getWardrobe(Long userId) {
         List<WardrobeItemEntity> items = itemRepository.findAllByUserIdOrderByAcquiredAtAscIdAsc(userId);
         WardrobeOutfitEntity outfit = outfitRepository.findById(userId).orElse(null);
-        return toDto(items, outfit);
+        return toDto(items, outfit, gogglesAcquiredAt(userId));
+    }
+
+    /** 고글을 얻은 때: 계정을 만든 때(계정을 못 찾으면 1970-01-01). */
+    private Instant gogglesAcquiredAt(Long userId) {
+        return userRepository.findById(userId).map(UserEntity::getCreatedAt).orElse(Instant.EPOCH);
     }
 
     /**
@@ -93,6 +104,7 @@ public class WardrobeService {
         WardrobeDto.Equipped equipped = requested == null ? new WardrobeDto.Equipped(null, null, null, null, null, null, null) : requested;
         List<WardrobeItemEntity> items = itemRepository.findAllByUserIdOrderByAcquiredAtAscIdAsc(userId);
         Set<String> owned = items.stream().map(WardrobeItemEntity::getItemType).collect(Collectors.toSet());
+        owned.add(GOGGLES);
         Map<String, String> bySlot = asMap(equipped);
         for (Map.Entry<String, String> entry : bySlot.entrySet()) {
             String type = entry.getValue();
@@ -109,7 +121,7 @@ public class WardrobeService {
                 equipped.face(), equipped.back(), equipped.accessory(), Instant.now()
         );
         outfitRepository.save(outfit);
-        return toDto(items, outfit);
+        return toDto(items, outfit, gogglesAcquiredAt(userId));
     }
 
     private static Map<String, String> asMap(WardrobeDto.Equipped equipped) {
@@ -124,18 +136,21 @@ public class WardrobeService {
         return bySlot;
     }
 
-    private static WardrobeDto toDto(List<WardrobeItemEntity> items, WardrobeOutfitEntity outfit) {
-        // 목록에서 사라진 종류(옛 아이템)는 보이지 않는다
-        List<WardrobeDto.Item> list = items.stream()
-                .filter(item -> ITEM_SLOTS.containsKey(item.getItemType()))
+    private static WardrobeDto toDto(List<WardrobeItemEntity> items, WardrobeOutfitEntity outfit, Instant gogglesAcquiredAt) {
+        // 고글은 늘 맨 앞에 있다. 목록에서 사라진 종류(옛 아이템)는 보이지 않는다
+        List<WardrobeDto.Item> list = new java.util.ArrayList<>();
+        list.add(new WardrobeDto.Item(GOGGLES, ITEM_SLOTS.get(GOGGLES), gogglesAcquiredAt));
+        items.stream()
+                .filter(item -> ITEM_SLOTS.containsKey(item.getItemType()) && !GOGGLES.equals(item.getItemType()))
                 .map(item -> new WardrobeDto.Item(item.getItemType(), ITEM_SLOTS.get(item.getItemType()), item.getAcquiredAt()))
-                .toList();
+                .forEach(list::add);
+        // 입은 것을 저장한 적 없으면 고글을 쓰고 있다
         WardrobeDto.Equipped equipped = outfit == null
-                ? new WardrobeDto.Equipped(null, null, null, null, null, null, null)
+                ? new WardrobeDto.Equipped(null, null, null, null, GOGGLES, null, null)
                 : new WardrobeDto.Equipped(
                         outfit.getHatItem(), outfit.getTopItem(), outfit.getBottomItem(), outfit.getShoesItem(),
                         outfit.getFaceItem(), outfit.getBackItem(), outfit.getAccessoryItem()
                 );
-        return new WardrobeDto(list, equipped);
+        return new WardrobeDto(List.copyOf(list), equipped);
     }
 }

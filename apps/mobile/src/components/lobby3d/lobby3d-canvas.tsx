@@ -22,6 +22,7 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_PLACES } from "@/lib/lobby3d/village";
+import type { WearState } from "@/lib/lobby3d/wear";
 import { layoutGeometry, layoutItem, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
 import { BASIC_ROOM, currentRoom, outsideExit } from "@/lib/lobby3d/room";
 import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
@@ -113,6 +114,8 @@ export interface Lobby3dCanvasProps {
   onVillageReady?: () => void;
   /** 마을 모델을 불러오지 못했을 때. */
   onVillageFailed?: () => void;
+  /** 라룹이가 입은 착용 아이템(캐릭터 꾸미기 기술 시험, 개발 화면). */
+  wear?: WearState;
 }
 
 const LINE = 0x3d1b0f;
@@ -842,6 +845,7 @@ function Scene({
   area = "room",
   onVillageReady,
   onVillageFailed,
+  wear,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치 표시 수(layoutKey)가 바뀌면 다시 만든다(서버 배치 받기 등).
@@ -1281,7 +1285,7 @@ function Scene({
       ) : null}
       <CharacterErrorBoundary onFailed={characterSettled}>
         <Suspense fallback={null}>
-          <Character kit={world.kit} outline={toon.outline} handleRef={character} />
+          <Character kit={world.kit} outline={toon.outline} handleRef={character} wear={wear} />
           <Settled onSettled={characterSettled} />
         </Suspense>
       </CharacterErrorBoundary>

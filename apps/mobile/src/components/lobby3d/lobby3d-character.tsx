@@ -1,11 +1,13 @@
 import { useLoader } from "@react-three/fiber/native";
-import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useState, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { characterClipState } from "@/lib/lobby3d/character-clips";
 import { outlineAttributes, type OutlineAttributeChoice } from "@/lib/lobby3d/outline-attributes";
 import type { LobbySim } from "@/lib/lobby3d/engine";
+import { NO_WEAR, wearsAnything, type WearState } from "@/lib/lobby3d/wear";
+import type * as WearablesModule from "./lobby3d-wearables";
 
 // 로비의 라이트루프 3D 모델(규격: docs/guides/character-3d-model-spec.ko.md).
 // 모델은 키 1, 앞쪽 +Z이고 동작 클립을 담고 있다. 어떤 클립을 얼마나 섞을지는 character-clips가 정하고, 여기서는 그대로 재생한다.
@@ -78,6 +80,14 @@ function makeBook(): { group: THREE.Group; setOpen: (open: number) => void; mate
   };
 }
 
+/** 외곽선 굵기·배율(착용 아이템도 같은 값을 쓴다). */
+export type CharacterOutlineUniforms = OutlineUniforms;
+
+/** 라룹이와 같은 갈색 외곽선 재질(법선 방향으로 부풀림). 착용 아이템이 쓴다. */
+export function characterOutlineMaterial(uniforms: OutlineUniforms): THREE.MeshBasicMaterial {
+  return outlineMaterial(uniforms, outlineAttributes({ hasOutlineNormal: false, hasOutlineBias: false }));
+}
+
 interface OutlineUniforms {
   thickness: { value: number };
   scale: { value: number };
@@ -123,10 +133,12 @@ interface CharacterProps {
   kit: ToonKit;
   outline: number;
   handleRef: MutableRefObject<CharacterHandle | null>;
+  /** 입은 착용 아이템(캐릭터 꾸미기 기술 시험). 없으면 아무것도 입지 않는다. */
+  wear?: WearState;
 }
 
 /** 모델을 불러와 장면에 붙인다. 다 불러올 때까지는 아무것도 그리지 않는다(Suspense). */
-export function Character({ kit, outline, handleRef }: CharacterProps) {
+export function Character({ kit, outline, handleRef, wear = NO_WEAR }: CharacterProps) {
   // 모델 자산은 require로 받은 번들 자산 번호다. R3F 네이티브가 expo-asset으로 파일을 찾아 읽는다.
   const gltf = useLoader(GLTFLoader, MODEL_ASSET as string) as GLTF;
   const built = useMemo(() => {
@@ -194,7 +206,7 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     book.group.visible = false;
     group.add(book.group);
     materials.push(...book.materials);
-    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips, hit, handR, handL, book };
+    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips, hit, handR, handL, book, body: skinned[0] ?? null };
   }, [gltf]);
 
   // 카툰 명암 단계·외곽선 굵기 설정을 따른다.
@@ -322,9 +334,34 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     };
   }, [built, handleRef]);
 
-  // react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다.
-  // eslint-disable-next-line react/no-unknown-property
-  return <primitive object={built.group} />;
+  // 착용 아이템: 한 번이라도 입으면 착용 모듈을 불러와 붙인다(벗어도 붙인 채 숨긴다)
+  const [wearHost, setWearHost] = useState<WearablesModule.WearHost | null>(null);
+  useEffect(() => {
+    if (wearHost || !built.body || !wearsAnything(wear)) return;
+    setWearHost({ model: built.model, body: built.body, uniforms: built.uniforms, kit });
+  }, [built, kit, wear, wearHost]);
+
+  return (
+    <>
+      {/* react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다. */}
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <primitive object={built.group} />
+      {wearHost ? <WearLayer host={wearHost} wear={wear} /> : null}
+    </>
+  );
+}
+
+/** 착용 모듈(착용 모델·도형 도구)은 처음 입을 때 불러온다. */
+function WearLayer({ host, wear }: { host: WearablesModule.WearHost; wear: WearState }) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require("./lobby3d-wearables") as typeof WearablesModule;
+  return (
+    <mod.WearablesErrorBoundary>
+      <Suspense fallback={null}>
+        <mod.Wearables host={host} wear={wear} />
+      </Suspense>
+    </mod.WearablesErrorBoundary>
+  );
 }
 
 /** 모델을 불러오지 못하면 캐릭터 없이 방만 보이게 한다. 오류는 개발 콘솔에 남긴다. */

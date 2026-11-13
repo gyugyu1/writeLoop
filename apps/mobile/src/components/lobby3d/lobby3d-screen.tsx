@@ -31,6 +31,7 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_START } from "@/lib/lobby3d/village";
+import { NO_WEAR, WEAR_SLOTS, type WearState } from "@/lib/lobby3d/wear";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
@@ -234,6 +235,8 @@ export default function Lobby3dScreen({
   // 지금 구역(방·마을). 방의 '나가기'·마을 집의 '들어가기'(검게 어두워지는 전환)와 개발 화면 시험판(바로 바뀜)에서 바꾼다
   const [area, setArea] = useState<LobbyArea>("room");
   const areaRef = useRef<LobbyArea>("room");
+  // 착용 시험(개발 화면 시험판): 라룹이가 입은 것
+  const [wear, setWear] = useState<WearState>(NO_WEAR);
   // 전환 중(어두워지는 동안·마을을 읽는 동안·밝아지는 동안)에는 로비를 누르지 못한다
   const travelFade = useRef(new Animated.Value(0)).current;
   const [traveling, setTraveling] = useState(false);
@@ -875,6 +878,7 @@ export default function Lobby3dScreen({
         area={area}
         onVillageReady={onVillageReady}
         onVillageFailed={onVillageFailed}
+        wear={wear}
       />
       ) : null}
 
@@ -1181,6 +1185,20 @@ export default function Lobby3dScreen({
                   onPress={() => switchArea(next)}
                 >
                   <Text style={[styles.stepText, area === next && styles.stepTextOn]}>{AREA_LABELS[next]}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.panelLabel}>착용 시험</Text>
+            <View style={styles.row}>
+              {WEAR_SLOTS.map(({ slot, label }) => (
+                <Pressable
+                  key={slot}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: wear[slot] }}
+                  style={[styles.stepButton, wear[slot] && styles.stepButtonOn]}
+                  onPress={() => setWear((current) => ({ ...current, [slot]: !current[slot] }))}
+                >
+                  <Text style={[styles.stepText, wear[slot] && styles.stepTextOn]}>{label}</Text>
                 </Pressable>
               ))}
             </View>

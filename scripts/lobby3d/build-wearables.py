@@ -2,7 +2,7 @@
 # 쓰는 법: blender -b -P scripts/lobby3d/build-wearables.py -- <라룹이 glb> <야구모자 glb> <출력 glb> [미리 보기 png]
 #   (Blender 5.2에서 확인. 라룹이 glb는 apps/mobile/assets/models/writeloop.glb, 출력은 apps/mobile/assets/models/lobby-wearables.glb)
 # 모두 라룹이 모델과 같은 좌표(쉬는 자세)로 내보낸다. 앱이 라룹이 모델 아래에 두고
-#   wear-hat(머리 뼈), wear-shoe-l·wear-shoe-r(발 뼈)은 그 뼈에 붙이고(자리는 그대로),
+#   wear-hat(머리 뼈), wear-shoe-l(왼발 뼈. 신발은 한 짝만 넣고 앱이 좌우로 뒤집어 오른발에도 붙인다)은 그 뼈에 붙이고(자리는 그대로),
 #   wear-top·wear-bottom(뼈대로 휘는 껍질)은 라룹이 뼈대에 뼈 이름으로 다시 묶는다.
 # 상의·하의는 라룹이 몸에서 그 부위(뼈 무게가 가장 큰 뼈로 가름)를 떠서 법선 쪽으로 살짝 부풀린다. 그래서 몸에 꼭 맞고 같은 뼈대로 움직인다.
 import math
@@ -134,20 +134,26 @@ visor_dir = -1 if mean_y > (lo.y + hi.y) / 2 else 1  # 챙이 −y(평균이 +y�
 # 라룹이 앞은 Blender −y(glTF +z). 챙을 −y로 맞춘다
 if visor_dir == 1:
     hat.data.transform(Matrix.Rotation(math.pi, 4, "Z"))
-# 크기·자리: 머리(귀 빼고) 폭에 맞추고, 머리 꼭대기에 얹는다
+# 크기·자리: 두 귀 사이(안쪽 가장자리 사이 폭)에 들어가게 줄이고, 귀 사이 머리 꼭대기에 얹는다(귀는 모자 양옆으로 나온다)
 h_lo, h_hi = region_bounds({"head"})
+ears = sorted([region_bounds({"ear_l"}), region_bounds({"ear_r"})], key=lambda b: (b[0].x + b[1].x) / 2)
+ear_gap = ears[1][0].x - ears[0][1].x  # 왼쪽 귀의 안쪽(오른쪽 끝)과 오른쪽 귀의 안쪽(왼쪽 끝) 사이
+ear_mid_x = (ears[1][0].x + ears[0][1].x) / 2
 vs = [v.co for v in hat.data.vertices]
 c_lo = Vector((min(p.x for p in vs), min(p.y for p in vs), min(p.z for p in vs)))
 c_hi = Vector((max(p.x for p in vs), max(p.y for p in vs), max(p.z for p in vs)))
 head_w = h_hi.x - h_lo.x
-s = head_w * 0.9 / (c_hi.x - c_lo.x)
+# 모자 가로 폭을 귀 사이 폭보다 조금 넓게(귀 안쪽에 살짝 닿는다)
+s = ear_gap * 1.12 / (c_hi.x - c_lo.x)
 hat.data.transform(Matrix.Scale(s, 4))
 vs = [v.co for v in hat.data.vertices]
 c_lo = Vector((min(p.x for p in vs), min(p.y for p in vs), min(p.z for p in vs)))
 c_hi = Vector((max(p.x for p in vs), max(p.y for p in vs), max(p.z for p in vs)))
 cap_h = c_hi.z - c_lo.z
 # 모자 아랫단이 눈썹 위에 오게 머리 꼭대기에서 모자 높이의 0.3만큼만 내려 얹는다(조금 뒤로)
-target = Vector(((h_lo.x + h_hi.x) / 2, (h_lo.y + h_hi.y) / 2 + head_w * 0.04, h_hi.z - cap_h * 0.3))
+head_d = h_hi.y - h_lo.y
+# 귀 사이 머리 꼭대기의 조금 앞(−y)에 얹고, 챙이 이마 위로 나오게 한다
+target = Vector((ear_mid_x, (h_lo.y + h_hi.y) / 2 - head_d * 0.1, h_hi.z - cap_h * 0.18))
 center = Vector(((c_lo.x + c_hi.x) / 2, (c_lo.y + c_hi.y) / 2, c_lo.z))
 hat.data.transform(Matrix.Translation(target - center))
 
@@ -177,8 +183,8 @@ def make_shoe(name, foot):
     return o
 
 
+# 신발은 한 짝(왼발)만 넣는다. 라룹이는 좌우가 같아(x = 0 기준) 앱이 뒤집어 오른발에 붙인다
 make_shoe("wear-shoe-l", "foot_l")
-make_shoe("wear-shoe-r", "foot_r")
 
 # ---------- 미리 보기 ----------
 if preview:

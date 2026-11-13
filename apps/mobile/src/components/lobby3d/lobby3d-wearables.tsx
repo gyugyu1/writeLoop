@@ -7,6 +7,7 @@ import { characterOutlineMaterial, type CharacterOutlineUniforms, type ToonKit }
 
 // 라룹이 착용 시험(캐릭터 꾸미기 ① 기술 시험). 착용 모델(lobby-wearables.glb, scripts/lobby3d/build-wearables.py)의
 // 모자는 머리 뼈, 신발은 발 뼈에 붙이고(자리는 라룹이 쉬는 자세 기준), 상의·하의 껍질은 라룹이 뼈대에 뼈 이름으로 다시 묶는다.
+// 신발은 모델에 왼쪽 한 짝만 들어 있으면 좌우로 뒤집어(라룹이는 x = 0 기준으로 좌우가 같다) 오른발에도 붙인다.
 // 라룹이와 같은 카툰 명암(명암 단계 설정)과 갈색 외곽선(굵기 설정)으로 그린다. 이 모듈은 착용한 것이 있을 때 처음 불러온다.
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -53,12 +54,15 @@ export function Wearables({ host, wear }: { host: WearHost; wear: WearState }) {
       disposables.push(m);
       return m;
     };
-    const sources: THREE.Mesh[] = [];
+    const sources: { source: THREE.Mesh; name: string; mirror: boolean }[] = [];
     gltf.scene.traverse((o) => {
-      if ((o as THREE.Mesh).isMesh && (RIGID[o.name] || SKINNED[o.name])) sources.push(o as THREE.Mesh);
+      if ((o as THREE.Mesh).isMesh && (RIGID[o.name] || SKINNED[o.name])) sources.push({ source: o as THREE.Mesh, name: o.name, mirror: false });
     });
-    for (const source of sources) {
-      const rigid = RIGID[source.name];
+    // 오른쪽 신발이 따로 없으면 왼쪽 신발을 뒤집어 쓴다
+    const leftShoe = sources.find((s) => s.name === "wear-shoe-l");
+    if (leftShoe && !sources.some((s) => s.name === "wear-shoe-r")) sources.push({ source: leftShoe.source, name: "wear-shoe-r", mirror: true });
+    for (const { source, name, mirror } of sources) {
+      const rigid = RIGID[name];
       if (rigid) {
         const bone = skeleton.bones[boneIndex.get(rigid.bone) ?? -1];
         if (!bone) continue;
@@ -67,9 +71,18 @@ export function Wearables({ host, wear }: { host: WearHost; wear: WearState }) {
         const local = new THREE.Matrix4()
           .multiplyMatrices(skeleton.boneInverses[boneIndex.get(rigid.bone)!], host.body.bindMatrix)
           .multiply(source.matrixWorld);
+        const geometry = source.geometry.clone();
+        if (mirror) {
+          // 모델 좌표에서 x를 뒤집는다(자리째 반대쪽 발로 간다). 음수 배율로 그리면 three가 앞뒷면을 알아서 바꿔 그린다
+          local.copy(
+            new THREE.Matrix4()
+              .multiplyMatrices(skeleton.boneInverses[boneIndex.get(rigid.bone)!], host.body.bindMatrix)
+              .multiply(new THREE.Matrix4().makeScale(-1, 1, 1))
+              .multiply(source.matrixWorld)
+          );
+        }
         const group = new THREE.Group();
         local.decompose(group.position, group.quaternion, group.scale);
-        const geometry = source.geometry.clone();
         if (!geometry.attributes.normal) geometry.computeVertexNormals();
         disposables.push(geometry);
         const mesh = new THREE.Mesh(geometry, toon(source.material as THREE.Material));

@@ -46,7 +46,10 @@ export function setItemCatalog(data: ItemCatalogData): void {
   listeners.forEach((listener) => listener());
 }
 
-/** 받은(저장한) 목록을 읽는다. 모양이 틀리면 null(못 받은 것으로 본다). */
+/**
+ * 받은(저장한) 목록을 읽는다. 응답 모양이 틀리면(version이 없거나 빈 글, items가 목록이 아님) null(못 받은 것으로 본다).
+ * 칸 값이 틀리거나 이 앱이 모르는 값(새 종류·분류)이 든 아이템은 그 아이템만 건너뛴다(그 아이템은 앱 기본값으로 보인다).
+ */
 export function parseItemCatalog(value: unknown): ItemCatalogData | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   const { version, items } = value as Record<string, unknown>;
@@ -54,8 +57,7 @@ export function parseItemCatalog(value: unknown): ItemCatalogData | null {
   const list: CatalogItem[] = [];
   for (const entry of items) {
     const item = parseItem(entry);
-    if (!item) return null;
-    list.push(item);
+    if (item) list.push(item);
   }
   return { version, items: list };
 }

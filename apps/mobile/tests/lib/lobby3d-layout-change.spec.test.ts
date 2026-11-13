@@ -19,6 +19,9 @@
 // 067(private 작업 폴더 067/01-main-spec.md)에서 책상 모델이 칸 폭 3.0을 다 채워 칸 가운데에 놓이고 책상 장소의 바라볼 지점·이름표가 가구 기준
 // (-0.25, 0) → (0, 0)으로 옮겨져, 명세의 "고칠 기존 테스트"대로 책상 그림·바라볼 지점·이름표의 기대값(가구 가운데에서 x -0.25 → 0)과
 // 그 바라볼 지점을 보는 방향만 고쳤다(DEFAULT_PLACES·DEFAULT_PIECES의 책상, T1-1~T1-4, T5-2·T5-4·T5-5, R1). 서는 자리·의자·막힌 칸과 입력은 그대로다.
+// 089-③(private 작업 폴더 089-2026-11-13-캐릭터-꾸미기/05-옷장과-꾸미기-화면/03-main-decision.md A, 사용자 결정 "qa가 새 동작에 맞게 고침")에서
+// 옷장이 막는 가구가 아니라 옷장마다 하나인 장소가 되어, T0-4·T4-2의 옷장 기대값만 새 동작(막는 가구 표시 없음, 그 옷장의 장소 표시)으로 고쳤다.
+// 장소 id는 구현의 closetPlaceId(가구 id)로 만든다. 자리·방향 등 나머지 기대값과 입력은 그대로다.
 //
 // 기준 코드에서는 새 입구가 없어 타입 검사가 깨지지 않게, 입구는 아래 "지금 코드를 부르는 곳"에서 require로 불러오고 타입은 결정 03대로 여기서 적는다.
 // 구현이 부르는 모양을 바꾸면 그곳만 따라 고친다(결정 03의 4). 그 아래의 기대값·단언·입력은 고치지 않는다.
@@ -26,6 +29,7 @@ import { windowLightPanes, type WindowLightPane } from "@/lib/lobby3d/daylight";
 import * as engine from "@/lib/lobby3d/engine";
 import type { FloorPoint, MarkId } from "@/lib/lobby3d/engine";
 import * as furniture from "@/lib/lobby3d/furniture-layout";
+import { closetPlaceId } from "@/lib/lobby3d/lobby-layout";
 
 // ---------- 지금 코드를 부르는 곳(결정 03의 입구) ----------
 
@@ -293,7 +297,7 @@ describe("[spec] 064-① 범위 3 T0: 처음 배치를 데이터로 넣으면 �
     expect(chairOf(g)).toEqual(DEFAULT_CHAIR);
   });
 
-  it("T0-4: furniturePlacements(처음 배치)는 입구 발판을 더한 여덟 개이고, 장소·막는 가구 표시가 지금과 같다", () => {
+  it("T0-4: furniturePlacements(처음 배치)는 입구 발판을 더한 여덟 개이고, 장소·막는 가구 표시가 지금과 같다(089-③ 03 결정 A: 옷장은 옷장 장소)", () => {
     const list = current.placements(defaultLayout());
     expect(list.length).toBe(8);
     expect(Object.fromEntries(list.map((p) => [p.piece, { ...piecesByName([p])[p.piece], mark: p.mark ?? null, blocker: p.blocker ?? false }]))).toEqual({
@@ -302,7 +306,7 @@ describe("[spec] 064-① 범위 3 T0: 처음 배치를 데이터로 넣으면 �
       desk: { ...DEFAULT_PIECES.desk, mark: "desk", blocker: false },
       chair: { ...DEFAULT_PIECES.chair, mark: "desk", blocker: false },
       bookcase: { ...DEFAULT_PIECES.bookcase, mark: "bookcase", blocker: false },
-      wardrobe: { ...DEFAULT_PIECES.wardrobe, mark: null, blocker: true },
+      wardrobe: { ...DEFAULT_PIECES.wardrobe, mark: closetPlaceId("wardrobe"), blocker: false },
       rug: { ...DEFAULT_PIECES.rug, mark: null, blocker: false },
       exit: { x: 4, y: 0, z: 11.35, rotY: 0, mark: "door", blocker: false }
     });
@@ -464,13 +468,13 @@ describe("[spec] 064-① 범위 3 T4: 옷장·깔개를 옮기면 막힌 칸만 
     expect({ old: current.isBlocked(7.5, 3.5), now: current.isBlocked(7.5, 8.5) }).toEqual({ old: false, now: true });
   });
 
-  it("T4-2: 옷장을 방 가운데 (5.5, 9.5)에 앞을 보게: 그림 뒷면이 칸 뒤 끝(z 9)이라 가운데가 (5.5, 9.438), rotY 0, 막힌 칸 \"5,9\"", () => {
+  it("T4-2: 옷장을 방 가운데 (5.5, 9.5)에 앞을 보게: 그림 뒷면이 칸 뒤 끝(z 9)이라 가운데가 (5.5, 9.438), rotY 0, 막힌 칸 \"5,9\", 옮긴 옷장은 그 옷장 장소(089-③ 03 결정 A)", () => {
     const layout = layoutWith((l) => (l.floor.wardrobe = { x: 5.5, z: 9.5, facing: 0 }));
     const g = current.geometry(layout);
     expect(piecesByName(g.pieces).wardrobe).toEqual({ x: 5.5, y: 0, z: 9.438, rotY: 0 });
     expect(sortedTiles(g.solidTiles)).toEqual(["0,2", "0,5", "1,5", "2,5", "5,9"]);
     const marked = current.placements(layout).find((p) => p.piece === "wardrobe");
-    expect({ blocker: marked?.blocker ?? false, mark: marked?.mark ?? null }).toEqual({ blocker: true, mark: null });
+    expect({ blocker: marked?.blocker ?? false, mark: marked?.mark ?? null }).toEqual({ blocker: false, mark: closetPlaceId("wardrobe") });
   });
 
   it("T4-3: 깔개를 (2.0, 9.0)으로: 그림만 옮겨지고 막힌 칸은 그대로", () => {

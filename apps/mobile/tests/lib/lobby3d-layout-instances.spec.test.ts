@@ -18,11 +18,14 @@
 // 옮겼고, P5·P13은 결과가 같아 이름의 칸 범위만 3×3으로 고쳤다. G2는 막힌 칸만 보아 그대로 두었다.
 // 067(private 작업 폴더 067/01-main-spec.md)에서 책상 장소의 바라볼 지점이 (1.25, 5.5) → (1.5, 5.5)로 옮겨져, 명세의 "고칠 기존 테스트"대로
 // P0_PLACES의 책상 바라볼 지점만 고쳤다(이 값을 쓰는 G4·G5의 기대값이 함께 바뀐다).
+// 089-③(private 작업 폴더 089-2026-11-13-캐릭터-꾸미기/05-옷장과-꾸미기-화면/03-main-decision.md A, 사용자 결정 "qa가 새 동작에 맞게 고침")에서
+// 옷장이 막는 가구가 아니라 옷장마다 하나인 장소가 되어, G3의 옷장 기대값만 새 동작(막는 가구 표시 없음, 그 옷장의 장소 표시)으로 고쳤다.
+// 장소 id는 구현의 closetPlaceId(가구 id)로 만든다. 자리·방향 기대값과 나머지 확인은 그대로다.
 
 import { ROOM, TAP_MAX_MOVE_PX, type PointerHit } from "@/lib/lobby3d/engine";
 import { furniturePlacements } from "@/lib/lobby3d/furniture-layout";
 import { LobbyEditor, isPlaceableLayout } from "@/lib/lobby3d/lobby-edit";
-import { layoutGeometry, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
+import { closetPlaceId, layoutGeometry, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 
 type LayoutItem = LobbyLayout["items"][number];
 type FloorSpot = NonNullable<LayoutItem["floor"]>;
@@ -87,13 +90,14 @@ describe("[spec] 066-① G: 막힌 칸·장소·3D 가구가 인스턴스 목록
     expect(sortedTiles(g.solidTiles)).toEqual(P0_SOLID);
   });
 
-  test("G3 옷장을 하나 더 두면 3D 목록(furniturePlacements)에 막는 가구가 둘이고, 새 옷장 그림은 (5.5, 0, 9.438) rotY 0이다", () => {
+  test("G3(089-③ 03 결정 A) 옷장을 하나 더 두면 3D 목록(furniturePlacements)에 막는 가구는 없고 두 옷장이 각자의 옷장 장소이며, 새 옷장 그림은 (5.5, 0, 9.438) rotY 0이다", () => {
     const list = furniturePlacements(plus("wardrobe-2", "wardrobe", { x: 5.5, z: 9.5, facing: 0 }));
-    const blockers = list.filter((p) => p.blocker === true).map((p) => [r4(p.x), r4(p.y), r4(p.z), r4(p.rotY)]);
-    expect(blockers.sort()).toEqual(
+    expect(list.filter((p) => p.blocker === true)).toEqual([]);
+    const wardrobes = list.filter((p) => p.piece === "wardrobe").map((p) => [r4(p.x), r4(p.y), r4(p.z), r4(p.rotY), p.mark ?? null]);
+    expect(wardrobes.sort()).toEqual(
       [
-        [5.5, 0, 9.438, 0],
-        [7.562, 0, 3.5, r4(-Math.PI / 2)]
+        [5.5, 0, 9.438, 0, closetPlaceId("wardrobe-2")],
+        [7.562, 0, 3.5, r4(-Math.PI / 2), closetPlaceId("wardrobe")]
       ].sort()
     );
   });

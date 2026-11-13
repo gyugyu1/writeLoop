@@ -2,6 +2,9 @@
 // 기대값은 시나리오(private 작업 폴더 066/07-방-구조-데이터/03-qa-scenarios.md B1~B16)에서만 가져온다.
 // 시나리오의 값은 기준 커밋 8cfa693의 코드로 얻은 값이다(소수 6자리 반올림).
 // 방을 넘기지 않고(지금 방 = 기본 방) 부른다.
+// 089-③(private 작업 폴더 089-2026-11-13-캐릭터-꾸미기/05-옷장과-꾸미기-화면/03-main-decision.md A, 사용자 결정 "qa가 새 동작에 맞게 고침")에서
+// 옷장이 막는 가구가 아니라 옷장마다 하나인 장소가 되어, B11의 옷장 기대값만 새 동작(막는 가구 표시 blocker 없음, 그 옷장의 장소 표시 mark)으로 고쳤다.
+// 장소 id는 구현의 closetPlaceId(가구 id)로 만든다. 자리·크기·그림자 등 나머지 기대값과 순서는 그대로다.
 
 import { createHash } from "crypto";
 import {
@@ -17,7 +20,7 @@ import {
 } from "@/lib/lobby3d/engine";
 import { buildPlacements, furniturePlacements } from "@/lib/lobby3d/furniture-layout";
 import { freeSpotFor, nearestWall, wallPieceInFront } from "@/lib/lobby3d/lobby-edit";
-import { DEFAULT_LOBBY_LAYOUT, makeLayout, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, closetPlaceId, makeLayout, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import { parseLobbyLayoutPayload, toLobbyLayoutPayload } from "@/lib/lobby3d/lobby-layout-payload";
 
 const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
@@ -119,7 +122,7 @@ describe("[spec] 기본 방의 가구 자리(B11·B12)", () => {
       { item: "desk", piece: "desk", mount: "floor", box: { width: 3, height: 1.292, depth: 1 }, scale: { x: 1.215559, z: 0.758725 }, shadow: { floor: [3.403566, 1.251897, 0.5] }, x: 1.5, y: 0, z: 5.5, rotY: 0, mark: "desk" },
       { item: "desk", piece: "chair", companion: true, mount: "floor", box: { width: 0.56, height: 1.316, depth: 0.56 }, scale: { x: 1, z: 1 }, shadow: { floor: [0.75, 0.75, 0.42] }, x: 1.5, y: 0, z: 5.95, rotY: 3.141593, mark: "desk" },
       { item: "bookcase", piece: "bookcase", mount: "floor", box: { width: 1, height: 2.464, depth: 0.876 }, scale: { x: 0.892857, z: 1 }, shadow: { floor: [1.25, 1.2, 0.52] }, x: 0.438, y: 0, z: 2.5, rotY: 1.570796, mark: "bookcase" },
-      { item: "wardrobe", piece: "wardrobe", mount: "floor", box: { width: 1, height: 2.38, depth: 0.876 }, scale: { x: 0.892857, z: 1 }, shadow: { floor: [1.25, 1.2, 0.52] }, x: 7.562, y: 0, z: 3.5, rotY: -1.570796, blocker: true },
+      { item: "wardrobe", piece: "wardrobe", mount: "floor", box: { width: 1, height: 2.38, depth: 0.876 }, scale: { x: 0.892857, z: 1 }, shadow: { floor: [1.25, 1.2, 0.52] }, x: 7.562, y: 0, z: 3.5, rotY: -1.570796, mark: closetPlaceId("wardrobe") },
       { item: "rug", piece: "rug", mount: "cover", box: { width: 2.576, height: 0.028, depth: 2.576 }, scale: { x: 1, z: 1 }, x: 4.6, y: 0.004, z: 7.2, rotY: 0 },
       { item: "lamp", piece: "tableLamp", mount: "tabletop", box: { width: 0.418, height: 0.88, depth: 0.475 }, scale: { x: 1, z: 1 }, parent: "desk", pickBox: { width: 0.8, height: 0.88, depth: 0.8 }, x: 0.5, y: 1.292, z: 5.5, rotY: 0, mark: "desk" },
       { item: "exit", piece: "exit", mount: "floor", x: 4, y: 0, z: 11.35, rotY: 0, mark: "door" }

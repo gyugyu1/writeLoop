@@ -32,6 +32,9 @@
 //   개발용 '가구 더하기' 탭과 화면의 allowAddFurniture 속성이 없어져, 속성을 빼고 B2의 "침대를 더한다" 준비를
 //   "홈쇼핑에서 산 침대 bed-1이 보관함에 든 처음 배치(DEF_BOUGHT_BED)로 열어 보관함 칸 '침대'를 눌러 꺼낸다"로 바꿨다. 단언과 기대값은 그대로다.
 // - 한계: 실제 폰에서 멈칫함이 줄었는지, 모양이 어울리는지, 장소 안내 말풍선(라룹이가 장소에 섰을 때)은 이 테스트로 보지 않는다.
+// - 089-③(private 작업 폴더 089-2026-11-13-캐릭터-꾸미기/05-옷장과-꾸미기-화면/03-main-decision.md A, 사용자 결정 "qa가 새 동작에 맞게 고침")에서
+//   옷장이 막는 가구가 아니라 옷장마다 하나인 장소가 되어, K4의 "옮긴 옷장을 누르면 막힘(바닥 점 없음)"만 새 동작
+//   "옮긴 옷장을 누르면 바닥 점이 있고 그 옷장의 장소(closetPlaceId(가구 id))가 잡힌다"로 고쳤다. 막힌 칸·원래 자리 확인과 준비는 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { useState } from "react";
@@ -43,7 +46,7 @@ import Lobby3dScreen from "@/components/lobby3d/lobby3d-screen";
 import { activeLobbyLayout, applyLobbyLayout, applyRoom, isBlocked, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
 import { furniturePlacements, placementKey } from "@/lib/lobby3d/furniture-layout";
-import { DEFAULT_LOBBY_LAYOUT, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, closetPlaceId, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import { BASIC_ROOM } from "@/lib/lobby3d/room";
 
 type FrameState = {
@@ -1350,7 +1353,7 @@ describe("[spec] 085 그대로여야 할 동작", () => {
   );
 
   test(
-    "[그대로] K4 옷장을 칸 7,0으로 옮겨 '완료'한 뒤 꾸미기 밖에서: 지금 배치가 저장한 배치이고, 칸 7,0은 막히고 칸 7,3은 지나갈 수 있으며, 옮긴 옷장을 누르면 막히고(바닥 점 없음) 원래 자리를 누르면 바닥 점이 있다",
+    "[그대로] K4 옷장을 칸 7,0으로 옮겨 '완료'한 뒤 꾸미기 밖에서: 지금 배치가 저장한 배치이고, 칸 7,0은 막히고 칸 7,3은 지나갈 수 있으며, 옮긴 옷장을 누르면 바닥 점이 있고 그 옷장 장소가 잡히며(089-③ 03 결정 A) 원래 자리를 누르면 바닥 점이 있다",
     async () => {
       await openReadyLobby();
       await enterEdit();
@@ -1367,7 +1370,7 @@ describe("[spec] 085 그대로여야 할 동작", () => {
       expect(poseOf(sent, "wardrobe")).toEqual(AT_PLACE);
       const height = furnitureType("wardrobe").model.box.height;
       const onNew = await tapAt(toScreen(WARDROBE_TO.x, height / 2, WARDROBE_TO.z));
-      expect(onNew?.point ?? null).toBeNull();
+      expect({ hasPoint: (onNew?.point ?? null) !== null, mark: onNew?.mark ?? null }).toEqual({ hasPoint: true, mark: closetPlaceId("wardrobe") });
       const onOld = await tapAt(toScreen(WARDROBE_AT.x, 0.4, WARDROBE_AT.z));
       expect(onOld?.point ?? null).not.toBeNull();
     },

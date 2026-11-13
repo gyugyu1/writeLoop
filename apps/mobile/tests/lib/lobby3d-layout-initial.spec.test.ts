@@ -10,6 +10,9 @@
 // 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
 // 067(private 작업 폴더 067/01-main-spec.md)에서 책상 모델이 칸 폭 3.0을 다 채워 칸 가운데에 놓이고 책상 장소의 바라볼 지점이 (1.25, 5.5) → (1.5, 5.5)로
 // 옮겨져, 명세의 "고칠 기존 테스트"대로 책상 그림 자리(L1)·바라볼 지점(M2)과 그 지점을 보는 방향(P2의 desk, P3, C2의 out40)의 기대값만 고쳤다.
+// 089-③(private 작업 폴더 089-2026-11-13-캐릭터-꾸미기/05-옷장과-꾸미기-화면/03-main-decision.md A, 사용자 결정 "qa가 새 동작에 맞게 고침")에서
+// 옷장이 막는 가구가 아니라 옷장마다 하나인 장소가 되어, L1의 옷장 기대값만 새 동작(막는 가구 표시 없음, 그 옷장의 장소 표시)으로 고쳤다.
+// 장소 id는 구현의 closetPlaceId(가구 id)로 만든다. 자리·방향 등 나머지 기대값과 입력은 그대로다.
 //
 // 구현이 이름이나 부르는 방법을 바꾸면 아래 "지금 코드를 부르는 곳"만 따라 고친다. 그 아래의 기대값·단언·입력은 고치지 않는다.
 import { windowLightPanes, type SunPosition, type WindowLightPane } from "@/lib/lobby3d/daylight";
@@ -31,6 +34,7 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { FURNITURE_LAYOUT, WINDOW_OPENING } from "@/lib/lobby3d/furniture-layout";
+import { closetPlaceId } from "@/lib/lobby3d/lobby-layout";
 
 // ---------- 지금 코드를 부르는 곳(처음 배치) ----------
 
@@ -139,7 +143,7 @@ describe("[spec] 064-① 처음 배치: 3D에 놓는 가구 자리·방향(그�
       desk: { x: 1.5, y: 0, z: 5.5, rotY: 0, mark: "desk", blocker: false },
       chair: { x: 1.5, y: 0, z: 5.95, rotY: angle(Math.PI), mark: "desk", blocker: false },
       bookcase: { x: 0.438, y: 0, z: 2.5, rotY: angle(Math.PI / 2), mark: "bookcase", blocker: false },
-      wardrobe: { x: 7.562, y: 0, z: 3.5, rotY: angle(-Math.PI / 2), mark: null, blocker: true },
+      wardrobe: { x: 7.562, y: 0, z: 3.5, rotY: angle(-Math.PI / 2), mark: closetPlaceId("wardrobe"), blocker: false },
       rug: { x: 4.6, y: 0.004, z: 7.2, rotY: 0, mark: null, blocker: false },
       exit: { x: 4, y: 0, z: 11.35, rotY: 0, mark: "door", blocker: false }
     });

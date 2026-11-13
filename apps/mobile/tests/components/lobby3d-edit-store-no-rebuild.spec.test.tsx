@@ -21,6 +21,9 @@
 // 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
 // 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 빈 곳을 톡하면 고르기가 풀리지 않고 골라진 가구가 그리로 옮겨 간다.
 // 그래서 고르기를 푸는 도우미(deselect)는 골라진 가구 자신을 다시 톡한다(판정은 보지 않고 누르기 결과를 화면에 직접 넣는다). 준비만 바꿨고 단언은 그대로다.
+// 089-③(private 작업 폴더 089-2026-11-13-캐릭터-꾸미기/05-옷장과-꾸미기-화면/03-main-decision.md A, 사용자 결정 "qa가 새 동작에 맞게 고침")에서
+// 옷장이 막는 가구가 아니라 옷장마다 하나인 장소가 되어, K6의 "옷장이 놓인 배치는 훑으면 막힌 곳이 있다"를 새 동작
+// "옷장이 놓인 배치는 훑으면 그 옷장 장소(closetPlaceId(가구 id))가 잡히는 곳이 있고, 그곳은 바닥 점이 있다"로 고쳤다(탐색이 옷장을 잡아내는지 보는 뜻은 같다).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { useState } from "react";
@@ -29,7 +32,7 @@ import type { TestInstance } from "test-renderer";
 import type { Lobby3dCanvasProps } from "@/components/lobby3d/lobby3d-canvas";
 import Lobby3dScreen from "@/components/lobby3d/lobby3d-screen";
 import { ROOM, applyLobbyLayout, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
-import { DEFAULT_LOBBY_LAYOUT, makeLayout, type FurnitureItem, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
+import { DEFAULT_LOBBY_LAYOUT, closetPlaceId, makeLayout, type FurnitureItem, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
 
 type FramePart = (state: { camera: THREE.Camera; gl: unknown; clock: { elapsedTime: number }; scene: THREE.Scene }, delta: number) => void;
 
@@ -786,13 +789,15 @@ describe("[spec] 069 그대로 둘 동작: 숨긴 가구는 보이지 않고 누
   );
 
   test(
-    "K6 (탐색 확인) 꾸미기 밖 로비에서 옷장이 (7.5, 3.5)에 놓인 배치는, 방을 훑으면 막힌 곳(바닥 점 없음)이 있다",
+    "K6 (탐색 확인, 089-③ 03 결정 A) 꾸미기 밖 로비에서 옷장이 (7.5, 3.5)에 놓인 배치는, 방을 훑으면 그 옷장 장소가 잡히는 곳이 있고 그곳은 모두 바닥 점이 있다",
     async () => {
       await renderLobby(DEF);
 
       const probes = await probeRoom();
 
-      expect(probes.filter((p) => p.hit?.point == null).length).toBeGreaterThan(0);
+      const onWardrobe = probes.filter((p) => p.hit?.mark === closetPlaceId("wardrobe"));
+      expect(onWardrobe.length).toBeGreaterThan(0);
+      expect(onWardrobe.filter((p) => p.hit?.point == null).map((p) => p.at)).toEqual([]);
     },
     PROBE_TEST_MS
   );

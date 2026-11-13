@@ -581,18 +581,31 @@ describe("[spec] 마을 모델을 읽는 중·못 읽음(L2~L7, 결정 2)", () =
     expect(seen).toEqual([]);
   });
 
-  it("L3: 읽는 중에 '나가기'를 누르면 2초 동안 방이고, 누른 뒤 0.5초부터 '마을로 나가는 중…'이 보인다", async () => {
+  // 08 결정(사용자 2026-11-13 "L3을 보이는 것으로 고침"): 검은 판 아래의 내부 구역(area)은 보지 않고, 2초 내내 검은 판이 3D·위 줄·아래 메뉴를
+  // 덮고 있는지를 본다("검은 판" = 누르기를 받는 화면 전체 판 가운데 바탕색이 검정인 것, 03 결정 4). 글이 0.5초부터 보이는 단언은 그대로다.
+  it("L3(08 결정): 읽는 중에 '나가기'를 누르면 2초 내내 검은 판이 덮여 있고, 누른 뒤 0.5초부터 '마을로 나가는 중…'이 보인다", async () => {
     mockVillage.mode = "pending";
-    await renderLobby();
+    await renderLobby({ onMenu: jest.fn() });
     await arriveAtDoor();
     await pressBubble("나가기");
-    const areas: string[] = [];
+    const isBlack = (node: UiNode) => {
+      const style = (StyleSheet.flatten((node.props as { style?: unknown }).style as never) ?? {}) as { backgroundColor?: unknown };
+      return ["#000", "#000000", "black"].includes(String(style.backgroundColor).toLowerCase());
+    };
+    const uncovered: string[] = [];
     const missingText: number[] = [];
     await steps(2, (elapsed) => {
-      areas.push(area());
+      const targets: Record<string, UiNode> = {
+        "3D": canvasNode(),
+        "카메라 거리 설정": screen.getByRole("button", { name: "카메라 거리 설정", ...ALL }),
+        "질문에 답하기": screen.getByRole("button", { name: "질문에 답하기", ...ALL })
+      };
+      for (const [name, node] of Object.entries(targets)) {
+        if (!blockersOver(node).some(isBlack)) uncovered.push(`${elapsed.toFixed(2)} ${name}`);
+      }
       if (elapsed >= 0.5 - 1e-9 && screen.queryAllByText(LOADING).length === 0) missingText.push(Number(elapsed.toFixed(2)));
     });
-    expect([...new Set(areas)]).toEqual(["room"]);
+    expect(uncovered).toEqual([]);
     expect(missingText).toEqual([]);
   });
 

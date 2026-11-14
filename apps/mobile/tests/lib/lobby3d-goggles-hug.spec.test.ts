@@ -7,9 +7,11 @@
 // 그대로 둘 동작은 기준 커밋 a36d70a의 파일(git show)과 견준다. 테스트 이름 앞의 번호와 분류는 02-qa-tests.md에 적었다.
 // 좌표는 앱 규격(Y 위, 앞 +Z, 키 1, 원점 발 가운데)이고 몸 파일의 POSITION이 쉬는 자세다(뼈대의 쉬는 자세와 묶음 자세가 같다).
 // 명세에 수치가 없어 qa가 정한 판정 기준(02-qa-tests.md "가정"에 이유를 적었고 사용자 확인이 필요하다):
-// - 앞머리 자리 상자: x -0.16~0.30, y 0.66~0.92, z ≥ 0(기준 몸의 앞머리 세 갈래와 오른쪽 털 뭉치를 덮는다). 법선이 바뀌어도 되는 둘레: 상자를 4cm 넓힌 곳.
+// - 앞머리 자리 상자: x -0.27~0.30, y 0.66~0.92, z ≥ 0(기준 몸의 앞머리 전체를 덮는다. 06 결정 1로 왼쪽 끝을 -0.16에서 -0.27로 넓혔다:
+//   앞머리가 왼쪽 x -0.17~-0.26까지 이어져 있다). 법선이 바뀌어도 되는 둘레: 상자를 4cm 넓힌 곳.
 // - 매끈한 이마: 앞에서 본 깊이 지도(1cm 간격)에서 이마 가운데(x -0.10~0.10, y 0.68~0.84)의 2cm 간격 2차 차분이 0.3cm 이하(오목하게 꺼지거나
 //   솟은 데가 없다), 이마 양옆(x 0.01~0.26, y 0.66~0.88)은 좌우 깊이 차가 1.0cm 이하(기준 몸에서 앞머리 밖은 0.5cm 안으로 좌우 대칭이다).
+//   06 결정 2로 관자놀이(x 0.23~0.26, y 0.77~0.80)는 기준 몸의 좌우 차와 1.0cm 중 큰 값까지 본다(기준 몸이 이미 1.0~1.2cm 비대칭).
 // - 고글이 붙음: 몸을 향한 고글 면(면 법선과 가장 가까운 몸 점 방향의 cos > 0.5)의 가운데가 모두 몸에서 1.0cm 안.
 //   명세가 지금 띠의 "1~2cm"를 뜬 것으로 본다.
 // - 파고들지 않음: 고글 표본점(꼭짓점·삼각형 가운데·변 가운데)이 몸 속(감은 수 > 0.5)에 1mm보다 깊이 들지 않는다.
@@ -267,7 +269,7 @@ const cm = (v: number) => round(v * 100, 2);
 /** 점 i가 앞머리 자리 상자 안인가(margin만큼 넓혀서). */
 function inBangsBox(P: number[], i: number, margin = 0): boolean {
   const x = P[3 * i], y = P[3 * i + 1], z = P[3 * i + 2];
-  return x >= -0.16 - margin && x <= 0.3 + margin && y >= 0.66 - margin && y <= 0.92 + margin && z >= 0 - margin;
+  return x >= -0.27 - margin && x <= 0.3 + margin && y >= 0.66 - margin && y <= 0.92 + margin && z >= 0 - margin;
 }
 
 // ---------- 바뀔 동작 1: 앞머리 없는 몸 ----------
@@ -299,9 +301,12 @@ describe("[spec] 095 바뀔 동작 1: 라룹이 몸에 앞머리가 없고 이�
     expect(bumps.sort((p, q) => q.cm - p.cm).slice(0, 10)).toEqual([]);
   });
 
-  it("B3 이마 양옆(x 0.01~0.26, y 0.66~0.88)은 앞에서 본 깊이가 좌우(x와 -x)로 1.0cm 안에서 같고, 한쪽만 비는 곳이 없다(한쪽 털 뭉치가 없다)", () => {
+  // 06 결정 2(사용자 "상자 넓히고 B3 고침"): 관자놀이(x 0.23~0.26, y 0.77~0.80)는 기준 몸에서 이미 좌우 깊이가 1.0cm 넘게 다르다(앞머리가 아닌
+  // 머리 자체의 비대칭). 그 자리는 "기준 몸의 좌우 차보다 커지지 않으면" 통과로 본다(기준이 1.0cm 안인 점은 1.0cm 그대로). 나머지 자리는 1.0cm 그대로다.
+  it("B3 이마 양옆(x 0.01~0.26, y 0.66~0.88)은 앞에서 본 깊이가 좌우(x와 -x)로 1.0cm 안에서 같고(관자놀이 x 0.23~0.26, y 0.77~0.80은 기준 몸의 좌우 차와 1.0cm 중 큰 값 안), 한쪽만 비는 곳이 없다(한쪽 털 뭉치가 없다)", () => {
     const { P, I } = files().now;
     const depth = frontDepth(P, I, -0.3, 0.3, 0.6, 0.92, 0.01);
+    const base = frontDepth(files().base.P, files().base.I, -0.3, 0.3, 0.6, 0.92, 0.01);
     const off: { x: number; y: number; cm: number | string }[] = [];
     for (let xi = 1; xi <= 26; xi += 1) {
       for (let yi = 66; yi <= 88; yi += 1) {
@@ -310,7 +315,12 @@ describe("[spec] 095 바뀔 동작 1: 라룹이 몸에 앞머리가 없고 이�
         if (right === -Infinity && left === -Infinity) continue;
         if (right === -Infinity || left === -Infinity) { off.push({ x, y, cm: "한쪽만 빔" }); continue; }
         const diff = Math.abs(right - left);
-        if (diff > 0.01) off.push({ x, y, cm: cm(diff) });
+        let allowed = 0.01;
+        if (xi >= 23 && xi <= 26 && yi >= 77 && yi <= 80) {
+          const baseRight = base.at(x, y), baseLeft = base.at(-x, y);
+          if (baseRight !== -Infinity && baseLeft !== -Infinity) allowed = Math.max(0.01, Math.abs(baseRight - baseLeft));
+        }
+        if (diff > allowed) off.push({ x, y, cm: cm(diff) });
       }
     }
     expect(off.sort((p, q) => Number(q.cm) - Number(p.cm)).slice(0, 10)).toEqual([]);

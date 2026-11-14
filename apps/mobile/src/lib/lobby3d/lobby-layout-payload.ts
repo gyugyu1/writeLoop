@@ -3,6 +3,7 @@ import { REQUIRED_FURNITURE_TYPES, findFurnitureType, furnitureType, surfaceSlot
 import {
   makeLayout,
   storedItems,
+  withFixedPlacements,
   type KeptFurniture,
   type Facing,
   type FloorPlacementData,
@@ -90,7 +91,8 @@ export function parseLobbyLayoutPayload(value: unknown): LobbyLayout | null {
     if (items.filter((item) => item.type === type).length !== 1) return null;
   }
   const kept: KeptFurniture | undefined = unknownItems.length + unknownStored.length > 0 ? { items: unknownItems, stored: unknownStored } : undefined;
-  return makeLayout(items, stored, kept);
+  // 붙박이(창문)는 늘 제자리다. 다른 자리로 저장해 둔 옛 배치를 불러와도 제자리에 둔다(그대로 저장하면 서버가 거절한다)
+  return withFixedPlacements(makeLayout(items, stored, kept));
 }
 
 /** 방 가구 하나가 앱이 그릴 줄 모르는 종류이면 받은 그대로(id 규칙은 본다), 아니면 null. */

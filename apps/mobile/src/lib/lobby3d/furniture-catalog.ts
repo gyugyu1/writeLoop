@@ -57,6 +57,8 @@ export interface FurnitureType {
   surface?: { cells?: LocalPoint[] };
   /** 보관함으로 치울 수 있는지. 장소가 딸린 가구는 치울 수 없다(사용자 결정). */
   removable: boolean;
+  /** 붙박이인지(창문). 늘 처음 배치 자리에 있고, 꾸미기에서 고르거나 옮길 수 없다. 없으면 옮길 수 있다. */
+  fixed?: boolean;
   /** 창밖 장면과 바닥 창문 빛을 내는 창문인지. */
   view?: boolean;
   model: {
@@ -238,6 +240,7 @@ const CATALOG: FurnitureType[] = [
     blocksWalk: false,
     place: { id: "window", approach: [{ x: -0.3, z: 1.55 }, { x: 0.3, z: 1.55 }], faceTo: { x: 0, z: 0 }, label: { x: 0, y: 3.05, z: 0.3 } },
     removable: false,
+    fixed: true,
     view: true,
     // 창문은 미닫이 창 두 벌을 나란히 놓은 넓은 창이다
     model: { piece: "window", box: { width: 2.3, height: 1.876, depth: 0.35 }, y: 2.05, wallDepth: 0.17, shadow: { wall: [2.55, 2.15, 0.3] } }
@@ -285,7 +288,10 @@ function drawnType(item: CatalogItem): FurnitureType | null {
   if (closet !== undefined && closet !== null && (!isObj(closet) || !Array.isArray(closet.approach) || !closet.approach.every(isPoint) || !isPoint(closet.faceTo))) return null;
   if (chair !== undefined && chair !== null && (!isObj(chair) || typeof chair.piece !== "string" || !isPoint(chair.at))) return null;
   if (surface !== undefined && surface !== null && !isObj(surface)) return null;
-  return { ...(draw as unknown as Omit<FurnitureType, "id" | "name">), id: item.id, name: item.name, ...(view === true ? { view: true } : {}) };
+  const type: FurnitureType = { ...(draw as unknown as Omit<FurnitureType, "id" | "name">), id: item.id, name: item.name, ...(view === true ? { view: true } : {}) };
+  // 붙박이는 true일 때만 둔다(다른 값은 옮길 수 있는 가구로 본다)
+  if (type.fixed !== true) delete type.fixed;
+  return type;
 }
 
 /** 가구 종류: 서버 목록의 그리기 정보, 없으면 앱에 든 값. 모르는 종류면 undefined. */

@@ -43,7 +43,7 @@ import { catalogItem, useItemCatalog } from "@/lib/item-catalog-store";
 import { useItemFiles } from "@/lib/item-files";
 import { furnitureType } from "@/lib/lobby3d/furniture-catalog";
 import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
-import { sameLobbyLayout, storedItems, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
+import { sameLobbyLayout, storedItems, withFixedPlacements, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
 import { useLobbyClock, type ClockOverride } from "@/lib/lobby3d/use-lobby-clock";
 import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/lib/lobby3d/view-storage";
 
@@ -115,6 +115,7 @@ const EDIT_RED_FINISH = "빨간 가구를 놓을 수 있는 자리로 옮기거�
 const EDIT_SAVE_FAILED = "배치를 저장하지 못했어요. 다시 눌러 주세요";
 const EDIT_CANNOT_PLACE = "여기에는 놓을 수 없어요. 원래 자리로 돌려놓았어요";
 const EDIT_CANNOT_MOVE_HERE = "여기에는 둘 수 없어요";
+const EDIT_FIXED = "창문은 옮길 수 없어요";
 const EDIT_NO_ROOM = "놓을 자리가 없어요. 가구를 옮기거나 치운 뒤 다시 꺼내 주세요";
 const STORAGE_EMPTY = "보관함이 비었어요";
 
@@ -397,7 +398,9 @@ export default function Lobby3dScreen({
   // 꾸미기 '완료'로 저장한 배치는 3D를 다시 짓지 않는다(keepScene). 꾸미던 3D가 이미 그 배치로 그려져 있어, 3D 그리기가 가구 자리·이름표만 맞춘다.
   const [layoutKey, setLayoutKey] = useState(0);
   const applyLayout = useCallback(
-    (next: LobbyLayout, keepScene = false) => {
+    (received: LobbyLayout, keepScene = false) => {
+      // 붙박이(창문)는 늘 제자리다(다른 자리로 저장된 옛 배치를 받아도 제자리에 둔다)
+      const next = withFixedPlacements(received);
       if (sameLobbyLayout(next, activeLobbyLayout())) return;
       applyLobbyLayout(next);
       sim.relayout(Date.now());
@@ -735,6 +738,7 @@ export default function Lobby3dScreen({
           const notice = editor.pointerUp();
           if (notice === "cannot-place") showToast(EDIT_CANNOT_PLACE);
           else if (notice === "cannot-move-here") showToast(EDIT_CANNOT_MOVE_HERE);
+          else if (notice === "fixed") showToast(EDIT_FIXED);
         }
         else editor.pointerCancel();
         refreshEdit();

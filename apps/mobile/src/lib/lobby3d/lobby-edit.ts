@@ -12,6 +12,7 @@ import {
   storedItems,
   surfaceSlotsOf,
   tabletopPose,
+  withFixedPlacements,
   withItemPlacement,
   withKept,
   type Facing,
@@ -48,6 +49,11 @@ const typeOf = (layout: LobbyLayout, id: string): FurnitureType => furnitureType
 /** 벽에 거는 가구인지. */
 export function isWallPiece(layout: LobbyLayout, id: string): boolean {
   return typeOf(layout, id).mount === "wall";
+}
+
+/** 붙박이 가구(창문)인지. 고르거나 옮길 수 없다. */
+export function isFixedPiece(layout: LobbyLayout, id: string): boolean {
+  return typeOf(layout, id).fixed === true;
 }
 
 /** 받침 가구 위에 올리는 탁상형 소품인지. */
@@ -194,13 +200,17 @@ export function freeSpotFor(layout: LobbyLayout, item: StoredItem, room: RoomSpe
  *    지금 자리 그대로 넣어도 놓을 수 있으면 그 자리에 둔다. 아니면 장소 가구는 꺼낼 때와 같은 규칙으로 새 방의 놓을 수 있는 자리로 옮기고,
  *    나머지 가구는 보관함 끝에 넣는다. 받침 가구를 보관함에 넣으면 그 위 소품도 받침 가구 다음에(자리 번호 순서로) 함께 넣는다.
  * 3. 보관함에 있던 가구는 그대로 보관함에 둔다. 방에 남는 가구는 원래 배치 순서대로다.
+ * 붙박이 가구(창문)는 늘 제자리(처음 배치 자리)에 두고 맨 먼저 놓는다.
  */
 export function fitLayoutToRoom(layout: LobbyLayout, room: RoomSpec): LobbyLayout {
+  layout = withFixedPlacements(layout);
   if (isPlaceableLayout(layout, room)) return layout;
+  const isFixed = (item: FurnitureItem) => furnitureType(item.type).fixed === true;
   const isPlace = (item: FurnitureItem) => Boolean(furnitureType(item.type).place);
   const order = [
-    ...layout.items.filter((item) => isPlace(item)),
-    ...layout.items.filter((item) => !isPlace(item) && !item.on),
+    ...layout.items.filter((item) => isFixed(item)),
+    ...layout.items.filter((item) => isPlace(item) && !isFixed(item)),
+    ...layout.items.filter((item) => !isPlace(item) && !isFixed(item) && !item.on),
     ...layout.items.filter((item) => item.on)
   ];
   const placed: FurnitureItem[] = [];
@@ -208,6 +218,11 @@ export function fitLayoutToRoom(layout: LobbyLayout, room: RoomSpec): LobbyLayou
   const gone = new Set<string>();
   for (const item of order) {
     if (gone.has(item.id)) continue;
+    // 붙박이는 제자리 그대로 둔다(다른 가구가 비켜 놓인다)
+    if (isFixed(item)) {
+      placed.push(item);
+      continue;
+    }
     if (isPlaceableLayout(makeLayout([...placed, item], []), room)) {
       placed.push(item);
       continue;
@@ -327,8 +342,11 @@ export interface EditZone {
   approach: FloorPoint[];
 }
 
-/** 누른 결과. 화면이 안내를 띄운다. no-room은 보관함에서 꺼내거나 더할 자리가 없을 때, limit는 가구 수가 한도라 더할 수 없을 때다. */
-export type EditNotice = "red-first" | "cannot-place" | "cannot-move-here" | "no-room" | "limit" | null;
+/**
+ * 누른 결과. 화면이 안내를 띄운다. no-room은 보관함에서 꺼내거나 더할 자리가 없을 때, limit는 가구 수가 한도라 더할 수 없을 때,
+ * fixed는 아무것도 들지 않고 붙박이 가구(창문)를 눌렀을 때다(고르지 않는다).
+ */
+export type EditNotice = "red-first" | "cannot-place" | "cannot-move-here" | "no-room" | "limit" | "fixed" | null;
 
 /** 한 배치에 둘 수 있는 가구 수(방과 보관함을 합친 수, 저장 본문 검사와 같다). */
 export const MAX_LAYOUT_ITEMS = 40;
@@ -376,6 +394,8 @@ export class LobbyEditor {
   red: string | null = null;
   private press: Press | null = null;
   private drag: Drag | null = null;
+  /** 붙박이(창문)를 누른 채 끌려고 했는지. 끌지 않고 고르기를 풀며, 손을 떼면 안내한다. */
+  private fixedDrag = false;
   /** 앱이 그릴 줄 모르는 가구(편집하지 않고 그대로 둔다). 저장할 배치(result)에 다시 붙는다. */
   private readonly kept: KeptFurniture | undefined;
 
@@ -490,6 +510,7 @@ export class LobbyEditor {
   pointerDown(hit: PointerHit, screenX: number, screenY: number): EditNotice {
     this.press = null;
     this.drag = null;
+    this.fixedDrag = false;
     // 배치에 없는 가구(3D가 아직 다시 만들어지기 전의 치운 가구)를 맞혔으면 가구를 맞히지 않은 것으로 본다
     if (hit.piece && !layoutItem(this.layout, hit.piece)) hit = { ...hit, piece: null };
     // 고른 바닥 가구는 떠 있어 모양을 맞히기 어렵다. 그 칸 안을 눌렀으면(덮개가 아닌 다른 가구를 직접 맞히지 않았으면) 그 가구다
@@ -553,6 +574,12 @@ export class LobbyEditor {
   private startDrag(press: Press, screenX: number, screenY: number): boolean {
     if (!press.piece) return false;
     if (Math.hypot(screenX - press.x, screenY - press.y) <= TAP_MAX_MOVE_PX) return false;
+    // 붙박이(창문)는 끌지 않는다. 다른 가구를 끌기 시작할 때처럼 고르기는 풀지만 창문을 고르지는 않는다
+    if (isFixedPiece(this.layout, press.piece)) {
+      this.selected = null;
+      this.fixedDrag = true;
+      return false;
+    }
     if (isWallPiece(this.layout, press.piece)) {
       if (!press.wall) return false;
       const from = this.wallOf(press.piece);
@@ -577,8 +604,11 @@ export class LobbyEditor {
   pointerUp(): EditNotice {
     const press = this.press;
     const drag = this.drag;
+    const fixedDrag = this.fixedDrag;
     this.press = null;
     this.drag = null;
+    this.fixedDrag = false;
+    if (fixedDrag) return "fixed";
     if (drag) {
       if (isPlaceableLayout(this.layout)) {
         if (this.red === drag.piece) this.red = null;
@@ -592,6 +622,8 @@ export class LobbyEditor {
     if (!press) return null;
     // 고른 가구가 없으면 누른 가구를 고른다(빈 곳이면 그대로). 고른 가구를 다시 톡하면 자리를 확정한다(고르기를 풀고 내려앉는다)
     if (this.selected === null || press.piece === this.selected) {
+      // 붙박이(창문)는 고르지 않고 안내만 한다
+      if (this.selected === null && press.piece !== null && isFixedPiece(this.layout, press.piece)) return "fixed";
       this.selected = press.piece !== null && press.piece === this.selected ? null : press.piece;
       return null;
     }
@@ -632,6 +664,7 @@ export class LobbyEditor {
     const drag = this.drag;
     this.press = null;
     this.drag = null;
+    this.fixedDrag = false;
     if (drag) this.revert(drag);
   }
 

@@ -83,6 +83,30 @@ export const DEFAULT_LOBBY_LAYOUT: LobbyLayout = {
   ]
 };
 
+/** 붙박이 가구 종류(창문)의 자리: 처음 배치에서 그 종류가 있는 자리. 붙박이가 아니거나 처음 배치에 없으면 null. */
+export function fixedPlacementOf(type: string): Pick<FurnitureItem, "floor" | "wall"> | null {
+  if (furnitureType(type).fixed !== true) return null;
+  const home = DEFAULT_LOBBY_LAYOUT.items.find((item) => item.type === type);
+  if (!home || home.on) return null;
+  return home.wall ? { wall: { ...home.wall } } : home.floor ? { floor: { ...home.floor } } : null;
+}
+
+/** 붙박이 가구(창문)를 늘 제자리(처음 배치 자리)에 둔 배치. 다른 가구와 보관함은 그대로다. 바뀐 것이 없으면 같은 배치를 돌려준다. */
+export function withFixedPlacements(layout: LobbyLayout): LobbyLayout {
+  let changed = false;
+  const items = layout.items.map((item) => {
+    const spot = item.on ? null : fixedPlacementOf(item.type);
+    if (!spot) return item;
+    const same = spot.wall
+      ? item.wall?.wall === spot.wall.wall && item.wall?.along === spot.wall.along && !item.floor
+      : item.floor?.x === spot.floor!.x && item.floor?.z === spot.floor!.z && item.floor?.facing === spot.floor!.facing && !item.wall;
+    if (same) return item;
+    changed = true;
+    return { id: item.id, type: item.type, ...spot };
+  });
+  return changed ? makeLayout(items, storedItems(layout), layout.kept) : layout;
+}
+
 /** 배치 안의 가구(id로). */
 export function layoutItem(layout: LobbyLayout, id: string): FurnitureItem | undefined {
   return layout.items.find((item) => item.id === id);

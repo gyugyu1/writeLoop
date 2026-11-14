@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -58,9 +59,9 @@ public class LobbyLayoutService {
 
     /**
      * 아는 가구 종류(아이템 목록 파일 ItemCatalog의 가구): 두는 곳, 장소가 딸려 배치에 정확히 하나 있어야 하는지,
-     * 윗면의 소품 자리 수(차지한 칸 수, 윗면이 없으면 0).
+     * 윗면의 소품 자리 수(차지한 칸 수, 윗면이 없으면 0), 붙박이인지(늘 처음 배치 자리에 있어야 한다).
      */
-    private record FurnitureKind(Mount mount, boolean place, int slots) {
+    private record FurnitureKind(Mount mount, boolean place, int slots, boolean fixed) {
     }
 
     private static final Map<String, FurnitureKind> KINDS = furnitureKinds();
@@ -75,7 +76,8 @@ public class LobbyLayoutService {
                     default -> throw new IllegalStateException("모르는 가구 두는 곳: " + type + " " + furniture.mount());
                 },
                 furniture.place(),
-                furniture.slots()
+                furniture.slots(),
+                furniture.fixed()
         )));
         return Map.copyOf(kinds);
     }
@@ -207,6 +209,7 @@ public class LobbyLayoutService {
             parsed.add(next);
         }
         requireTabletopsOnSlots(parsed);
+        requireFixedAtHome(parsed);
         List<LobbyLayoutDto.StoredItem> stored = request.has("stored") ? parseStored(request.get("stored"), ids, items.size()) : null;
         // 장소가 딸린 가구는 종류마다 정확히 하나다
         for (Map.Entry<String, FurnitureKind> kind : KINDS.entrySet()) {
@@ -215,6 +218,22 @@ public class LobbyLayoutService {
             }
         }
         return new LobbyLayoutDto(SHAPE_VERSION, List.copyOf(parsed), stored);
+    }
+
+    /** 붙박이 가구(창문)는 종류로 판단해, 처음 배치에서 그 종류가 있는 자리(창문은 뒷벽 4.8) 그대로여야 한다. 방 크기와 관계없다. */
+    private void requireFixedAtHome(List<LobbyLayoutDto.Item> items) {
+        for (LobbyLayoutDto.Item item : items) {
+            if (!KINDS.get(item.type()).fixed()) {
+                continue;
+            }
+            LobbyLayoutDto.Item home = DEFAULT_LAYOUT.items().stream()
+                    .filter(candidate -> candidate.type().equals(item.type()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("처음 배치에 없는 붙박이 가구: " + item.type()));
+            if (!Objects.equals(home.floor(), item.floor()) || !Objects.equals(home.wall(), item.wall()) || item.on() != null) {
+                throw invalid("창문은 옮길 수 없어요.");
+            }
+        }
     }
 
     /** 탁상형 소품은 방에 놓인 받침 가구(윗면이 있는 바닥 가구)의 있는 자리에 올리고, 한 자리에 하나만 둔다. */

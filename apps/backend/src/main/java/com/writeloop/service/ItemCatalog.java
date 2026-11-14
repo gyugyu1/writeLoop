@@ -71,8 +71,11 @@ public class ItemCatalog {
     public record Files(String model, String icon) {
     }
 
-    /** 서버 검사에 쓰는 가구 정보(그리기 정보에서 만든다): 두는 곳(floor·wall·tabletop), 장소가 딸렸는지, 윗면 소품 자리 수. */
-    public record Furniture(String mount, boolean place, int slots) {
+    /**
+     * 서버 검사에 쓰는 가구 정보(그리기 정보에서 만든다): 두는 곳(floor·wall·tabletop), 장소가 딸렸는지, 윗면 소품 자리 수,
+     * 붙박이인지(draw.fixed가 true. 창문은 늘 처음 배치 자리에 있다).
+     */
+    public record Furniture(String mount, boolean place, int slots, boolean fixed) {
     }
 
     /** 내려받을 파일 하나: 주소, 내용 SHA-256(소문자 16진수 전체), 크기. */
@@ -248,7 +251,8 @@ public class ItemCatalog {
                     ? cells.size()
                     : draw.path("size").path("width").asInt() * draw.path("size").path("depth").asInt();
         }
-        return new Furniture(serverMount, place, slots);
+        JsonNode fixed = draw.path("fixed");
+        return new Furniture(serverMount, place, slots, fixed.isBoolean() && fixed.booleanValue());
     }
 
     public List<Item> items() {

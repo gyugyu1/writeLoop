@@ -975,6 +975,7 @@
           }
         },
         "removable": false,
+        "fixed": true,
         "view": true,
         "model": {
           "piece": "window",

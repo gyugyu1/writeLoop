@@ -1111,12 +1111,13 @@ export default function Lobby3dScreen({
                 <Text style={styles.decorText}>꾸미기</Text>
               </Pressable>
             ) : null}
-            {onSaveLayout && onOpenShop ? (
+            {/* 홈쇼핑(버튼과 룹 잔액 칩)도 방에서만 쓴다 */}
+            {onSaveLayout && onOpenShop && area === "room" ? (
               <Pressable accessibilityRole="button" style={styles.decorButton} onPress={onOpenShop}>
                 <Text style={styles.decorText}>홈쇼핑</Text>
               </Pressable>
             ) : null}
-            {onSaveLayout && onOpenShop && shopBalance !== null ? (
+            {onSaveLayout && onOpenShop && area === "room" && shopBalance !== null ? (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`${shopBalance}룹, 홈쇼핑 열기`}

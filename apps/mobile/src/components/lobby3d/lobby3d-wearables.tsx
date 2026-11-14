@@ -1,9 +1,10 @@
-import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useLoader } from "@react-three/fiber/native";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { useItemCatalog } from "@/lib/item-catalog-store";
 import { cachedItemFile, fetchItemFile, itemFileFailed, useItemFiles } from "@/lib/item-files";
-import { lookOfWear, wearDraw, type WearDraw, type WearLook, type WearState } from "@/lib/lobby3d/wear";
+import { shownLook, wearDraw, type WearDraw, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type { WardrobeSlot } from "@/lib/types";
 import { characterOutlineMaterial, type CharacterOutlineUniforms, type ToonKit } from "./lobby3d-character";
 
@@ -13,7 +14,8 @@ import { characterOutlineMaterial, type CharacterOutlineUniforms, type ToonKit }
 // - bone: 모델(라룹이 쉬는 자세 좌표)을 그 뼈에 단단히 붙인다(자리는 쉬는 자세 기준). mirror가 있으면 좌우로 뒤집어 그 뼈에도 붙인다(신발 오른짝).
 // - skin: 모델의 뼈대로 휘는 껍질을 라룹이 뼈대에 뼈 이름으로 다시 묶는다.
 // 아이템에 색이 있으면 모델을 그 색으로 칠한다(같은 모양의 다른 색 아이템). 라룹이와 같은 카툰 명암과 갈색 외곽선으로 그린다.
-// 모델 파일은 scripts/lobby3d/split-wearables.py(묶음에서 나눔)·build-extra-wearables.py(서버로만 더한 옷)가 만든다. 이 모듈은 착용한 것이 있을 때 처음 불러온다.
+// 라룹이 고글은 모두 처음부터 가진 얼굴장식이라 앱에 든 모델(wear-goggles.glb)로 머리 뼈에 붙인다. 입은 것을 모르면(look 없음) 고글을 쓴 모습이다.
+// 옷 모델 파일은 scripts/lobby3d/build-wearables.py, 고글은 build-goggles.py가 만든다. 이 모듈은 그릴 것(고글 포함)이 있을 때 처음 불러온다.
 
 /** 라룹이 쪽에서 넘겨 주는 것: 모델 뿌리(착용 모델을 같은 좌표로 둔다), 몸 메시(뼈대·묶음 행렬), 외곽선 설정, 카툰 명암. */
 export interface WearHost {
@@ -24,6 +26,19 @@ export interface WearHost {
 }
 
 const LOOK_SLOTS: readonly WardrobeSlot[] = ["hat", "top", "bottom", "shoes", "face", "back", "accessory"];
+
+/** 라룹이 고글: 모두 처음부터 가진 얼굴장식이라 앱에 든 모델로 머리 뼈에 붙인다(내려받지 않는다). 모델은 라룹이 쉬는 자세 좌표다. */
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const GOGGLES_ASSET = require("../../../assets/models/wear-goggles.glb") as string;
+const GOGGLES_DRAW: WearDraw = {
+  type: "goggles",
+  slot: "face",
+  attach: "bone",
+  bone: "head",
+  mirror: null,
+  color: null,
+  model: { url: "", sha256: "bundled:wear-goggles", bytes: 0 }
+};
 
 /** 기기에 받은 모델 파일을 읽은 것(파일 해시 → 읽기). 읽지 못하면 지워 다음에 다시 읽는다. */
 const MODELS = new Map<string, Promise<GLTF | null>>();
@@ -55,7 +70,7 @@ export function Wearables({ host, wear, look }: { host: WearHost; wear: WearStat
   // 받은 목록·받은 파일이 바뀌면 다시 고른다
   const catalog = useItemCatalog();
   const filesTick = useItemFiles();
-  const shown = look ?? lookOfWear(wear);
+  const shown = shownLook(wear, look);
   const key = LOOK_SLOTS.map((slot) => shown[slot] ?? "").join("|");
   const draws = useMemo(() => {
     const list: WearDraw[] = [];
@@ -89,12 +104,26 @@ export function Wearables({ host, wear, look }: { host: WearHost; wear: WearStat
 
   return (
     <>
+      {shown.face === "goggles" ? (
+        // 고글은 따로 기다리고 따로 실패한다(읽는 동안이나 읽지 못해도 다른 옷은 그대로 붙는다)
+        <WearablesErrorBoundary>
+          <Suspense fallback={null}>
+            <Goggles host={host} />
+          </Suspense>
+        </WearablesErrorBoundary>
+      ) : null}
       {draws.map((draw) => {
         const gltf = models.get(draw.model.sha256);
         return gltf ? <WearPiece key={`${draw.slot}:${draw.type}:${draw.model.sha256}`} host={host} draw={draw} gltf={gltf} /> : null;
       })}
     </>
   );
+}
+
+/** 앱에 든 라룹이 고글(읽는 동안은 바깥 Suspense가 기다린다). */
+function Goggles({ host }: { host: WearHost }) {
+  const gltf = useLoader(GLTFLoader, GOGGLES_ASSET) as GLTF;
+  return <WearPiece host={host} draw={GOGGLES_DRAW} gltf={gltf} />;
 }
 
 /**

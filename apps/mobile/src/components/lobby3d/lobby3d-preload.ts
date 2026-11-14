@@ -9,7 +9,12 @@ import { bundledFurnitureModels } from "@/lib/lobby3d/furniture-files";
 // 로비의 각 부분(lobby3d-room, lobby3d-character, lobby3d-furniture)이 useLoader로 읽는 파일과 같아야 같은 것을 함께 쓴다.
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-const LOBBY_MODEL_ASSETS = [require("../../../assets/models/lobby-room.glb"), require("../../../assets/models/writeloop.glb")] as string[];
+const LOBBY_MODEL_ASSETS = [
+  require("../../../assets/models/lobby-room.glb"),
+  require("../../../assets/models/writeloop.glb"),
+  // 라룹이 고글(착용 모듈이 같은 파일을 useLoader로 읽는다. 입은 것을 모르거나 고글을 쓰면 처음부터 그린다)
+  require("../../../assets/models/wear-goggles.glb")
+] as string[];
 // 바깥 마을 모델. 방에서 '나가기'를 누르기 전에 읽어 두어 마을이 바로 뜨게 한다(lobby3d-village가 같은 파일을 읽는다)
 const VILLAGE_MODEL_ASSET = require("../../../assets/models/lobby-village.glb") as string;
 /* eslint-enable @typescript-eslint/no-require-imports */

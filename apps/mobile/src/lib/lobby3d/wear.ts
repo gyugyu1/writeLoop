@@ -127,7 +127,7 @@ export function wearDraw(type: string | null | undefined): WearDraw | null {
   return draw;
 }
 
-/** 라룹이 몸에 그려진 옷(라룹이 고글). 그리기 정보·모델 파일 없이 라룹이 쪽이 그린다. */
+/** 앱에 든 옷(라룹이 고글). 받은 목록의 그리기 정보·모델 파일 없이 앱에 든 모델(assets/models/wear-goggles.glb)로 그린다. */
 export const BODY_WEARABLES: ReadonlySet<string> = new Set(["goggles"]);
 
 /** 라룹이에 입힐 수 있는 옷인지: 받은 목록으로 그릴 수 있는 옷(wearDraw)이거나 몸에 그려진 옷. 옷장 칸은 이런 옷에만 만든다. */
@@ -192,8 +192,17 @@ export function lookOfWear(wear: WearState): WearLook {
   return look;
 }
 
-/** 착용 모델로 그릴 것이 하나라도 있는지(그릴 아이템을 주면 새 부위도 본다). 라룹이 고글은 라룹이 모델에 있어 세지 않는다. */
+/**
+ * 착용 모델로 그릴 것이 하나라도 있는지(라룹이 고글 포함). 그릴 아이템(look)을 주면 일곱 부위를 보고,
+ * 주지 않으면(입은 것을 모름) 라룹이 기본 모습대로 고글을 쓴 것이라 늘 참이다.
+ */
 export function wearsAnything(wear: WearState, look?: WearLook | null): boolean {
-  if (look) return LOOK_SLOTS.some((slot) => look[slot] !== null && look[slot] !== "goggles");
-  return wear.hat || wear.top || wear.bottom || wear.shoes;
+  void wear;
+  if (look) return LOOK_SLOTS.some((slot) => look[slot] !== null);
+  return true;
+}
+
+/** 착용 모듈이 그릴 일곱 부위: look이 있으면 그대로, 없으면(입은 것을 모름) ①의 넷에 라룹이 고글을 쓴 모습. */
+export function shownLook(wear: WearState, look?: WearLook | null): WearLook {
+  return look ?? { ...lookOfWear(wear), face: "goggles" };
 }

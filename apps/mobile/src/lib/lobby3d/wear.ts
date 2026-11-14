@@ -148,10 +148,16 @@ export function wearableLabel(type: string): string {
   return catalogItem(type)?.name ?? WEARABLE_ITEMS[type]?.label ?? type;
 }
 
-/** 그 부위의 아이템들(받은 목록 순서의 입힐 수 있는 옷, 목록이 없으면 앱 이름표 순서). 시험판이 차례로 고를 때 쓴다. */
+/**
+ * 그 부위의 아이템들(받은 목록 순서의 입힐 수 있는 옷, 목록이 없으면 앱 이름표 순서). 시험판이 차례로 고를 때 쓴다.
+ * 앱에 든 옷(라룹이 고글)은 그 부위의 맨 앞이다(목록 순서와 관계없이 얼굴장식의 첫 아이템).
+ */
 export function itemsInSlot(slot: WardrobeSlot): string[] {
   const catalog = currentItemCatalog();
-  if (catalog) return catalog.items.filter((item) => item.kind === "wearable" && item.slot === slot && isWearableDrawable(item.id)).map((item) => item.id);
+  if (catalog) {
+    const ids = catalog.items.filter((item) => item.kind === "wearable" && item.slot === slot && isWearableDrawable(item.id)).map((item) => item.id);
+    return [...ids.filter((id) => BODY_WEARABLES.has(id)), ...ids.filter((id) => !BODY_WEARABLES.has(id))];
+  }
   return Object.keys(WEARABLE_ITEMS).filter((type) => WEARABLE_ITEMS[type].slot === slot);
 }
 

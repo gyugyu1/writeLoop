@@ -149,7 +149,8 @@ export default function HomeScreen() {
         .then(() => getWardrobe())
         .then((wardrobe) => {
           if (request === wardrobeRequest.current) {
-            setLobbyEquipped({ value: wardrobe?.equipped });
+            // 옷장을 받지 못했으면(로그인이 풀림 등 null) 입은 것을 모르는 것으로 둔다(라룹이 기본 모습대로 고글을 쓴다)
+            setLobbyEquipped(wardrobe ? { value: wardrobe.equipped } : null);
           }
         })
         .catch(() => {

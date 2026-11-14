@@ -71,6 +71,9 @@ jobs:
         working-directory: apps/mobile
     steps:
       - uses: actions/checkout@v7
+        with:
+          # 모델·그림 파일 테스트 일부가 옛 커밋의 파일(git show <커밋>:<경로>)과 비교하므로 기록이 모두 있어야 한다.
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: "24"

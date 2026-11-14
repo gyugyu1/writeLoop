@@ -159,7 +159,7 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
     model.traverse((o) => {
       if ((o as THREE.SkinnedMesh).isSkinnedMesh) skinned.push(o as THREE.SkinnedMesh);
     });
-    // 몸의 외곽선 껍질(고글을 감출 때 몸과 함께 모양 변형을 준다)
+    // 몸의 외곽선 껍질
     for (const mesh of skinned) {
       const source = mesh.material as THREE.MeshStandardMaterial;
       // 꼬리 뿌리처럼 면이 접혀 겹친 자리에서 몇 장이 뒤를 보여 틈이 생긴다. 닫힌 몸이라 양면으로 그려도 뒷면은 가려진다.

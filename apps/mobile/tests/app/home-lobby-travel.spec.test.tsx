@@ -1,6 +1,7 @@
 // [spec] qa 테스트(작업 088 ② 방↔마을 오가기, 새 기능, 모바일): 홈(/) 화면 단위.
 // 기대값은 시나리오(private 작업 폴더 088-2026-11-13-바깥-마을/03-방-마을-오가기/02-qa-scenarios.md)와 03-main-decision.md에서만 가져온다.
 // 여기서 보는 시나리오: X1·X2·X4·X6, N2·N4, H1~H6, O1~O3, O5. 로비 화면 단위는 tests/components/lobby3d-travel-screen.spec.test.tsx가 본다.
+// 작업 092(홈쇼핑은 방에서만)에서 H1을 새 동작으로 고치고 H4·H5를 지웠다(092 명세의 "고칠 기존 테스트"와 02-main-decision.md).
 //
 // 구현(d58b7ca)에서 읽은 것은 부르는 방법뿐이다: 3D 그리기가 받는 onVillageReady·onVillageFailed, 동작 줄이기는 AccessibilityInfo.isReduceMotionEnabled.
 // 가짜로 두는 것은 기존 홈쇼핑 시험(home-shopping-screen.spec.test.tsx)과 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내, 라우터, 포커스, 3D 그리기).
@@ -630,14 +631,22 @@ describe("[spec] 홈: 마을 → 방(N2·N4)", () => {
 // ---------- H. 위 줄과 아래 메뉴 ----------
 
 describe("[spec] 홈: 마을의 위 줄과 아래 메뉴(H1~H6)", () => {
-  it("H1: 마을에서는 '꾸미기'가 없고 연속 기록 칩·'홈쇼핑'·'120룹'·카메라 거리가 있으며, 방에 돌아오면 '꾸미기'가 다시 있다", async () => {
+  // 092(홈쇼핑은 방에서만, 기능 변경): 명세의 "고칠 기존 테스트"대로 H1을 새 동작(마을에서는 '홈쇼핑'·"N룹" 칩이 없고, 방에 돌아오면 다시 있다)으로 고쳤다.
+  // H4·H5(마을에서 홈쇼핑 주문 뒤 '바로 놓기')는 092 결정 파일(02-main-decision.md)의 사용자 결정("테스트만 지움")대로 지웠다.
+  it("H1: 마을에서는 '꾸미기'·'홈쇼핑'·'120룹' 칩이 없고 연속 기록 칩·카메라 거리가 있으며, 방에 돌아오면 '꾸미기'·'홈쇼핑'·'120룹' 칩이 다시 있다", async () => {
     await renderHome();
     expect(screen.queryByText("꾸미기")).not.toBeNull();
+    expect(screen.queryAllByRole("button", { name: "홈쇼핑" })).toHaveLength(1);
+    expect(screen.queryAllByText(`${BALANCE}룹`)).toHaveLength(1);
+    expect(screen.queryAllByLabelText(`${BALANCE}룹, 홈쇼핑 열기`)).toHaveLength(1);
+
     await goOut();
     expect(screen.queryByText("꾸미기")).toBeNull();
+    expect(screen.queryAllByRole("button", { name: "홈쇼핑", ...ALL })).toHaveLength(0);
+    expect(textCount("홈쇼핑")).toBe(0);
+    expect(textCount(`${BALANCE}룹`)).toBe(0);
+    expect(screen.queryAllByLabelText(`${BALANCE}룹, 홈쇼핑 열기`, ALL)).toHaveLength(0);
     expect(screen.getByText("연속 2일")).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: "홈쇼핑" }).length).toBeGreaterThan(0);
-    expect(screen.getByText(`${BALANCE}룹`)).toBeTruthy();
     expect(screen.getByRole("button", { name: "카메라 거리 설정" })).toBeTruthy();
 
     await arriveAtHome();
@@ -645,6 +654,9 @@ describe("[spec] 홈: 마을의 위 줄과 아래 메뉴(H1~H6)", () => {
     await steps(1.2);
     expect(area()).toBe("room");
     expect(screen.queryByText("꾸미기")).not.toBeNull();
+    expect(screen.queryAllByRole("button", { name: "홈쇼핑" })).toHaveLength(1);
+    expect(screen.queryAllByText(`${BALANCE}룹`)).toHaveLength(1);
+    expect(screen.queryAllByLabelText(`${BALANCE}룹, 홈쇼핑 열기`)).toHaveLength(1);
   });
 
   it("H2: 마을에서도 아래 메뉴 넷과 아래 탭바(홈·기록·내정보)가 있다", async () => {
@@ -669,36 +681,6 @@ describe("[spec] 홈: 마을의 위 줄과 아래 메뉴(H1~H6)", () => {
     await frames(1);
     expect(area()).toBe("village");
     expect(dist(pos(), before)).toBeLessThanOrEqual(1e-6);
-  });
-
-  it("H4: 마을에서 '바로 놓기'를 누르면 0.1초에는 아직 마을이고 꾸미기가 닫혀 있으며, 0.2~0.5초 사이에 방으로 바뀌고 1.0초까지 산 가구를 꺼낸 꾸미기가 열린다", async () => {
-    await renderHome();
-    await goOut();
-    await orderBed();
-    await fireEvent.press(screen.getByRole("button", { name: "바로 놓기" }));
-    await flushAsync();
-    await steps(0.1);
-    expect(area()).toBe("village");
-    expect(canvas().edit ?? null).toBeNull();
-
-    const switched = await untilAreaLeaves("village", 0.1);
-    expect(area()).toBe("room");
-    expect(switched).toBeGreaterThanOrEqual(0.2 - 1e-9);
-    expect(switched).toBeLessThanOrEqual(0.5 + 1e-9);
-    await steps(Math.max(0, 1.0 - switched));
-    expectBedTakenOut();
-    expect(screen.queryByText("내정보")).toBeNull();
-  });
-
-  it("H5: 동작 줄이기면 마을에서 '바로 놓기'를 누르는 즉시 방이고 산 가구를 꺼낸 꾸미기가 열린다", async () => {
-    jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(true);
-    await renderHome();
-    await goOut();
-    await orderBed();
-    await fireEvent.press(screen.getByRole("button", { name: "바로 놓기" }));
-    await flushAsync();
-    expect(area()).toBe("room");
-    expectBedTakenOut();
   });
 
   it("H6: 방에서 '바로 놓기'를 누르면 프레임을 넣지 않아도 바로 산 가구를 꺼낸 꾸미기가 열리고 구역은 방이다", async () => {

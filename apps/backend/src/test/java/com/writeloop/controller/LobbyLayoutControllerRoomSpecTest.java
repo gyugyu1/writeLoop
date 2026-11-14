@@ -2,9 +2,11 @@ package com.writeloop.controller;
 
 import static com.writeloop.controller.LobbyLayoutControllerSpecTest.assertSameLayout;
 import static com.writeloop.controller.LobbyLayoutControllerSpecTest.floorPiece;
+import static com.writeloop.controller.LobbyLayoutControllerSpecTest.items;
 import static com.writeloop.controller.LobbyLayoutControllerSpecTest.names;
 import static com.writeloop.controller.LobbyLayoutControllerSpecTest.p0;
 import static com.writeloop.controller.LobbyLayoutControllerSpecTest.p1;
+import static com.writeloop.controller.LobbyLayoutControllerSpecTest.wallItem;
 import static com.writeloop.controller.LobbyLayoutControllerSpecTest.wallPiece;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -80,17 +82,19 @@ class LobbyLayoutControllerRoomSpecTest extends IntegrationTestSupport {
         });
     }
 
+    // 작업 093(창문 붙박이, 01-main-spec.md "고칠 기존 테스트"): 창문은 뒷벽 4.8에서 옮길 수 없게 되어,
+    // 창문을 옮겨 보던 RA-7·RA-9·RA-10을 다른 벽 가구(액자·게시판)로 같은 자리를 확인하게 바꿨다.
     @Test
     void ra7_wallBoundaryOfTheBasicRoomIsAccepted() throws Exception {
         assertAccepted("RA-7", l -> {
             wallPiece(l, "board").put("wall", "back").put("along", 8.0);
-            wallPiece(l, "window").put("wall", "left").put("along", 11.0);
+            items(l).add(wallItem("frame-1", "frame", "left", 11.0));
         });
     }
 
     @Test
     void ra10_sideWallAlongBeyondTheWidthIsAccepted() throws Exception {
-        assertAccepted("RA-10", l -> wallPiece(l, "window").put("wall", "right").put("along", 8.5));
+        assertAccepted("RA-10", l -> wallPiece(l, "board").put("wall", "right").put("along", 8.5));
     }
 
     // ---------- 거절 ----------
@@ -103,8 +107,8 @@ class LobbyLayoutControllerRoomSpecTest extends IntegrationTestSupport {
                 rejected("RA-6 rug z -0.0001", OUTSIDE_MESSAGE, l -> floorPiece(l, "rug").put("z", -0.0001)),
                 rejected("RA-8 board back along 8.0001", OUTSIDE_MESSAGE,
                         l -> wallPiece(l, "board").put("wall", "back").put("along", 8.0001)),
-                rejected("RA-9 window right along 11.0001", OUTSIDE_MESSAGE,
-                        l -> wallPiece(l, "window").put("wall", "right").put("along", 11.0001)),
+                rejected("RA-9 board right along 11.0001", OUTSIDE_MESSAGE,
+                        l -> wallPiece(l, "board").put("wall", "right").put("along", 11.0001)),
                 rejected("RA-11 board wall front", WALL_MESSAGE, l -> wallPiece(l, "board").put("wall", "front")),
                 rejected("RA-12 top-level room key", SHAPE_MESSAGE, l -> l.put("room", "basic"))
         );

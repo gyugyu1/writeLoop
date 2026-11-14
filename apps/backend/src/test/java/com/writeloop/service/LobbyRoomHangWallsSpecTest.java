@@ -67,12 +67,14 @@ class LobbyRoomHangWallsSpecTest {
 
     // ---------- 결정 2 의심 4: 걸 수 없는 벽의 안내 문구 ----------
 
+    // 작업 093(창문 붙박이, 01-main-spec.md "고칠 기존 테스트"): 창문은 뒷벽 4.8에서 옮길 수 없게 되어,
+    // 걸 수 없는 벽의 안내 문구를 창문 대신 게시판으로 확인한다(창문 붙박이 거절이 먼저 나면 문구를 볼 수 없다).
     @Test
     void hm1_rejectingTheRightWallInABackLeftRoomNamesOnlyThatRoomsWalls() {
         ApiException error = catchThrowableOfType(ApiException.class,
-                () -> service.parse(p0(l -> wall(l, "window").put("wall", "right").put("along", 5.0)), ROOM_BACK_LEFT));
+                () -> service.parse(p0(l -> wall(l, "board").put("wall", "right").put("along", 5.0)), ROOM_BACK_LEFT));
 
-        assertThat(error).as("parse should reject window on the right wall").isNotNull();
+        assertThat(error).as("parse should reject board on the right wall").isNotNull();
         assertThat(error.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(error.getCode()).isEqualTo(INVALID_CODE);
         assertThat(error.getMessage()).as("message %s", error.getMessage())

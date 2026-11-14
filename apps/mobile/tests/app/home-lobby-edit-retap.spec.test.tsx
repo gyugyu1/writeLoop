@@ -10,6 +10,8 @@
 // 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 K5를 새 동작으로 고쳤다(private 작업 폴더
 // 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 가구를 톡하면
 // 골라진 가구를 그리로 옮기려 하고, 둘 수 없으면 옮기지 않고 "여기에는 둘 수 없어요" 안내를 띄우며 탭한 가구는 골라지지 않는다.
+// 093(창문 붙박이) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 093-2026-11-14-창문-붙박이/01-main-spec.md, 보고 03-qa-tests.md):
+// 창문을 고를 수 없게 되어, 창문을 고르고 다시 톡하던 N4·N5·N6과 창문을 끌던 K8을 같은 동작의 게시판(뒷벽 1.8, 띠 (1.8, 0.5))으로 바꿨다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -214,8 +216,8 @@ const AT = {
   wardrobe: { x: 7.5, z: 3.5 },
   rug: { x: 4.6, z: 7.2 }
 } as const;
-/** 뒷벽 창문(4.8) 앞 바닥 띠 안의 점(064 ④ B1과 같다). */
-const WINDOW_STRIP: FloorPoint = { x: 4.8, z: 0.5 };
+/** 093: 뒷벽 게시판(1.8, 띠 0.9~2.7) 앞 바닥 띠 안의 점(옛 창문 띠 (4.8, 0.5) 대신). */
+const BOARD_STRIP: FloorPoint = { x: 1.8, z: 0.5 };
 
 // ---------- 도우미 ----------
 
@@ -464,34 +466,34 @@ describe("[spec] 065 결정 19 N: 고른 가구를 다시 톡하면 고르기가
     expectNothingSelected();
   });
 
-  test("[spec] N4 고른 창문을 다시 톡하면 고르기가 풀려 벽 칠·서는 자리가 사라진다", async () => {
+  test("[spec] N4 [093 게시판으로] 고른 게시판을 다시 톡하면 고르기가 풀려 벽 칠·서는 자리가 사라진다", async () => {
     await startEditing();
-    await tap(back(4.8), "window");
-    expectLifted("window");
-    expect(wallMarkPieces()).toEqual(["window"]);
+    await tap(back(1.8), "board");
+    expectLifted("board");
+    expect(wallMarkPieces()).toEqual(["board"]);
 
-    await tap(back(4.8), "window");
+    await tap(back(1.8), "board");
 
     expectNothingSelected();
     expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(P0));
   });
 
-  test("[spec] N5 바닥 띠 (4.8, 0.5)로 고른 창문은 그 띠를 다시 톡하면 고르기가 풀린다", async () => {
+  test("[spec] N5 [093 게시판으로] 바닥 띠 (1.8, 0.5)로 고른 게시판은 그 띠를 다시 톡하면 고르기가 풀린다", async () => {
     await startEditing();
-    await tap({ floor: WINDOW_STRIP });
-    expectLifted("window");
+    await tap({ floor: BOARD_STRIP });
+    expectLifted("board");
 
-    await tap({ floor: WINDOW_STRIP });
+    await tap({ floor: BOARD_STRIP });
 
     expectNothingSelected();
   });
 
-  test("[spec] N6 바닥 띠 (4.8, 0.5)로 고른 창문은 창문 자체를 다시 톡해도 고르기가 풀린다", async () => {
+  test("[spec] N6 [093 게시판으로] 바닥 띠 (1.8, 0.5)로 고른 게시판은 게시판 자체를 다시 톡해도 고르기가 풀린다", async () => {
     await startEditing();
-    await tap({ floor: WINDOW_STRIP });
-    expectLifted("window");
+    await tap({ floor: BOARD_STRIP });
+    expectLifted("board");
 
-    await tap(back(4.8), "window");
+    await tap(back(1.8), "board");
 
     expectNothingSelected();
   });
@@ -603,11 +605,11 @@ describe("[spec] 065 결정 19 K: 지키는 동작", () => {
     expect(screen.getByText(CANNOT_PLACE)).toBeTruthy();
   });
 
-  test("[spec] K8 창문을 책상 바로 위인 왼벽 5.0으로 끌어 놓으면 뒷벽 4.8로 돌아가며 알림이 뜬다(벽 가구)", async () => {
+  test("[spec] K8 [093 게시판으로] 게시판을 책상 바로 위인 왼벽 5.0으로 끌어 놓으면 뒷벽 1.8로 돌아가며 알림이 뜬다(벽 가구)", async () => {
     await startEditing();
 
-    await pressAndMove(back(4.8), "window", { wall: "left", along: 5.0 });
-    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "window", { wall: "left", along: 5.0 })));
+    await pressAndMove(back(1.8), "board", { wall: "left", along: 5.0 });
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "board", { wall: "left", along: 5.0 })));
     await release();
 
     expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(P0));

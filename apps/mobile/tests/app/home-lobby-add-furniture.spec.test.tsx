@@ -25,6 +25,8 @@
 // - N14(더하기의 40개 한도)는 꺼내기로는 개수가 늘지 않아 옮길 수 없어, 40개 배치에서도 탭이 없다는 시험으로 바꿨다(40개 한도는 서버 주문의 LAYOUT_FULL이 맡는다).
 // - N11의 "보관함 그대로"는 보관함에 둔 산 책이 꺼내지지 않고 남아 있는지로 본다(시작 보관함 그대로).
 // - "더한 뒤에도 줄이 열린 채"(expectAddRowOpen)는 꺼낸 뒤에도 보관함 줄 머리가 보이는지로 본다.
+// 093(창문 붙박이) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 093-2026-11-14-창문-붙박이/01-main-spec.md, 보고 03-qa-tests.md):
+// 창문은 꾸미기에서 눌러도 골라지지 않는다. K4의 창문 부분을 새 동작(창문을 톡해도 골라지지 않고 돌리기·치우기 버튼이 없다)으로 고쳤다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { BackHandler } from "react-native";
@@ -729,7 +731,7 @@ describe("[spec] 066-⑤ 명세 5: 그대로여야 할 동작(K, 화면)", () =>
     expect(storedOf(editLayout())).toEqual([]);
   });
 
-  test("K4 액자를 고르면 돌리기 버튼이 없고 치우기 버튼이 있다. 게시판·창문은 둘 다 없다", async () => {
+  test("K4 [093 바뀔] 액자를 고르면 돌리기 버튼이 없고 치우기 버튼이 있다. 게시판은 둘 다 없고, 창문은 골라지지 않으며 둘 다 없다", async () => {
     await renderHome(layout([...N0_ITEMS, wall("frame-1", "frame", "left", 7.5)]));
     await enterEdit();
 
@@ -741,10 +743,7 @@ describe("[spec] 066-⑤ 명세 5: 그대로여야 할 동작(K, 화면)", () =>
     await tapHit({ point: null, mark: null, onCharacter: false, piece: "frame-1", wall: { wall: "left", along: 7.5 } });
     expect(lifted()).toBeNull();
 
-    for (const [id, along] of [
-      ["board", 1.8],
-      ["window", 4.8]
-    ] as const) {
+    for (const [id, along] of [["board", 1.8]] as const) {
       await tapHit({ point: null, mark: null, onCharacter: false, piece: id, wall: { wall: "back", along } });
       expect(lifted()).toBe(id);
       expect(screen.queryByRole("button", { name: "돌리기" })).toBeNull();
@@ -753,5 +752,11 @@ describe("[spec] 066-⑤ 명세 5: 그대로여야 할 동작(K, 화면)", () =>
       await tapHit({ point: null, mark: null, onCharacter: false, piece: id, wall: { wall: "back", along } });
       expect(lifted()).toBeNull();
     }
+
+    // 093: 창문은 톡해도 골라지지 않는다(옛: 골라져 뜨고 버튼이 없음을 본 뒤 다시 톡해 확정)
+    await tapHit({ point: null, mark: null, onCharacter: false, piece: "window", wall: { wall: "back", along: 4.8 } });
+    expect(lifted()).toBeNull();
+    expect(screen.queryByRole("button", { name: "돌리기" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "치우기" })).toBeNull();
   });
 });

@@ -13,6 +13,8 @@
 // 구현 코드는 부르는 방법(LobbyEditor의 생성자·pointerDown·pointerUp·rotate·selected·red·layout, 누르기 결과의 point·piece·wall)을 알려고만 읽었다.
 // 빨간 가구(돌려서 놓을 수 없는 자리가 된 가구)가 골라진 채 다른 곳을 탭하는 경우는 결정(같은 폴더 03-main-decision.md의 답 2)에서 가져온다:
 // 다른 가구와 같이 탭한 곳으로 옮기고, 그 자리에 둘 수 있으면 빨간 상태가 풀리며, 둘 수 없으면 안내만 뜨고 그대로(빨강)다(R1~R4).
+// 093(창문 붙박이, private 작업 폴더 093-2026-11-14-창문-붙박이/01-main-spec.md "고칠 기존 테스트", 보고 03-qa-tests.md): 창문을 고를 수 없게 되어
+// 창문을 골라 옮기던 벽 가구 테스트(T19~T22, T25~T28, T30)를 같은 동작의 게시판으로 바꿨다(이름에 [093 게시판으로]). 확인하는 동작은 그대로다.
 
 import type { FloorPoint, PointerHit } from "@/lib/lobby3d/engine";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
@@ -283,37 +285,39 @@ describe("[spec] 075 바뀌는 동작 1: 탁상 소품은 탭한 점에서 가�
 // ---------- 4. 벽 가구 ----------
 
 describe("[spec] 075 바뀌는 동작 1: 벽 가구는 벽을 탭하면 그 벽의 그 자리, 바닥을 탭하면 가장 가까운 벽의 그 자리", () => {
-  test("T19 창문(뒷벽 4.8)을 고른 채 뒷벽 6.0을 탭하면 뒷벽 6.0으로 옮겨 가고 골라진 채다", () => {
+  // 093(창문 붙박이) 고칠 기존 테스트: 창문을 골라 옮기던 T19~T22·T25~T28·T30을 같은 동작의 게시판(뒷벽 1.8, 폭 1.8)으로 바꿨다.
+  // 창문(뒷벽 3.65~5.95)이 그대로 있어 게시판이 뒷벽에 놓일 수 있는 자리는 1.5~2.5뿐이라, 기대 자리는 같은 규칙으로 다시 셈했다.
+  // T21·T22는 뒷벽에서 반 칸 내림·올림을 볼 자리가 없어(게시판 띠 0.9~2.7 밖이면서 창문과 겹치지 않는 뒷벽 자리가 없다) 왼벽에서 본다.
+  test("T19 [093 게시판으로] 게시판(뒷벽 1.8)을 고른 채 뒷벽 2.5를 탭하면 뒷벽 2.5로 옮겨 가고 골라진 채다", () => {
     const editor = new LobbyEditor(N0());
-    select(editor, wallHit("back", 4.8, "window"), "window");
+    select(editor, wallHit("back", 1.8, "board"), "board");
 
-    const notice = tap(editor, wallHit("back", 6.0));
+    const notice = tap(editor, wallHit("back", 2.5));
 
     expect(notice).toBeNull();
-    expectLayout(editor, moved(N0(), "window", { wall: { wall: "back", along: 6.0 } }));
-    expect(editor.selected).toBe("window");
+    expectLayout(editor, moved(N0(), "board", { wall: { wall: "back", along: 2.5 } }));
+    expect(editor.selected).toBe("board");
   });
 
-  test("T20 창문을 고른 채 왼벽 8.5를 탭하면 왼벽 8.5로 옮겨 간다(다른 벽)", () => {
+  test("T20 [093 게시판으로] 게시판을 고른 채 왼벽 8.5를 탭하면 왼벽 8.5로 옮겨 간다(다른 벽)", () => {
     const editor = new LobbyEditor(N0());
-    select(editor, wallHit("back", 4.8, "window"), "window");
+    select(editor, wallHit("back", 1.8, "board"), "board");
 
     const notice = tap(editor, wallHit("left", 8.5));
 
     expect(notice).toBeNull();
-    expectLayout(editor, moved(N0(), "window", { wall: { wall: "left", along: 8.5 } }));
-    expect(editor.selected).toBe("window");
+    expectLayout(editor, moved(N0(), "board", { wall: { wall: "left", along: 8.5 } }));
+    expect(editor.selected).toBe("board");
   });
 
   test.each([
-    ["T21 뒷벽이 가장 가까운 (6.2, 0.4) → 뒷벽 6.0(반 칸 단위로 내림)", "window", { x: 6.2, z: 0.4 }, { wall: "back", along: 6.0 }],
-    ["T22 뒷벽이 가장 가까운 (6.3, 0.4) → 뒷벽 6.5(반 칸 단위로 올림)", "window", { x: 6.3, z: 0.4 }, { wall: "back", along: 6.5 }],
+    ["T21 [093 게시판으로] 왼벽이 가장 가까운 (0.4, 8.7) → 왼벽 8.5(반 칸 단위로 내림)", "board", { x: 0.4, z: 8.7 }, { wall: "left", along: 8.5 }],
+    ["T22 [093 게시판으로] 왼벽이 가장 가까운 (0.4, 8.8) → 왼벽 9.0(반 칸 단위로 올림)", "board", { x: 0.4, z: 8.8 }, { wall: "left", along: 9.0 }],
     ["T23 왼벽이 가장 가까운 (0.4, 8.2) → 왼벽 8.0", "board", { x: 0.4, z: 8.2 }, { wall: "left", along: 8.0 }],
     ["T24 오른벽이 가장 가까운 빈 바닥 (4.5, 9.5) → 오른벽 9.5", "board", { x: 4.5, z: 9.5 }, { wall: "right", along: 9.5 }]
   ] as const)("%s: 벽 가구를 고른 채 바닥을 탭하면 가장 가까운 벽의 그 자리로 옮겨 가고 골라진 채다", (_label, id, point, spot) => {
     const editor = new LobbyEditor(N0());
-    const along = id === "window" ? 4.8 : 1.8;
-    select(editor, wallHit("back", along, id), id);
+    select(editor, wallHit("back", 1.8, id), id);
 
     const notice = tap(editor, floorHit(point));
 
@@ -323,19 +327,19 @@ describe("[spec] 075 바뀌는 동작 1: 벽 가구는 벽을 탭하면 그 벽�
   });
 
   test.each([
-    ["T25 같은 벽의 게시판과 겹침: 뒷벽 2.0을 탭", wallHit("back", 2.0)],
-    ["T26 책상 바로 위(책상이 창문 아래 끝보다 높다): 왼벽 6.5를 탭", wallHit("left", 6.5)],
-    ["T27 바닥 (0.4, 6.4)를 탭 → 가장 가까운 왼벽 6.5가 책상 바로 위", floorHit({ x: 0.4, z: 6.4 })],
-    ["T28 벽 끝을 넘음: 뒷벽 7.5를 탭(폭 2.3이 벽 끝 0.2 안으로 들지 않는다)", wallHit("back", 7.5)]
-  ])("%s하면 창문은 뒷벽 4.8 그대로 골라진 채이고 알림이 있다", (_label, hit) => {
+    ["T25 [093 게시판으로] 같은 벽의 창문과 겹침: 뒷벽 4.0을 탭", wallHit("back", 4.0)],
+    ["T26 [093 게시판으로] 책상 바로 위(책상이 게시판 아래 끝보다 높다): 왼벽 6.5를 탭", wallHit("left", 6.5)],
+    ["T27 [093 게시판으로] 바닥 (0.4, 6.4)를 탭 → 가장 가까운 왼벽 6.5가 책상 바로 위", floorHit({ x: 0.4, z: 6.4 })],
+    ["T28 [093 게시판으로] 벽 끝을 넘음: 뒷벽 7.5를 탭(폭 1.8이 벽 끝 0.2 안으로 들지 않는다)", wallHit("back", 7.5)]
+  ])("%s하면 게시판은 뒷벽 1.8 그대로 골라진 채이고 알림이 있다", (_label, hit) => {
     const editor = new LobbyEditor(N0());
-    select(editor, wallHit("back", 4.8, "window"), "window");
+    select(editor, wallHit("back", 1.8, "board"), "board");
 
     const notice = tap(editor, hit);
 
     expect(notice).not.toBeNull();
     expectLayout(editor, N0());
-    expect(editor.selected).toBe("window");
+    expect(editor.selected).toBe("board");
   });
 
   test("T29 게시판을 고른 채 책장 (0.5, 2.5)를 탭하면 책장은 골라지지 않고, 가장 가까운 왼벽 2.5는 책장 바로 위라 옮기지 않으며 알림이 있다", () => {
@@ -349,15 +353,15 @@ describe("[spec] 075 바뀌는 동작 1: 벽 가구는 벽을 탭하면 그 벽�
     expect(editor.selected).toBe("board");
   });
 
-  test("T30 옮긴 창문(왼벽 8.5)을 그 자리에서 탭하면 확정된다", () => {
+  test("T30 [093 게시판으로] 옮긴 게시판(왼벽 8.5)을 그 자리에서 탭하면 확정된다", () => {
     const editor = new LobbyEditor(N0());
-    select(editor, wallHit("back", 4.8, "window"), "window");
+    select(editor, wallHit("back", 1.8, "board"), "board");
     tap(editor, wallHit("left", 8.5));
 
-    tap(editor, wallHit("left", 8.5, "window"));
+    tap(editor, wallHit("left", 8.5, "board"));
 
     expect(editor.selected).toBeNull();
-    expectLayout(editor, moved(N0(), "window", { wall: { wall: "left", along: 8.5 } }));
+    expectLayout(editor, moved(N0(), "board", { wall: { wall: "left", along: 8.5 } }));
   });
 });
 

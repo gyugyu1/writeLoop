@@ -21,6 +21,9 @@
 // 둘 수 없으면 옮기지 않고 "여기에는 둘 수 없어요" 안내를 띄운다(탭한 곳의 가구는 골라지지 않는다).
 // - L2·L3·L11·Z9·Z10·Z11: 옛 동작(다른 가구가 골라짐, 빈 곳이면 풀림)을 새 동작으로 고쳤다. 기대 자리는 명세의 칸 맞춤으로 손으로 셈했다.
 // - L12·Z15: 빨간 책장의 고르기를 빈 바닥 톡 대신 책장을 다시 톡해 푼다(준비만 바꿈. 고른 빨간 가구로 다른 곳을 톡하는 동작은 명세가 정하지 않아 피한다).
+// 093(창문 붙박이) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 093-2026-11-14-창문-붙박이/01-main-spec.md, 보고 03-qa-tests.md):
+// 창문은 꾸미기에서 눌러도 골라지지 않는다. L7·Z2·Z5는 새 동작(창문은 뜨지 않고 구역도 없다, [093 바뀔])으로,
+// 창문을 끌던 L8·L10·Z13과 창문 띠로 고르던 L9는 같은 동작의 게시판(뒷벽 1.8, 띠 (1.8, 0.5))으로 바꿨다([093 게시판으로]).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -233,6 +236,8 @@ const AT = {
 const EMPTY_FLOOR: FloorPoint = { x: 4.5, z: 9.5 };
 /** 뒷벽 창문(4.8) 앞 바닥 띠 안의 점(064 ④ B1과 같다). */
 const WINDOW_STRIP: FloorPoint = { x: 4.8, z: 0.5 };
+/** 093: 뒷벽 게시판(1.8, 띠 0.9~2.7) 앞 바닥 띠 안의 점. */
+const BOARD_STRIP: FloorPoint = { x: 1.8, z: 0.5 };
 
 // ---------- 도우미 ----------
 
@@ -358,8 +363,7 @@ function expectZone(expected: Zone | null) {
 // 처음 배치 P0에서 각 장소의 구역(손으로 셈한 값)
 // 게시판: 뒷벽 1.8 → 서는 자리 (1.6, 1.3), (2.2, 1.3), 가운데 (1.9, 1.3), 바라볼 지점 (1.8, 0)
 const ZONE_BOARD_P0: Zone = { place: "board", center: { x: 1.9, z: 1.3 }, reach: { x: 1.8, z: 0 }, radius: 1, approach: [{ x: 1.6, z: 1.3 }, { x: 2.2, z: 1.3 }] };
-// 창가: 뒷벽 4.8 → 서는 자리 (4.5, 1.55), (5.1, 1.55), 가운데 (4.8, 1.55), 바라볼 지점 (4.8, 0)
-const ZONE_WINDOW_P0: Zone = { place: "window", center: { x: 4.8, z: 1.55 }, reach: { x: 4.8, z: 0 }, radius: 1, approach: [{ x: 4.5, z: 1.55 }, { x: 5.1, z: 1.55 }] };
+// 창가(뒷벽 4.8)의 구역 값은 093에서 창문을 고를 수 없게 되어 쓰지 않아 지웠다(옛 값: 가운데 (4.8, 1.55), 바라볼 지점 (4.8, 0))
 // 일기 책상: (1.5, 5.5) 앞 → 서는 자리 (1.5, 6.75), 원만이라 바라볼 지점까지 잇지 않는다
 const ZONE_DESK_P0: Zone = { place: "desk", center: { x: 1.5, z: 6.75 }, reach: null, radius: 1, approach: [{ x: 1.5, z: 6.75 }] };
 // 책장: (0.5, 2.5) 오른쪽 보기 → 서는 자리 (1.4, 2.5), 바라볼 지점 (0, 2.5)
@@ -498,44 +502,45 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
     expectLifted("wardrobe");
   });
 
-  test("[spec] L7 창문을 톡해 고르면 창문이 뜬다(벽 가구)", async () => {
+  // 093 고칠 기존 테스트: 옛 L7 "창문이 골라져 뜬다"를 새 동작(창문은 골라지지 않아 뜨지 않는다)으로 고쳤다
+  test("[spec] L7 [093 바뀔] 창문을 톡해도 골라지지 않아 창문이 뜨지 않는다(벽 가구)", async () => {
     await startEditing();
 
     await tap(back(4.8), "window");
 
-    expectLifted("window");
-    expect(wallMarkPieces()).toEqual(["window"]);
+    expectLifted(null);
+    expect(wallMarkPieces()).toEqual([]);
   });
 
-  test("[spec] L8 창문을 뒷벽 5.6으로 끄는 동안 뜨고, 뒷벽 5.5에 놓은 뒤에도 떠 있다", async () => {
+  test("[spec] L8 [093 게시판으로] 게시판을 뒷벽 2.6으로 끄는 동안 뜨고, 뒷벽 2.5에 놓은 뒤에도 떠 있다", async () => {
     await startEditing();
 
-    await pressAndMove(back(4.8), "window", back(5.6));
-    expectLifted("window");
+    await pressAndMove(back(1.8), "board", back(2.6));
+    expectLifted("board");
     await release();
 
-    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
-    expectLifted("window");
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "board", back(2.5))));
+    expectLifted("board");
   });
 
-  test("[spec] L9 창문 앞 바닥 띠 (4.8, 0.5)를 톡해 창문을 고르면 창문이 뜬다", async () => {
+  test("[spec] L9 [093 게시판으로] 게시판 앞 바닥 띠 (1.8, 0.5)를 톡해 게시판을 고르면 게시판이 뜬다", async () => {
     await startEditing();
 
-    await tap({ floor: WINDOW_STRIP });
+    await tap({ floor: BOARD_STRIP });
 
-    expect(wallMarkPieces()).toEqual(["window"]);
-    expectLifted("window");
+    expect(wallMarkPieces()).toEqual(["board"]);
+    expectLifted("board");
   });
 
-  test("[spec] L10 창문 앞 바닥 띠 (4.8, 0.5)를 눌러 뒷벽 5.6으로 끌면 끄는 동안과 놓은 뒤 모두 창문이 뜬다", async () => {
+  test("[spec] L10 [093 게시판으로] 게시판 앞 바닥 띠 (1.8, 0.5)를 눌러 뒷벽 2.6으로 끌면 끄는 동안과 놓은 뒤 모두 게시판이 뜬다", async () => {
     await startEditing();
 
-    await pressAndMove({ floor: WINDOW_STRIP }, null, back(5.6));
-    expectLifted("window");
+    await pressAndMove({ floor: BOARD_STRIP }, null, back(2.6));
+    expectLifted("board");
     await release();
 
-    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
-    expectLifted("window");
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "board", back(2.5))));
+    expectLifted("board");
   });
 
   // 075 고칠 기존 테스트: 옛 L11 "게시판은 내려앉고 책상이 뜬다"를 새 동작(가장 가까운 왼벽 5.5는 책상 바로 위라 안내, 게시판이 뜬 채)으로 고쳤다
@@ -603,7 +608,6 @@ describe("[spec] 065 바뀔 동작: 골라진 가구가 뜬다", () => {
 describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자리를 넘긴다", () => {
   test.each([
     ["Z1 게시판", back(1.8) as Spot, "board" as PieceId, ZONE_BOARD_P0],
-    ["Z2 창문(생각 창가)", back(4.8) as Spot, "window" as PieceId, ZONE_WINDOW_P0],
     ["Z3 일기 책상(의자를 눌러도 책상으로 골라진다)", { floor: AT.desk } as Spot, "desk" as PieceId, ZONE_DESK_P0],
     ["Z4 책장", { floor: AT.bookcase } as Spot, "bookcase" as PieceId, ZONE_BOOKCASE_P0]
   ])("[spec] %s를 톡해 고르면 처음 배치에서의 그 장소 구역(반지름 1칸)과 서는 자리를 넘긴다", async (_label, spot, piece, zone) => {
@@ -614,12 +618,22 @@ describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자�
     expectZone(zone);
   });
 
-  test("[spec] Z5 창문 앞 바닥 띠 (4.8, 0.5)로 창문을 고르면 창가 구역을 넘긴다", async () => {
+  // 093 고칠 기존 테스트: 옛 Z2(위 표의 창문 줄, 창가 구역 ZONE_WINDOW_P0을 넘김)를 표에서 빼서 새 동작(창문은 골라지지 않아 구역이 없다)으로 고쳤다
+  test("[spec] Z2 [093 바뀔] 창문(생각 창가)을 톡해도 골라지지 않아 구역을 넘기지 않는다", async () => {
+    await startEditing();
+
+    await tap(back(4.8), "window");
+
+    expectZone(null);
+  });
+
+  // 093 고칠 기존 테스트: 옛 Z5 "창가 구역을 넘긴다"를 새 동작(구역이 없다)으로 고쳤다
+  test("[spec] Z5 [093 바뀔] 창문 앞 바닥 띠 (4.8, 0.5)를 톡해도 창문이 골라지지 않아 구역을 넘기지 않는다", async () => {
     await startEditing();
 
     await tap({ floor: WINDOW_STRIP });
 
-    expectZone(ZONE_WINDOW_P0);
+    expectZone(null);
   });
 
   test.each([
@@ -707,12 +721,14 @@ describe("[spec] 065 결정 03 Z: 고른 장소 가구의 구역과 서는 자�
     expectZone(moved);
   });
 
-  test("[spec] Z13 창문을 뒷벽 5.6으로 끌면 끄는 동안과 뒷벽 5.5에 놓은 뒤 창가 구역이 창문을 따라간다", async () => {
+  // 093: 창문을 끌 수 없게 되어 같은 동작(벽 장소 가구를 끌면 구역이 따라감)을 게시판으로 본다.
+  // 게시판 뒷벽 2.5 → 서는 자리 (2.3, 1.3), (2.9, 1.3), 가운데 (2.6, 1.3), 바라볼 지점 (2.5, 0)(ZONE_BOARD_P0과 같은 규칙)
+  test("[spec] Z13 [093 게시판으로] 게시판을 뒷벽 2.6으로 끌면 끄는 동안과 뒷벽 2.5에 놓은 뒤 게시판 구역이 게시판을 따라간다", async () => {
     await startEditing();
-    const moved: Zone = { place: "window", center: { x: 5.5, z: 1.55 }, reach: { x: 5.5, z: 0 }, radius: 1, approach: [{ x: 5.2, z: 1.55 }, { x: 5.8, z: 1.55 }] };
+    const moved: Zone = { place: "board", center: { x: 2.6, z: 1.3 }, reach: { x: 2.5, z: 0 }, radius: 1, approach: [{ x: 2.3, z: 1.3 }, { x: 2.9, z: 1.3 }] };
 
-    await pressAndMove(back(4.8), "window", back(5.6));
-    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
+    await pressAndMove(back(1.8), "board", back(2.6));
+    expect(sortedItems(canvas().edit!.layout)).toEqual(sortedItems(withWall(P0, "board", back(2.5))));
     expectZone(moved);
     await release();
 

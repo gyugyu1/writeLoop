@@ -4,6 +4,8 @@
 // 결정 파일(05-main-decision.md 1: 걸 수 없는 벽에는 놓을 수 없고, 꺼내기는 건너뛰고, 저장 본문 검사도 거절한다)에서만 가져온다.
 // 지금 방을 바꾸는 방법(engine의 applyRoom, 바꾼 뒤 applyLobbyLayout으로 배치 값을 다시 계산)과 room 인자는 구현 커밋 0325938에서 부르는 방법만 확인했다.
 // 테스트마다 끝나면 기본 방과 처음 배치로 되돌린다.
+// 093(창문 붙박이, private 작업 폴더 093-2026-11-14-창문-붙박이/01-main-spec.md "고칠 기존 테스트", 보고 03-qa-tests.md): 창문을 고를 수 없게 되어
+// 창문을 골라 구역을 보던 C23을 게시판으로 바꿨다.
 
 import {
   MARKS,
@@ -191,12 +193,14 @@ describe("[spec] T의 편집 모드(C15~C23)", () => {
     expect(layoutItem(editor.layout, "wardrobe-2")!.floor).toEqual({ x: 5.5, z: 12.5, facing: 0 });
   });
 
-  it("C23: 오른벽 6에 건 창문의 장소 구역", () => {
-    const layout = makeLayout(DEF.items.map((item) => (item.id === "window" ? { id: "window", type: "window", wall: { wall: "right" as const, along: 6 } } : item)), []);
+  // 093(창문 붙박이) 고칠 기존 테스트: 창문을 고를 수 없게 되어, T의 오른벽에 건 벽 장소 가구의 구역을 게시판으로 본다(확인하는 뜻은 그대로).
+  // 게시판 서는 자리(가구 기준 (-0.2, 1.3), (0.4, 1.3))를 오른벽 6(벽 면 x 9, 앞면이 -x)에 놓아 셈했다: 창문의 옛 기대값과 같은 놓는 규칙이다.
+  it("C23 [093 게시판으로]: 오른벽 6에 건 게시판의 장소 구역", () => {
+    const layout = makeLayout(DEF.items.map((item) => (item.id === "board" ? { id: "board", type: "board", wall: { wall: "right" as const, along: 6 } } : item)), []);
     const editor = new LobbyEditor(layout);
-    editor.pointerDown(hit(null, "window"), 0, 0);
+    editor.pointerDown(hit(null, "board"), 0, 0);
     editor.pointerUp();
-    expect(editor.selected).toBe("window");
+    expect(editor.selected).toBe("board");
     const zone = editor.zone()!;
     expect({
       place: zone.place,
@@ -205,13 +209,13 @@ describe("[spec] T의 편집 모드(C15~C23)", () => {
       radius: zone.radius,
       approach: zone.approach.map((p) => ({ x: r6(p.x), z: r6(p.z) }))
     }).toEqual({
-      place: "window",
-      center: { x: 7.45, z: 6 },
+      place: "board",
+      center: { x: 7.7, z: 6.1 },
       reach: { x: 9, z: 6 },
       radius: 1,
       approach: [
-        { x: 7.45, z: 5.7 },
-        { x: 7.45, z: 6.3 }
+        { x: 7.7, z: 5.8 },
+        { x: 7.7, z: 6.4 }
       ]
     });
   });

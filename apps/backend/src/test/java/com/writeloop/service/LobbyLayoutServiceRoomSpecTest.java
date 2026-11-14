@@ -63,17 +63,19 @@ class LobbyLayoutServiceRoomSpecTest {
         assertOutside(p0(l -> floor(l, "wardrobe").put("z", 12.0001)), ROOM_T);
     }
 
+    // 작업 093(창문 붙박이, 01-main-spec.md "고칠 기존 테스트"): 창문은 뒷벽 4.8에서 옮길 수 없게 되어,
+    // 창문을 옮겨 보던 RT-4·RT-6·RW-3·RW-4를 다른 벽 가구(액자·게시판)로 같은 자리를 확인하게 바꿨다.
     @Test
     void rt4_wallBoundaryOfRoomTIsAccepted() {
         LobbyLayoutDto parsed = service.parse(p0(l -> {
             wall(l, "board").put("wall", "back").put("along", 10.0);
-            wall(l, "window").put("wall", "left").put("along", 12.0);
+            l.withArray("items").add(wallItem("frame-1", "frame", "left", 12.0));
         }), ROOM_T);
 
         assertThat(item(parsed, "board").wall().wall()).isEqualTo("back");
         assertThat(item(parsed, "board").wall().along()).isEqualTo(10.0);
-        assertThat(item(parsed, "window").wall().wall()).isEqualTo("left");
-        assertThat(item(parsed, "window").wall().along()).isEqualTo(12.0);
+        assertThat(item(parsed, "frame-1").wall().wall()).isEqualTo("left");
+        assertThat(item(parsed, "frame-1").wall().along()).isEqualTo(12.0);
     }
 
     @Test
@@ -83,7 +85,7 @@ class LobbyLayoutServiceRoomSpecTest {
 
     @Test
     void rt6_rightWallAlongPastRoomTIsRejected() {
-        assertOutside(p0(l -> wall(l, "window").put("wall", "right").put("along", 12.0001)), ROOM_T);
+        assertOutside(p0(l -> wall(l, "board").put("wall", "right").put("along", 12.0001)), ROOM_T);
     }
 
     @Test
@@ -115,20 +117,20 @@ class LobbyLayoutServiceRoomSpecTest {
 
     @Test
     void rw3_wallsThatCanHangStillAcceptInTheSameRoom() {
-        LobbyLayoutDto parsed = service.parse(p0(l -> wall(l, "window").put("wall", "left").put("along", 5.0)), ROOM_NO_RIGHT);
+        LobbyLayoutDto parsed = service.parse(p0(l -> wall(l, "board").put("wall", "left").put("along", 5.0)), ROOM_NO_RIGHT);
 
-        assertThat(item(parsed, "window").wall().wall()).isEqualTo("left");
-        assertThat(item(parsed, "window").wall().along()).isEqualTo(5.0);
-        assertThat(item(parsed, "board").wall().wall()).isEqualTo("back");
-        assertThat(item(parsed, "board").wall().along()).isEqualTo(1.8);
+        assertThat(item(parsed, "board").wall().wall()).isEqualTo("left");
+        assertThat(item(parsed, "board").wall().along()).isEqualTo(5.0);
+        assertThat(item(parsed, "window").wall().wall()).isEqualTo("back");
+        assertThat(item(parsed, "window").wall().along()).isEqualTo(4.8);
     }
 
     @Test
     void rw4_theRightWallStillAcceptsInTheBasicRoom() {
-        LobbyLayoutDto parsed = service.parse(p0(l -> wall(l, "window").put("wall", "right").put("along", 5.0)), LobbyRoom.BASIC);
+        LobbyLayoutDto parsed = service.parse(p0(l -> wall(l, "board").put("wall", "right").put("along", 5.0)), LobbyRoom.BASIC);
 
-        assertThat(item(parsed, "window").wall().wall()).isEqualTo("right");
-        assertThat(item(parsed, "window").wall().along()).isEqualTo(5.0);
+        assertThat(item(parsed, "board").wall().wall()).isEqualTo("right");
+        assertThat(item(parsed, "board").wall().along()).isEqualTo(5.0);
     }
 
     // ---------- 도움 ----------

@@ -106,7 +106,7 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> second = put(user.token(), p0());
         HttpResponse<String> load = get(user.token());
 
-        assertThat(first.statusCode()).as("S5/S15 PUT P1 (left and right walls), body %s", first.body()).isEqualTo(200);
+        assertThat(first.statusCode()).as("S5/S15 PUT P1 (board on the left wall), body %s", first.body()).isEqualTo(200);
         assertThat(second.statusCode()).as("S5/S15 PUT P0 (back walls), body %s", second.body()).isEqualTo(200);
         assertThat(load.statusCode()).as("S5 GET, body %s", load.body()).isEqualTo(200);
         assertSameLayout(p0(), JSON.readTree(load.body()), "S5");
@@ -228,12 +228,14 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         cases.add(rejected("S12-8 bookcase z 12", l -> floorPiece(l, "bookcase").put("z", 12.0)));
         cases.add(rejected("S12-9 wardrobe z -0.5", l -> floorPiece(l, "wardrobe").put("z", -0.5)));
         cases.add(rejected("S12-10 board back along 10", l -> wallPiece(l, "board").put("along", 10.0)));
-        cases.add(rejected("S12-11 window left along 12", l -> wallPiece(l, "window").put("wall", "left").put("along", 12.0)));
-        cases.add(rejected("S12-12 window right along -1", l -> wallPiece(l, "window").put("wall", "right").put("along", -1.0)));
+        // 작업 093: 창문은 옮길 수 없게 되어(붙박이), 옆벽 길이 검사를 창문 대신 게시판으로 확인한다
+        cases.add(rejected("S12-11 board left along 12", l -> wallPiece(l, "board").put("wall", "left").put("along", 12.0)));
+        cases.add(rejected("S12-12 board right along -1", l -> wallPiece(l, "board").put("wall", "right").put("along", -1.0)));
         cases.add(rejected("S12-13 desk facing 4", l -> floorPiece(l, "desk").put("facing", 4)));
         cases.add(rejected("S12-14 rug facing -1", l -> floorPiece(l, "rug").put("facing", -1)));
         cases.add(rejected("S12-15 board wall front", l -> wallPiece(l, "board").put("wall", "front")));
-        cases.add(rejected("S12-16 window wall ceiling", l -> wallPiece(l, "window").put("wall", "ceiling")));
+        // 작업 093: 모르는 벽 이름 검사를 창문 대신 게시판으로 확인한다
+        cases.add(rejected("S12-16 board wall ceiling", l -> wallPiece(l, "board").put("wall", "ceiling")));
         // 결정 04-1: 버전이 빠졌거나 모르는 버전이면 거절
         cases.add(rejected("D1 version missing", l -> l.remove("version")));
         // 066 ①: v2는 version 2만 받으므로(명세 4), 모르는 버전을 옛 버전 1로 한다.
@@ -321,7 +323,7 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         floorPiece(layout, "rug").put("x", 8.0).put("z", 0.0);
         floorPiece(layout, "desk").put("x", 0.0).put("z", 11.0);
         wallPiece(layout, "board").put("wall", "back").put("along", 0.0);
-        wallPiece(layout, "window").put("wall", "back").put("along", 8.0);
+        // 작업 093: 창문은 뒷벽 4.8 붙박이라 뒷벽 끝(8.0)으로 옮기지 않는다(뒷벽 8.0 경계는 RoomSpecTest RA-7의 게시판이 본다)
 
         HttpResponse<String> save = put(user.token(), layout);
         HttpResponse<String> load = get(user.token());
@@ -336,7 +338,7 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         TestUser user = newUser("d21");
         ObjectNode layout = p0();
         wallPiece(layout, "board").put("wall", "left").put("along", 11.0);
-        wallPiece(layout, "window").put("wall", "right").put("along", 0.0);
+        // 작업 093: 창문은 뒷벽 4.8 붙박이라 오른벽으로 옮기지 않는다(오른벽 0.0 경계는 NewFurnitureSpecTest의 액자가 본다)
 
         HttpResponse<String> save = put(user.token(), layout);
         HttpResponse<String> load = get(user.token());
@@ -390,7 +392,10 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         return layout;
     }
 
-    /** 다른 배치 P1(02-qa-scenarios.md)을 v2 모양으로. 모든 가구가 P0과 다르고, 게시판은 왼벽, 창문은 오른벽. */
+    /**
+     * 다른 배치 P1(02-qa-scenarios.md)을 v2 모양으로. 창문 밖의 모든 가구가 P0과 다르고, 게시판은 왼벽.
+     * 작업 093(창문 붙박이, 01-main-spec.md "고칠 기존 테스트"): 창문은 늘 뒷벽 4.8이어야 저장되므로 창문을 오른벽 6.2에서 뒷벽 4.8로 옮겼다.
+     */
     static ObjectNode p1() {
         ObjectNode layout = JSON.createObjectNode();
         layout.put("version", 2);
@@ -400,7 +405,7 @@ class LobbyLayoutControllerSpecTest extends IntegrationTestSupport {
         items.add(floorItem("wardrobe", "wardrobe", 1.5, 1.5, 1));
         items.add(floorItem("rug", "rug", 3.0, 4.0, 1));
         items.add(wallItem("board", "board", "left", 3.5));
-        items.add(wallItem("window", "window", "right", 6.2));
+        items.add(wallItem("window", "window", "back", 4.8));
         return layout;
     }
 

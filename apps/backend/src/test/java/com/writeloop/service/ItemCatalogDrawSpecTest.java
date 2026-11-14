@@ -105,10 +105,11 @@ public class ItemCatalogDrawSpecTest {
                  "removable":false,
                  "model":{"box":{"width":1.792,"height":1.4,"depth":0.126},"y":1.75,"wallDepth":0.06,"shadow":{"wall":[2.0,1.6,0.3]}}}
                 """);
+        // 작업 093 창문 붙박이(04-main-decision.md 사용자 결정 1): 창문 draw에 "옮길 수 없음" fixed(true) 하나만 더했다
         map.put("window", """
                 {"mount":"wall","size":{"width":2.3,"depth":0},"height":{"bottom":1.112,"top":2.988},"blocksWalk":false,
                  "place":{"id":"window","approach":[{"x":-0.3,"z":1.55},{"x":0.3,"z":1.55}],"faceTo":{"x":0,"z":0},"label":{"x":0,"y":3.05,"z":0.3}},
-                 "removable":false,"view":true,
+                 "removable":false,"view":true,"fixed":true,
                  "model":{"box":{"width":2.3,"height":1.876,"depth":0.35},"y":2.05,"wallDepth":0.17,"shadow":{"wall":[2.55,2.15,0.3]}}}
                 """);
         map.put("frame", """

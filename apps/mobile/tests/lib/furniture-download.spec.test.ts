@@ -14,6 +14,8 @@
 // home-shopping-catalog(isShopKnown·shopPlacement), 기기 파일은 expo-file-system(File·Directory·Paths, File.downloadFileAsync).
 // 가짜로 두는 것: 기기 파일(expo-file-system: 주소마다 크기를 두는 표, 받기는 테스트가 답을 정한다), 기기 저장소(AsyncStorage: 새 실행에도 남는 표),
 // 서버 목록 API(getItemCatalog). "새 실행"은 jest.resetModules로 앱 모듈 상태를 비우는 것으로 본다(기기 파일·기기 저장소는 남는다).
+// 093(창문 붙박이) 04-main-decision.md 1(사용자 결정 "qa가 4개 고침"): 앱 창문 정보에 draw.fixed(true)가 더해져, A2·B6이 비교하는 기준 표 BASE의 창문에
+// 이 값 하나만 더했다(private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 06-qa-tests.md). 다른 값과 단언은 그대로다.
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { createHash } from "crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "fs";
@@ -305,6 +307,7 @@ const BASE = [
     place: { id: "window", approach: [{ x: -0.3, z: 1.55 }, { x: 0.3, z: 1.55 }], faceTo: { x: 0, z: 0 }, label: { x: 0, y: 3.05, z: 0.3 } },
     removable: false,
     view: true,
+    fixed: true,
     model: { piece: "window", box: { width: 2.3, height: 1.876, depth: 0.35 }, y: 2.05, wallDepth: 0.17, shadow: { wall: [2.55, 2.15, 0.3] } }
   },
   {

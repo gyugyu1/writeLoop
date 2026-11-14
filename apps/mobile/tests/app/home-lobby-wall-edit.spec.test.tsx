@@ -20,6 +20,13 @@
 // - S3·S4·S5: 옛 동작(다른 가구가 골라짐, 빈 곳이면 풀림)을 새 동작으로 고쳤다. 기대 자리는 명세의 벽 자리 맞춤으로 손으로 셈했다.
 // - makeRedBookcase(S7·S8·B8의 준비): 빨간 책장의 고르기를 빈 바닥 톡 대신 책장을 다시 톡해 푼다(준비만 바꿈).
 // - B7: 두 띠를 차례로 볼 때 사이에 게시판 띠를 다시 톡해 고르기를 푼다(준비만 바꿈. 단언은 그대로).
+// 093(창문 붙박이) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 093-2026-11-14-창문-붙박이/01-main-spec.md, 보고 03-qa-tests.md):
+// 창문은 늘 뒷벽 4.8이고 꾸미기에서 눌러도 골라지지 않는다. 창문을 골라 옮기던 테스트는 같은 동작의 게시판(또는 액자)으로 바꾸거나([093 게시판으로]·[093 액자로]),
+// 새 동작(창문은 골라지지 않고 그대로)으로 바꿨다([093 바뀔]). 기대 자리는 같은 놓기 규칙으로 다시 셈했다.
+// - 새 동작: S2·B1, D16·D17(DRAG_CASES에서 빼서 "093 창문 끌기"로 옮김).
+// - 게시판으로: S8·D4·D6·D7·D10·D11·결정2-나·E2·E3·W9·B3·B5·B6·B8·B11. B3·B6은 창문을 왼벽에 둔 배치 LW 대신 게시판을 왼벽 8.5에 둔 LB에서 시작한다.
+// - B7(모서리에서 두 띠가 겹칠 때)은 창문이 뒷벽에 붙박이라 이 화면 테스트로 만들 수 없어 편집기 단위(tests/lib/lobby3d-window-fixed.spec.test.ts K6)로 옮겼다.
+// - 창문을 고르지 않는 B4·B9(LW·L3 배치에서 시작)는 고치지 않았다.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
@@ -431,13 +438,16 @@ describe("[spec] 064-④ S: 벽 가구 고르기", () => {
     expect(floorMarks()).toEqual([]);
   });
 
-  test("S2 창문을 톡하면 골라지고 돌리기 버튼이 없다. 칠하기: 뒷벽 3.65~5.95, 놓을 수 있음", async () => {
+  // 093 고칠 기존 테스트: 옛 S2 "창문이 골라지고 벽에 칠한다"를 새 동작(창문은 골라지지 않아 칠하기가 없다)으로 고쳤다
+  test("S2 [093 바뀔] 창문을 톡하면 골라지지 않고 돌리기 버튼이 없다. 칠하기 없음, 배치 그대로", async () => {
     await startEditing();
 
     await tap(back(4.8), "window");
 
     expect(rotateButton()).toBeNull();
-    expect(wallMarks()).toEqual([{ piece: "window", wall: "back", from: 3.65, to: 5.95, ok: true }]);
+    expect(wallMarks()).toEqual([]);
+    expect(floorMarks()).toEqual([]);
+    expect(sortedItems(editLayout())).toEqual(sortedItems(P0));
   });
 
   // 075 고칠 기존 테스트: 옛 S3 "창문으로 바뀐다"를 새 동작(바닥 가구인 책상은 벽 위에 둘 수 없어 안내, 책상이 골라진 채)으로 고쳤다
@@ -510,16 +520,17 @@ describe("[spec] 064-④ S: 벽 가구 고르기", () => {
     expect(floorMarks()).toEqual([{ piece: "bookcase", ok: false }]);
   });
 
-  test("S8 빨간 책장이 있는 동안 창문을 뒷벽 4.8 → 6.4로 끌면 알림이 뜨고 창문은 그대로, 골라지지 않는다", async () => {
+  // 093: 창문을 끌 수 없게 되어 같은 동작(빨간 가구가 있는 동안 벽 가구 끌기)을 게시판으로 본다
+  test("S8 [093 게시판으로] 빨간 책장이 있는 동안 게시판을 뒷벽 1.8 → 2.4로 끌면 알림이 뜨고 게시판은 그대로, 골라지지 않는다", async () => {
     await startEditing();
     await makeRedBookcase();
 
-    await press("window", back(4.8));
-    await moveTo(back(6.4));
+    await press("board", back(1.8));
+    await moveTo(back(2.4));
     await release();
 
     expect(screen.getByText(RED_FIRST)).toBeTruthy();
-    expect(spotOf(editLayout(), "window")).toEqual(back(4.8));
+    expect(spotOf(editLayout(), "board")).toEqual(back(1.8));
     expect(wallMarks()).toEqual([]);
   });
 });
@@ -542,10 +553,10 @@ const DRAG_CASES: DragCase[] = [
   { label: "D1 게시판 뒷벽 1.8 → 뒷벽 1.9: 한 번 끌면 2.0", piece: "board", pressAt: back(1.8), moves: [{ to: back(1.9), expect: back(2.0), ok: true }], after: back(2.0) },
   { label: "D2 게시판 뒷벽 1.8 → 뒷벽 2.3: 2.5", piece: "board", pressAt: back(1.8), moves: [{ to: back(2.3), expect: back(2.5), ok: true }], after: back(2.5) },
   { label: "D3 게시판을 뒷벽 2.4에서 눌러 뒷벽 3.2로: 3.2 − 0.6 = 2.6 → 2.5", piece: "board", pressAt: back(2.4), moves: [{ to: back(3.2), expect: back(2.5) }], after: back(2.5) },
-  { label: "D4 창문을 뒷벽 4.3에서 눌러 뒷벽 5.6으로: 5.6 + 0.5 = 6.1 → 6.0", piece: "window", pressAt: back(4.3), moves: [{ to: back(5.6), expect: back(6.0) }], after: back(6.0) },
+  { label: "D4 [093 게시판으로] 게시판을 뒷벽 1.3에서 눌러 뒷벽 1.6으로: 1.6 + 0.5 = 2.1 → 2.0", piece: "board", pressAt: back(1.3), moves: [{ to: back(1.6), expect: back(2.0) }], after: back(2.0) },
   { label: "D5 게시판 뒷벽 1.8 → 왼벽 z 7.4: 왼벽 7.5", piece: "board", pressAt: back(1.8), moves: [{ to: left(7.4), expect: left(7.5), ok: true }], after: left(7.5) },
-  { label: "D6 창문 뒷벽 4.8 → 바닥 (6.9, 8.6): 가장 가까운 오른벽 8.5", piece: "window", pressAt: back(4.8), moves: [{ to: { floor: { x: 6.9, z: 8.6 } }, expect: right(8.5) }], after: right(8.5) },
-  { label: "D7 창문 뒷벽 4.8 → 바닥 (5.6, 1.0): 가장 가까운 뒷벽 5.5", piece: "window", pressAt: back(4.8), moves: [{ to: { floor: { x: 5.6, z: 1.0 } }, expect: back(5.5) }], after: back(5.5) },
+  { label: "D6 [093 게시판으로] 게시판 뒷벽 1.8 → 바닥 (6.9, 8.6): 가장 가까운 오른벽 8.5", piece: "board", pressAt: back(1.8), moves: [{ to: { floor: { x: 6.9, z: 8.6 } }, expect: right(8.5) }], after: right(8.5) },
+  { label: "D7 [093 게시판으로] 게시판 뒷벽 1.8 → 바닥 (2.6, 1.0): 가장 가까운 뒷벽 2.5", piece: "board", pressAt: back(1.8), moves: [{ to: { floor: { x: 2.6, z: 1.0 } }, expect: back(2.5) }], after: back(2.5) },
   {
     label: "D8 게시판 뒷벽 1.8 → 왼벽 7.4 → 오른벽 7.4 → 뒷벽 2.3",
     piece: "board",
@@ -558,8 +569,8 @@ const DRAG_CASES: DragCase[] = [
     after: back(2.5)
   },
   { label: "D9 게시판 → 왼벽 z 2.6: 왼벽 2.5는 책장 바로 위라 빨강, 떼면 뒷벽 1.8", piece: "board", pressAt: back(1.8), moves: [{ to: left(2.6), expect: left(2.5), ok: false }], after: back(1.8) },
-  { label: "D10 창문 → 뒷벽 3.4: 3.5는 게시판과 겹쳐 빨강, 떼면 뒷벽 4.8", piece: "window", pressAt: back(4.8), moves: [{ to: back(3.4), expect: back(3.5), ok: false }], after: back(4.8) },
-  { label: "D11 창문 → 뒷벽 4.1: 4.0은 놓을 수 있음", piece: "window", pressAt: back(4.8), moves: [{ to: back(4.1), expect: back(4.0), ok: true }], after: back(4.0) },
+  { label: "D10 [093 게시판으로] 게시판 → 뒷벽 3.4: 3.5는 창문과 겹쳐 빨강, 떼면 뒷벽 1.8", piece: "board", pressAt: back(1.8), moves: [{ to: back(3.4), expect: back(3.5), ok: false }], after: back(1.8) },
+  { label: "D11 [093 게시판으로] 게시판 → 뒷벽 1.4: 1.5는 놓을 수 있음", piece: "board", pressAt: back(1.8), moves: [{ to: back(1.4), expect: back(1.5), ok: true }], after: back(1.5) },
   { label: "D12 게시판 → 뒷벽 0.9: 1.0은 왼끝 간격 0.1이라 빨강, 떼면 1.8", piece: "board", pressAt: back(1.8), moves: [{ to: back(0.9), expect: back(1.0), ok: false }], after: back(1.8) },
   { label: "D13 게시판 → 왼벽 z 10.1: 10.0은 앞끝 간격 0.1이라 빨강, 떼면 뒷벽 1.8", piece: "board", pressAt: back(1.8), moves: [{ to: left(10.1), expect: left(10.0), ok: false }], after: back(1.8) },
   { label: "D14 게시판 → 왼벽 z 5.4: 5.5는 서는 자리가 책상 칸이라 빨강, 떼면 뒷벽 1.8", piece: "board", pressAt: back(1.8), moves: [{ to: left(5.4), expect: left(5.5), ok: false }], after: back(1.8) },
@@ -571,27 +582,12 @@ const DRAG_CASES: DragCase[] = [
     moves: [{ to: back(4.4), expect: back(4.5), ok: false }],
     after: left(7.5)
   },
-  {
-    label: "D16 (D5 뒤) 창문 → 왼벽 z 9.4: 9.5는 게시판과 겹쳐 빨강, 떼면 뒷벽 4.8",
-    afterD5: true,
-    piece: "window",
-    pressAt: back(4.8),
-    moves: [{ to: left(9.4), expect: left(9.5), ok: false }],
-    after: back(4.8)
-  },
-  {
-    label: "D17(결정 11) (D5 뒤) 창문 → 왼벽 z 5.1: 5.0은 책상 칸 0,5 바로 위라 빨강, 떼면 뒷벽 4.8",
-    afterD5: true,
-    piece: "window",
-    pressAt: back(4.8),
-    moves: [{ to: left(5.1), expect: left(5.0), ok: false }],
-    after: back(4.8)
-  },
+  // 093: D16·D17(창문 끌기)은 창문이 끌리지 않게 되어 아래 "093 창문 끌기"로 옮겨 새 동작으로 고쳤다
   // 결정 11의 1: 벽 가구를 끌어 책상 바로 위가 되는 자리도 놓을 수 없다
   { label: "결정11-가 게시판 → 왼벽 z 5.1: 5.0은 책상 칸 0,5 바로 위라 빨강, 떼면 뒷벽 1.8", piece: "board", pressAt: back(1.8), moves: [{ to: left(5.1), expect: left(5.0), ok: false }], after: back(1.8) },
   // 결정 03의 2: 다른 벽으로 넘어가도 벽을 따라간 거리(along의 차이)를 숫자 그대로 더한다
   { label: "결정2-가 게시판을 뒷벽 2.4(가운데 −0.6)에서 눌러 왼벽 z 8.1로: 8.1 − 0.6 = 7.5", piece: "board", pressAt: back(2.4), moves: [{ to: left(8.1), expect: left(7.5) }], after: left(7.5) },
-  { label: "결정2-나 창문을 뒷벽 4.3(가운데 +0.5)에서 눌러 오른벽 z 7.6으로: 7.6 + 0.5 = 8.1 → 8.0", piece: "window", pressAt: back(4.3), moves: [{ to: right(7.6), expect: right(8.0) }], after: right(8.0) },
+  { label: "결정2-나 [093 게시판으로] 게시판을 뒷벽 1.3(가운데 +0.5)에서 눌러 오른벽 z 7.6으로: 7.6 + 0.5 = 8.1 → 8.0", piece: "board", pressAt: back(1.3), moves: [{ to: right(7.6), expect: right(8.0) }], after: right(8.0) },
   // 결정 03의 3: 방 밖으로 나가면 마지막 자리에 멈추고, 떼면 그 자리로 판단한다
   {
     label: "결정3-가 게시판 → 왼벽 7.4 → 방 밖: 왼벽 7.5에 멈추고, 떼면 왼벽 7.5에 놓인다",
@@ -642,6 +638,28 @@ describe("[spec] 064-④ D: 벽 가구 끌기", () => {
   });
 });
 
+// 093 고칠 기존 테스트: 옛 D16·D17(창문을 끌어 놓을 수 없는 자리에서 빨강, 떼면 돌아감)을 새 동작(창문은 끌리지도 골라지지도 않는다)으로 고쳤다
+describe("[spec] 093 창문 끌기: 창문은 붙박이라 끌어도 뒷벽 4.8 그대로다", () => {
+  test.each([
+    ["D16 [093 바뀔] (D5 뒤) 창문 → 왼벽 z 9.4", left(9.4)],
+    ["D17 [093 바뀔] (D5 뒤) 창문 → 왼벽 z 5.1", left(5.1)]
+  ])("%s: 끄는 동안과 뗀 뒤 모두 창문은 뒷벽 4.8, 게시판은 왼벽 7.5 그대로이고 아무것도 골라지지 않는다", async (_label, to) => {
+    await startEditing();
+    await moveBoardToLeft();
+    const before = editLayout();
+
+    await press("window", back(4.8));
+    await moveTo(to);
+    expect(sortedItems(editLayout())).toEqual(sortedItems(before));
+    expect(wallMarks()).toEqual([]);
+    await release();
+
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "board", left(7.5))));
+    expect(wallMarks()).toEqual([]);
+    expect(floorMarks()).toEqual([]);
+  });
+});
+
 // ---------- E. 완료·취소·처음 배치로, F3 따라가는 것 ----------
 
 describe("[spec] 064-④ E·F3: 벽 가구를 옮긴 뒤 완료·취소·처음 배치로", () => {
@@ -664,13 +682,14 @@ describe("[spec] 064-④ E·F3: 벽 가구를 옮긴 뒤 완료·취소·처음 
     expect({ wall: markZoneAt(0.1, 7.5), old: markZoneAt(1.9, 0.6) }).toEqual({ wall: "board", old: null });
   });
 
-  test("E2 게시판을 왼벽 7.5, 창문을 뒷벽 4.0으로 옮기고 '취소': 저장 없이 나오고 방은 P0", async () => {
+  // 093: 창문을 옮길 수 없게 되어 두 번째 옮기기를 게시판으로 한다(게시판 왼벽 7.5 → 왼벽 8.4: 8.5)
+  test("E2 [093 게시판으로] 게시판을 왼벽 7.5로, 다시 왼벽 8.5로 옮기고 '취소': 저장 없이 나오고 방은 P0", async () => {
     await startEditing();
     await moveBoardToLeft();
-    await press("window", back(4.8));
-    await moveTo(back(4.1));
+    await press("board", left(7.5));
+    await moveTo(left(8.4));
     await release();
-    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(withWall(P0, "board", left(7.5)), "window", back(4.0))));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "board", left(8.5))));
     await pressButton("취소");
 
     expect(saveLobbyLayout).not.toHaveBeenCalled();
@@ -678,12 +697,13 @@ describe("[spec] 064-④ E·F3: 벽 가구를 옮긴 뒤 완료·취소·처음 
     expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(P0));
   });
 
-  test("E3 같은 두 가지를 옮기고 '처음 배치로': 편집 중 배치가 P0(게시판 뒷벽 1.8, 창문 뒷벽 4.8)이고 편집 모드에 남는다", async () => {
+  test("E3 [093 게시판으로] 같은 두 번을 옮기고 '처음 배치로': 편집 중 배치가 P0(게시판 뒷벽 1.8, 창문 뒷벽 4.8)이고 편집 모드에 남는다", async () => {
     await startEditing();
     await moveBoardToLeft();
-    await press("window", back(4.8));
-    await moveTo(back(4.1));
+    await press("board", left(7.5));
+    await moveTo(left(8.4));
     await release();
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "board", left(8.5))));
 
     await pressButton("처음 배치로");
 
@@ -695,17 +715,18 @@ describe("[spec] 064-④ E·F3: 벽 가구를 옮긴 뒤 완료·취소·처음 
 
 // ---------- W9 놓인 뒤 다시 계산 ----------
 
-describe("[spec] 064-④ W9: 창문을 끄는 동안과 놓은 뒤 3D 그리기에 넘기는 값", () => {
-  test("W9 창문을 오른벽 8.5로 끄는 동안은 끄는 중(dragging)으로 넘기고, 놓은 뒤에는 끄는 중이 아니며 배치의 창문이 오른벽 8.5다", async () => {
+describe("[spec] 064-④ W9: 벽 가구를 끄는 동안과 놓은 뒤 3D 그리기에 넘기는 값", () => {
+  // 093: 창문을 끌 수 없게 되어 같은 동작을 게시판으로 본다
+  test("W9 [093 게시판으로] 게시판을 오른벽 8.5로 끄는 동안은 끄는 중(dragging)으로 넘기고, 놓은 뒤에는 끄는 중이 아니며 배치의 게시판이 오른벽 8.5다", async () => {
     await startEditing();
 
-    await press("window", back(4.8));
+    await press("board", back(1.8));
     await moveTo({ floor: { x: 6.9, z: 8.6 } });
     expect(canvas().edit!.dragging).toBe(true);
 
     await release();
     expect(canvas().edit!.dragging).toBe(false);
-    expect(spotOf(editLayout(), "window")).toEqual(right(8.5));
+    expect(spotOf(editLayout(), "board")).toEqual(right(8.5));
   });
 });
 
@@ -717,8 +738,8 @@ describe("[spec] 064-④ W9: 창문을 끄는 동안과 놓은 뒤 3D 그리기�
 const LW: LobbyLayout = withWall(P0, "window", left(8.5));
 /** 게시판 오른벽 6.0, 창문 왼벽 8.0. 게시판 띠: x > 7, z 5.1~6.9. */
 const L3: LobbyLayout = withWall(withWall(P0, "board", right(6.0)), "window", left(8.0));
-/** 게시판 뒷벽 6.5(띠 x 5.6~7.4, z < 1), 창문 오른벽 1.5(띠 x > 7, z 0.35~2.65). 뒤·오른쪽 모서리에서 두 띠가 겹친다. */
-const CORNER: LobbyLayout = withWall(withWall(P0, "board", back(6.5)), "window", right(1.5));
+/** 093: 게시판을 왼벽 8.5에 건 배치(창문은 뒷벽 4.8 그대로). 게시판 띠: x < 1, z 7.6~9.4. */
+const LB: LobbyLayout = withWall(P0, "board", left(8.5));
 /** 깔개를 창문 아래(4.5, 1.5, 칸 3~6·0~3)에 둔 배치(깔개는 벽 가구 아래도 된다). */
 const RUG_UNDER: LobbyLayout = v2({ ...P0_FLOOR, rug: { x: 4.5, z: 1.5, facing: 0 } }, P0_WALL);
 
@@ -736,13 +757,16 @@ async function tapFloor(point: FloorPoint) {
 }
 
 describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
-  test("B1 뒷벽 창문 앞 띠 (4.8, 0.5)를 톡하면 창문이 골라진다", async () => {
+  // 093 고칠 기존 테스트: 옛 B1 "창문이 골라진다"를 새 동작(창문은 골라지지 않는다)으로 고쳤다
+  test("B1 [093 바뀔] 뒷벽 창문 앞 띠 (4.8, 0.5)를 톡해도 창문이 골라지지 않고 배치가 그대로다", async () => {
     await startEditing();
 
     await tapFloor({ x: 4.8, z: 0.5 });
 
-    expect(wallMarks()).toEqual([{ piece: "window", wall: "back", from: 3.65, to: 5.95, ok: true }]);
+    expect(wallMarks()).toEqual([]);
+    expect(floorMarks()).toEqual([]);
     expect(rotateButton()).toBeNull();
+    expect(sortedItems(editLayout())).toEqual(sortedItems(P0));
   });
 
   test("B2 뒷벽 게시판 앞 띠 (1.8, 0.6)를 톡하면 게시판이 골라진다", async () => {
@@ -753,12 +777,12 @@ describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
     expect(wallMarks()).toEqual([{ piece: "board", wall: "back", from: 0.9, to: 2.7, ok: true }]);
   });
 
-  test("B3 왼벽 창문(8.5) 앞 띠 (0.5, 8.5)를 톡하면 창문이 골라진다", async () => {
-    await startEditingFrom(LW);
+  test("B3 [093 게시판으로] 왼벽 게시판(8.5) 앞 띠 (0.5, 8.5)를 톡하면 게시판이 골라진다", async () => {
+    await startEditingFrom(LB);
 
     await tapFloor({ x: 0.5, z: 8.5 });
 
-    expect(wallMarks().map((m) => ({ piece: m.piece, wall: m.wall }))).toEqual([{ piece: "window", wall: "left" }]);
+    expect(wallMarks().map((m) => ({ piece: m.piece, wall: m.wall }))).toEqual([{ piece: "board", wall: "left" }]);
   });
 
   test("B4 오른벽 게시판(6.0) 앞 띠 (7.6, 6.0)을 톡하면 게시판이 골라진다", async () => {
@@ -769,48 +793,39 @@ describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
     expect(wallMarks().map((m) => ({ piece: m.piece, wall: m.wall }))).toEqual([{ piece: "board", wall: "right" }]);
   });
 
-  test("B5 뒷벽 창문 띠 (4.8, 0.5)를 눌러 뒷벽 x 5.6으로 끌면 창문이 끌려 뒷벽 5.5에 놓인다", async () => {
+  test("B5 [093 게시판으로] 뒷벽 게시판 띠 (1.8, 0.5)를 눌러 뒷벽 x 2.6으로 끌면 게시판이 끌려 뒷벽 2.5에 놓인다", async () => {
     await startEditing();
 
     screenStep = 0;
-    await pointer("down", hitAt({ floor: { x: 4.8, z: 0.5 } }), 200, 300);
-    await moveTo(back(5.6));
-    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
+    await pointer("down", hitAt({ floor: { x: 1.8, z: 0.5 } }), 200, 300);
+    await moveTo(back(2.6));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "board", back(2.5))));
     await release();
 
-    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "window", back(5.5))));
-    expect(wallMarks().map((m) => m.piece)).toEqual(["window"]);
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "board", back(2.5))));
+    expect(wallMarks().map((m) => m.piece)).toEqual(["board"]);
   });
 
-  test("B6 왼벽 창문 띠 (0.5, 8.5)를 눌러 왼벽 z 9.4로 끌면 창문이 왼벽 9.5에 놓인다", async () => {
-    await startEditingFrom(LW);
+  test("B6 [093 게시판으로] 왼벽 게시판 띠 (0.5, 8.5)를 눌러 왼벽 z 9.4로 끌면 게시판이 왼벽 9.5에 놓인다", async () => {
+    await startEditingFrom(LB);
 
     screenStep = 0;
     await pointer("down", hitAt({ floor: { x: 0.5, z: 8.5 } }), 200, 300);
     await moveTo(left(9.4));
     await release();
 
-    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "window", left(9.5))));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withWall(P0, "board", left(9.5))));
   });
 
-  test("B7 뒤·오른쪽 모서리에서 두 띠에 모두 들면 가장 가까운 벽의 가구: (7.3, 0.5)는 뒷벽 게시판, (7.3, 0.9)는 오른벽 창문", async () => {
-    await startEditingFrom(CORNER);
+  // 093: 옛 B7(뒤·오른쪽 모서리에서 게시판 띠와 오른벽 창문 띠가 겹칠 때 가장 가까운 벽의 가구)은 창문이 뒷벽 4.8에 붙박이라
+  // 이 화면 테스트의 가구(게시판·창문)로는 두 띠가 겹치는 모서리를 만들 수 없다(액자를 쓰려면 내려받은 파일 준비가 필요하다).
+  // 같은 확인을 편집기 단위 테스트(tests/lib/lobby3d-window-fixed.spec.test.ts의 K6, 액자와 게시판)로 옮겼다.
 
-    await tapFloor({ x: 7.3, z: 0.5 });
-    expect(wallMarks().map((m) => m.piece)).toEqual(["board"]);
-    // 075: 게시판 띠를 다시 톡해 고르기를 푼다(준비만 바꿈)
-    await tapFloor({ x: 7.3, z: 0.5 });
-    expect(wallMarks()).toEqual([]);
-
-    await tapFloor({ x: 7.3, z: 0.9 });
-    expect(wallMarks().map((m) => m.piece)).toEqual(["window"]);
-  });
-
-  test("B8 빨간 책장이 있는 동안 창문 띠 (4.8, 0.5)를 톡하면 '빨간 가구부터 옮겨 주세요'가 뜨고 창문은 골라지지 않는다", async () => {
+  test("B8 [093 게시판으로] 빨간 책장이 있는 동안 게시판 띠 (1.8, 0.6)를 톡하면 '빨간 가구부터 옮겨 주세요'가 뜨고 게시판은 골라지지 않는다", async () => {
     await startEditing();
     await makeRedBookcase();
 
-    await tapFloor({ x: 4.8, z: 0.5 });
+    await tapFloor({ x: 1.8, z: 0.6 });
 
     expect(screen.getByText(RED_FIRST)).toBeTruthy();
     expect(wallMarks()).toEqual([]);
@@ -848,13 +863,14 @@ describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
     expect(wallMarks()).toEqual([]);
   });
 
-  test("B11 게시판 띠 (1.8, 0.5) 위라도 창문을 직접 맞혔으면 창문이 골라진다", async () => {
+  // 093: 창문은 골라지지 않게 되어, 띠보다 직접 맞힌 벽 가구가 먼저인 것을 창문 띠 위에서 게시판을 맞힌 것으로 본다
+  test("B11 [093 게시판으로] 창문 띠 (4.8, 0.5) 위라도 게시판을 직접 맞혔으면 게시판이 골라진다", async () => {
     await startEditing();
 
-    await pointer("down", { point: { x: 1.8, z: 0.5 }, mark: "window", onCharacter: false, piece: "window", wall: { wall: "back", along: 4.8 } }, 200, 300);
+    await pointer("down", { point: { x: 4.8, z: 0.5 }, mark: "board", onCharacter: false, piece: "board", wall: { wall: "back", along: 1.8 } }, 200, 300);
     await pointer("up", null, 200, 300);
     await flushAsync();
 
-    expect(wallMarks().map((m) => m.piece)).toEqual(["window"]);
+    expect(wallMarks().map((m) => m.piece)).toEqual(["board"]);
   });
 });

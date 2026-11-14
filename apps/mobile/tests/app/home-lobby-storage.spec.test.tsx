@@ -29,6 +29,8 @@
 // 075(꾸미기: 들린 가구를 탭으로 옮기기) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 075-2026-11-11-꾸미기-탭으로-옮기기-보관함-줄-넓히기/
 // 01-main-spec.md, 보고 02-qa-tests.md): 가구가 골라져 있을 때 다른 가구를 톡하면 그 가구가 골라지지 않고 골라진 가구를 옮기려 한다.
 // 그래서 R3·R4에서 가구를 차례로 고를 때 사이에 앞 가구를 다시 톡해 확정한다(준비만 바꿈. 단언은 그대로).
+// 093(창문 붙박이) 명세의 "고칠 기존 테스트"로 고친 것(private 작업 폴더 093-2026-11-14-창문-붙박이/01-main-spec.md, 보고 03-qa-tests.md):
+// 창문은 꾸미기에서 눌러도 골라지지 않는다. R4의 창문 부분을 새 동작(창문을 톡해도 골라지지 않고 '치우기' 버튼이 없다)으로 고쳤다.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -594,7 +596,7 @@ describe("[spec] 066-③ 명세 2: 치우기", () => {
     expect(storeButton()).toBeNull();
   });
 
-  test("R4 벽 가구 게시판·창문(장소 가구)을 각각 고르면 '치우기' 버튼이 없다", async () => {
+  test("R4 [093 바뀔] 벽 가구 게시판(장소 가구)을 고르면 '치우기' 버튼이 없고, 창문은 톡해도 골라지지 않으며 '치우기' 버튼이 없다", async () => {
     await renderHome(DEF);
     await enterEdit();
 
@@ -604,7 +606,9 @@ describe("[spec] 066-③ 명세 2: 치우기", () => {
     await tapHit({ point: null, mark: "board", onCharacter: false, piece: "board", wall: { wall: "back", along: 1.8 } });
     expect(lifted()).toBeNull();
 
-    await selectWall("window", "back", 4.8, "window");
+    // 093: 창문은 골라지지 않는다(옛: selectWall로 골라진 것을 확인)
+    await tapHit({ point: null, mark: "window", onCharacter: false, piece: "window", wall: { wall: "back", along: 4.8 } });
+    expect(lifted()).toBeNull();
     expect(storeButton()).toBeNull();
   });
 

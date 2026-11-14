@@ -3,6 +3,8 @@
 // 결정 파일(05-main-decision.md 1: 걸 수 없는 벽에 걸려 있던 가구는 보관함으로, 장소 가구는 걸 수 있는 다른 벽으로)에서만 가져온다.
 // 부르는 이름 fitLayoutToRoom(layout, room)과 isPlaceableLayout(layout, room)은 구현 커밋 0325938에서 부르는 방법만 확인했다.
 // 방 가구는 순서를 보지 않고(id마다 종류와 자리), 보관함은 순서까지 본다.
+// 093(창문 붙박이) 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 08-qa-tests.md):
+// 방에 배치를 맞출 때도 창문은 늘 뒷벽 4.8이라(04 결정 3) D6·H4의 창문 기대 자리만 뒷벽 4.8로 바꿨다. 입력과 다른 확인은 그대로다.
 
 import { fitLayoutToRoom, isPlaceableLayout } from "@/lib/lobby3d/lobby-edit";
 import { DEFAULT_LOBBY_LAYOUT, makeLayout, storedItems, type FurnitureItem, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
@@ -85,9 +87,9 @@ describe("[spec] 규칙 2·3: 하나씩 다시 놓기(D3~D11), 기본 방으로"
     ]);
   });
 
-  it("D6: 오른벽 11.5에서 벽 밖이 된 창문(장소 가구)은 뒷벽 4.0으로 옮긴다", () => {
+  it("D6 [093 창문 4.8]: 오른벽 11.5에서 벽 밖이 된 창문(장소 가구)은 뒷벽 4.8로 옮긴다", () => {
     const layout = makeLayout(replaced("window", { wall: { wall: "right", along: 11.5 } }), []);
-    expectFit(fitLayoutToRoom(layout, BASIC_ROOM), BASIC_ROOM, replaced("window", { wall: { wall: "back", along: 4.0 } }), []);
+    expectFit(fitLayoutToRoom(layout, BASIC_ROOM), BASIC_ROOM, replaced("window", { wall: { wall: "back", along: 4.8 } }), []);
   });
 
   it("D7: 보관함에 가는 받침 가구 위 소품은 받침 가구 바로 다음에 함께 간다", () => {
@@ -155,12 +157,12 @@ describe("[spec] 규칙 2·3: 하나씩 다시 놓기(D3~D11), 기본 방으로"
 });
 
 describe("[spec] 걸 수 없는 벽으로 맞추기(05 결정 1)", () => {
-  it("H4: 오른벽에 걸 수 없는 방으로 옮기면 오른벽 액자는 보관함으로, 오른벽 창문(장소 가구)은 뒷벽 4.5로", () => {
+  it("H4 [093 창문 4.8]: 오른벽에 걸 수 없는 방으로 옮기면 오른벽 액자는 보관함으로, 오른벽 창문(장소 가구)은 뒷벽 4.8로", () => {
     const layout = makeLayout(
       [...replaced("window", { wall: { wall: "right", along: 6 } }), { id: "frame-1", type: "frame", wall: { wall: "right", along: 11 } }],
       []
     );
     const room = roomT(["back", "left"]);
-    expectFit(fitLayoutToRoom(layout, room), room, replaced("window", { wall: { wall: "back", along: 4.5 } }), [{ id: "frame-1", type: "frame" }]);
+    expectFit(fitLayoutToRoom(layout, room), room, replaced("window", { wall: { wall: "back", along: 4.8 } }), [{ id: "frame-1", type: "frame" }]);
   });
 });

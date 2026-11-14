@@ -155,6 +155,14 @@ afterEach(() => {
 
 // ---------- P. 개발 화면 ----------
 
+// 작업 089 ⑤ 08-main-decision.md "기존 테스트"(사용자 결정: qa가 고글 기본에 맞게 고침)·12-B·24-main-decision.md와 11-B1·B6:
+// 라룹이 고글이 얼굴장식의 첫 아이템이 되고 시험판이 고글을 쓴 채('얼굴장식' 켜짐) 시작한다. 그래서 처음 상태와 그리는 착용의 기대값에
+// 얼굴장식 고글을 더했다. 누르는 차례(입력)는 그대로다. 얼굴장식은 고글에서 시작하므로 '얼굴장식 바꾸기'는 선글라스 → 고글 차례이고,
+// '얼굴장식' 버튼의 첫 누르기는 끄기, 둘째 누르기가 켜기(첫 아이템 고글)다.
+const GOGGLES = { face: "goggles" } as const;
+/** 11-B6: 고글을 쓴 채 '얼굴장식 바꾸기'를 누를 때마다 고글 → 선글라스 → 고글. */
+const FACE_FROM_GOGGLES = ["sunglassesBlack", "goggles"] as const;
+
 describe("[spec] 089-⑤ P: 개발 화면 '착용 시험'", () => {
   it("P1 '착용 시험'과 부위 일곱 버튼(모자·상의·하의·신발·얼굴장식·등장식·액세서리)이 하나씩, '착용 바꾸기'와 '<부위> 바꾸기' 일곱이 하나씩 있다", async () => {
     await renderDevWithPanel();
@@ -166,10 +174,10 @@ describe("[spec] 089-⑤ P: 개발 화면 '착용 시험'", () => {
     }
   });
 
-  it("P2 처음에는 일곱 버튼 모두 꺼져 있고 그리는 착용이 비어 있다", async () => {
+  it("P2 처음에는 '얼굴장식'만 켜져 있고(라룹이 고글) 나머지 여섯 버튼은 꺼져 있으며 그리는 착용이 고글뿐이다", async () => {
     await renderDevWithPanel();
-    expect(selected()).toEqual([]);
-    expect(drawnLook()).toEqual({});
+    expect(selected()).toEqual(["얼굴장식"]);
+    expect(drawnLook()).toEqual(GOGGLES);
   });
 
   it.each(SLOTS.map((s) => [s.name, s.slot, s.items] as const))(
@@ -181,20 +189,30 @@ describe("[spec] 089-⑤ P: 개발 화면 '착용 시험'", () => {
         await press(`${name} 바꾸기`);
         const look = drawnLook();
         seen.push(look[slot]);
-        expect(Object.keys(look)).toEqual([slot]);
+        const { [slot]: _mine, ...rest } = look;
+        expect(rest).toEqual(slot === "face" ? {} : GOGGLES);
       }
-      expect(seen).toEqual([...items, items[0]]);
+      expect(seen).toEqual(slot === "face" ? [...FACE_FROM_GOGGLES] : [...items, items[0]]);
     }
   );
 
   it.each(SLOTS.map((s) => [s.name, s.slot, s.items[0]] as const))("P3·P6 '%s' 버튼을 켜면 그 부위 첫 아이템을 입고 켜짐으로 보이며, 다시 누르면 벗는다", async (name, slot, first) => {
     await renderDevWithPanel();
     await press(name);
-    expect(drawnLook()).toEqual({ [slot]: first });
-    expect(selected()).toEqual([name]);
+    if (slot === "face") {
+      // 고글을 쓴 채 시작하므로 첫 누르기는 벗기, 둘째 누르기가 켜기(첫 아이템 고글)다
+      expect(drawnLook()).toEqual({});
+      expect(selected()).toEqual([]);
+      await press(name);
+      expect(drawnLook()).toEqual(GOGGLES);
+      expect(selected()).toEqual(["얼굴장식"]);
+      return;
+    }
+    expect(drawnLook()).toEqual({ ...GOGGLES, [slot]: first });
+    expect(selected()).toEqual(NAMES.filter((n) => n === name || n === "얼굴장식"));
     await press(name);
-    expect(drawnLook()).toEqual({});
-    expect(selected()).toEqual([]);
+    expect(drawnLook()).toEqual(GOGGLES);
+    expect(selected()).toEqual(["얼굴장식"]);
   });
 
   it("P4 일곱을 모두 입힌 뒤 '액세서리'를 끄면 액세서리만 빠지고 나머지 여섯은 그대로다", async () => {
@@ -210,9 +228,9 @@ describe("[spec] 089-⑤ P: 개발 화면 '착용 시험'", () => {
   it("P5 액세서리에서 빨강 머플러를 고른 뒤 바꾸면 금 목걸이 하나만 입는다", async () => {
     await renderDevWithPanel();
     await press("액세서리 바꾸기");
-    expect(drawnLook()).toEqual({ accessory: "mufflerRed" });
+    expect(drawnLook()).toEqual({ ...GOGGLES, accessory: "mufflerRed" });
     await press("액세서리 바꾸기");
-    expect(drawnLook()).toEqual({ accessory: "necklaceGold" });
+    expect(drawnLook()).toEqual({ ...GOGGLES, accessory: "necklaceGold" });
   });
 
   it("P6 '<부위> 바꾸기'로 입은 부위의 버튼은 켜짐으로 보인다", async () => {

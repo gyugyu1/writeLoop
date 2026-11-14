@@ -50,6 +50,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *   <li>잔액은 GET /api/loop-points로 잔액 행을 만든 뒤 jdbc로 바꾼다. 가진 옷은 저장소로 wardrobe_items에 직접 넣는다.</li>
  *   <li>NC(아무것도 바뀌지 않음): 잔액 행, 장부 음수 줄, 주문 기록(종류·가격), 가진 옷(종류·얻은 때), GET /api/wardrobe 본문,
  *       GET /api/lobby-layout(상태와 본문)이 요청 전후로 같다.</li>
+ *   <li>작업 089 ⑤ 08 결정(사용자 결정, 고글 기본)에 맞춰 주문 결과 옷장의 가진 것 맨 앞에 고글을 더하고,
+ *       입은 것을 저장한 적 없는 계정의 얼굴장식을 고글로 바꿨다(O1·O7, O5, O11).</li>
  * </ul>
  */
 class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
@@ -309,8 +311,8 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
         assertThat(body.has("layout") && body.get("layout").isNull()).as("O1 layout is null: %s", body).isTrue();
         JsonNode wardrobe = body.path("wardrobe");
         assertThat(wardrobe.isObject()).as("O1 wardrobe is an object: %s", body).isTrue();
-        assertThat(typesAndSlots(wardrobe)).as("O1 wardrobe items").containsExactly("capOrange/hat");
-        assertThat(wardrobe.path("equipped")).as("O1 wardrobe equipped").isEqualTo(equipped(Map.of()));
+        assertThat(typesAndSlots(wardrobe)).as("O1 wardrobe items").containsExactly("goggles/face", "capOrange/hat");
+        assertThat(wardrobe.path("equipped")).as("O1 wardrobe equipped").isEqualTo(equipped(Map.of("face", "goggles")));
 
         // O2
         assertThat(balanceRow(user.id())).as("O2 balance row").isEqualTo(240);
@@ -326,7 +328,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> get = getWardrobe(user.token());
         assertThat(get.statusCode()).as("O3 GET /api/wardrobe, body %s", get.body()).isEqualTo(200);
         assertSameWardrobe(wardrobe, JSON.readTree(get.body()), "O3");
-        assertThat(JSON.readTree(get.body()).path("equipped")).as("O7 equipped").isEqualTo(equipped(Map.of()));
+        assertThat(JSON.readTree(get.body()).path("equipped")).as("O7 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
     }
 
     @Test
@@ -358,7 +360,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
         assertThat(body.path("balance").asInt()).as("O5 balance").isEqualTo(210);
         assertThat(body.path("owned").asInt()).as("O5 owned").isEqualTo(1);
         JsonNode wardrobe = body.path("wardrobe");
-        assertThat(typesAndSlots(wardrobe)).as("O5 wardrobe items").containsExactly("capOrange/hat", "shoesBrown/shoes");
+        assertThat(typesAndSlots(wardrobe)).as("O5 wardrobe items").containsExactly("goggles/face", "capOrange/hat", "shoesBrown/shoes");
         assertThat(itemIn(wardrobe, "capOrange").path("acquiredAt").asText()).as("O5 capOrange acquiredAt")
                 .isEqualTo("2026-11-01T00:00:00Z");
     }
@@ -426,8 +428,8 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
 
         assertThat(last.path("balance").asInt()).as("O11 balance").isEqualTo(700);
         assertThat(typesAndSlots(last.path("wardrobe"))).as("O11 wardrobe items")
-                .containsExactly("capOrange/hat", "tshirtOrange/top", "shortsNavy/bottom", "shoesBrown/shoes");
-        assertThat(last.path("wardrobe").path("equipped")).as("O11 equipped").isEqualTo(equipped(Map.of()));
+                .containsExactly("goggles/face", "capOrange/hat", "tshirtOrange/top", "shortsNavy/bottom", "shoesBrown/shoes");
+        assertThat(last.path("wardrobe").path("equipped")).as("O11 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
         Map<String, Integer> owned = ownedMap(JSON.readTree(shop(user.token()).body()));
         for (String cloth : CLOTHES) {
             assertThat(owned.get(cloth)).as("O11 %s owned", cloth).isEqualTo(1);

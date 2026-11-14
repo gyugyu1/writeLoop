@@ -71,7 +71,11 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
             "wear-backpack", "wear-hat", "wear-hat-blue", "wear-hat-green", "wear-muffler", "wear-necklace", "wear-shoe-l",
             "wear-sunglasses", "wear-bottom", "wear-top", "wear-shoe-r");
 
-    /** 부록 B: 기준 커밋 apps/mobile/assets/icons/wearables/&lt;id&gt;.png의 sha256·bytes(고글은 결정 05로 파일 없음). */
+    /**
+     * 부록 B: 기준 커밋 apps/mobile/assets/icons/wearables/&lt;id&gt;.png의 sha256·bytes(고글은 결정 05로 파일 없음).
+     * 작업 089 ⑤ 24-main-decision(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 옷 그림을 새 몸·새 옷으로 다시 찍어(커밋 057a534)
+     * 값을 그 파일의 sha256·bytes로 고쳤다(확인하는 내용은 그대로).
+     */
     private record IconFile(String sha256, long bytes) {
     }
 
@@ -79,26 +83,30 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
 
     private static Map<String, IconFile> icons() {
         Map<String, IconFile> map = new LinkedHashMap<>();
-        map.put("backpackRed", new IconFile("1cf315241e75d4ef30bb9e0ad5579b91275cdbc98995a54b32415c418e0d84ae", 79885));
-        map.put("capBlue", new IconFile("7f71df853b20ad146116acc30ab632f6de4b246719a10765ffee5af68f8ae6c7", 76149));
-        map.put("capGreen", new IconFile("5b74917bb087ad960226b4841fd145126ed87d3f07ab8ea2d521232391cf8499", 77102));
-        map.put("capOrange", new IconFile("d27ff4949392ba9a64084fafedba7a15e23deb0d998893ce42f3a361d564e4e3", 76099));
-        map.put("mufflerRed", new IconFile("4db84575bd949fc0c2c084107b0da558deed836486e0abc88ed3dfd4a72d23df", 95603));
-        map.put("necklaceGold", new IconFile("8ba6bd0e6bef2478c41a5808ceca12cf809a556a9ac1b83a510386f76c96bf86", 93213));
-        map.put("shoesBrown", new IconFile("6bce9bffa10c667b3bad1515a21e853b001b6d626141a4d79c4509822c88ec4a", 67596));
-        map.put("shoesRed", new IconFile("f4ea9abf902b99ef2de2fc1ecbb5f91c1945bb8fa33ba6089d5253356f2b4739", 68755));
-        map.put("shoesWhite", new IconFile("83ef155d6a0a22189326d98ace4a10df6750de65b365b1493b45415a711b30bc", 64556));
-        map.put("shortsBrown", new IconFile("92e6b065e3216417cee2034a0695f922a73c7a6a7316498f0fd758189b3bdb49", 80093));
-        map.put("shortsNavy", new IconFile("1748d02914114e64893ec9ffa815d6713eb9579f63b08ec8d4eacf339bcf4836", 79767));
-        map.put("shortsRed", new IconFile("5e4443f2c21029162aaa95902a738f84e870720307f6243dc7c9e3fdff6dfd93", 81342));
-        map.put("sunglassesBlack", new IconFile("e35ef20dd053d7663edf7aef45e8795e368dfa9b2a268863921f7d3829c5df99", 83358));
-        map.put("tshirtOrange", new IconFile("145094aaf07d689dfea189250ed7b27a8ff580aba27c59cfed0ecfa10f84d2e3", 96326));
-        map.put("tshirtWhite", new IconFile("0c3ceb6bf38caecef83e385e5a0899c6a04513498c1442e033a32f03ec5a290f", 89611));
-        map.put("tshirtYellow", new IconFile("2315f7e31700f3bf46ebbc340b9d85fb6a31df6a4959dcc3c8c0cc5ddf76dc15", 96556));
+        map.put("backpackRed", new IconFile("24c7298089190c99af17b7bf11dec11ded773c8cb39aaf0e37a7dc093bba2a4b", 76948));
+        map.put("capBlue", new IconFile("9bc5a7bffbe4658e844c1b6791673498379724022f11bc8db50055f7b5ae6497", 65565));
+        map.put("capGreen", new IconFile("2ea7b9743e1437bed0954cb8e4b29f050d6776ba8e94990df1f7b8ed2483ac01", 66136));
+        map.put("capOrange", new IconFile("a2543a504b6a67915d9960b3bf9230de8117e6be1e2ec36f720205672a679d6f", 65182));
+        map.put("mufflerRed", new IconFile("55b99c90ef81793b70c4a7816aa828cf20f9ce388e5c123cdd4ad2c26a32129f", 87227));
+        map.put("necklaceGold", new IconFile("fd0cbf3ab20ad78399106b7e9b112eb531078c80d3a11b460e4ef611c9dee320", 89565));
+        map.put("shoesBrown", new IconFile("b93d139fa891ce1d1b1e7a4522285125b6c61ed2461c58e4a3eab7ae89173b75", 63744));
+        map.put("shoesRed", new IconFile("830c587f7112b5279908971d8c15745260857a10531e577613c3564e7b7459b8", 65270));
+        map.put("shoesWhite", new IconFile("b9fa9691b646cf88722e12bcee0ba4eb0f99c65f426ef30ebf65130b7cf076c8", 61177));
+        map.put("shortsBrown", new IconFile("58d0c6000fed57ebf629d042c3bb5d7cee2dd78f7fe51906065224e6d7fd6bc0", 73232));
+        map.put("shortsNavy", new IconFile("fd22834c97ecb7e68666bd3d8471c6316ebb6c39d6fe1e27f2e61e113a7fef01", 73129));
+        map.put("shortsRed", new IconFile("f4c113791092606bdc8123a96effb82fd43a10525886d5ec85e546445bc7f8e4", 75146));
+        map.put("sunglassesBlack", new IconFile("8cf1cf5df29eeb55deec48a814bb78c3a5acaeb8f306d95ae398d01c1d96d94e", 83951));
+        map.put("tshirtOrange", new IconFile("6f943fdc2ffbf6e76bb1428a1b47205875af78b8942be1f750513eab22653f4f", 89174));
+        map.put("tshirtWhite", new IconFile("0b9575a888ad6588824cc717f633facc9d10743ae1cf14feaba34abbd804a147", 81290));
+        map.put("tshirtYellow", new IconFile("104fe133b1d375123d93c81a6ad5acc8be96ce067f6166a2f217db09be79b501", 88954));
         return map;
     }
 
-    /** 부록 C: 메시 경계 상자와 텍스처 없는 재질 색(조각마다). colors가 null이면 텍스처(모자). */
+    /**
+     * 부록 C: 메시 경계 상자와 텍스처 없는 재질 색(조각마다). colors가 null이면 텍스처(모자).
+     * 작업 089 ⑤ 24-main-decision(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 옷 모델 열하나를 새 몸용으로 바꿔(커밋 057a534)
+     * 경계 상자를 그 파일 값으로 고쳤다. 색은 17 결정("같은 색 그대로")대로 그대로다.
+     */
     private record Mesh(boolean skin, double[] min, double[] max, List<double[]> colors) {
     }
 
@@ -106,22 +114,22 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
 
     private static Map<String, Mesh> meshes() {
         Map<String, Mesh> map = new LinkedHashMap<>();
-        map.put("wear-backpack", new Mesh(false, v(-0.1945, 0.1675, -0.5418), v(0.1999, 0.4771, 0.2021),
+        map.put("wear-backpack", new Mesh(false, v(-0.1646, 0.2652, -0.2764), v(0.1631, 0.4208, 0.1749),
                 List.of(v(0.5776, 0.0578, 0.0423, 1), v(0.3916, 0.0331, 0.0252, 1), v(0.1559, 0.0232, 0.0176, 1))));
-        map.put("wear-hat", new Mesh(false, v(-0.1368, 0.8987, -0.0964), v(0.1332, 1.1128, 0.2688), null));
-        map.put("wear-hat-blue", new Mesh(false, v(-0.1368, 0.8987, -0.0964), v(0.1332, 1.1128, 0.2688), null));
-        map.put("wear-hat-green", new Mesh(false, v(-0.1368, 0.8987, -0.0964), v(0.1332, 1.1128, 0.2688), null));
-        map.put("wear-muffler", new Mesh(false, v(-0.271, 0.2079, -0.2321), v(0.2765, 0.4026, 0.2233),
+        map.put("wear-hat", new Mesh(false, v(-0.1352, 0.8823, -0.1808), v(0.1321, 1.0943, 0.1808), null));
+        map.put("wear-hat-blue", new Mesh(false, v(-0.1352, 0.8823, -0.1808), v(0.1321, 1.0943, 0.1808), null));
+        map.put("wear-hat-green", new Mesh(false, v(-0.1352, 0.8823, -0.1808), v(0.1321, 1.0943, 0.1808), null));
+        map.put("wear-muffler", new Mesh(false, v(-0.2276, 0.2263, -0.2196), v(0.2259, 0.4078, 0.2076),
                 List.of(v(0.6445, 0.0452, 0.0452, 1))));
-        map.put("wear-necklace", new Mesh(false, v(-0.2272, 0.2527, -0.1879), v(0.2326, 0.4203, 0.2089),
+        map.put("wear-necklace", new Mesh(false, v(-0.1931, 0.2923, -0.1847), v(0.1914, 0.4287, 0.2026),
                 List.of(v(0.7454, 0.4508, 0.0452, 1))));
-        map.put("wear-shoe-l", new Mesh(false, v(0.0121, -0.004, -0.0974), v(0.213, 0.0939, 0.1772),
+        map.put("wear-shoe-l", new Mesh(false, v(0.0137, -0.004, -0.1064), v(0.2091, 0.085, 0.1418),
                 List.of(v(0.1946, 0.0685, 0.0232, 1))));
-        map.put("wear-sunglasses", new Mesh(false, v(-0.3345, 0.556, 0.1239), v(0.3302, 0.7303, 0.3656),
+        map.put("wear-sunglasses", new Mesh(false, v(-0.3313, 0.5537, -0.0224), v(0.3273, 0.7263, 0.2864),
                 List.of(v(0.013, 0.013, 0.0176, 1), v(0.0052, 0.0052, 0.007, 1))));
-        map.put("wear-bottom", new Mesh(true, v(-0.2238, -0.024, -0.1962), v(0.2217, 0.2672, 0.1526),
+        map.put("wear-bottom", new Mesh(true, v(-0.2167, 0.094, -0.1685), v(0.2124, 0.2207, 0.1709),
                 List.of(v(0.0343, 0.0802, 0.1946, 1))));
-        map.put("wear-top", new Mesh(true, v(-0.3138, 0.1067, -0.256), v(0.303, 0.5188, 0.182),
+        map.put("wear-top", new Mesh(true, v(-0.2868, 0.1981, -0.1965), v(0.2823, 0.394, 0.1864),
                 List.of(v(0.8714, 0.2423, 0.0423, 1))));
         return map;
     }

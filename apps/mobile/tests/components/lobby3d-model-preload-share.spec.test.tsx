@@ -28,6 +28,8 @@ import type { ComponentType, MutableRefObject, ReactNode } from "react";
 // 이 목록과 마을 모델 파일을 이름 문자열로 바꾸는 가짜만 더했고, 단언은 그대로다.
 // 090-② 05 결정 3(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침"): 가구 묶음(lobby-furniture.glb) 대신 앱에 든 처음 방 가구 일곱의
 // 파일(assets/models/furniture/<id>.glb)을 읽는다. 이 목록과 일곱 파일을 이름 문자열로 바꾸는 가짜만 바꿨고, 단언은 그대로다.
+// 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침", 답 1: 앱 시작 때 고글 모델도 미리 읽는다): 앱에 든 라룹이 고글
+// 모델(assets/models/wear-goggles.glb)을 이 목록에 더하고 그 파일을 이름 문자열로 바꾸는 가짜를 더했다. 단언은 그대로다.
 const MODEL_FILES = [
   "furniture/board.glb",
   "furniture/bookcase.glb",
@@ -38,6 +40,7 @@ const MODEL_FILES = [
   "furniture/window.glb",
   "lobby-room.glb",
   "lobby-village.glb",
+  "wear-goggles.glb",
   "writeloop.glb"
 ];
 
@@ -121,6 +124,7 @@ jest.mock("@/assets/models/furniture/wardrobe.glb", () => "furniture/wardrobe.gl
 jest.mock("@/assets/models/furniture/rug.glb", () => "furniture/rug.glb");
 jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
+jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");
   return {

@@ -117,7 +117,14 @@ describe("[spec] 착용 모델 파일(M1~M7)", () => {
       "| `lobby-village.glb` | [Kenney Fantasy Town Kit](https://kenney.nl/assets/fantasy-town-kit) 2.0의 벽·문·창·지붕(건물 넷으로 조립), 분수, 가로등, 노점, 벤치, 바위, 길, 생울타리, 나무 울타리를 `scripts/lobby3d/build-village.py`로 골라 배치하고 한 파일로 묶었다(색 그림의 회벽·벽 아래 띠 색을 바꿨다). 밤 불빛 판은 새로 만들었다 | CC0 1.0(출처 표기 의무 없음) |"
     );
     expect(lines).toContain("| `lobby-room.glb` | WriteLoop이 `scripts/lobby3d/bake-room.py`로 만들었다 | 저장소와 같다 |");
-    expect(lines).toContain("| `writeloop.glb` | WriteLoop 캐릭터 모델 | 저장소와 같다 |");
+    // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침", 답 2): 22 결정으로 라룹이 몸을 Tripo 웹으로 만든 고글 없는 새 몸으로
+    // 바꿔 writeloop.glb 줄이 새 몸 설명이 되었다. 그 줄이 하나이고 앞(파일 이름·"WriteLoop 캐릭터 모델")과 끝(라이선스)이 그대로이며 새 몸 설명(Tripo, 고글 없는 몸)이 있는지 본다.
+    const characterLines = lines.filter((line) => line.includes("`writeloop.glb`"));
+    expect(characterLines).toHaveLength(1);
+    expect(characterLines[0].startsWith("| `writeloop.glb` | WriteLoop 캐릭터 모델")).toBe(true);
+    expect(characterLines[0].endsWith(" | 저장소와 같다 |")).toBe(true);
+    expect(characterLines[0]).toContain("Tripo");
+    expect(characterLines[0]).toContain("고글 없는 몸");
   });
 });
 

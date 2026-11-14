@@ -26,6 +26,7 @@ type MockBone = THREE.Bone;
 
 const mockFrames = new Set<FramePart>();
 const mockCharacter: { value: unknown } = { value: null };
+const mockGoggles: { value: unknown } = { value: null };
 /** 기기 주소 → 그 파일의 가짜 모델(CAT-W 모델 이름). */
 const mockFiles = new Map<string, CatWModel>();
 
@@ -51,6 +52,8 @@ jest.mock("@react-three/fiber/native", () => {
       }, []);
     },
     useLoader: (_loader: unknown, url: unknown) => {
+      // 작업 089 ⑤ 24 결정: 앱에 든 라룹이 고글 모델
+      if (String(url) === "wear-goggles.glb") return mockGoggles.value;
       if (String(url) !== "writeloop.glb") throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
       return mockCharacter.value;
     }
@@ -95,6 +98,10 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
   };
 });
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+// 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 라룹이 고글이 앱에 든 착용 모델(assets/models/wear-goggles.glb)이 되어
+// 라룹이를 그리면 그 파일도 react-three-fiber useLoader로 읽는다. 그래서 가짜 불러오기가 그 파일에 가짜 고글 모델(skin 없는 메시 wear-goggles 하나,
+// 점 136개)을 주게 했다. 단언·입력은 바꾸지 않았다(고글이 그려져 바뀐 기대값은 그 테스트에 따로 적었다).
+jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 jest.mock("@/lib/api", () => ({ ...jest.requireActual("@/lib/api"), getItemCatalog: jest.fn() }));
 jest.mock("@react-native-async-storage/async-storage", () =>
@@ -178,6 +185,17 @@ function makeClips(): THREE.AnimationClip[] {
       new THREE.VectorKeyframeTrack("hips.position", [0, 1, 2], [0, 0.4, 0, 0.02, 0.45, 0.05, 0, 0.38, -0.03])
     ]);
   });
+}
+
+/** 작업 089 ⑤ 24 결정: 가짜 라룹이 고글 모델(skin 없는 메시 wear-goggles 하나, 이마 높이, 점 136개). */
+function qaFakeGoggles() {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.1, 15, 1, 1), new THREE.MeshStandardMaterial({ color: 0x3060c0 }));
+  mesh.name = "wear-goggles";
+  mesh.position.set(0, 0.9, 0.21);
+  const scene = new THREE.Group();
+  scene.add(mesh);
+  scene.updateMatrixWorld(true);
+  return { scene, scenes: [scene], animations: [], cameras: [], asset: {}, parser: {}, userData: {} };
 }
 
 function fakeCharacter() {
@@ -349,6 +367,7 @@ beforeEach(() => {
   mockFiles.clear();
   mockFrames.clear();
   mockCharacter.value = fakeCharacter();
+  mockGoggles.value = qaFakeGoggles();
   errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 });

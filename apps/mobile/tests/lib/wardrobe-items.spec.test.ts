@@ -57,7 +57,8 @@ describe("[spec] 앱의 착용 아이템 목록(C1~C3)", () => {
   });
 
   // 작업 089 ⑤ 04-main-decision.md A-2(사용자 결정): 아이템이 열여섯이 되어 "넷이고 face·back·accessory가 없다"를 새 목록(⑤ 명세 표)으로 고쳤다.
-  it("C2: 종류가 정확히 열여섯이고, 부위가 명세 표와 같다", () => {
+  // 작업 089 ⑤ 08-main-decision.md "기존 테스트"(사용자 결정)·12-B: 라룹이 고글(goggles, 얼굴장식)이 앱 아이템이 되어 열일곱으로 고쳤다.
+  it("C2: 종류가 정확히 열일곱이고, 부위가 명세 표(라룹이 고글 포함)와 같다", () => {
     expect(Object.entries(WEARABLE_ITEMS).map(([type, item]) => [type, item.slot]).sort()).toEqual(
       [
         ["capOrange", "hat"],
@@ -72,6 +73,7 @@ describe("[spec] 앱의 착용 아이템 목록(C1~C3)", () => {
         ["shoesBrown", "shoes"],
         ["shoesRed", "shoes"],
         ["shoesWhite", "shoes"],
+        ["goggles", "face"],
         ["sunglassesBlack", "face"],
         ["backpackRed", "back"],
         ["mufflerRed", "accessory"],

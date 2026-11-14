@@ -203,6 +203,8 @@ jest.mock("@/assets/models/furniture/rug.glb", () => 9016);
 jest.mock("@/assets/models/furniture/lamp.glb", () => 9017);
 // 088 ② 06 결정 2(사용자 2026-11-13 "둘 다 qa가 고침"): 미리 읽기에 마을 모델이 더해져, 그 파일의 가짜만 더했다(준비 변경. 단언은 그대로다)
 jest.mock("@/assets/models/lobby-village.glb", () => 9004);
+// 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 앱에 든 라룹이 고글 모델 파일이 생겨 로비 모듈이 그 파일도 require한다(준비 변경. 단언은 그대로다)
+jest.mock("@/assets/models/wear-goggles.glb", () => 9005);
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => ({ createOutdoor: () => ({}) }));
 
 // 앱이 로비 모델을 읽는 모듈을 불러온다(여기서 FileLoader·TextureLoader가 기기용 읽기로 바뀐다)

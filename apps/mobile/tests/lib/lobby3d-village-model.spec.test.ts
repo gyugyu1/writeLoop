@@ -43,7 +43,14 @@ describe("[spec] 마을 3D 모델 파일(F1~F3)", () => {
     )).toBe(true);
     expect(furnitureLines[0].endsWith(" 게시판·창틀·액자는 같은 모양새로 새로 만들었다 | CC0 1.0(출처 표기 의무 없음) |")).toBe(true);
     expect(lines).toContain("| `lobby-room.glb` | WriteLoop이 `scripts/lobby3d/bake-room.py`로 만들었다 | 저장소와 같다 |");
-    expect(lines).toContain("| `writeloop.glb` | WriteLoop 캐릭터 모델 | 저장소와 같다 |");
+    // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침", 답 2): 22 결정으로 라룹이 몸을 Tripo 웹으로 만든 고글 없는 새 몸으로
+    // 바꿔 writeloop.glb 줄이 새 몸 설명이 되었다. 그 줄이 하나이고 앞(파일 이름·"WriteLoop 캐릭터 모델")과 끝(라이선스)이 그대로이며 새 몸 설명(Tripo, 고글 없는 몸)이 있는지 본다.
+    const characterLines = lines.filter((line) => line.includes("`writeloop.glb`"));
+    expect(characterLines).toHaveLength(1);
+    expect(characterLines[0].startsWith("| `writeloop.glb` | WriteLoop 캐릭터 모델")).toBe(true);
+    expect(characterLines[0].endsWith(" | 저장소와 같다 |")).toBe(true);
+    expect(characterLines[0]).toContain("Tripo");
+    expect(characterLines[0]).toContain("고글 없는 몸");
   });
 });
 

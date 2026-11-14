@@ -154,6 +154,10 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
 });
 jest.mock("@/assets/models/lobby-room.glb", () => "lobby-room.glb");
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+// 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 라룹이 고글이 앱에 든 착용 모델(assets/models/wear-goggles.glb)이 되어
+// 라룹이를 그리면 그 파일도 react-three-fiber useLoader로 읽는다. 그래서 가짜 불러오기가 그 파일에 가짜 고글 모델(skin 없는 메시 wear-goggles 하나,
+// 점 136개)을 주게 했다. 단언·입력은 바꾸지 않았다(고글이 그려져 바뀐 기대값은 그 테스트에 따로 적었다).
+jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 // 090-② 05 결정 3: 가구 묶음 대신 앱에 든 처음 방 가구 일곱의 파일이다(Jest가 읽지 못하는 파일이라 이름만 준다)
 jest.mock("@/assets/models/furniture/desk.glb", () => "furniture/desk.glb");
 jest.mock("@/assets/models/furniture/bookcase.glb", () => "furniture/bookcase.glb");
@@ -357,6 +361,17 @@ function fakeModelFor(file: string): unknown {
   const scene = new THREE.Group();
   scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial()));
   return { scene, animations: [] };
+}
+
+/** 작업 089 ⑤ 24 결정: 가짜 라룹이 고글 모델(skin 없는 메시 wear-goggles 하나, 이마 높이, 점 136개). */
+function qaFakeGoggles() {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.1, 15, 1, 1), new THREE.MeshStandardMaterial({ color: 0x3060c0 }));
+  mesh.name = "wear-goggles";
+  mesh.position.set(0, 0.9, 0.21);
+  const scene = new THREE.Group();
+  scene.add(mesh);
+  scene.updateMatrixWorld(true);
+  return { scene, scenes: [scene], animations: [], cameras: [], asset: {}, parser: {}, userData: {} };
 }
 
 function pendingModel(): MockModel {
@@ -650,6 +665,8 @@ beforeEach(async () => {
   mockLoaded.length = 0;
   for (const file of [ROOM_FILE, CHARACTER_FILE, FURNITURE_FILE, VILLAGE_FILE, WEAR_FILE]) mockModels.set(file, pendingModel());
   mark("loaded", CHARACTER_FILE);
+  // 작업 089 ⑤ 24 결정: 앱에 든 라룹이 고글 모델(읽음)
+  mockModels.set("wear-goggles.glb", { ...pendingModel(), status: "loaded", value: qaFakeGoggles() });
   // 못 읽은 모델을 오류 경계가 잡을 때 React와 경계가 남기는 출력은 출력만 막는다
   errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
@@ -835,13 +852,16 @@ describe("[spec] 누르기 판정과 착용하지 않은 라룹이(U1, U2, 결�
     return new THREE.Raycaster(origin, direction.normalize()).intersectObject(group, true);
   }
 
-  it("U1: 아무것도 입히지 않으면 그려지는 메시는 몸과 그 외곽선 껍질 둘뿐이고, 착용 모델을 읽지 않는다", async () => {
+  // 작업 089 ⑤ 24 결정(사용자: qa가 새 동작에 맞게 고침): 입은 것을 모르면(look 없음) 라룹이 고글(앱에 든 착용 모델)이 그려지므로(22 결정)
+  // 그려지는 메시의 기대값을 "몸과 외곽선 둘"에서 "몸과 외곽선 둘 + 고글 겉·외곽선 둘"로 고쳤다. 받는 옷 모델을 읽지 않는 것은 그대로다.
+  it("U1: 아무것도 입히지 않으면 그려지는 메시는 몸과 그 외곽선 껍질 둘과 라룹이 고글 겉·외곽선 둘뿐이고, 착용 모델을 읽지 않는다", async () => {
     const rig = makeRig();
     const { group } = await renderBare(rig);
     const shown = meshesUnder(group).filter((m) => drawn(m, group));
-    expect(shown.length).toBe(2);
-    expect(shown.every((m) => (m as THREE.SkinnedMesh).isSkinnedMesh && m.geometry.attributes.position.count === BODY_POINTS)).toBe(true);
-    expect(shown.filter(isToon).length).toBe(1);
+    expect(shown.length).toBe(4);
+    expect(shown.filter((m) => (m as THREE.SkinnedMesh).isSkinnedMesh && m.geometry.attributes.position.count === BODY_POINTS).length).toBe(2);
+    expect(shown.filter((m) => m.geometry.attributes.position.count === 136).length).toBe(2);
+    expect(shown.filter(isToon).length).toBe(2);
     expect(wearLoads()).toBe(0);
   });
 
@@ -951,7 +971,8 @@ describe("[spec] 착용 모델을 읽는 때와 못 읽을 때(결정 4·5, F1)"
     expect(rig.failed).not.toHaveBeenCalled();
     const primitives = screen.container.queryAll((i: TestInstance) => (i.type as unknown) === "primitive" && i.props.object === group);
     expect(primitives.length).toBe(1);
-    expect(meshesUnder(group).filter((m) => drawn(m, group)).length).toBe(2);
+    // 작업 089 ⑤ 24 결정(사용자: qa가 새 동작에 맞게 고침): 입은 것을 모르면(look 없음) 라룹이 고글(앱에 든 착용 모델, 겉·외곽선 둘)이 그려진다(22 결정).
+    expect(meshesUnder(group).filter((m) => drawn(m, group)).length).toBe(4);
 
     await act(async () => {
       mark("loaded", WEAR_FILE);
@@ -1005,7 +1026,8 @@ describe("[spec] 화면 단위: 개발 화면에서 입고 벗기(F1·F2, 결정
       expect(indicatorShown()).toBe(false);
       const group = characterGroupOnScreen();
       expect(group !== null).toBe(true);
-      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(2);
+      // 작업 089 ⑤ 24 결정: 시험판은 라룹이 고글을 쓴 채 시작해(11-B6) 고글 겉·외곽선 둘이 더 그려진다(받는 옷은 붙지 않는다)
+      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(4);
 
       // 끄고 다시 켜도 눌린 대로 바뀐다
       await press("모자");
@@ -1013,7 +1035,7 @@ describe("[spec] 화면 단위: 개발 화면에서 입고 벗기(F1·F2, 결정
       await press("모자");
       expect(screen.getByRole("button", { name: "모자" }).props.accessibilityState?.selected).toBe(true);
       await frame(3);
-      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(2);
+      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(4);
 
       await press("신나게 점프");
       expect(mockCanvas.props!.sim.action?.type).toBe("jump");
@@ -1035,7 +1057,8 @@ describe("[spec] 화면 단위: 개발 화면에서 입고 벗기(F1·F2, 결정
       expect(indicatorShown()).toBe(false);
       const group = characterGroupOnScreen();
       expect(group !== null).toBe(true);
-      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(2);
+      // 작업 089 ⑤ 24 결정: 시험판은 라룹이 고글을 쓴 채 시작해(11-B6) 고글 겉·외곽선 둘이 더 그려진다
+      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(4);
     },
     SLOW_TEST_MS
   );

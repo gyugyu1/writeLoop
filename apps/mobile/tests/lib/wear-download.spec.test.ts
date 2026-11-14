@@ -35,7 +35,6 @@ import {
 
 jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 
-const BASE_COMMIT = "be00aac";
 const SIXTEEN = [
   "capOrange", "capBlue", "capGreen", "tshirtOrange", "tshirtWhite", "tshirtYellow", "shortsNavy", "shortsBrown",
   "shortsRed", "shoesBrown", "shoesRed", "shoesWhite", "sunglassesBlack", "backpackRed", "mufflerRed", "necklaceGold"
@@ -361,7 +360,6 @@ function expectClose(label: string, actual: number[], expected: number[]) {
   const diff = actual.reduce((max, v, i) => Math.max(max, Math.abs(v - expected[i])), 0);
   expect({ label, close: diff < 1e-5 }).toEqual({ label, close: true });
 }
-const baseFile = (path: string) => execFileSync("git", ["show", `${BASE_COMMIT}:${path}`], { cwd: REPO_DIR, maxBuffer: 64 * 1024 * 1024 });
 const serverModelFile = (id: string) => rawServerItems().find((item) => item.id === id)!.files!.model!;
 
 /** writeloop.glb 뼈대(스킨 관절)의 뼈 이름. */
@@ -416,8 +414,13 @@ describe("[spec] 090-③ Z: 실제 서버 목록 파일·모델·그림을 앱�
     }
   });
 
-  test("Z3 서버 옷 모델 파일의 메시 점 자리가 기준 커밋 묶음의 같은 모델과 같고, 상의·하의의 skin 뼈 이름·묶음 역행렬이 묶음과 같으며 뼈 이름은 모두 라룹이 뼈대에 있다", () => {
-    const bundle = parseGlb(baseFile("apps/mobile/assets/models/lobby-wearables.glb"));
+  // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 옷 모델 열하나를 새 몸용으로 바꿔(묶음에서 나누지 않고
+  // 모델마다 바로 만듦, 커밋 057a534) 견주는 기준을 기준 커밋 be00aac의 착용 모델 묶음에서 새 옷 파일을 넣은 커밋 057a534의 같은 서버 파일로 바꿨다.
+  // 확인하는 내용(점 자리·skin 뼈 이름·묶음 역행렬이 기준과 같고, 뼈 이름은 모두 지금 라룹이 뼈대에 있다)은 그대로다.
+  test("Z3 서버 옷 모델 파일의 메시 점 자리가 새 옷 파일 커밋(057a534)의 같은 모델과 같고, 상의·하의의 skin 뼈 이름·묶음 역행렬이 그 파일과 같으며 뼈 이름은 모두 라룹이 뼈대에 있다", () => {
+    const NEW_WEAR_COMMIT = "057a534";
+    const referenceOf = (type: string) =>
+      parseGlb(execFileSync("git", ["show", `${NEW_WEAR_COMMIT}:apps/backend/src/main/resources/catalog/files/${serverModelFile(type)}`], { cwd: REPO_DIR, maxBuffer: 64 * 1024 * 1024 }));
     const bones = characterBones();
     const pairs: [string, string][] = [
       ["capOrange", "wear-hat"],
@@ -432,6 +435,7 @@ describe("[spec] 090-③ Z: 실제 서버 목록 파일·모델·그림을 앱�
       ["necklaceGold", "wear-necklace"]
     ];
     for (const [type, node] of pairs) {
+      const bundle = referenceOf(type);
       const server = parseGlb(readFileSync(join(SERVER_FILES_DIR, serverModelFile(type))));
       const serverNode = server.json.nodes.find((n) => n.mesh !== undefined)!;
       expectClose(`${type} 점 자리`, scenePositions(server, serverNode.name!), scenePositions(bundle, node));
@@ -448,11 +452,14 @@ describe("[spec] 090-③ Z: 실제 서버 목록 파일·모델·그림을 앱�
     }
   });
 
-  test("Z4 서버 옷 그림 열여섯은 기준 커밋 앱 그림과 바이트가 같다", () => {
+  // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 옷 그림을 새 몸·새 옷으로 다시 찍어(커밋 057a534)
+  // 견주는 기준을 기준 커밋 be00aac의 앱 그림에서 새 그림을 넣은 커밋 057a534의 같은 서버 그림으로 바꿨다(바이트가 같은지 보는 것은 그대로).
+  test("Z4 서버 옷 그림 열여섯은 새 그림 커밋(057a534)의 그림과 바이트가 같다", () => {
     for (const type of SIXTEEN) {
       const iconFile = rawServerItems().find((item) => item.id === type)!.files!.icon!;
       const now = readFileSync(join(SERVER_FILES_DIR, iconFile));
-      expect({ type, same: now.equals(baseFile(`apps/mobile/assets/icons/wearables/${type}.png`)) }).toEqual({ type, same: true });
+      const reference = execFileSync("git", ["show", `057a534:apps/backend/src/main/resources/catalog/files/${iconFile}`], { cwd: REPO_DIR, maxBuffer: 64 * 1024 * 1024 });
+      expect({ type, same: now.equals(reference) }).toEqual({ type, same: true });
     }
   });
 

@@ -256,8 +256,11 @@ describe("[spec] 089-⑤ F: 착용 모델 파일과 칸 그림 파일", () => {
     expect(nodesNamed(glb, (n) => n.startsWith("wear-shoe")).length).toBe(1);
   });
 
-  it("F4 라룹이 모델(writeloop.glb)은 기준 커밋과 바이트가 같다", () => {
-    expect(readFileSync(CHARACTER).equals(baseFile("apps/mobile/assets/models/writeloop.glb"))).toBe(true);
+  // 작업 089 ⑤ 08·12-B·24-main-decision.md(사용자 결정: qa가 새 동작에 맞게 고침): 22 결정으로 라룹이 몸을 고글 없는 새 몸으로 바꿨으므로
+  // 견주는 파일을 기준 커밋 6e2f069의 옛 몸에서 새 몸을 넣은 커밋 d6338fa의 파일로 바꿨다(확인하는 내용 "라룹이 모델이 정한 파일과 바이트까지 같다"는 그대로).
+  it("F4 라룹이 모델(writeloop.glb)은 새 몸을 넣은 커밋(d6338fa)의 파일과 바이트가 같다", () => {
+    const newBody = execFileSync("git", ["show", "d6338fa:apps/mobile/assets/models/writeloop.glb"], { cwd: REPO, maxBuffer: 64 * 1024 * 1024 });
+    expect(readFileSync(CHARACTER).equals(newBody)).toBe(true);
   });
 
   it("F5 열여섯 칸 그림이 모두 있고, PNG이며 투명 채널이 있고, 내용이 서로 다르다", () => {

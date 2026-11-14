@@ -34,6 +34,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *   <li>로그인은 토큰 로그인(Bearer). 테스트마다 새 사용자를 만든다.</li>
  *   <li>own(U, 종류, 시각)은 앱과 같은 저장 방식이 되게 WardrobeItemRepository로 넣는다(명세: 테스트는 DB에 직접 넣는다).</li>
  *   <li>200 응답은 기대 JSON 전체와 같아야 한다(F1의 키 모양과 F2의 acquiredAt 문자열을 함께 본다).</li>
+ *   <li>작업 089 ⑤ 08 결정(사용자 결정, 고글 기본)에 맞춰 기대 응답의 가진 것 맨 앞에 고글을 더하고, 입은 것을 저장한 적 없는
+ *       계정의 얼굴장식을 고글로 바꿨다(확인하는 내용은 그대로).</li>
  * </ul>
  */
 class WardrobeControllerSpecTest extends IntegrationTestSupport {
@@ -68,7 +70,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(items(), equipped()), "S1");
+        assertOkBody(response, wardrobe(u, items(), equipped("face", "goggles")), "S1");
     }
 
     @Test
@@ -78,9 +80,9 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(items(item("capOrange", "hat", T1)), equipped()), "S2");
+        assertOkBody(response, wardrobe(u, items(item("capOrange", "hat", T1)), equipped("face", "goggles")), "S2");
         // F2: acquiredAt 문자열 그대로
-        assertThat(JSON.readTree(response.body()).path("items").get(0).path("acquiredAt").asText())
+        assertThat(JSON.readTree(response.body()).path("items").get(1).path("acquiredAt").asText())
                 .as("F2 acquiredAt").isEqualTo("2026-11-13T12:00:00Z");
     }
 
@@ -95,11 +97,11 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(items(
+        assertOkBody(response, wardrobe(u, items(
                 item("shoesBrown", "shoes", T1),
                 item("capOrange", "hat", T2),
                 item("shortsNavy", "bottom", T3),
-                item("tshirtOrange", "top", T4)), equipped()), "S3");
+                item("tshirtOrange", "top", T4)), equipped("face", "goggles")), "S3");
     }
 
     @Test
@@ -110,7 +112,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(items(item("capOrange", "hat", T1)), equipped("hat", "capOrange")), "S4");
+        assertOkBody(response, wardrobe(u, items(item("capOrange", "hat", T1)), equipped("hat", "capOrange")), "S4");
     }
 
     // =====================================================================
@@ -147,7 +149,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = put(u.token(), P1_BODY);
 
-        assertOkBody(response, wardrobe(i4(), p1Equipped()), "P1 PUT");
+        assertOkBody(response, wardrobe(u, i4(), p1Equipped()), "P1 PUT");
         assertThat(JSON.readTree(get(u.token()).body())).as("P1 GET equals PUT").isEqualTo(JSON.readTree(response.body()));
     }
 
@@ -158,7 +160,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = put(u.token(), "{\"top\": \"tshirtOrange\"}");
 
-        assertOkBody(response, wardrobe(i4(), equipped("top", "tshirtOrange")), "P2 PUT");
+        assertOkBody(response, wardrobe(u, i4(), equipped("top", "tshirtOrange")), "P2 PUT");
         assertThat(JSON.readTree(get(u.token()).body())).as("P2 GET equals PUT").isEqualTo(JSON.readTree(response.body()));
     }
 
@@ -169,7 +171,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = put(u.token(), "{}");
 
-        assertOkBody(response, wardrobe(i4(), equipped()), "P3 PUT");
+        assertOkBody(response, wardrobe(u, i4(), equipped()), "P3 PUT");
         assertThat(JSON.readTree(get(u.token()).body())).as("P3 GET equals PUT").isEqualTo(JSON.readTree(response.body()));
     }
 
@@ -181,7 +183,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = put(u.token(), "{\"hat\": null, \"top\": \"tshirtOrange\", \"bottom\": null,"
                 + " \"shoes\": null, \"face\": null, \"back\": null, \"accessory\": null}");
 
-        assertOkBody(response, wardrobe(i4(), equipped("top", "tshirtOrange")), "P4 PUT");
+        assertOkBody(response, wardrobe(u, i4(), equipped("top", "tshirtOrange")), "P4 PUT");
         assertThat(JSON.readTree(get(u.token()).body())).as("P4 GET equals PUT").isEqualTo(JSON.readTree(response.body()));
     }
 
@@ -192,8 +194,8 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> first = put(u.token(), P1_BODY);
         HttpResponse<String> second = put(u.token(), P1_BODY);
 
-        assertOkBody(first, wardrobe(i4(), p1Equipped()), "P5 first");
-        assertOkBody(second, wardrobe(i4(), p1Equipped()), "P5 second");
+        assertOkBody(first, wardrobe(u, i4(), p1Equipped()), "P5 first");
+        assertOkBody(second, wardrobe(u, i4(), p1Equipped()), "P5 second");
     }
 
     @Test
@@ -202,7 +204,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = put(u.token(), "{\"face\": null, \"back\": null, \"accessory\": null}");
 
-        assertOkBody(response, wardrobe(items(), equipped()), "P6");
+        assertOkBody(response, wardrobe(u, items(), equipped()), "P6");
     }
 
     // =====================================================================
@@ -219,8 +221,8 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         return u;
     }
 
-    private static ObjectNode xBase() {
-        return wardrobe(items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)),
+    private ObjectNode xBase(TestUser u) {
+        return wardrobe(u, items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)),
                 equipped("hat", "capOrange", "top", "tshirtOrange"));
     }
 
@@ -230,7 +232,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = put(u.token(), body);
 
         assertInvalid(response, tag);
-        assertOkBody(get(u.token()), xBase(), tag + " unchanged");
+        assertOkBody(get(u.token()), xBase(u), tag + " unchanged");
     }
 
     @Test
@@ -293,8 +295,8 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = put(y.token(), "{\"shoes\": \"shoesBrown\"}");
 
         assertInvalid(response, "X11 Y");
-        assertOkBody(get(y.token()), wardrobe(items(), equipped()), "X11 Y GET");
-        assertOkBody(get(x.token()), wardrobe(items(item("shoesBrown", "shoes", T1)), equipped("shoes", "shoesBrown")), "X11 X GET");
+        assertOkBody(get(y.token()), wardrobe(y, items(), equipped("face", "goggles")), "X11 Y GET");
+        assertOkBody(get(x.token()), wardrobe(x, items(item("shoesBrown", "shoes", T1)), equipped("shoes", "shoesBrown")), "X11 X GET");
     }
 
     // ---- 결정 04 M1: 일곱 부위가 아닌 키는 무시하고 200 ----
@@ -305,7 +307,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = put(u.token(), "{\"top\": \"tshirtOrange\", \"gloves\": \"capOrange\"}");
 
-        ObjectNode expected = wardrobe(items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)),
+        ObjectNode expected = wardrobe(u, items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)),
                 equipped("top", "tshirtOrange"));
         assertOkBody(response, expected, "X12 PUT");
         assertOkBody(get(u.token()), expected, "X12 GET");
@@ -317,7 +319,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = put(u.token(), "{\"gloves\": null}");
 
-        ObjectNode expected = wardrobe(items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)), equipped());
+        ObjectNode expected = wardrobe(u, items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)), equipped());
         assertOkBody(response, expected, "X13 PUT");
         assertOkBody(get(u.token()), expected, "X13 GET");
     }
@@ -347,7 +349,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         assertThat(objectValue.statusCode()).as("X16 object value, body %s", objectValue.body()).isEqualTo(400);
         assertThat(arrayValue.statusCode()).as("X16 array value, body %s", arrayValue.body()).isEqualTo(400);
-        assertOkBody(get(u.token()), xBase(), "X16 unchanged");
+        assertOkBody(get(u.token()), xBase(u), "X16 unchanged");
     }
 
     // ---- 결정 04 M2: 빈 본문·JSON null은 모두 벗음 ----
@@ -358,7 +360,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = put(u.token(), "");
 
-        ObjectNode expected = wardrobe(items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)), equipped());
+        ObjectNode expected = wardrobe(u, items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)), equipped());
         assertOkBody(response, expected, "X17 PUT");
         assertOkBody(get(u.token()), expected, "X17 GET");
     }
@@ -369,7 +371,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = put(u.token(), "null");
 
-        ObjectNode expected = wardrobe(items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)), equipped());
+        ObjectNode expected = wardrobe(u, items(item("capOrange", "hat", T1), item("tshirtOrange", "top", T2)), equipped());
         assertOkBody(response, expected, "X18 PUT");
         assertOkBody(get(u.token()), expected, "X18 GET");
     }
@@ -383,7 +385,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = put(u.token(), "[]");
 
         assertThat(response.statusCode()).as("X19 array body, body %s", response.body()).isEqualTo(400);
-        assertOkBody(get(u.token()), xBase(), "X19 unchanged");
+        assertOkBody(get(u.token()), xBase(u), "X19 unchanged");
     }
 
     @Test
@@ -393,7 +395,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = put(u.token(), "{\"hat\": ");
 
         assertThat(response.statusCode()).as("X20 broken JSON, body %s", response.body()).isEqualTo(400);
-        assertOkBody(get(u.token()), xBase(), "X20 unchanged");
+        assertOkBody(get(u.token()), xBase(u), "X20 unchanged");
     }
 
     // =====================================================================
@@ -439,7 +441,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         assertThat(put(x.token(), "{\"hat\": \"capOrange\"}").statusCode()).as("K1 setup").isEqualTo(200);
         TestUser y = newUser("k1y");
 
-        assertOkBody(get(y.token()), wardrobe(items(), equipped()), "K1 Y");
+        assertOkBody(get(y.token()), wardrobe(y, items(), equipped("face", "goggles")), "K1 Y");
     }
 
     @Test
@@ -450,13 +452,13 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         own(y, "capOrange", T2);
         assertThat(put(x.token(), "{\"hat\": \"capOrange\"}").statusCode()).as("K2 X equips").isEqualTo(200);
 
-        assertOkBody(get(y.token()), wardrobe(items(item("capOrange", "hat", T2)), equipped()), "K2 first Y GET");
+        assertOkBody(get(y.token()), wardrobe(y, items(item("capOrange", "hat", T2)), equipped("face", "goggles")), "K2 first Y GET");
 
         assertThat(put(y.token(), "{\"hat\": \"capOrange\"}").statusCode()).as("K2 Y equips").isEqualTo(200);
         assertThat(put(x.token(), "{}").statusCode()).as("K2 X unequips").isEqualTo(200);
 
-        assertOkBody(get(x.token()), wardrobe(items(item("capOrange", "hat", T1)), equipped()), "K2 last X GET");
-        assertOkBody(get(y.token()), wardrobe(items(item("capOrange", "hat", T2)), equipped("hat", "capOrange")), "K2 last Y GET");
+        assertOkBody(get(x.token()), wardrobe(x, items(item("capOrange", "hat", T1)), equipped()), "K2 last X GET");
+        assertOkBody(get(y.token()), wardrobe(y, items(item("capOrange", "hat", T2)), equipped("hat", "capOrange")), "K2 last Y GET");
     }
 
     // =====================================================================
@@ -474,7 +476,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
                 .as("D1 second capOrange row")
                 .isInstanceOf(DataIntegrityViolationException.class);
 
-        assertOkBody(get(u.token()), wardrobe(items(item("capOrange", "hat", T1)), equipped()), "D1 GET");
+        assertOkBody(get(u.token()), wardrobe(u, items(item("capOrange", "hat", T1)), equipped("face", "goggles")), "D1 GET");
     }
 
     @Test
@@ -528,7 +530,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         assertThat(delete.statusCode()).as("W1 DELETE account, body %s", delete.body()).isEqualTo(200);
         assertThat(countItems(u.id())).as("W1 U wardrobe_items").isZero();
         assertThat(countOutfits(u.id())).as("W1 U wardrobe_outfits").isZero();
-        assertOkBody(get(v.token()), wardrobe(items(item("capOrange", "hat", T3)), equipped("hat", "capOrange")), "W1 V GET");
+        assertOkBody(get(v.token()), wardrobe(v, items(item("capOrange", "hat", T3)), equipped("hat", "capOrange")), "W1 V GET");
     }
 
     @Test
@@ -550,7 +552,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         assertThat(countOutfits(u.id())).as("W2 U wardrobe_outfits").isZero();
         assertThat(countItems(v.id())).as("W2 V wardrobe_items").isEqualTo(1);
         assertThat(countOutfits(v.id())).as("W2 V wardrobe_outfits").isEqualTo(1);
-        assertOkBody(get(v.token()), wardrobe(items(item("capOrange", "hat", T3)), equipped("hat", "capOrange")), "W2 V GET");
+        assertOkBody(get(v.token()), wardrobe(v, items(item("capOrange", "hat", T3)), equipped("hat", "capOrange")), "W2 V GET");
     }
 
     // =====================================================================
@@ -622,11 +624,24 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         assertThat(body.path("message").asText()).as("%s message, body %s", label, response.body()).isEqualTo("입을 수 없는 아이템이에요");
     }
 
-    private static ObjectNode wardrobe(ArrayNode items, ObjectNode equipped) {
+    /**
+     * 기대 응답. 작업 089 ⑤ 08 결정(사용자: 고글 기본에 맞게 고침)으로 가진 것 맨 앞에 그 계정의 고글
+     * (얼굴장식, 얻은 때는 계정을 만든 때)을 더한다.
+     */
+    private ObjectNode wardrobe(TestUser user, ArrayNode items, ObjectNode equipped) {
+        ArrayNode withGoggles = JSON.createArrayNode();
+        withGoggles.add(item("goggles", "face", accountCreatedAt(user)));
+        withGoggles.addAll(items);
         ObjectNode node = JSON.createObjectNode();
-        node.set("items", items);
+        node.set("items", withGoggles);
         node.set("equipped", equipped);
         return node;
+    }
+
+    /** 계정을 만든 때(users.created_at)를 ISO 순간 문자열로. */
+    private String accountCreatedAt(TestUser user) {
+        Long epochSeconds = jdbc.queryForObject("SELECT UNIX_TIMESTAMP(created_at) FROM users WHERE id = ?", Long.class, user.id());
+        return Instant.ofEpochSecond(epochSeconds).toString();
     }
 
     private static ArrayNode items(ObjectNode... items) {

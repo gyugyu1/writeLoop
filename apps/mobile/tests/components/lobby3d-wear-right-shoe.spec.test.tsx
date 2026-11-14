@@ -84,6 +84,10 @@ jest.mock("three/examples/jsm/utils/SkeletonUtils.js", () => ({
   }
 }));
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+// 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 라룹이 고글이 앱에 든 착용 모델(assets/models/wear-goggles.glb)이 되어
+// 라룹이를 그리면 그 파일도 react-three-fiber useLoader로 읽는다. 그래서 가짜 불러오기가 그 파일에 가짜 고글 모델(skin 없는 메시 wear-goggles 하나,
+// 점 136개)을 주게 했다. 단언·입력은 바꾸지 않았다(고글이 그려져 바뀐 기대값은 그 테스트에 따로 적었다).
+jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 jest.mock("@/assets/models/lobby-wearables.glb", () => "lobby-wearables.glb");
 
 // ---------- 고정 값 ----------
@@ -174,6 +178,17 @@ function makeClips(): THREE.AnimationClip[] {
       new THREE.VectorKeyframeTrack("foot_r.position", [0, 1, 2], [0, -0.3, 0.02, -0.04, -0.27, -0.08, 0, -0.25, 0.09 + 0.01 * k])
     ]);
   });
+}
+
+/** 작업 089 ⑤ 24 결정: 가짜 라룹이 고글 모델(skin 없는 메시 wear-goggles 하나, 이마 높이, 점 136개). */
+function qaFakeGoggles() {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.1, 15, 1, 1), new THREE.MeshStandardMaterial({ color: 0x3060c0 }));
+  mesh.name = "wear-goggles";
+  mesh.position.set(0, 0.9, 0.21);
+  const scene = new THREE.Group();
+  scene.add(mesh);
+  scene.updateMatrixWorld(true);
+  return { scene, scenes: [scene], animations: [], cameras: [], asset: {}, parser: {}, userData: {} };
 }
 
 function fakeCharacter() {
@@ -412,6 +427,8 @@ beforeEach(() => {
   setWearCatalog();
   mockModels.clear();
   mockModels.set(CHARACTER_FILE, { status: "loaded", value: fakeCharacter(), error: null });
+  // 작업 089 ⑤ 24 결정: 앱에 든 라룹이 고글 모델(읽음)
+  mockModels.set("wear-goggles.glb", { status: "loaded", value: qaFakeGoggles(), error: null });
   mockModels.set(WEAR_FILE, { status: "loaded", value: fakeWearablesOneShoe(), error: null });
   errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});

@@ -33,6 +33,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *   <li>로그인은 토큰 로그인(Bearer). 테스트마다 새 사용자를 만든다.</li>
  *   <li>가진 아이템은 WardrobeItemRepository로 직접 넣는다(② 명세: 테스트는 직접 넣어 본다). 얻은 때는 1분씩 늦춰 순서를 정한다.</li>
  *   <li>WNC(옷장이 바뀌지 않음): 요청 전후로 GET /api/wardrobe 본문과 wardrobe_outfits의 그 계정 줄이 같다.</li>
+ *   <li>08 결정(사용자 결정, 고글 기본)에 맞춰 기대 응답의 가진 것 맨 앞에 고글을 더하고(개수 +1),
+ *       입은 것을 저장한 적 없는 계정의 얼굴장식을 고글로 바꿨다(W1, W2, W3, W4, W5, W11, W14).</li>
  * </ul>
  */
 class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
@@ -82,8 +84,8 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(expectedItems, equipped()), "W1");
-        assertThat(JSON.readTree(response.body()).path("items").size()).as("W1 items count").isEqualTo(12);
+        assertOkBody(response, wardrobe(u, expectedItems, equipped("face", "goggles")), "W1");
+        assertThat(JSON.readTree(response.body()).path("items").size()).as("W1 items count").isEqualTo(13);
     }
 
     @Test
@@ -93,14 +95,14 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(expectedItems, equipped()), "W2");
+        assertOkBody(response, wardrobe(u, expectedItems, equipped("face", "goggles")), "W2");
         JsonNode items = JSON.readTree(response.body()).path("items");
-        assertThat(items.size()).as("W2 items count").isEqualTo(16);
+        assertThat(items.size()).as("W2 items count").isEqualTo(17);
         List<String> firstFour = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 1; i <= 4; i++) {
             firstFour.add(items.get(i).path("type").asText() + "/" + items.get(i).path("slot").asText());
         }
-        assertThat(firstFour).as("W2 first four").containsExactly("capOrange/hat", "tshirtOrange/top", "shortsNavy/bottom", "shoesBrown/shoes");
+        assertThat(firstFour).as("W2 first four after goggles").containsExactly("capOrange/hat", "tshirtOrange/top", "shortsNavy/bottom", "shoesBrown/shoes");
     }
 
     // =====================================================================
@@ -119,7 +121,7 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
         ObjectNode expectedEquipped = equipped(
                 "hat", "capBlue", "top", "tshirtYellow", "bottom", "shortsRed", "shoes", "shoesWhite",
                 "face", "sunglassesBlack", "back", "backpackRed", "accessory", "mufflerRed");
-        assertOkBody(response, wardrobe(expectedItems, expectedEquipped), "W3 PUT");
+        assertOkBody(response, wardrobe(u, expectedItems, expectedEquipped), "W3 PUT");
         assertThat(JSON.readTree(get(u.token()).body())).as("W3 GET equals the PUT response").isEqualTo(JSON.readTree(response.body()));
         Map<String, String> row = new LinkedHashMap<>();
         row.put("hat", "capBlue");
@@ -140,7 +142,7 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = put(u.token(),
                 "{\"hat\": \"capGreen\", \"top\": \"tshirtWhite\", \"bottom\": \"shortsBrown\", \"shoes\": \"shoesRed\", \"accessory\": \"necklaceGold\"}");
 
-        assertOkBody(response, wardrobe(expectedItems, equipped(
+        assertOkBody(response, wardrobe(u, expectedItems, equipped(
                 "hat", "capGreen", "top", "tshirtWhite", "bottom", "shortsBrown", "shoes", "shoesRed", "accessory", "necklaceGold")), "W4");
     }
 
@@ -152,9 +154,9 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
         own(back, "backpackRed", minute(0));
 
         assertOkBody(put(face.token(), "{\"face\": \"sunglassesBlack\"}"),
-                wardrobe(items(item("sunglassesBlack", "face", minute(0))), equipped("face", "sunglassesBlack")), "W5 face");
+                wardrobe(face, items(item("sunglassesBlack", "face", minute(0))), equipped("face", "sunglassesBlack")), "W5 face");
         assertOkBody(put(back.token(), "{\"back\": \"backpackRed\"}"),
-                wardrobe(items(item("backpackRed", "back", minute(0))), equipped("back", "backpackRed")), "W5 back");
+                wardrobe(back, items(item("backpackRed", "back", minute(0))), equipped("back", "backpackRed")), "W5 back");
     }
 
     @Test
@@ -251,8 +253,8 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = put(y.token(), "{\"face\": \"sunglassesBlack\"}");
 
         assertInvalid(response, "W11 Y");
-        assertOkBody(get(y.token()), wardrobe(items(), equipped()), "W11 Y GET");
-        assertOkBody(get(x.token()), wardrobe(items(item("sunglassesBlack", "face", minute(0))), equipped("face", "sunglassesBlack")), "W11 X GET");
+        assertOkBody(get(y.token()), wardrobe(y, items(), equipped("face", "goggles")), "W11 Y GET");
+        assertOkBody(get(x.token()), wardrobe(x, items(item("sunglassesBlack", "face", minute(0))), equipped("face", "sunglassesBlack")), "W11 X GET");
     }
 
     @Test
@@ -300,7 +302,7 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
                 .as("W14 second necklaceGold row")
                 .isInstanceOf(DataIntegrityViolationException.class);
 
-        assertOkBody(get(u.token()), wardrobe(items(item("necklaceGold", "accessory", minute(0))), equipped()), "W14 GET");
+        assertOkBody(get(u.token()), wardrobe(u, items(item("necklaceGold", "accessory", minute(0))), equipped("face", "goggles")), "W14 GET");
     }
 
     @Test
@@ -417,11 +419,21 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
         assertThat(outfitRow(user.id())).as("%s outfit row unchanged", label).isEqualTo(rowBefore);
     }
 
-    private static ObjectNode wardrobe(ArrayNode items, ObjectNode equipped) {
+    /** 기대 응답. 08 결정(사용자: 고글 기본에 맞게 고침)으로 가진 것 맨 앞에 그 계정의 고글(얻은 때는 계정을 만든 때)을 더한다. */
+    private ObjectNode wardrobe(TestUser user, ArrayNode items, ObjectNode equipped) {
+        ArrayNode withGoggles = JSON.createArrayNode();
+        withGoggles.add(item("goggles", "face", accountCreatedAt(user)));
+        withGoggles.addAll(items);
         ObjectNode node = JSON.createObjectNode();
-        node.set("items", items);
+        node.set("items", withGoggles);
         node.set("equipped", equipped);
         return node;
+    }
+
+    /** 계정을 만든 때(users.created_at)를 ISO 순간 문자열로. */
+    private String accountCreatedAt(TestUser user) {
+        Long epochSeconds = jdbc.queryForObject("SELECT UNIX_TIMESTAMP(created_at) FROM users WHERE id = ?", Long.class, user.id());
+        return Instant.ofEpochSecond(epochSeconds).toString();
     }
 
     private static ArrayNode items(ObjectNode... items) {

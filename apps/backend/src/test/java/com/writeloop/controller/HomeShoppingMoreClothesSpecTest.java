@@ -43,6 +43,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *   <li>잔액은 GET /api/loop-points로 잔액 행을 만든 뒤 jdbc로 바꾼다. 가진 옷은 WardrobeItemRepository로 직접 넣는다.</li>
  *   <li>NC(아무것도 바뀌지 않음): 잔액 행, 장부 음수 줄, 주문 기록, 가진 옷, GET /api/wardrobe 본문,
  *       GET /api/lobby-layout(상태와 본문)이 요청 전후로 같다.</li>
+ *   <li>08 결정(사용자 결정, 고글 기본)에 맞춰 주문 결과 옷장의 가진 것 맨 앞에 고글을 더하고,
+ *       입은 것을 저장한 적 없는 계정의 얼굴장식을 고글로 바꿨다(O1, O3, O4, O5, O7, O11).</li>
  * </ul>
  */
 class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
@@ -313,8 +315,8 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
         assertThat(body.has("itemId") && body.get("itemId").isNull()).as("O1 itemId is null: %s", body).isTrue();
         assertThat(body.has("layout") && body.get("layout").isNull()).as("O1 layout is null: %s", body).isTrue();
         JsonNode wardrobe = body.path("wardrobe");
-        assertThat(typesAndSlots(wardrobe)).as("O1 wardrobe items").containsExactly("sunglassesBlack/face");
-        assertThat(wardrobe.path("equipped")).as("O1 equipped").isEqualTo(equipped(Map.of()));
+        assertThat(typesAndSlots(wardrobe)).as("O1 wardrobe items").containsExactly("goggles/face", "sunglassesBlack/face");
+        assertThat(wardrobe.path("equipped")).as("O1 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
 
         // O2
         assertThat(balanceRow(user.id())).as("O2 balance row").isEqualTo(200);
@@ -342,7 +344,7 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
             assertThat(body.path("price").asInt()).as("O3 %s price", type).isEqualTo(price);
             assertThat(body.path("balance").asInt()).as("O3 %s balance", type).isEqualTo(1000 - price);
             assertThat(body.path("owned").asInt()).as("O3 %s owned", type).isEqualTo(1);
-            assertThat(typesAndSlots(body.path("wardrobe"))).as("O3 %s wardrobe items", type).containsExactly(type + "/" + slot);
+            assertThat(typesAndSlots(body.path("wardrobe"))).as("O3 %s wardrobe items", type).containsExactly("goggles/face", type + "/" + slot);
         }
     }
 
@@ -351,7 +353,7 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
         TestUser user = newUser("o4");
         setBalance(user, 2000);
         JsonNode last = null;
-        List<String> expected = new ArrayList<>();
+        List<String> expected = new ArrayList<>(List.of("goggles/face"));
         for (Object[] row : NEW_TWELVE) {
             last = JSON.readTree(assertOk(order(user.token(), (String) row[0], (Integer) row[2]), "O4 " + row[0]).body());
             expected.add(row[0] + "/" + row[1]);
@@ -359,7 +361,7 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
 
         assertThat(last.path("balance").asInt()).as("O4 balance").isEqualTo(980);
         assertThat(typesAndSlots(last.path("wardrobe"))).as("O4 wardrobe items").containsExactlyElementsOf(expected);
-        assertThat(last.path("wardrobe").path("equipped")).as("O4 equipped").isEqualTo(equipped(Map.of()));
+        assertThat(last.path("wardrobe").path("equipped")).as("O4 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
         Map<String, Integer> owned = ownedMap(JSON.readTree(shop(user.token()).body()));
         for (Object[] row : NEW_TWELVE) {
             assertThat(owned.get((String) row[0])).as("O4 %s owned", row[0]).isEqualTo(1);
@@ -385,7 +387,7 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
         JsonNode last = JSON.readTree(assertOk(order(user.token(), "capGreen", 60), "O5 capGreen").body());
 
         assertThat(typesAndSlots(last.path("wardrobe"))).as("O5 wardrobe items")
-                .containsExactly("capOrange/hat", "capBlue/hat", "capGreen/hat");
+                .containsExactly("goggles/face", "capOrange/hat", "capBlue/hat", "capGreen/hat");
     }
 
     @Test
@@ -409,7 +411,7 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
 
         JsonNode body = JSON.readTree(assertOk(order(user.token(), "backpackRed", 120), "O7").body());
 
-        assertThat(body.path("wardrobe").path("equipped")).as("O7 equipped").isEqualTo(equipped(Map.of()));
+        assertThat(body.path("wardrobe").path("equipped")).as("O7 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
     }
 
     @Test
@@ -461,7 +463,7 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
 
         assertThat(last.path("balance").asInt()).as("O11 balance").isEqualTo(700);
         assertThat(typesAndSlots(last.path("wardrobe"))).as("O11 wardrobe items")
-                .containsExactly("capOrange/hat", "tshirtOrange/top", "shortsNavy/bottom", "shoesBrown/shoes");
+                .containsExactly("goggles/face", "capOrange/hat", "tshirtOrange/top", "shortsNavy/bottom", "shoesBrown/shoes");
     }
 
     // =====================================================================

@@ -50,8 +50,9 @@ const WX_EQUIPPED = { hat: "capBlue", top: null, bottom: null, shoes: null, face
 // ---------- C. 앱의 아이템 목록 ----------
 
 describe("[spec] 089-⑤ C1~C3: 앱의 착용 아이템 목록", () => {
-  it("C1 종류가 정확히 열여섯이고 glassesRound(둥근 안경)는 없다", () => {
-    expect(Object.keys(WEARABLE_ITEMS).sort()).toEqual(ITEMS.map(([type]) => type).sort());
+  // 작업 089 ⑤ 08-main-decision.md "기존 테스트"(사용자 결정)·12-B: 라룹이 고글(goggles)이 앱 아이템이 되어 열일곱으로 고쳤다.
+  it("C1 종류가 정확히 열일곱(열여섯 + 라룹이 고글)이고 glassesRound(둥근 안경)는 없다", () => {
+    expect(Object.keys(WEARABLE_ITEMS).sort()).toEqual([...ITEMS.map(([type]) => type), "goggles"].sort());
     expect(WEARABLE_ITEMS.glassesRound).toBeUndefined();
   });
 

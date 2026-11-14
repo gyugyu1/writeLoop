@@ -48,6 +48,7 @@ type MockBone = THREE.Bone;
 
 const mockFrames = new Set<FramePart>();
 const mockCharacter: { value: unknown } = { value: null };
+const mockGoggles: { value: unknown } = { value: null };
 /** 기기 주소 → 그 파일의 가짜 모델(CAT-W 모델 이름)과 읽기 답. */
 const mockFiles = new Map<string, { model: CatWModel; answer: "loaded" | "failed" }>();
 /** 읽은 기기 주소(차례대로). */
@@ -75,6 +76,8 @@ jest.mock("@react-three/fiber/native", () => {
       }, []);
     },
     useLoader: (_loader: unknown, url: unknown) => {
+      // 작업 089 ⑤ 24 결정: 앱에 든 라룹이 고글 모델
+      if (String(url) === "wear-goggles.glb") return mockGoggles.value;
       if (String(url) !== "writeloop.glb") throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
       return mockCharacter.value;
     }
@@ -119,6 +122,10 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
   };
 });
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+// 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 라룹이 고글이 앱에 든 착용 모델(assets/models/wear-goggles.glb)이 되어
+// 라룹이를 그리면 그 파일도 react-three-fiber useLoader로 읽는다. 그래서 가짜 불러오기가 그 파일에 가짜 고글 모델(skin 없는 메시 wear-goggles 하나,
+// 점 136개)을 주게 했다. 단언·입력은 바꾸지 않았다(고글이 그려져 바뀐 기대값은 그 테스트에 따로 적었다).
+jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 jest.mock("@/lib/api", () => ({ ...jest.requireActual("@/lib/api"), getItemCatalog: jest.fn() }));
 jest.mock("@react-native-async-storage/async-storage", () =>
@@ -211,6 +218,17 @@ function makeClips(): THREE.AnimationClip[] {
       new THREE.VectorKeyframeTrack("foot_r.position", [0, 1, 2], [0, -0.3, 0.02, -0.04, -0.27, -0.08, 0, -0.25, 0.09 + 0.01 * k])
     ]);
   });
+}
+
+/** 작업 089 ⑤ 24 결정: 가짜 라룹이 고글 모델(skin 없는 메시 wear-goggles 하나, 이마 높이, 점 136개). */
+function qaFakeGoggles() {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.1, 15, 1, 1), new THREE.MeshStandardMaterial({ color: 0x3060c0 }));
+  mesh.name = "wear-goggles";
+  mesh.position.set(0, 0.9, 0.21);
+  const scene = new THREE.Group();
+  scene.add(mesh);
+  scene.updateMatrixWorld(true);
+  return { scene, scenes: [scene], animations: [], cameras: [], asset: {}, parser: {}, userData: {} };
 }
 
 function fakeCharacter() {
@@ -426,6 +444,7 @@ beforeEach(() => {
   mockReads.length = 0;
   mockFrames.clear();
   mockCharacter.value = fakeCharacter();
+  mockGoggles.value = qaFakeGoggles();
   errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 });
@@ -641,7 +660,9 @@ describe("[spec] 090-③ C: 받은 목록의 그리기 정보로 라룹이에 �
     expect(isAncestor(bone(group, "head"), glasses[0])).toBe(true);
   });
 
-  it("C9 일곱 부위가 null이거나 고글만이면 착용 모델 요청·읽기가 0건이고 라룹이 메시는 몸과 외곽선 둘뿐이다", async () => {
+  // 작업 089 ⑤ 24 결정(사용자: qa가 새 동작에 맞게 고침): 22 결정으로 고글이 앱에 든 착용 모델이 되어 얼굴장식이 고글이면 고글 겉·외곽선이
+  // 그려진다. 그래서 마지막(고글만) 메시 기대값을 "몸과 외곽선 둘"에서 "몸과 외곽선 둘 + 고글 둘"로 고쳤다(받는 옷 요청·읽기 0건은 그대로).
+  it("C9 일곱 부위가 null이거나 고글만이면 착용 모델 요청·읽기가 0건이고, 고글만이면 라룹이 메시는 몸과 외곽선 둘과 고글 겉·외곽선 둘뿐이다", async () => {
     newCatW();
     const rig = makeRig();
     const { view, group } = await renderBare(rig);
@@ -650,8 +671,9 @@ describe("[spec] 090-③ C: 받은 목록의 그리기 정보로 라룹이에 �
     expect(device.downloads).toEqual([]);
     expect(mockReads).toEqual([]);
     const shown = meshesUnder(group).filter((m) => drawn(m, group));
-    expect(shown.length).toBe(2);
-    expect(shown.every((m) => m.geometry.attributes.position.count === BODY_POINTS)).toBe(true);
+    expect(shown.length).toBe(4);
+    expect(shown.filter((m) => m.geometry.attributes.position.count === BODY_POINTS).length).toBe(2);
+    expect(shown.filter((m) => m.geometry.attributes.position.count === 136).length).toBe(2);
   });
 
   it("C10 받은 파일이 깨진 모델이면 오류가 밖으로 나오지 않고 라룹이가 그대로 보인다", async () => {

@@ -29,6 +29,12 @@
 // 작업 085 03 결정 1(사용자 2026-11-12, private 작업 폴더 085-2026-11-12-로비-꾸미기-완료-빠르게): '완료'로 나오면 로딩 표시("방을 정리하고 있어요")가
 // 떠 있는 동안 이름표를 숨기므로, X3·X11은 '완료' 직후 표시가 보이고 이름표가 숨는지 본 뒤 1.5초가 지나 표시가 내려가면 이름표가 보이는지 보게 고쳤다.
 // 저장 한 번·새 배치·막힌 칸·메뉴·탭 확인은 그대로다.
+// 093(창문 붙박이) 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 12-qa-tests.md):
+// 창문이 늘 뒷벽 4.8이라 창문을 왼벽 8.5에 둔 배치 LW가 생기지 않는다. 13-main-decision.md(사용자 "창문 대신 다른 벽 가구로", 보고 14-qa-tests.md)대로
+// LW를 게시판을 왼벽 8.5에 둔 배치 LB(창문 뒷벽 4.8)로 바꿨다. 게시판도 왼벽 7.6~9.4를 차지하고 아래 끝(1.05)이 옷장 윗면(2.38)보다 낮아,
+// 옷장을 놓을 수 없는 칸(0,7·0,8·0,9)과 놓을 수 있는 칸(0,6·0,10)이 LW의 창문(7.35~9.65)과 같다(M14·U7·U8·U9·U10, 기대 결과 그대로).
+// R10은 LW를 쓴 이유(뒷벽 오른쪽을 비워 책상을 K-right에 놓음)를 LB로 살린다: 게시판이 왼벽으로 가 뒷벽 왼쪽이 비므로, 책상을 K-left (1.5, 0.5)
+// (칸 0~2,0, 창문 아래 칸 3~5와 겹치지 않음)로 옮겨 한 번 돌리면 방 밖으로 나가 빨간 가구가 된다(기대 결과 그대로).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -228,7 +234,8 @@ const W_CENTER = withFloor(P0, "wardrobe", 4.5, 6.5, 3);
 const W_FAR = withFloor(P0, "wardrobe", 7.5, 0.5, 3);
 const W_ON_RUG = withFloor(P0, "wardrobe", 4.5, 7.5, 3);
 const K_FAR = withFloor(P0, "desk", 5.5, 8.5, 0);
-const LW: LobbyLayout = v2(P0_FLOOR, { board: P0_WALL.board, window: { wall: "left", along: 8.5 } });
+/** 093 13 결정: 게시판을 왼벽 8.5에 건 배치(창문은 뒷벽 4.8). 옛 LW(창문 왼벽 8.5) 대신. */
+const LB: LobbyLayout = v2(P0_FLOOR, { board: { wall: "left", along: 8.5 }, window: P0_WALL.window });
 /** 04: 불러온 배치 자체가 놓을 수 없는 배치(옷장이 책상과 칸 1,5에서 겹침). */
 const XB = withFloor(P0, "wardrobe", 1.5, 5.5, 3);
 
@@ -956,15 +963,15 @@ describe("끌기", () => {
     await finishExpectSaved(expected);
   });
 
-  test("[spec] M14·U-LW 불러온 배치 LW에서 옷장을 왼쪽 벽 창문 아래 칸 0,8로 끌면 돌아간다", async () => {
-    jest.mocked(getLobbyLayout).mockResolvedValue(LW);
+  test("[spec] M14·U-LW [093 게시판으로] 불러온 배치 LB에서 옷장을 왼쪽 벽 게시판 아래 칸 0,8로 끌면 돌아간다", async () => {
+    jest.mocked(getLobbyLayout).mockResolvedValue(LB);
     await renderHome();
-    expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(LW));
+    expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(LB));
     await enterEdit();
 
     await drag("wardrobe", AT.wardrobe, { x: 0.5, z: 8.5 });
 
-    expect(sortedItems(editLayout())).toEqual(sortedItems(LW));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(LB));
     await finishExpectNoSave();
   });
 });
@@ -1121,15 +1128,15 @@ describe("돌리기와 빨간 가구", () => {
     expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(P0));
   });
 
-  test("[spec] R10 (배치 LW에서) 책상을 K-right로 옮겨 한 번 돌리면(방 밖으로 나감) 돌고 빨간 가구라 '완료'가 막힌다", async () => {
-    jest.mocked(getLobbyLayout).mockResolvedValue(LW);
+  test("[spec] R10 [093 게시판으로] (배치 LB에서) 책상을 K-left로 옮겨 한 번 돌리면(방 밖으로 나감) 돌고 빨간 가구라 '완료'가 막힌다", async () => {
+    jest.mocked(getLobbyLayout).mockResolvedValue(LB);
     await renderHome();
     await enterEdit();
-    await drag("desk", AT.desk, { x: 6.5, z: 0.5 });
-    expect(sortedItems(editLayout())).toEqual(sortedItems(withFloor(LW, "desk", 6.5, 0.5, 0)));
+    await drag("desk", AT.desk, { x: 1.5, z: 0.5 });
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withFloor(LB, "desk", 1.5, 0.5, 0)));
     await rotate();
 
-    expect(sortedItems(editLayout())).toEqual(sortedItems(withFloor(LW, "desk", 6.5, 0.5, 1)));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(withFloor(LB, "desk", 1.5, 0.5, 1)));
     await finishExpectRedBlocked();
   });
 });
@@ -1529,29 +1536,29 @@ describe("벽 가구 바로 아래 칸의 경계", () => {
   });
 
   test.each([
-    ["U7 LW 칸 0,7", { x: 0.5, z: 7.5 }],
-    ["U8 LW 칸 0,9", { x: 0.5, z: 9.5 }]
-  ])("[spec] %s(왼쪽 벽 창문 아래)로 옷장을 끌면 돌아가고 저장하지 않는다", async (_label, to) => {
-    jest.mocked(getLobbyLayout).mockResolvedValue(LW);
+    ["U7 [093 게시판으로] LB 칸 0,7", { x: 0.5, z: 7.5 }],
+    ["U8 [093 게시판으로] LB 칸 0,9", { x: 0.5, z: 9.5 }]
+  ])("[spec] %s(왼쪽 벽 게시판 아래)로 옷장을 끌면 돌아가고 저장하지 않는다", async (_label, to) => {
+    jest.mocked(getLobbyLayout).mockResolvedValue(LB);
     await renderHome();
     await enterEdit();
 
     await drag("wardrobe", AT.wardrobe, to);
 
-    expect(sortedItems(editLayout())).toEqual(sortedItems(LW));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(LB));
     await finishExpectNoSave();
   });
 
   test.each([
-    ["U9 LW 칸 0,6", 0.5, 6.5],
-    ["U10 LW 칸 0,10", 0.5, 10.5]
-  ])("[spec] %s(창문 폭 밖)으로 옷장을 끌면 놓이고 저장된다", async (_label, x, z) => {
-    jest.mocked(getLobbyLayout).mockResolvedValue(LW);
+    ["U9 [093 게시판으로] LB 칸 0,6", 0.5, 6.5],
+    ["U10 [093 게시판으로] LB 칸 0,10", 0.5, 10.5]
+  ])("[spec] %s(게시판 폭 밖)으로 옷장을 끌면 놓이고 저장된다", async (_label, x, z) => {
+    jest.mocked(getLobbyLayout).mockResolvedValue(LB);
     await renderHome();
     await enterEdit();
 
     await drag("wardrobe", AT.wardrobe, { x, z });
 
-    await finishExpectSaved(withFloor(LW, "wardrobe", x, z, 3));
+    await finishExpectSaved(withFloor(LB, "wardrobe", x, z, 3));
   });
 });

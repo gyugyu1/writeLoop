@@ -10,6 +10,8 @@
 // 처음 배치 장소 값(P0_PLACES)의 책상 바라볼 지점만 고쳤다.
 // 작업 079 03 결정(사용자 2026-11-11 "가짜 그림판이 신호를 보내게"): 방이 처음 보이기 전에는 이름표·장소 안내·말풍선을 숨기므로,
 // 가짜 3D 그림판이 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 준비만 바꿨다. 단언·기대값·입력은 그대로다.
+// 093(창문 붙박이) 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 12-qa-tests.md):
+// 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이라, L1을 받은 뒤의 기대값만 창문을 뒷벽 4.8로 바꿨다(L1_SEEN·L1_PLACES_SEEN). 받는 배치와 다른 확인은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -188,6 +190,10 @@ const L1_PLACES: PlaceValues = {
   desk: P0_PLACES.desk,
   bookcase: { approach: [{ x: 1.4, z: 4.5 }], faceTo: { x: 0, z: 4.5 } }
 };
+
+/** 093 07 결정: 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이다. 창문이 다른 자리인 입력의 기대값에만 쓴다. */
+const L1_SEEN: LobbyLayout = { ...L1, items: L1.items.map((item) => (item.type === "window" ? { id: item.id, type: item.type, wall: { wall: "back" as const, along: 4.8 } } : item)) };
+const L1_PLACES_SEEN: PlaceValues = { ...L1_PLACES, window: P0_PLACES.window };
 
 // ---------- 고정 데이터 ----------
 
@@ -426,7 +432,7 @@ describe("결정 14. 저장한 배치를 받은 계정이 홈에 다시 들어�
     const again = deferred<LobbyLayout | null>();
     jest.mocked(getLobbyLayout).mockResolvedValueOnce(sameValueCopy(L1)).mockReturnValueOnce(again.promise);
     await renderHome();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
     const keyAfterFirst = canvasLayoutKey();
 
     await leaveAndReturnHome();
@@ -444,7 +450,7 @@ describe("결정 14. 저장한 배치를 받은 계정이 홈에 다시 들어�
     expect(snapshot().moving).toBe(true);
     await walkUntilArrived("board");
     expect(canvasLayoutKey()).toBe(keyAfterFirst);
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
   });
 
   test("[spec] 14-2 책장에서 '들어가기' → 기록 화면 → 돌아와 책을 다시 꽂는 동작 중에 같은 배치를 받아도 동작이 끊기지 않고 끝까지 이어지며, 방을 다시 그리지 않는다", async () => {
@@ -452,7 +458,7 @@ describe("결정 14. 저장한 배치를 받은 계정이 홈에 다시 들어�
     const again = deferred<LobbyLayout | null>();
     jest.mocked(getLobbyLayout).mockResolvedValueOnce(sameValueCopy(L1)).mockReturnValueOnce(again.promise);
     await renderHome();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
     const keyAfterFirst = canvasLayoutKey();
 
     await tap({ point: null, mark: "bookcase" });
@@ -496,7 +502,7 @@ describe("결정 14. 저장한 배치를 받은 계정이 홈에 다시 들어�
       .mockResolvedValueOnce(sameValueCopy(L1))
       .mockResolvedValueOnce(sameValueCopy(L1));
     await renderHome();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
     const keyAfterFirst = canvasLayoutKey();
     const before = position();
 
@@ -506,6 +512,6 @@ describe("결정 14. 저장한 배치를 받은 계정이 홈에 다시 들어�
     expect(getLobbyLayout).toHaveBeenCalledTimes(3);
     expect(canvasLayoutKey()).toBe(keyAfterFirst);
     expect(position()).toEqual(before);
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
   });
 });

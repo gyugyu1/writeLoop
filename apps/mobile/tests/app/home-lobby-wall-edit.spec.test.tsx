@@ -27,6 +27,10 @@
 // - 게시판으로: S8·D4·D6·D7·D10·D11·결정2-나·E2·E3·W9·B3·B5·B6·B8·B11. B3·B6은 창문을 왼벽에 둔 배치 LW 대신 게시판을 왼벽 8.5에 둔 LB에서 시작한다.
 // - B7(모서리에서 두 띠가 겹칠 때)은 창문이 뒷벽에 붙박이라 이 화면 테스트로 만들 수 없어 편집기 단위(tests/lib/lobby3d-window-fixed.spec.test.ts K6)로 옮겼다.
 // - 창문을 고르지 않는 B4·B9(LW·L3 배치에서 시작)는 고치지 않았다.
+// 093 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", 보고 12-qa-tests.md): 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이라,
+// startEditingFrom과 B9의 "배치 그대로" 기대값만 windowFixed()로 창문을 뒷벽 4.8로 바꿨다(B4·B9). 입력(L3·LW)과 누르는 자리는 그대로다.
+// 093 13-main-decision.md(사용자 "창문 대신 다른 벽 가구로", 보고 14-qa-tests.md): 창문이 왼벽에 있을 수 없어 뜻이 없어진 B9의 LW 두 줄을
+// 게시판을 왼벽 8.5에 둔 LB(게시판 띠 x < 1, z 7.6~9.4)로 바꿨다. 누르는 자리 (1.2, 8.5)·(0.5, 7.0)은 그대로 띠 밖이다. 쓰지 않게 된 LW는 지웠다.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
@@ -734,8 +738,6 @@ describe("[spec] 064-④ W9: 벽 가구를 끄는 동안과 놓은 뒤 3D 그리
 // 띠: 그 벽에서 1칸 안(뒷벽 z < 1, 왼벽 x < 1, 오른벽 x > 7)이고 벽을 따라 그 벽 가구 폭 안(along ± 폭/2)인 바닥.
 // 바닥 가구를 맞혔으면 바닥 가구가 먼저, 벽 가구를 직접 맞혔으면 그 벽 가구, 두 벽 띠에 모두 들면 가장 가까운 벽의 가구.
 
-/** 창문을 왼벽 8.5에 건 배치(③의 LW와 같다). 창문 띠: x < 1, z 7.35~9.65. */
-const LW: LobbyLayout = withWall(P0, "window", left(8.5));
 /** 게시판 오른벽 6.0, 창문 왼벽 8.0. 게시판 띠: x > 7, z 5.1~6.9. */
 const L3: LobbyLayout = withWall(withWall(P0, "board", right(6.0)), "window", left(8.0));
 /** 093: 게시판을 왼벽 8.5에 건 배치(창문은 뒷벽 4.8 그대로). 게시판 띠: x < 1, z 7.6~9.4. */
@@ -743,12 +745,17 @@ const LB: LobbyLayout = withWall(P0, "board", left(8.5));
 /** 깔개를 창문 아래(4.5, 1.5, 칸 3~6·0~3)에 둔 배치(깔개는 벽 가구 아래도 된다). */
 const RUG_UNDER: LobbyLayout = v2({ ...P0_FLOOR, rug: { x: 4.5, z: 1.5, facing: 0 } }, P0_WALL);
 
+/** 093 07 결정: 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이다. 창문이 다른 자리인 입력의 기대값에만 쓴다. */
+function windowFixed(layout: LobbyLayout): LobbyLayout {
+  return { ...layout, items: layout.items.map((item) => (item.type === "window" ? { id: item.id, type: item.type, wall: back(4.8) } : item)) };
+}
+
 async function startEditingFrom(layout: LobbyLayout) {
   jest.mocked(getLobbyLayout).mockResolvedValue(layout);
   await renderHome();
-  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(layout));
+  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(windowFixed(layout)));
   await enterEdit();
-  expect(sortedItems(editLayout())).toEqual(sortedItems(layout));
+  expect(sortedItems(editLayout())).toEqual(sortedItems(windowFixed(layout)));
 }
 
 /** 바닥만 누른 것(3D 그리기가 바닥 가구도 벽 가구도 맞히지 못함). */
@@ -836,8 +843,8 @@ describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
     ["뒷벽에서 1칸 넘음 (4.8, 1.2)", P0, { x: 4.8, z: 1.2 }],
     ["창문 폭 밖 (6.2, 0.5)", P0, { x: 6.2, z: 0.5 }],
     ["게시판과 창문 사이 (3.2, 0.5)", P0, { x: 3.2, z: 0.5 }],
-    ["왼벽에서 1칸 넘음 (1.2, 8.5)", LW, { x: 1.2, z: 8.5 }],
-    ["왼벽 창문 폭 밖 (0.5, 7.0)", LW, { x: 0.5, z: 7.0 }]
+    ["[093 게시판으로] 왼벽에서 1칸 넘음 (1.2, 8.5)", LB, { x: 1.2, z: 8.5 }],
+    ["[093 게시판으로] 왼벽 게시판 폭 밖 (0.5, 7.0)", LB, { x: 0.5, z: 7.0 }]
   ])("B9 띠 밖 %s 를 톡하거나 끌어도 아무것도 골라지지 않고 배치가 그대로다", async (_label, layout, point) => {
     await startEditingFrom(layout);
 
@@ -849,7 +856,7 @@ describe("[spec] 064-④ 결정 11 B: 벽 가구 앞 바닥 띠", () => {
     await pointer("down", hitAt({ floor: point }), 200, 300);
     await moveTo(back(6.4));
     await release();
-    expect(sortedItems(editLayout())).toEqual(sortedItems(layout));
+    expect(sortedItems(editLayout())).toEqual(sortedItems(windowFixed(layout)));
     expect(wallMarks()).toEqual([]);
   });
 

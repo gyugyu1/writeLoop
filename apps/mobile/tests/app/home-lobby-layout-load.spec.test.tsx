@@ -13,6 +13,9 @@
 // 책장·옷장 그림 자리의 기대값만 새 자리(뒤로 0.06 → 칸 뒤 끝에서 0.876/2 앞, 벽 가까이 0.44 → 0.438, 7.56 → 7.562)로 고쳤다.
 // 067(private 작업 폴더 067/01-main-spec.md)에서 책상 장소의 바라볼 지점이 (1.25, 5.5) → (1.5, 5.5)로 옮겨져, 명세의 "고칠 기존 테스트"대로
 // 처음 배치 장소 값(P0_PLACES)의 책상 바라볼 지점만 고쳤다.
+// 093(창문 붙박이) 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 12-qa-tests.md):
+// 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이라, L1(창문 뒷벽 5.6)·L3(창문 왼벽 8.0)을 받은 뒤의 기대값만 창문을 뒷벽 4.8로 바꿨다
+// (L1_SEEN·L3_SEEN·L1_PLACES_SEEN·L3_PLACES_SEEN, S2·S3의 창문 3D 자리, S15의 창문 이름표). 받는 배치(입력)와 다른 가구의 기대값은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, render, screen } from "@testing-library/react-native";
 import HomeScreen from "@/app/index";
@@ -208,6 +211,16 @@ const L4_PLACES: PlaceValues = {
   ...P0_PLACES,
   board: { approach: [{ x: 1.3, z: 10.2 }, { x: 1.3, z: 9.6 }], faceTo: { x: 0, z: 10 } }
 };
+
+/** 093 07 결정: 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이다. 창문이 다른 자리인 입력의 기대값에만 쓴다. */
+function windowFixed(layout: LobbyLayout): LobbyLayout {
+  return { ...layout, items: layout.items.map((item) => (item.type === "window" ? { id: item.id, type: item.type, wall: P0_WALL.window } : item)) };
+}
+/** 093: L1·L3을 받은 뒤 보이는 배치와 장소(창문만 뒷벽 4.8, 창가 장소는 처음 배치와 같다). */
+const L1_SEEN = windowFixed(L1);
+const L3_SEEN = windowFixed(L3);
+const L1_PLACES_SEEN: PlaceValues = { ...L1_PLACES, window: P0_PLACES.window };
+const L3_PLACES_SEEN: PlaceValues = { ...L3_PLACES, window: P0_PLACES.window };
 
 const ALL_MARKS: MarkId[] = ["board", "window", "desk", "bookcase", "door"];
 
@@ -480,14 +493,14 @@ describe("A. 홈을 열 때 불러와 적용", () => {
 
     await renderHome();
 
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
     expect(markZoneAt(1.4, 4.5)).toBe("bookcase");
     expect(markZoneAt(1.4, 2.5)).toBeNull();
     expectPiece("bookcase", { x: 0.438, y: 0, z: 4.5, rotY: Math.PI / 2 });
     expectPiece("wardrobe", { x: 7.562, y: 0, z: 6.5, rotY: -Math.PI / 2 });
     expectPiece("rug", { x: 3.0, y: 0.004, z: 8.0, rotY: Math.PI / 2 });
     expectPiece("board", { x: 2.0, y: 1.75, z: 0.06, rotY: 0 });
-    expectPiece("window", { x: 5.6, y: 2.05, z: 0.17, rotY: 0 });
+    expectPiece("window", { x: 4.8, y: 2.05, z: 0.17, rotY: 0 });
   });
 
   test("[spec] S3 옆벽 배치 L3을 받으면 방에 적용된다(게시판 오른벽, 창문 왼벽)", async () => {
@@ -495,9 +508,9 @@ describe("A. 홈을 열 때 불러와 적용", () => {
 
     await renderHome();
 
-    expectApplied(L3, P0_SOLID, L3_PLACES);
+    expectApplied(L3_SEEN, P0_SOLID, L3_PLACES_SEEN);
     expectPiece("board", { x: 7.94, y: 1.75, z: 6.0, rotY: -Math.PI / 2 });
-    expectPiece("window", { x: 0.17, y: 2.05, z: 8.0, rotY: Math.PI / 2 });
+    expectPiece("window", { x: 4.8, y: 2.05, z: 0.17, rotY: 0 });
   });
 
   test("[spec] S4 저장한 배치가 없으면(서버 404) 처음 배치로 보인다", async () => {
@@ -572,7 +585,7 @@ describe("A. 홈을 열 때 불러와 적용", () => {
     await leaveAndReturnHome();
 
     expect(getLobbyLayout).toHaveBeenCalledTimes(2);
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
   });
 
   test("[spec] S7 다시 들어왔는데 또 실패하면 처음 배치로 보인다(불러오기는 모두 2번)", async () => {
@@ -685,11 +698,11 @@ describe("B. 모르는 모양 버전, 맞지 않는 모양", () => {
   test("[spec] S2·S3 짝: 서버 본문(지금 버전)으로 받은 L1·L3도 같은 검사를 지나 적용된다", async () => {
     serverRespondsWith(async () => respond(200, payload(L1)));
     await renderHome();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
 
     serverRespondsWith(async () => respond(200, payload(L3)));
     await leaveAndReturnHome();
-    expectApplied(L3, P0_SOLID, L3_PLACES);
+    expectApplied(L3_SEEN, P0_SOLID, L3_PLACES_SEEN);
   });
 });
 
@@ -707,7 +720,7 @@ describe("C. 계정이 바뀔 때", () => {
   test("[spec] S9 A의 L1이 적용된 뒤 B로 바꾸고 B가 '없음'이면 처음 배치로 보인다", async () => {
     jest.mocked(getLobbyLayout).mockResolvedValueOnce(L1).mockResolvedValue(null);
     const view = await renderHome();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
 
     await switchUserTo(userB, view);
 
@@ -719,7 +732,7 @@ describe("C. 계정이 바뀔 때", () => {
   test("[spec] S10 A의 L1이 적용된 뒤 B로 바꾸고 B의 불러오기가 실패하면 처음 배치로 보인다", async () => {
     jest.mocked(getLobbyLayout).mockResolvedValueOnce(L1).mockRejectedValue(new Error("가구 배치를 불러오지 못했어요."));
     const view = await renderHome();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
 
     await switchUserTo(userB, view);
 
@@ -792,11 +805,11 @@ describe("E. 3D 다시 그리기", () => {
 
     await renderHome();
 
-    expect(currentFurnitureLayout()).toEqual(furniturePlacements(L1));
+    expect(currentFurnitureLayout()).toEqual(furniturePlacements(L1_SEEN));
     const labels = layoutGeometry(activeLobbyLayout(), 8).places;
     expect(labels.bookcase.label).toEqual({ x: 0.9, y: 2.3, z: 4.5 });
     expect(labels.board.label).toEqual({ x: 2.0, y: 2.75, z: 0.3 });
-    expect(labels.window.label).toEqual({ x: 5.6, y: 3.05, z: 0.3 });
+    expect(labels.window.label).toEqual({ x: 4.8, y: 3.05, z: 0.3 });
   });
 });
 

@@ -8,6 +8,9 @@
 // 처음 배치 장소 값(P0_PLACES)의 책상 바라볼 지점만 고쳤다.
 // 작업 079 03 결정(사용자 2026-11-11 "가짜 그림판이 신호를 보내게"): 방이 처음 보이기 전에는 이름표·장소 안내·말풍선을 숨기므로,
 // 가짜 3D 그림판이 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 준비만 바꿨다. 단언·기대값·입력은 그대로다.
+// 093(창문 붙박이) 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 12-qa-tests.md):
+// 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이라, L1·L3을 받은 뒤의 기대값만 창문을 뒷벽 4.8로 바꿨다(L1_SEEN·L3_SEEN·L1_PLACES_SEEN·L3_PLACES_SEEN).
+// 받는 배치(입력)와 다른 가구·걷기·동작의 기대값은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { AppState } from "react-native";
@@ -200,6 +203,16 @@ const L3_PLACES: PlaceValues = {
   desk: P0_PLACES.desk,
   bookcase: P0_PLACES.bookcase
 };
+
+/** 093 07 결정: 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이다. 창문이 다른 자리인 입력의 기대값에만 쓴다. */
+function windowFixed(layout: LobbyLayout): LobbyLayout {
+  return { ...layout, items: layout.items.map((item) => (item.type === "window" ? { id: item.id, type: item.type, wall: P0_WALL.window } : item)) };
+}
+/** 093: L1·L3을 받은 뒤 보이는 배치와 장소(창문만 뒷벽 4.8, 창가 장소는 처음 배치와 같다). */
+const L1_SEEN = windowFixed(L1);
+const L3_SEEN = windowFixed(L3);
+const L1_PLACES_SEEN: PlaceValues = { ...L1_PLACES, window: P0_PLACES.window };
+const L3_PLACES_SEEN: PlaceValues = { ...L3_PLACES, window: P0_PLACES.window };
 
 // ---------- 고정 데이터 ----------
 
@@ -496,14 +509,14 @@ describe("결정 08 1-1. 이 계정의 배치를 이미 받았으면 다음 불�
   test("[spec] 1-1 (a) L1을 받은 뒤 다시 들어왔을 때 500이면 L1이 그대로다", async () => {
     jest.mocked(getLobbyLayout).mockResolvedValueOnce(L1);
     await renderHome();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
 
     serverRespondsWith(async () => respond(500, { message: "오류" }));
     await leaveAndReturnHome();
 
     expect(getLobbyLayout).toHaveBeenCalledTimes(2);
     await expectLastLoad("failed");
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
   });
 
   test("[spec] 1-1 (b) L1을 받은 뒤 다시 들어왔을 때 네트워크가 실패하면 L1이 그대로다", async () => {
@@ -519,7 +532,7 @@ describe("결정 08 1-1. 이 계정의 배치를 이미 받았으면 다음 불�
 
     expect(getLobbyLayout).toHaveBeenCalledTimes(2);
     await expectLastLoad("failed");
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
   });
 
   test("[spec] 1-1 (c) L1을 받은 뒤 다시 들어왔을 때 시간 초과면 L1이 그대로다(결정 08의 2: 시간 초과도 실패)", async () => {
@@ -534,7 +547,7 @@ describe("결정 08 1-1. 이 계정의 배치를 이미 받았으면 다음 불�
 
     expect(getLobbyLayout).toHaveBeenCalledTimes(2);
     await expectLastLoad("failed");
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
   });
 });
 
@@ -544,7 +557,7 @@ describe("결정 08 2. 로그인이 만료돼 불러오기가 401이면 받은 �
   test("[spec] 2 L1을 받은 뒤 다시 들어왔을 때 401이면 처음 배치로 보인다", async () => {
     jest.mocked(getLobbyLayout).mockResolvedValueOnce(L1);
     await renderHome();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
 
     serverRespondsWith(async () => respond(401, { message: "로그인이 필요해요." }));
     await leaveAndReturnHome();
@@ -569,7 +582,7 @@ describe("결정 08 1-2. 배경에 두었던 앱으로 돌아오는 것으로는
     await sendAppState(listeners, "active");
 
     expect(getLobbyLayout).toHaveBeenCalledTimes(1);
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
   });
 });
 
@@ -586,15 +599,15 @@ describe("결정 08 1-3. 성공한 뒤에도 홈에 들어올 때마다 다시 �
 
     await renderHome();
     expect(getLobbyLayout).toHaveBeenCalledTimes(1);
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
 
     await leaveAndReturnHome();
     expect(getLobbyLayout).toHaveBeenCalledTimes(2);
-    expectApplied(L3, P0_SOLID, L3_PLACES);
+    expectApplied(L3_SEEN, P0_SOLID, L3_PLACES_SEEN);
 
     await leaveAndReturnHome();
     expect(getLobbyLayout).toHaveBeenCalledTimes(3);
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
 
     await leaveAndReturnHome();
     expect(getLobbyLayout).toHaveBeenCalledTimes(4);
@@ -620,7 +633,7 @@ describe("결정 08 1-4. 배치를 적용할 때 걷기·들어가기 동작을 
       pending.resolve(L1);
     });
     await flushAsync();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
 
     await frames(40);
     expect(position()).toEqual(before);
@@ -643,7 +656,7 @@ describe("결정 08 1-4. 배치를 적용할 때 걷기·들어가기 동작을 
       pending.resolve(L1);
     });
     await flushAsync();
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
     expect(snapshot().scene).toBeNull();
 
     for (let index = 0; index < 60; index += 1) {
@@ -670,7 +683,7 @@ describe("결정 08 1-4. 배치를 적용할 때 걷기·들어가기 동작을 
 
     await renderHome();
 
-    expectApplied(L1, L1_SOLID, L1_PLACES);
+    expectApplied(L1_SEEN, L1_SOLID, L1_PLACES_SEEN);
     expect(position()).toEqual({ x: 4.2, z: 6.2 });
   });
 });

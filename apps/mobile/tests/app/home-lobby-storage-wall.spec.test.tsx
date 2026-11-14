@@ -11,6 +11,11 @@
 // 01-main-spec.md, 보고 02-qa-tests.md): 줄은 꾸미기에 들어가면 늘 보이고 아래 '보관함' 버튼이 없어져, openStorage는 누르지 않고
 // 줄 머리가 보이는지만 보며, 개수는 줄 머리의 "보관함 N"(개발 빌드는 '보관함 N' 탭 글)에서 읽는다.
 // 가정(071): 줄 머리 글은 버튼이 아니고, 개발 빌드의 탭 역할은 070처럼 tab이다.
+// 093(창문 붙박이) 13-main-decision.md(사용자 "창문 대신 다른 벽 가구로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 14-qa-tests.md):
+// 창문이 늘 뒷벽 4.8(3.65~5.95)이라 창문을 옮겨 뒷벽의 빈자리를 만들거나 채우던 W1·W2·W3·W_TIE를, 창문은 뒷벽 4.8에 두고 게시판·포스터를 옮겨
+// 같은 상황이 되게 다시 짰다(W1B·W2B·W3B·W_TIE_B. S15·S16·S17·결정(같은 거리)). 확인하는 규칙(뒷벽·왼벽·오른벽 차례로 벽 가운데에서 가까운
+// 반 칸 자리, 같은 거리면 벽을 따라간 값이 작은 쪽)은 그대로이고, 꺼낸 자리 기대값은 새 배치에서 같은 규칙으로 다시 셈했다.
+// R11은 13 결정의 대상이 아니라 옛 W1 그대로다(포스터를 치우는 것만 본다).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -177,15 +182,23 @@ function defWith(replace: LayoutItem[] = [], add: LayoutItem[] = []): LayoutItem
 
 /** W1: DEF에서 창문을 (right, 7)로 옮김. */
 const W1_ITEMS = defWith([wall("window", "window", "right", 7)]);
-/** W2: DEF에서 게시판 (back, 1.1), 창문 (back, 3.35)로 옮기고 포스터 셋을 뒷벽 5·6·7에 더함. */
-const W2_ITEMS = defWith(
-  [wall("board", "board", "back", 1.1), wall("window", "window", "back", 3.35)],
-  [wall("poster1", "poster", "back", 5), wall("poster2", "poster", "back", 6), wall("poster3", "poster", "back", 7)]
-);
-/** W3: W2 + 포스터 lp1~lp10을 왼벽 0.7, 1.7, …, 9.7에 더함. */
-const W3_ITEMS = [...W2_ITEMS, ...Array.from({ length: 10 }, (_, i) => wall(`lp${i + 1}`, "poster", "left", Math.round((0.7 + i) * 10) / 10))];
-/** 결정(같은 거리)용: 게시판 (back, 1.1), 창문 (right, 7), 포스터 p0 (back, 4). 뒷벽 3.0과 5.0이 벽 가운데(4)에서 같은 거리 1로 둘 다 비어 있다. */
-const W_TIE_ITEMS = defWith([wall("board", "board", "back", 1.1), wall("window", "window", "right", 7)], [wall("p0", "poster", "back", 4)]);
+/**
+ * 093 W1B(옛 W1 대신): DEF에서 게시판을 (left, 7.5)로 옮김. 뒷벽에는 창문(3.65~5.95)만 남아, 벽 가운데(4)에서 가까운 반 칸 자리 중
+ * 4.0·3.5·4.5·5.0은 창문과 겹치고 3.0(2.5~3.5)이 첫 빈자리다.
+ */
+const W1B_ITEMS = defWith([wall("board", "board", "left", 7.5)]);
+/**
+ * 093 W2B(옛 W2 대신): DEF에서 게시판을 (back, 1.1)(0.2~2.0)로 옮기고 포스터 둘을 뒷벽 2.5(2.0~3.0)·6.5(6.0~7.0)에 더함.
+ * 창문(3.65~5.95)과 함께 뒷벽에 폭 1이 들어갈 반 칸 자리가 없다(남는 틈 3.0~3.65, 7.0~7.8은 1보다 좁다).
+ */
+const W2B_ITEMS = defWith([wall("board", "board", "back", 1.1)], [wall("poster1", "poster", "back", 2.5), wall("poster2", "poster", "back", 6.5)]);
+/** 093 W3B(옛 W3 대신): W2B + 포스터 lp1~lp10을 왼벽 0.7, 1.7, …, 9.7에 더함(옛 W3과 같은 왼벽). */
+const W3B_ITEMS = [...W2B_ITEMS, ...Array.from({ length: 10 }, (_, i) => wall(`lp${i + 1}`, "poster", "left", Math.round((0.7 + i) * 10) / 10))];
+/**
+ * 093 결정(같은 거리)용 W_TIE_B(옛 W_TIE 대신): DEF에서 게시판을 (left, 7.5)로 옮기고 포스터 p0을 뒷벽 2.6(2.1~3.1)에 더함.
+ * 벽 가운데(4)에서 거리 2 이하의 반 칸 자리(2.0~6.0)는 p0이나 창문과 겹치고, 거리 2.5의 1.5(1.0~2.0)와 6.5(6.0~7.0)가 둘 다 비어 있다.
+ */
+const W_TIE_B_ITEMS = defWith([wall("board", "board", "left", 7.5)], [wall("p0", "poster", "back", 2.6)]);
 
 // ---------- 고정 데이터 ----------
 
@@ -470,22 +483,22 @@ describe("[spec] 066-③ 명세 2: 치울 수 있는 벽 가구", () => {
 // ---------- 3. 꺼내 놓기: 벽 가구 ----------
 
 describe("[spec] 066-③ 명세 3: 벽 가구는 뒷벽·왼벽·오른벽 차례로 벽 가운데에서 가까운 자리", () => {
-  test("S15 W1 + 보관함 poster1: 꺼내면 poster1이 (back, 4)", async () => {
-    expectPlaceable(W1_ITEMS);
-    await renderHome(layout(W1_ITEMS, [{ id: "poster1", type: "poster" }]));
+  test("S15 [093 게시판으로] W1B + 보관함 poster1: 꺼내면 poster1이 (back, 3)", async () => {
+    expectPlaceable(W1B_ITEMS);
+    await renderHome(layout(W1B_ITEMS, [{ id: "poster1", type: "poster" }]));
     await enterEdit();
     await openStorage();
 
     await takeOut(POSTER_NAME);
 
-    expect(itemIn(editLayout(), "poster1")).toEqual({ id: "poster1", type: "poster", wall: { wall: "back", along: 4 } });
+    expect(itemIn(editLayout(), "poster1")).toEqual({ id: "poster1", type: "poster", wall: { wall: "back", along: 3 } });
     expect(storedOf(editLayout())).toEqual([]);
     expect(lifted()).toBe("poster1");
   });
 
-  test("S16 W2 + 보관함 poster4: 뒷벽에 틈이 없어 poster4가 (left, 5.5)", async () => {
-    expectPlaceable(W2_ITEMS);
-    await renderHome(layout(W2_ITEMS, [{ id: "poster4", type: "poster" }]));
+  test("S16 [093 게시판으로] W2B + 보관함 poster4: 뒷벽에 틈이 없어 poster4가 (left, 5.5)", async () => {
+    expectPlaceable(W2B_ITEMS);
+    await renderHome(layout(W2B_ITEMS, [{ id: "poster4", type: "poster" }]));
     await enterEdit();
     await openStorage();
 
@@ -494,9 +507,9 @@ describe("[spec] 066-③ 명세 3: 벽 가구는 뒷벽·왼벽·오른벽 차�
     expect(itemIn(editLayout(), "poster4")?.wall).toEqual({ wall: "left", along: 5.5 });
   });
 
-  test("S17 W3 + 보관함 poster4: 뒷벽·왼벽 모두 틈이 없어 poster4가 (right, 5.5)", async () => {
-    expectPlaceable(W3_ITEMS);
-    await renderHome(layout(W3_ITEMS, [{ id: "poster4", type: "poster" }]));
+  test("S17 [093 게시판으로] W3B + 보관함 poster4: 뒷벽·왼벽 모두 틈이 없어 poster4가 (right, 5.5)", async () => {
+    expectPlaceable(W3B_ITEMS);
+    await renderHome(layout(W3B_ITEMS, [{ id: "poster4", type: "poster" }]));
     await enterEdit();
     await openStorage();
 
@@ -517,14 +530,14 @@ describe("[spec] 066-③ 명세 3: 벽 가구는 뒷벽·왼벽·오른벽 차�
     expect(itemIn(editLayout(), "poster1")?.wall).toEqual({ wall: "back", along: 6.5 });
   });
 
-  test("결정(같은 거리) 뒷벽 3.0과 5.0이 벽 가운데에서 같은 거리면 벽을 따라간 값이 작은 쪽 (back, 3.0)에 건다", async () => {
-    expectPlaceable(W_TIE_ITEMS);
-    await renderHome(layout(W_TIE_ITEMS, [{ id: "poster1", type: "poster" }]));
+  test("결정(같은 거리) [093 게시판으로] 뒷벽 1.5와 6.5가 벽 가운데에서 같은 거리면 벽을 따라간 값이 작은 쪽 (back, 1.5)에 건다", async () => {
+    expectPlaceable(W_TIE_B_ITEMS);
+    await renderHome(layout(W_TIE_B_ITEMS, [{ id: "poster1", type: "poster" }]));
     await enterEdit();
     await openStorage();
 
     await takeOut(POSTER_NAME);
 
-    expect(itemIn(editLayout(), "poster1")?.wall).toEqual({ wall: "back", along: 3 });
+    expect(itemIn(editLayout(), "poster1")?.wall).toEqual({ wall: "back", along: 1.5 });
   });
 });

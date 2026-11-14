@@ -8,6 +8,9 @@
 // 명세의 "고칠 기존 테스트"대로 확인하는 뜻은 그대로 두고 배치 모양만 v2로 고쳤다. "모르는 버전"은 2 대신 3, 문자열 버전은 "2"로,
 // "바닥 묶음에 든 벽 가구"는 벽 부착형(board)에 floor 자리를 준 것으로, "바닥 묶음이 null"은 items가 null인 것으로 옮겼다(066-① 명세 4).
 // 네트워크는 전역 fetch 가짜다. 실제 서버에 닿지 않는다.
+// 093(창문 붙박이) 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 12-qa-tests.md):
+// 앱이 받은 배치의 창문은 늘 뒷벽 4.8이라, D20·D21의 돌려받은 배치 기대값만 windowFixed()로 창문을 뒷벽 4.8로 바꿨다.
+// 입력(창문 경계 자리)과 그 밖의 값(게시판·바닥 가구 경계)은 그대로다. 창문 경계 자리는 거절되지 않는 것(null이 아님)까지만 본다.
 import * as SecureStore from "expo-secure-store";
 import { getLobbyLayout } from "@/lib/api";
 import type { LobbyLayout } from "@/lib/lobby3d/lobby-layout";
@@ -46,6 +49,11 @@ const P0_FLOOR: Record<string, FloorSpot> = {
   rug: { x: 4.6, z: 7.2, facing: 0 }
 };
 const P0: LobbyLayout = v2(P0_FLOOR, { board: { wall: "back", along: 1.8 }, window: { wall: "back", along: 4.8 } });
+
+/** 093 07 결정: 앱이 받은 배치의 창문은 늘 뒷벽 4.8이다. 창문이 다른 자리인 입력의 기대값에만 쓴다. */
+function windowFixed(layout: LobbyLayout): LobbyLayout {
+  return { ...layout, items: layout.items.map((item) => (item.type === "window" ? { id: item.id, type: item.type, wall: { wall: "back", along: 4.8 } } : item)) };
+}
 
 type Body = { version?: unknown; items: Record<string, unknown>[]; [key: string]: unknown };
 
@@ -185,7 +193,7 @@ describe("경계값은 방 안(결정 04의 1)", () => {
     );
     fetchMock.mockResolvedValue(respond(200, payload(layout)));
 
-    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(layout));
+    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(windowFixed(layout)));
   });
 
   test("[spec] D21 옆벽 along 0·11(왼벽·오른벽)을 받아 값을 그대로 돌려준다", async () => {
@@ -193,9 +201,9 @@ describe("경계값은 방 안(결정 04의 1)", () => {
     const second: LobbyLayout = v2(P0_FLOOR, { board: { wall: "right", along: 0 }, window: { wall: "left", along: 11 } });
 
     fetchMock.mockResolvedValue(respond(200, payload(first)));
-    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(first));
+    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(windowFixed(first)));
 
     fetchMock.mockResolvedValue(respond(200, payload(second)));
-    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(second));
+    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(windowFixed(second)));
   });
 });

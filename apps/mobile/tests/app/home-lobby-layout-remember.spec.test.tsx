@@ -17,6 +17,9 @@
 // 로그인 상태 가짜는 진짜 로그인 상태가 하듯 기기 저장소의 주인(storage-owner)도 그 계정으로 맞춘다.
 // 구현 코드는 부르는 방법(홈 화면, 엔진의 배치, 불러오기·저장 함수 이름)을 알려고만 읽었다.
 // 작업 090-① 명세의 "고칠 기존 테스트"대로 R12의 "모르는 가구 종류가 든 배치"를 빼고 새 동작의 R12-090으로 바꿨다(나머지 R12 경우는 그대로).
+// 093(창문 붙박이) 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 12-qa-tests.md):
+// 앱이 받거나 기억해 둔 배치로 지을 때 창문은 늘 뒷벽 4.8이라, 짓기 확인(expectBuiltWith 등)의 기대값만 windowFixed()로 창문을 뒷벽 4.8로 바꿨다.
+// 서버가 보내는 배치·기억해 둔 배치(입력)와 기기 저장소 확인, 다른 가구의 기대값은 그대로다.
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import HomeScreen from "@/app/index";
 import type { Lobby3dCanvasProps } from "@/components/lobby3d/lobby3d-canvas";
@@ -365,10 +368,16 @@ async function receiveFromServerThenClose(user: AuthUser, layout: LobbyLayout | 
 }
 
 /** 3D 그리기가 그려져 있고, 엔진의 배치와 3D 가구 자리가 그 배치다. */
+/** 093 07 결정: 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이다. 창문이 다른 자리인 입력의 기대값에만 쓴다. */
+function windowFixed(layout: LobbyLayout): LobbyLayout {
+  return { ...layout, items: layout.items.map((item) => (item.type === "window" ? { id: item.id, type: item.type, wall: { wall: "back" as const, along: 4.8 } } : item)) };
+}
+
+/** 093: 짓는 배치는 창문만 뒷벽 4.8로 본다(기대값만 바꿈. 넘기는 배치는 받은/기억한 그대로). */
 function expectBuiltWith(layout: LobbyLayout) {
   expect(mockCanvas.props).not.toBeNull();
-  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(layout));
-  expect(currentFurnitureLayout()).toEqual(furniturePlacements(layout));
+  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(windowFixed(layout)));
+  expect(currentFurnitureLayout()).toEqual(furniturePlacements(windowFixed(layout)));
 }
 
 /** 지금 3D 그리기가 받은 layoutKey와 엔진의 배치 객체(이 둘이 바뀌면 진짜 3D 그리기는 다시 짓는다). */
@@ -813,7 +822,7 @@ describe("기억해 둔 배치를 쓰지 못할 때(명세 '처음 짓기'의 �
     jest.mocked(getLobbyLayout).mockReset().mockReturnValue(server.promise);
     await renderHome();
     expect(mockCanvas.props).not.toBeNull();
-    expect(currentFurnitureLayout()).toEqual(furniturePlacements({ items: L1.items.filter((item) => item.id !== "wardrobe") }));
+    expect(currentFurnitureLayout()).toEqual(furniturePlacements(windowFixed({ items: L1.items.filter((item) => item.id !== "wardrobe") })));
     expect(screen.getByRole("button", { name: "질문에 답하기" })).toBeTruthy();
 
     await act(async () => {

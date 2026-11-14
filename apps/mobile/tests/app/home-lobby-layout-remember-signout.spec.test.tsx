@@ -7,6 +7,9 @@
 // 앱을 껐다 켜는 것과 "3D 방을 짓는다"를 보는 방법, 기기 저장소 메모리 가짜는 home-lobby-layout-remember.spec.test.tsx와 같다.
 // "기억해 둔 값이 기기 저장소에 있다/없다"는 기기 저장소(AsyncStorage, expo-secure-store)의 JSON 값 안에 그 배치의 가구 목록이 있는지로 본다.
 // 구현 코드는 부르는 방법(홈·내정보 화면, 로그인 상태, 엔진의 배치, API 함수 이름)을 알려고만 읽었다.
+// 093(창문 붙박이) 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 12-qa-tests.md):
+// 앱이 받거나 기억해 둔 배치로 지을 때 창문은 늘 뒷벽 4.8이라, 짓기 확인(expectBuiltWith 등)의 기대값만 windowFixed()로 창문을 뒷벽 4.8로 바꿨다.
+// 서버가 보내는 배치·기억해 둔 배치(입력)와 기기 저장소 확인, 다른 가구의 기대값은 그대로다.
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import HomeScreen from "@/app/index";
 import MeScreen from "@/app/me";
@@ -310,10 +313,16 @@ async function closeApp() {
   sessionProbe.session = null;
 }
 
+/** 093 07 결정: 앱이 불러온 배치의 창문은 늘 뒷벽 4.8이다. 창문이 다른 자리인 입력의 기대값에만 쓴다. */
+function windowFixed(layout: LobbyLayout): LobbyLayout {
+  return { ...layout, items: layout.items.map((item) => (item.type === "window" ? { id: item.id, type: item.type, wall: { wall: "back" as const, along: 4.8 } } : item)) };
+}
+
+/** 093: 짓는 배치는 창문만 뒷벽 4.8로 본다(기대값만 바꿈. 넘기는 배치는 받은/기억한 그대로). */
 function expectBuiltWith(layout: LobbyLayout) {
   expect(mockCanvas.props).not.toBeNull();
-  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(layout));
-  expect(currentFurnitureLayout()).toEqual(furniturePlacements(layout));
+  expect(sortedItems(activeLobbyLayout())).toEqual(sortedItems(windowFixed(layout)));
+  expect(currentFurnitureLayout()).toEqual(furniturePlacements(windowFixed(layout)));
 }
 
 /** 기기 저장소(두 곳)의 JSON 값 가운데 그 배치의 가구 목록이 든 값의 수. */

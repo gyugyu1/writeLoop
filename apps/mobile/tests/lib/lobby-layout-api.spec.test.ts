@@ -7,6 +7,8 @@
 // S8-1의 "V+1"은 3이 되고, S8-4는 v2에서 꼭 있어야 하는 가구가 장소 가구뿐이라(066-① 명세 4) 빠뜨리는 가구를 옷장에서 책장으로 바꿨다.
 // 구현 코드(apps/mobile/src/lib/api.ts)는 함수 이름과 인자를 알려고만 읽었다.
 // 네트워크는 전역 fetch를 가짜로 바꿔 실제 서버에 닿지 않는다. 로그인 토큰은 기기 저장소(expo-secure-store) 가짜가 돌려준다.
+// 093(창문 붙박이) 07-main-decision.md(사용자 "qa가 창문 기대값만 4.8로", private 작업 폴더 093-2026-11-14-창문-붙박이, 보고 12-qa-tests.md):
+// 앱이 받은 배치의 창문은 늘 뒷벽 4.8이라, 창문이 다른 자리인 L1·L3을 받은 결과의 기대값만 windowFixed()로 창문을 뒷벽 4.8로 바꿨다(S17·S2·S3). 입력과 다른 확인은 그대로다.
 import * as SecureStore from "expo-secure-store";
 import { getLobbyLayout, saveLobbyLayout } from "@/lib/api";
 import type { LobbyLayout } from "@/lib/lobby3d/lobby-layout";
@@ -73,6 +75,11 @@ const P0: LobbyLayout = v2(P0_FLOOR, P0_WALL);
 const L3: LobbyLayout = v2(P0_FLOOR, { board: { wall: "right", along: 6.0 }, window: { wall: "left", along: 8.0 } });
 // S8-15(P0에서 게시판을 왼벽 along 10으로: 뒷벽이면 밖, 옆벽이면 안)
 const L4: LobbyLayout = v2(P0_FLOOR, { board: { wall: "left", along: 10 }, window: P0_WALL.window });
+
+/** 093 07 결정: 앱이 받은 배치의 창문은 늘 뒷벽 4.8이다(04 결정 3). 창문이 다른 자리인 입력의 기대값에만 쓴다. */
+function windowFixed(layout: LobbyLayout): LobbyLayout {
+  return { ...layout, items: layout.items.map((item) => (item.type === "window" ? { id: item.id, type: item.type, wall: { wall: "back", along: 4.8 } } : item)) };
+}
 
 /** 지금 버전(066-① 명세 2: version 2)을 붙인 본문. JSON으로 한 번 오가 깊은 복사가 된다. */
 function payload(layout: LobbyLayout): Record<string, unknown> {
@@ -148,7 +155,8 @@ describe("저장 함수", () => {
       { id: "wardrobe", type: "wardrobe", floor: { x: 7.5, z: 6.5, facing: 3 } },
       { id: "window", type: "window", wall: { wall: "back", along: 5.6 } }
     ]);
-    expect(sortedItems(saved)).toEqual(sortedItems(L1));
+    // 093: 돌려받은 배치는 앱이 읽은 것이라 창문이 뒷벽 4.8이다(보낸 본문은 위처럼 그대로)
+    expect(sortedItems(saved)).toEqual(sortedItems(windowFixed(L1)));
   });
 
   test("[spec] S17 소수 자리(4.6, 7.2, 1.8, 4.8)를 반올림하지 않고 보낸다(P0)", async () => {
@@ -189,7 +197,7 @@ describe("불러오기 함수", () => {
 
     const loaded = await getLobbyLayout();
 
-    expect(sortedItems(loaded)).toEqual(sortedItems(L1));
+    expect(sortedItems(loaded)).toEqual(sortedItems(windowFixed(L1)));
     expect(Object.keys(loaded ?? {})).toEqual(["items"]);
     const [url, init] = fetchMock.mock.calls[0];
     expect(new URL(url).pathname).toBe("/api/lobby-layout");
@@ -200,7 +208,7 @@ describe("불러오기 함수", () => {
   test("[spec] S3 바탕: 옆벽 배치 L3을 받으면 L3을 돌려준다", async () => {
     fetchMock.mockResolvedValue(respond(200, payload(L3)));
 
-    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(L3));
+    expect(sortedItems(await getLobbyLayout())).toEqual(sortedItems(windowFixed(L3)));
   });
 
   test("[spec] S8-15 바탕: 옆벽 along 10(뒷벽이면 밖, 옆벽이면 안)은 받아들인다", async () => {

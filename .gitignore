@@ -42,3 +42,7 @@ tmp_*
 
 # 디자인 검토 도구가 남기는 메모(로컬 전용)
 apps/mobile/.impeccable/
+
+# 파이썬 바이트코드(스크립트를 돌리면 생긴다)
+__pycache__/
+*.pyc

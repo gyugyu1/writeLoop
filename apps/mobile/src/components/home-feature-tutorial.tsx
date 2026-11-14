@@ -39,28 +39,11 @@ const CARD_SIDE_MARGIN = 16;
 const CALLOUT_ARROW_SPACE = 38;
 const ESTIMATED_CARD_HEIGHT = 230;
 
+// 홈(라룹이의 방) 첫 안내: 방의 세 장소를 차례로 짚는다. 짚는 대상은 각 장소의 이름표다(use-lobby-tutorial).
 const HOME_TUTORIAL_STEPS: HomeTutorialStep[] = [
-  {
-    eyebrow: "1/4 지금 영어로",
-    title: "떠오른 생각을 바로 영어로 바꿔 봐요",
-    body:
-      "지금 떠오르는 생각을 짧은 영어 문장으로 표현하는 연습을 해봐요. 알림을 설정하면 원하는 시간에 연습을 잊지 않고 이어갈 수 있어요."
-  },
-  {
-    eyebrow: "2/4 질문 답변",
-    title: "질문을 따라 문장을 완성해요",
-    body: "질문과 힌트를 따라 쓰고, AI 피드백으로 문장을 다듬어 보세요."
-  },
-  {
-    eyebrow: "3/4 난이도별 질문",
-    title: "내 수준에 맞게 골라요",
-    body: "입문부터 도전까지, 원하는 난이도의 질문을 선택해 연습할 수 있어요."
-  },
-  {
-    eyebrow: "4/4 영어일기",
-    title: "하루를 영어로 기록해요",
-    body: "하루 이야기를 자유롭게 쓰고, 흐름과 표현에 대한 피드백을 받아 보세요."
-  }
+  { eyebrow: "1/3 오늘의 질문", title: "여기서 오늘의 질문에 답해요", body: "" },
+  { eyebrow: "2/3 일기 책상", title: "영어일기는 이 책상에서 써요", body: "" },
+  { eyebrow: "3/3 생각 창가", title: "생각나는 대로 짧게 남길 땐 창가로 와요", body: "" }
 ];
 
 export const HOME_TUTORIAL_STEP_COUNT = HOME_TUTORIAL_STEPS.length;
@@ -281,7 +264,7 @@ export default function HomeFeatureTutorial({
             </View>
 
             <Text style={styles.title}>{step.title}</Text>
-            <Text style={styles.body}>{step.body}</Text>
+            {step.body ? <Text style={styles.body}>{step.body}</Text> : null}
 
             <View style={styles.footer}>
               <View

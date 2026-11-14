@@ -10,7 +10,12 @@ export const styles = StyleSheet.create({
   screen: {
     flex: 1
   },
-  homeScrollViewport: {
+  // 홈(로비): 위는 3D 방, 아래는 내비게이션 바
+  lobbyScreen: {
+    flex: 1,
+    backgroundColor: "#E8C79A"
+  },
+  lobbyArea: {
     flex: 1
   },
   homeLoadingState: {

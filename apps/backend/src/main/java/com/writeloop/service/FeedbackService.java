@@ -11,6 +11,7 @@ import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackRevealLaterDto;
 import com.writeloop.dto.FeedbackSessionStatusDto;
+import com.writeloop.dto.LoopPointsRewardDto;
 import com.writeloop.dto.PreviousMissionResultDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
@@ -71,6 +72,9 @@ public class FeedbackService {
 
     @Autowired(required = false)
     private FeedbackTimingRecorder feedbackTimingRecorder;
+
+    @Autowired(required = false)
+    private LoopPointService loopPointService;
 
     public FeedbackService(
             PromptService promptService,
@@ -375,7 +379,7 @@ public class FeedbackService {
             session.assignToUser(currentUserId);
         }
         if (session.getStatus() == SessionStatus.COMPLETED) {
-            return new FeedbackSessionStatusDto(session.getId(), SessionStatus.COMPLETED.name());
+            return new FeedbackSessionStatusDto(session.getId(), SessionStatus.COMPLETED.name(), null);
         }
         if (session.getStatus() != SessionStatus.READY_TO_FINISH || !latestAttemptIsReady(session.getId())) {
             throw new ApiException(
@@ -393,7 +397,13 @@ public class FeedbackService {
                 session.getGuestId(),
                 session.getId()
         );
-        return new FeedbackSessionStatusDto(session.getId(), SessionStatus.COMPLETED.name());
+        // 로그인 계정의 세션이면 룹을 적립한다(세션마다 한 번, 하루 한도 안에서). 손님 세션은 적립하지 않는다
+        LoopPointsRewardDto loopPoints = loopPointService == null ? null : loopPointService.earnQuietly(
+                session.getUserId(),
+                LoopPointService.Activity.QUESTION,
+                session.getId()
+        );
+        return new FeedbackSessionStatusDto(session.getId(), SessionStatus.COMPLETED.name(), loopPoints);
     }
 
     private FeedbackResponseDto attachLoopExperience(FeedbackResponseDto feedback) {

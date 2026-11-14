@@ -837,7 +837,8 @@ export function CompleteStep({
   isLoadingPrompts,
   setStep,
   streakDays,
-  todayStatus
+  todayStatus,
+  loopNotice = null
 }: {
   celebrationCanvasRef: RefObject<HTMLCanvasElement | null>;
   completionRelatedPrompts: Prompt[];
@@ -849,6 +850,8 @@ export function CompleteStep({
   setStep: Dispatch<SetStateAction<Step>>;
   streakDays: number;
   todayStatus: TodayWritingStatus | null;
+  /** 이번 완료로 쌓인 룹 안내(완료 응답의 loopPoints로 만든 문구). 없으면 보이지 않는다. */
+  loopNotice?: string | null;
 }) {
   function renderCompleteStep() {
     const recommendedPrompts = completionRelatedPrompts.slice(0, 2);
@@ -881,6 +884,7 @@ export function CompleteStep({
           <div className={styles.completionStoryCopy}>
             <h2>{completionHeading}</h2>
             <p>{completionSubcopy}</p>
+            {loopNotice ? <p className={styles.completionLoopNotice}>{loopNotice}</p> : null}
           </div>
 
           <div className={styles.completionStreakPanel}>

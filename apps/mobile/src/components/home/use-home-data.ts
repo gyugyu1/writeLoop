@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { AppState } from "react-native";
 import {
   getDiaryCalendarSummary,
   getFeaturedDailyPrompt,
@@ -44,6 +45,8 @@ export function useHomeData({
   const [diaryCalendarError, setDiaryCalendarError] = useState("");
   const [nowInEnglishSummary, setNowInEnglishSummary] = useState<NowInEnglishSummary | null>(null);
   const [isInitialHomeLoadComplete, setIsInitialHomeLoadComplete] = useState(false);
+  // 홈 정보(오늘 작문 상태·일기 요약 등)를 다 읽을 때마다 늘어난다. 로비 인사가 다시 읽기가 끝났는지 볼 때 쓴다.
+  const [homeLoadCount, setHomeLoadCount] = useState(0);
   const featuredRecommendationRequestIdRef = useRef(0);
   const homeSnapshotRequestIdRef = useRef(0);
   const diaryCalendarLoadPromiseRef = useRef<Promise<void> | null>(null);
@@ -204,6 +207,7 @@ export function useHomeData({
           setIsFeaturedRecommendationLoading(false);
           hasCompletedInitialHomeLoadRef.current = true;
           setIsInitialHomeLoadComplete(true);
+          setHomeLoadCount((count) => count + 1);
         }
       }
     },
@@ -249,6 +253,17 @@ export function useHomeData({
   useEffect(() => {
     void loadNowInEnglishSummary();
   }, [loadNowInEnglishSummary]);
+
+  // 다른 앱에 갔다가 돌아오면(배경 → 앞) 포커스를 다시 받은 것처럼 다시 확인한다. 아래 포커스 효과들이 이 값으로 다시 돈다.
+  const [appActiveCount, setAppActiveCount] = useState(0);
+  useEffect(() => {
+    let previous = AppState.currentState;
+    const subscription = AppState.addEventListener("change", (next) => {
+      if (previous !== "active" && next === "active") setAppActiveCount((count) => count + 1);
+      previous = next;
+    });
+    return () => subscription.remove();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -315,7 +330,9 @@ export function useHomeData({
       return () => {
         cancelled = true;
       };
-    }, [currentUser])
+      // appActiveCount는 본문에서 쓰지 않지만, 앱으로 돌아올 때 이 효과를 다시 돌리려고 넣는다.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUser, appActiveCount])
   );
 
   useFocusEffect(
@@ -326,7 +343,9 @@ export function useHomeData({
 
       void loadDiaryEntries();
       void loadNowInEnglishSummary();
-    }, [loadDiaryEntries, loadNowInEnglishSummary])
+      // appActiveCount는 본문에서 쓰지 않지만, 앱으로 돌아올 때 이 효과를 다시 돌리려고 넣는다.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loadDiaryEntries, loadNowInEnglishSummary, appActiveCount])
   );
 
   const handleRefresh = useCallback(async () => {
@@ -359,12 +378,14 @@ export function useHomeData({
     featuredRecommendationItem,
     featuredRecommendationPrompt,
     handleRefresh,
+    homeLoadCount,
     incompleteLoop,
     isDiaryCalendarLoading,
     isFeaturedRecommendationLoading,
     isFeaturedRecommendationTranslationVisible,
     isInitialHomeLoadComplete,
     isRefreshing,
+    isResolvingIncompleteLoop,
     nowInEnglishSummary,
     setIsFeaturedRecommendationTranslationVisible,
     statusError,

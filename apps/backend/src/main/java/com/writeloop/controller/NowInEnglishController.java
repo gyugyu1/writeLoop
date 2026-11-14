@@ -1,5 +1,6 @@
 package com.writeloop.controller;
 
+import com.writeloop.dto.NowInEnglishEntryCreateResponseDto;
 import com.writeloop.dto.NowInEnglishEntryDto;
 import com.writeloop.dto.NowInEnglishEntryRequestDto;
 import com.writeloop.dto.NowInEnglishEntrySyncRequestDto;
@@ -46,11 +47,11 @@ public class NowInEnglishController {
 
     @PostMapping("/entries")
     @ResponseStatus(HttpStatus.CREATED)
-    public NowInEnglishEntryDto createEntry(
+    public NowInEnglishEntryCreateResponseDto createEntry(
             @RequestBody NowInEnglishEntryRequestDto request,
             HttpServletRequest httpRequest
     ) {
-        return entryService.createEntry(requireCurrentUserId(httpRequest), request);
+        return entryService.createEntryWithPoints(requireCurrentUserId(httpRequest), request);
     }
 
     @PostMapping("/entries/sync")

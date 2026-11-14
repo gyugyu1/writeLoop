@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "@/lib/session";
 import AppUpdateNotice from "@/components/app-update-notice";
+import { preloadLobbyModels } from "@/components/lobby3d/lobby3d-preload";
 import { AppOverlayStatusProvider } from "@/lib/app-overlay-status";
 import { initSentry, wrapWithSentry } from "@/lib/sentry";
 
@@ -30,6 +31,11 @@ function RootLayout() {
     void SplashScreen.hideAsync().catch(() => {
       // The native splash can already be gone during fast refresh.
     });
+  }, []);
+
+  useEffect(() => {
+    // 홈 로비의 3D 모델은 읽는 데 몇 초가 걸려, 첫 화면을 그린 뒤 바로 읽기 시작한다(로그인 화면에 있는 동안에도)
+    preloadLobbyModels();
   }, []);
 
   useEffect(() => {

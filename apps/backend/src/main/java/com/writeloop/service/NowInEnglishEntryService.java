@@ -1,11 +1,14 @@
 package com.writeloop.service;
 
+import com.writeloop.dto.LoopPointsRewardDto;
+import com.writeloop.dto.NowInEnglishEntryCreateResponseDto;
 import com.writeloop.dto.NowInEnglishEntryDto;
 import com.writeloop.dto.NowInEnglishEntryRequestDto;
 import com.writeloop.dto.NowInEnglishEntrySyncRequestDto;
 import com.writeloop.persistence.NowInEnglishEntryEntity;
 import com.writeloop.persistence.NowInEnglishEntryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,8 @@ public class NowInEnglishEntryService {
     private static final Pattern ENTRY_ID_PATTERN = Pattern.compile("[A-Za-z0-9._:-]{1,80}");
 
     private final NowInEnglishEntryRepository nowInEnglishEntryRepository;
+    @Autowired(required = false)
+    private LoopPointService loopPointService;
 
     @Transactional(readOnly = true)
     public List<NowInEnglishEntryDto> listEntries(Long userId) {
@@ -40,10 +45,25 @@ public class NowInEnglishEntryService {
 
     @Transactional
     public NowInEnglishEntryDto createEntry(Long userId, NowInEnglishEntryRequestDto request) {
+        return createEntryWithPoints(userId, request).entry();
+    }
+
+    /**
+     * 조각을 저장하고, 그 계정에 없던 조각을 새로 저장했으면 룹을 적립한다(조각마다 한 번, 하루 한도 안에서).
+     * 이미 있던 조각을 다시 저장했거나 다듬은 조각(polishedFromEntryId가 있음)이면 적립하지 않고 loopPoints가 null이다.
+     */
+    @Transactional
+    public NowInEnglishEntryCreateResponseDto createEntryWithPoints(Long userId, NowInEnglishEntryRequestDto request) {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
         }
-        return toDto(upsertEntry(userId, request));
+        String entryId = normalizeEntryId(request.id());
+        boolean isNew = nowInEnglishEntryRepository.findByUserIdAndEntryId(userId, entryId).isEmpty();
+        NowInEnglishEntryEntity saved = upsertEntry(userId, request, entryId);
+        LoopPointsRewardDto loopPoints = isNew && saved.getPolishedFromEntryId() == null && loopPointService != null
+                ? loopPointService.earnQuietly(userId, LoopPointService.Activity.NOW_IN_ENGLISH, entryId)
+                : null;
+        return new NowInEnglishEntryCreateResponseDto(toDto(saved), loopPoints);
     }
 
     @Transactional
@@ -69,7 +89,10 @@ public class NowInEnglishEntryService {
     }
 
     private NowInEnglishEntryEntity upsertEntry(Long userId, NowInEnglishEntryRequestDto request) {
-        String entryId = normalizeEntryId(request.id());
+        return upsertEntry(userId, request, normalizeEntryId(request.id()));
+    }
+
+    private NowInEnglishEntryEntity upsertEntry(Long userId, NowInEnglishEntryRequestDto request, String entryId) {
         String text = normalizeText(request.text());
         String polishedFromEntryId = normalizeOptionalEntryId(request.polishedFromEntryId());
         String polishedFromText = normalizeOptionalText(request.polishedFromText());

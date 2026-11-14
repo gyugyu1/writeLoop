@@ -3,21 +3,16 @@
 // 홈 ①의 화면 테스트(index.spec.test.tsx)가 보지 않는 것만 더 적는다.
 // - 효과 실행 순서: 처음 그릴 때와 포커스를 다시 받을 때 각 효과가 부르는 API의 순서(효과 ④ → ⑤ → ⑥ → ⑦)
 // - 효과 ①(사용자가 바뀌면 첫 불러오기 표시를 되돌림)이 효과 ⑥(포커스 때 일기 달력·지금 영어로 다시 부르기)보다 먼저 도는 것
-// - 튜토리얼 단계마다 재는 대상 구역(튜토리얼 훅이 만든 ref가 화면의 어느 구역에 붙는지)과 창 크기 전달
 // - 데이터 훅의 오늘 상태가 월 달력 훅의 기준 달로 넘어가는 것
 // 가짜로 두는 것은 index.spec.test.tsx와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내 상태, 라우터, 포커스,
-// 네이티브 모듈, 화면 위치 재기). 가짜 시계: 2026-11-12T03:00:00Z = 서울 2026-11-12(목) 12:00.
+// 네이티브 모듈, 3D 그리기, 카메라 거리 저장). 가짜 시계: 2026-11-12T03:00:00Z = 서울 2026-11-12(목) 12:00.
+// 작업 060-03(홈을 로비로)에서 고침: 학습 일지·월 달력은 로비의 질문 판(시트)을 연 뒤 보고, 옛 튜토리얼 대상 구역 테스트는
+// 지웠다(옛 튜토리얼 단계. 분류는 060-03의 02-qa-scenarios.md 표와 03-main-decision.md).
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
-import { isValidElement, type ComponentProps } from "react";
-import { ScrollView, View } from "react-native";
+import { type ComponentProps } from "react";
+import type { TestInstance } from "test-renderer";
 import HomeScreen from "@/app/index";
 import type HomeFeatureTutorial from "@/components/home-feature-tutorial";
-import {
-  DifficultySectionContent,
-  FeaturedRecommendationContent,
-  HomeDiarySectionContent,
-  NowInEnglishSectionContent
-} from "@/components/home/home-sections";
 import {
   getDiaryCalendarSummary,
   getFeaturedDailyPrompt,
@@ -88,6 +83,13 @@ jest.mock("expo-secure-store", () => ({
   deleteItemAsync: jest.fn(() => Promise.resolve())
 }));
 jest.mock("react-native-safe-area-context", () => jest.requireActual("react-native-safe-area-context/jest/mock").default);
+jest.mock("@react-native-async-storage/async-storage", () =>
+  jest.requireActual("@react-native-async-storage/async-storage/jest/async-storage-mock")
+);
+jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
+  const React = jest.requireActual<typeof import("react")>("react");
+  return { __esModule: true, default: () => React.createElement("Lobby3dCanvasMock") };
+});
 jest.mock("@/components/home-feature-tutorial", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   const actual = jest.requireActual<typeof import("@/components/home-feature-tutorial")>(
@@ -102,6 +104,7 @@ jest.mock("@/components/home-feature-tutorial", () => {
 jest.mock("@/lib/api", () => ({
   getDiaryCalendarSummary: jest.fn(),
   getFeaturedDailyPrompt: jest.fn(),
+  getLobbyLayout: jest.fn(() => Promise.resolve(null)),
   getMobileHomeSnapshot: jest.fn(),
   getMonthWritingStatus: jest.fn(),
   getTodayWritingStatus: jest.fn(),
@@ -229,35 +232,9 @@ function monthStatus(year: number, month: number, completedDates: string[]): Mon
   };
 }
 
-// 튜토리얼 위치 재기: 스크롤 뷰를 감싼 바깥 View(뷰포트)와 튜토리얼 대상 구역 4개에 서로 다른 사각형을 돌려준다.
-// 대상 구역은 그 View가 감싼 화면 조각(홈 ①의 조각 컴포넌트)으로 가린다. 그 밖의 View를 재면 크기 0을 돌려준다.
-// 테스트 창 크기는 React Native 테스트 설정의 750 x 1334다.
-// 스크롤 0, 뷰포트 y 80, 위 여백 max(18, min(64, 1334 * 0.06)) = 64 → 스크롤 y = 대상 y - 80 - 64.
-// 강조 영역 = 왼쪽 max(8, x-7), 위 max(8, y-7), 오른쪽 min(742, x+w+7), 아래 min(1326, y+h+16).
-type Rect = { x: number; y: number; width: number; height: number };
-const VIEWPORT_RECT: Rect = { x: 0, y: 80, width: 750, height: 1100 };
-const SECTION_RECTS = {
-  now: { x: 20, y: 300, width: 335, height: 180 },
-  featured: { x: 2, y: 520, width: 327, height: 240 },
-  difficulty: { x: 400, y: 640, width: 345, height: 300 },
-  diary: { x: 30, y: 900, width: 315, height: 420 }
-} satisfies Record<string, Rect>;
-// 단계별 기대값(위 식으로 계산한 값)
-const STEP_EXPECTATIONS = [
-  { scrollY: 156, spotlight: { x: 13, y: 293, width: 349, height: 203 } },
-  // 왼쪽이 화면 가장자리 여백 8에 걸린다: max(8, 2-7)=8, 오른쪽 2+327+7=336
-  { scrollY: 376, spotlight: { x: 8, y: 513, width: 328, height: 263 } },
-  // 오른쪽이 창 너비에 걸린다: min(750-8, 400+345+7=752)=742
-  { scrollY: 496, spotlight: { x: 393, y: 633, width: 349, height: 323 } },
-  // 아래가 창 높이에 걸린다: min(1334-8, 900+420+16=1336)=1326
-  { scrollY: 756, spotlight: { x: 23, y: 893, width: 329, height: 433 } }
-];
-
 // ---------- 도우미 ----------
 
 const refreshSession = jest.fn<Promise<AuthUser | null>, []>();
-const viewMeasureInWindow = (View as unknown as { prototype: { measureInWindow: jest.Mock } }).prototype.measureInWindow;
-const scrollViewScrollTo = (ScrollView as unknown as { prototype: { scrollTo: jest.Mock } }).prototype.scrollTo;
 
 function setSessionUser(currentUser: AuthUser | null, isHydrating = false) {
   jest.mocked(useSession).mockReturnValue({
@@ -300,9 +277,25 @@ async function renderScreen() {
   await flushAsync();
 }
 
+// 홈 데이터를 다 불러온 로비까지 그린다. 옮겨진 칸은 판을 열어야 보이므로, 로비가 그려졌고 스냅샷을 불렀는지로 본다.
 async function renderLoaded() {
   await renderScreen();
-  expect(screen.getByText(featuredPrompt.questionEn)).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "질문에 답하기" })).toBeOnTheScreen();
+  expect(getMobileHomeSnapshot).toHaveBeenCalled();
+}
+
+// 로비의 "질문에 답하기" 메뉴로 질문 판을 열고 그 판(아래에서 올라오는 Modal)을 돌려준다.
+async function openQuestionSheet(): Promise<TestInstance> {
+  await fireEvent.press(screen.getByRole("button", { name: "질문에 답하기" }));
+  await flushAsync();
+  const sheets = screen.root!.queryAll(
+    (instance) =>
+      instance.type === "Modal" &&
+      instance.props.animationType === "slide" &&
+      within(instance).queryAllByRole("header", { name: "질문에 답하기" }).length > 0
+  );
+  expect(sheets).toHaveLength(1);
+  return sheets[0];
 }
 
 async function setFocused(focused: boolean) {
@@ -316,34 +309,6 @@ async function setFocused(focused: boolean) {
 async function refocus() {
   await setFocused(false);
   await setFocused(true);
-}
-
-function lastTutorialProps() {
-  return mockTutorialProps.at(-1)!;
-}
-
-function installSectionMeasure() {
-  viewMeasureInWindow.mockImplementation(function (
-    this: { props: { children?: unknown } },
-    callback: (x: number, y: number, width: number, height: number) => void
-  ) {
-    const children = this.props.children;
-    let rect: Rect = { x: 0, y: 0, width: 0, height: 0 };
-    if (isValidElement(children)) {
-      if (children.type === ScrollView) {
-        rect = VIEWPORT_RECT;
-      } else if (children.type === NowInEnglishSectionContent) {
-        rect = SECTION_RECTS.now;
-      } else if (children.type === FeaturedRecommendationContent) {
-        rect = SECTION_RECTS.featured;
-      } else if (children.type === DifficultySectionContent) {
-        rect = SECTION_RECTS.difficulty;
-      } else if (children.type === HomeDiarySectionContent) {
-        rect = SECTION_RECTS.diary;
-      }
-    }
-    callback(rect.x, rect.y, rect.width, rect.height);
-  });
 }
 
 // 함수가 마지막으로 불린 순번(jest 전체에서 늘어나는 값). 서로 다른 가짜 함수의 호출 순서를 비교한다.
@@ -371,8 +336,6 @@ beforeEach(() => {
   jest.mocked(consumeHomeTutorialReplay).mockReset().mockResolvedValue(false);
   jest.mocked(hasCompletedHomeTutorial).mockReset().mockResolvedValue(true);
   jest.mocked(completeHomeTutorial).mockReset().mockResolvedValue(undefined);
-  viewMeasureInWindow.mockReset();
-  scrollViewScrollTo.mockClear();
   refreshSession.mockReset().mockResolvedValue(signedInUser);
   setSessionUser(signedInUser);
   jest.mocked(useAppOverlayStatus).mockReturnValue({ appUpdateNoticePhase: "settled", setAppUpdateNoticePhase: jest.fn() });
@@ -448,46 +411,12 @@ describe("[spec] 효과 실행 순서", () => {
     expect(consumeHomeTutorialReplay).toHaveBeenCalledTimes(2);
     expect(getMobileHomeSnapshot).toHaveBeenCalledTimes(3);
     expect(getMobileHomeSnapshot).toHaveBeenLastCalledWith("I");
-    expect(screen.getByText("작문 4일 연속")).toBeOnTheScreen();
+    expect(within(await openQuestionSheet()).getByText("작문 4일 연속")).toBeOnTheScreen();
 
     // 새 사용자의 첫 불러오기가 끝났으므로, 포커스를 다시 받으면 일기 달력·지금 영어로를 다시 부른다.
     await refocus();
     expect(getDiaryCalendarSummary).toHaveBeenCalledTimes(1);
     expect(getNowInEnglishSummary).toHaveBeenCalledTimes(2);
-  });
-});
-
-// ---------- 튜토리얼 대상 구역 ----------
-
-describe("[spec] 튜토리얼 대상 구역", () => {
-  it("[spec] 단계마다 지금 영어로 → 오늘의 추천 질문 → 난이도별 질문 → 영어일기 구역을 재어 그 위치로 스크롤하고 강조 영역을 넘긴다", async () => {
-    jest.mocked(hasCompletedHomeTutorial).mockResolvedValue(false);
-    installSectionMeasure();
-    await renderLoaded();
-
-    await advance(180);
-    expect(scrollViewScrollTo).toHaveBeenLastCalledWith({ y: STEP_EXPECTATIONS[0].scrollY, animated: false });
-    await advance(120);
-    expect(lastTutorialProps()).toMatchObject({
-      visible: true,
-      stepIndex: 0,
-      spotlight: STEP_EXPECTATIONS[0].spotlight,
-      isPositioning: false
-    });
-
-    for (let stepIndex = 1; stepIndex < 4; stepIndex += 1) {
-      await fireEvent.press(screen.getByRole("button", { name: "다음" }));
-      await flushAsync();
-      expect(scrollViewScrollTo).toHaveBeenLastCalledWith({ y: STEP_EXPECTATIONS[stepIndex].scrollY, animated: true });
-      await advance(520);
-      expect(lastTutorialProps()).toMatchObject({
-        visible: true,
-        stepIndex,
-        spotlight: STEP_EXPECTATIONS[stepIndex].spotlight,
-        isPositioning: false
-      });
-    }
-    expect(scrollViewScrollTo).toHaveBeenCalledTimes(4);
   });
 });
 
@@ -502,13 +431,14 @@ describe("[spec] 월 달력 기준 달", () => {
     jest.mocked(getMonthWritingStatus).mockResolvedValue(monthStatus(2026, 10, ["2026-10-31"]));
     await renderLoaded();
 
-    // 요일 줄(오늘 상태의 날짜가 맨 오른쪽)의 첫 칸을 누른다.
-    await fireEvent.press(screen.getAllByText("일")[0]);
+    // 질문 판의 요일 줄(오늘 상태의 날짜가 맨 오른쪽)의 첫 칸을 누른다.
+    await fireEvent.press(within(await openQuestionSheet()).getAllByText("일")[0]);
     await flushAsync();
 
     expect(getMonthWritingStatus).toHaveBeenCalledTimes(1);
     expect(getMonthWritingStatus).toHaveBeenCalledWith(2026, 10);
-    const modals = screen.root!.queryAll((instance) => instance.type === "Modal");
+    // 월 달력 모달: 질문 판(slide) 안에 있는 fade Modal
+    const modals = screen.root!.queryAll((instance) => instance.type === "Modal" && instance.props.animationType === "fade");
     expect(modals).toHaveLength(1);
     expect(within(modals[0]).getByText("2026년 10월")).toBeOnTheScreen();
     expect(within(modals[0]).getByText(">")).toBeDisabled();

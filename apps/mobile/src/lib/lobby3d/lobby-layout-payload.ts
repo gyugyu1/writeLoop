@@ -1,0 +1,174 @@
+import { currentRoom, roomWallLength } from "./room";
+import { REQUIRED_FURNITURE_TYPES, findFurnitureType, furnitureType, surfaceSlots } from "./furniture-catalog";
+import {
+  makeLayout,
+  storedItems,
+  withFixedPlacements,
+  type KeptFurniture,
+  type Facing,
+  type FloorPlacementData,
+  type FurnitureItem,
+  type LobbyLayout,
+  type StoredItem,
+  type TabletopPlacementData,
+  type WallPlacementData,
+  type WallSide
+} from "./lobby-layout";
+
+// 계정에 저장하는 가구 배치(서버 /api/lobby-layout)의 본문: 배치 데이터(가구 인스턴스 목록)에 모양 버전을 붙인 것.
+// 서버와 같은 기준으로 모양만 본다(아는 종류인지, 종류에 맞는 자리가 방 안인지, 방향·벽 값, id가 겹치지 않는지, 장소 가구가 하나씩 있는지,
+// 보관함에 치울 수 있는 종류만 있는지, 탁상형 소품이 방의 받침 가구에 있는 자리에 하나씩 올라 있는지). 보관함(stored)은 없어도 되고, 빈 보관함은 보내지 않는다.
+// 겹침·길 막힘은 보지 않는다(편집 모드가 막는다).
+// 앱이 그릴 줄 모르는 종류(서버 아이템 목록에 나중에 더해진 가구)는 배치를 버리지 않고 받은 그대로 따로 담아 두고(kept),
+// 다시 본문으로 만들 때 그대로 붙인다. 그 위에 올린 소품도 함께 담는다. 모르는 가구에도 id 규칙·겹치지 않는 id·40개 한도는 그대로 본다.
+
+/** 지금 앱이 아는 배치 모양 버전. */
+export const LOBBY_LAYOUT_VERSION = 2;
+
+/** 한 배치에 둘 수 있는 가구 수(방과 보관함을 합친 수). */
+const MAX_ITEMS = 40;
+const ID_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
+
+export type LobbyLayoutPayload = LobbyLayout & { version: number };
+
+export function toLobbyLayoutPayload(layout: LobbyLayout): LobbyLayoutPayload {
+  const kept = layout.kept;
+  const items = kept ? [...layout.items, ...(kept.items as unknown as FurnitureItem[])] : layout.items;
+  const stored = kept ? [...storedItems(layout), ...kept.stored] : storedItems(layout);
+  return stored.length > 0 ? { version: LOBBY_LAYOUT_VERSION, items, stored } : { version: LOBBY_LAYOUT_VERSION, items };
+}
+
+/** 받은 본문을 배치로 읽는다. 모르는 버전이거나 모양이 맞지 않으면 null이다. */
+export function parseLobbyLayoutPayload(value: unknown): LobbyLayout | null {
+  const withStored = typeof value === "object" && value !== null && "stored" in value;
+  if (!hasExactKeys(value, withStored ? ["version", "items", "stored"] : ["version", "items"]) || value.version !== LOBBY_LAYOUT_VERSION) return null;
+  const raw = value.items;
+  if (!Array.isArray(raw) || raw.length < 1 || raw.length > MAX_ITEMS) return null;
+  const parsedItems: FurnitureItem[] = [];
+  const unknownItems: Record<string, unknown>[] = [];
+  const ids = new Set<string>();
+  for (const entry of raw) {
+    const unknownItem = asUnknownItem(entry);
+    const item = unknownItem ? null : parseItem(entry);
+    const id = unknownItem ? (unknownItem.id as string) : item?.id;
+    if (id === undefined || ids.has(id)) return null;
+    ids.add(id);
+    if (unknownItem) unknownItems.push(unknownItem);
+    else parsedItems.push(item!);
+  }
+  const stored: StoredItem[] = [];
+  const unknownStored: StoredItem[] = [];
+  if (withStored) {
+    const rawStored = (value as Record<string, unknown>).stored;
+    if (!Array.isArray(rawStored) || raw.length + rawStored.length > MAX_ITEMS) return null;
+    for (const entry of rawStored) {
+      const item = parseStoredItem(entry);
+      if (!item || ids.has(item.id)) return null;
+      ids.add(item.id);
+      if (findFurnitureType(item.type)) stored.push(item);
+      else unknownStored.push(item);
+    }
+  }
+  // 모르는 받침 가구 위에 올린 소품은 받침 가구와 함께 받은 그대로 담아 둔다(그릴 수 없으니)
+  const unknownIds = new Set(unknownItems.map((item) => item.id as string));
+  const items: FurnitureItem[] = [];
+  for (const item of parsedItems) {
+    if (item.on && unknownIds.has(item.on.parent)) unknownItems.push(item as unknown as Record<string, unknown>);
+    else items.push(item);
+  }
+  // 탁상형 소품은 방에 놓인 받침 가구의 있는 자리에 올리고, 한 자리에 하나만 둔다
+  const taken = new Set<string>();
+  for (const item of items) {
+    if (!item.on) continue;
+    const parent = items.find((p) => p.id === item.on!.parent);
+    if (!parent?.floor || item.on.slot >= surfaceSlots(furnitureType(parent.type)).length) return null;
+    const key = `${parent.id}#${item.on.slot}`;
+    if (taken.has(key)) return null;
+    taken.add(key);
+  }
+  // 장소 가구는 하나씩 꼭 있어야 한다
+  for (const type of REQUIRED_FURNITURE_TYPES) {
+    if (items.filter((item) => item.type === type).length !== 1) return null;
+  }
+  const kept: KeptFurniture | undefined = unknownItems.length + unknownStored.length > 0 ? { items: unknownItems, stored: unknownStored } : undefined;
+  // 붙박이(창문)는 늘 제자리다. 다른 자리로 저장해 둔 옛 배치를 불러와도 제자리에 둔다(그대로 저장하면 서버가 거절한다)
+  return withFixedPlacements(makeLayout(items, stored, kept));
+}
+
+/** 방 가구 하나가 앱이 그릴 줄 모르는 종류이면 받은 그대로(id 규칙은 본다), 아니면 null. */
+function asUnknownItem(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const { id, type } = record;
+  if (typeof id !== "string" || !ID_PATTERN.test(id) || typeof type !== "string" || findFurnitureType(type)) return null;
+  return record;
+}
+
+/** 보관함의 가구: id와 종류만 있고, 아는 종류면 치울 수 있는 종류여야 한다(모르는 종류는 그대로 받는다). */
+function parseStoredItem(value: unknown): StoredItem | null {
+  if (!hasExactKeys(value, ["id", "type"])) return null;
+  const { id, type } = value;
+  if (typeof id !== "string" || !ID_PATTERN.test(id) || typeof type !== "string") return null;
+  const kind = findFurnitureType(type);
+  return !kind || kind.removable ? { id, type } : null;
+}
+
+function parseItem(value: unknown): FurnitureItem | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const { id, type } = record;
+  if (typeof id !== "string" || !ID_PATTERN.test(id) || typeof type !== "string") return null;
+  const kind = findFurnitureType(type);
+  if (!kind) return null;
+  if (kind.mount === "tabletop") {
+    if (!hasExactKeys(value, ["id", "type", "on"])) return null;
+    const on = parseTabletopPiece(record.on);
+    return on ? { id, type, on } : null;
+  }
+  if (kind.mount === "wall") {
+    if (!hasExactKeys(value, ["id", "type", "wall"])) return null;
+    const wall = parseWallPiece(record.wall);
+    return wall ? { id, type, wall } : null;
+  }
+  if (!hasExactKeys(value, ["id", "type", "floor"])) return null;
+  const floor = parseFloorPiece(record.floor);
+  return floor ? { id, type, floor } : null;
+}
+
+function parseFloorPiece(value: unknown): FloorPlacementData | null {
+  if (!hasExactKeys(value, ["x", "z", "facing"])) return null;
+  const { x, z, facing } = value;
+  const room = currentRoom();
+  if (!isWithin(x, room.width) || !isWithin(z, room.depth)) return null;
+  if (facing !== 0 && facing !== 1 && facing !== 2 && facing !== 3) return null;
+  return { x, z, facing: facing as Facing };
+}
+
+function parseTabletopPiece(value: unknown): TabletopPlacementData | null {
+  if (!hasExactKeys(value, ["parent", "slot", "facing"])) return null;
+  const { parent, slot, facing } = value;
+  if (typeof parent !== "string" || !ID_PATTERN.test(parent)) return null;
+  if (typeof slot !== "number" || !Number.isInteger(slot) || slot < 0) return null;
+  if (facing !== 0 && facing !== 1 && facing !== 2 && facing !== 3) return null;
+  return { parent, slot, facing: facing as Facing };
+}
+
+function parseWallPiece(value: unknown): WallPlacementData | null {
+  if (!hasExactKeys(value, ["wall", "along"])) return null;
+  const { wall, along } = value;
+  if (typeof wall !== "string" || !(currentRoom().hangWalls as readonly string[]).includes(wall)) return null;
+  if (!isWithin(along, roomWallLength(currentRoom(), wall as WallSide))) return null;
+  return { wall: wall as WallSide, along };
+}
+
+/** 방 안(경계 포함)의 수인지. */
+function isWithin(value: unknown, max: number): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= max;
+}
+
+/** 객체이고 키가 정확히 keys와 같은지(모르는 키도, 빠진 키도 없다). */
+function hasExactKeys<K extends string>(value: unknown, keys: readonly K[]): value is Record<K, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const actual = Object.keys(value);
+  return actual.length === keys.length && keys.every((key) => actual.includes(key));
+}

@@ -29,6 +29,7 @@
 | [coach-ai-backend-flow.md](guides/coach-ai-backend-flow.md) | AI 코치 백엔드 흐름 |
 | [coach-used-expression-extraction.md](guides/coach-used-expression-extraction.md) | 코치 표현 사용 추출 |
 | [claude-work-process.ko.md](guides/claude-work-process.ko.md) | Claude 작업 공정: 에이전트 순서, 단계별 지침, 흐름도 |
+| [character-3d-model-spec.ko.md](guides/character-3d-model-spec.ko.md) | 모바일 로비용 라이트루프 3D 모델 규격(기준 그림, 파일·뼈대·표정·동작 클립, 검사) |
 | [backend-security-deployment-checklist-2026-04-15.ko.md](guides/backend-security-deployment-checklist-2026-04-15.ko.md) | 백엔드 보안 배포 체크리스트 |
 
 ## reports

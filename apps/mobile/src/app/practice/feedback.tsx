@@ -29,6 +29,7 @@ import { derivePracticeFeedbackView } from "@/components/practice-feedback/feedb
 import { useLanguageFixReveal } from "@/components/practice-feedback/use-language-fix-reveal";
 import { useFeedbackSavedExpressions } from "@/components/practice-feedback/use-feedback-saved-expressions";
 import { ApiError, completeFeedbackSession, submitFeedback } from "@/lib/api";
+import { loopPointsNotice } from "@/lib/loop-points";
 import { getOrCreateGuestId } from "@/lib/guest-id";
 import { deleteLocalWritingDraft, getLocalWritingDraft, saveLocalWritingDraft } from "@/lib/writing-drafts";
 import {
@@ -352,7 +353,8 @@ export default function PracticeFeedbackScreen() {
       setIsFinishing(true);
       const resolvedUser = currentUser ?? (await refreshSession().catch(() => null));
       const guestId = resolvedUser ? undefined : await getOrCreateGuestId();
-      await completeFeedbackSession(feedbackState.feedback.sessionId, guestId || undefined);
+      const finished = await completeFeedbackSession(feedbackState.feedback.sessionId, guestId || undefined);
+      const loopNotice = loopPointsNotice(finished?.loopPoints);
       const completedState = { ...feedbackState, sessionCompleted: true };
       savePracticeFeedbackState(completedState);
       setFeedbackState(completedState);
@@ -360,7 +362,8 @@ export default function PracticeFeedbackScreen() {
         pathname: "/practice/complete",
         params: {
           difficulty: requestedDifficulty,
-          promptId: feedbackState.prompt.id
+          promptId: feedbackState.prompt.id,
+          ...(loopNotice ? { loopNotice } : {})
         }
       });
     } catch (caughtError) {

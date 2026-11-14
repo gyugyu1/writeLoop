@@ -52,7 +52,8 @@
         }
       ],
       "expo-image",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

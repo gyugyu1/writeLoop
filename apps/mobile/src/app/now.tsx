@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar from "@/components/mobile-nav-bar";
+import { loopPointsNotice } from "@/lib/loop-points";
 import {
   NowCalendarModal,
   NowCoachModal,
@@ -248,12 +249,15 @@ export default function NowInEnglishScreen() {
       setText("");
       setPendingPolishSource(null);
       setEntries((current) => mergeSavedNowInEnglishEntry(current, savedEntry));
-      setStatusMessage(polishSource ? "좋아요. 다듬은 문장의 전후를 기록했어요." : "좋아요. 오늘의 영어 조각이 하나 쌓였어요.");
+      const savedMessage = polishSource ? "좋아요. 다듬은 문장의 전후를 기록했어요." : "좋아요. 오늘의 영어 조각이 하나 쌓였어요.";
+      const loopNotice = loopPointsNotice(savedEntry.loopPoints);
+      setStatusMessage(loopNotice ? `${savedMessage} ${loopNotice}` : savedMessage);
       void loadInstantCoachFeedback(savedEntry);
       try {
         await loadSummary();
       } catch {
-        setStatusMessage("저장은 됐어요. 기록 목록은 잠시 후 다시 갱신해 주세요.");
+        const refreshFailed = "저장은 됐어요. 기록 목록은 잠시 후 다시 갱신해 주세요.";
+        setStatusMessage(loopNotice ? `${refreshFailed} ${loopNotice}` : refreshFailed);
       }
     } finally {
       setIsSaving(false);

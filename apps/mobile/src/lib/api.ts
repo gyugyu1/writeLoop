@@ -1,8 +1,11 @@
+import { readLoopPoints } from "./loop-points";
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import { apiBaseUrl } from "./env";
 import { getExistingGuestId } from "./guest-id";
+import type { LobbyLayout } from "./lobby3d/lobby-layout";
+import { parseLobbyLayoutPayload, toLobbyLayoutPayload } from "./lobby3d/lobby-layout-payload";
 import { normalizeDailyDifficulty } from "./practice";
 import type {
   AdminPrompt,
@@ -33,8 +36,15 @@ import type {
   Feedback,
   FeedbackRequest,
   FeedbackSessionStatus,
+  HomeShopping,
+  HomeShoppingAnyOrderResult,
+  HomeShoppingOrderResult,
+  HomeShoppingWearableOrderResult,
+  Wardrobe,
+  WardrobeSlot,
   HistorySession,
   LoginRequest,
+  LoopPointsSummary,
   MobilePlatform,
   MobileHomeSnapshot,
   MonthWritingStatus,
@@ -283,7 +293,9 @@ function normalizeNowInEnglishEntryPayload(
     polishedFromEntryId: payload.polishedFromEntryId ?? null,
     polishedFromText: payload.polishedFromText ?? null,
     createdAt: payload.createdAt,
-    dateKey: payload.dateKey
+    dateKey: payload.dateKey,
+    // 저장 응답에만 있다(목록·동기화 응답에는 없다)
+    ...(payload.loopPoints !== undefined ? { loopPoints: readLoopPoints(payload.loopPoints) } : {})
   };
 }
 
@@ -512,7 +524,8 @@ function normalizeDiaryFeedbackPayload(value: unknown): DiaryFeedback | null {
       ? payload.diaryExpressions.map((item) => normalizeDiaryExpressionPayload(item))
       : [],
     nextDiaryMission: normalizeDiaryMissionPayload(payload.nextDiaryMission),
-    safetyFlags: asStringArray(payload.safetyFlags)
+    safetyFlags: asStringArray(payload.safetyFlags),
+    loopPoints: readLoopPoints(payload.loopPoints)
   };
 }
 
@@ -1560,6 +1573,173 @@ export async function deleteWritingDraft(promptId: string, draftType: WritingDra
   }
 }
 
+/**
+ * 계정에 저장한 홈 가구 배치. 저장한 적이 없거나(로그인 전 포함) 모양이 맞지 않으면 null이다.
+ * 로그인이 끊겨(401) null을 돌려줄 때는 onUnauthorized를 먼저 부른다(홈이 그 null을 기기에 기억하지 않게).
+ */
+export async function getLobbyLayout(options: { onUnauthorized?: () => void } = {}): Promise<LobbyLayout | null> {
+  const response = await apiFetch("/api/lobby-layout");
+
+  if (response.status === 401) {
+    options.onUnauthorized?.();
+    return null;
+  }
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "가구 배치를 불러오지 못했어요.");
+  }
+
+  return parseLobbyLayoutPayload(await response.json());
+}
+
+/** 홈 가구 배치를 계정에 저장(덮어쓰기)하고, 서버가 저장한 배치를 돌려준다. */
+export async function saveLobbyLayout(layout: LobbyLayout): Promise<LobbyLayout> {
+  const response = await apiFetch("/api/lobby-layout", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(toLobbyLayoutPayload(layout))
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "가구 배치를 저장하지 못했어요.");
+  }
+
+  const saved = parseLobbyLayoutPayload(await response.json());
+  if (!saved) {
+    throw new Error("가구 배치를 저장하지 못했어요.");
+  }
+  return saved;
+}
+
+/** 룹 잔액. 로그인하지 않았으면 null. */
+export async function getLoopPoints(): Promise<LoopPointsSummary | null> {
+  const response = await apiFetch("/api/loop-points");
+  if (response.status === 401) {
+    return null;
+  }
+  if (!response.ok) {
+    throw await parseApiError(response, "룹을 불러오지 못했어요.");
+  }
+  return (await response.json()) as LoopPointsSummary;
+}
+
+/** 라룹이 착용 아이템(가진 것·입은 것). 로그인하지 않았으면 null. */
+export async function getWardrobe(): Promise<Wardrobe | null> {
+  const response = await apiFetch("/api/wardrobe");
+  if (response.status === 401) {
+    return null;
+  }
+  if (!response.ok) {
+    throw await parseApiError(response, "옷장을 불러오지 못했어요");
+  }
+  return (await response.json()) as Wardrobe;
+}
+
+/** 부위별 입을 아이템을 한꺼번에 바꾼다(가지지 않았거나 다른 부위 아이템이면 400 WARDROBE_INVALID). */
+export async function saveWardrobeEquipped(equipped: Record<WardrobeSlot, string | null>): Promise<Wardrobe> {
+  const response = await apiFetch("/api/wardrobe/equipped", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(equipped)
+  });
+  if (!response.ok) {
+    throw await parseApiError(response, "입지 못했어요. 다시 시도해 주세요");
+  }
+  return (await response.json()) as Wardrobe;
+}
+
+/** 아이템 목록(가구·옷, 로그인하지 않아도 된다). 모양은 부르는 쪽(item-catalog)이 본다. */
+export async function getItemCatalog(): Promise<unknown> {
+  const response = await apiFetch("/api/catalog");
+  if (!response.ok) {
+    throw await parseApiError(response, "아이템 목록을 불러오지 못했어요");
+  }
+  return response.json();
+}
+
+/** 라룹 홈쇼핑 목록(잔액, 오늘의 방송 상품, 가구마다 가격·가진 개수). */
+export async function getHomeShopping(): Promise<HomeShopping> {
+  const response = await apiFetch("/api/home-shopping");
+  if (!response.ok) {
+    throw await parseApiError(response, "홈쇼핑을 불러오지 못했어요");
+  }
+  return (await response.json()) as HomeShopping;
+}
+
+/** 라룹 홈쇼핑 주문. price는 화면에 보인 가격이다(서버의 지금 가격과 다르면 409 PRICE_CHANGED). */
+export async function orderHomeShopping(request: { type: string; price: number }): Promise<HomeShoppingOrderResult> {
+  const response = await apiFetch("/api/home-shopping/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+  if (!response.ok) {
+    throw await parseApiError(response, "주문하지 못했어요. 다시 시도해 주세요");
+  }
+  const payload = (await response.json()) as Omit<HomeShoppingOrderResult, "layout"> & { layout: unknown };
+  const layout = parseLobbyLayoutPayload(payload.layout);
+  if (!layout) {
+    throw new Error("주문하지 못했어요. 다시 시도해 주세요");
+  }
+  return { ...payload, layout };
+}
+
+/**
+ * 앱이 모르는 상품의 주문(같은 주문 API): 서버가 새로 더한 가구나 옷. 응답 모양으로 가린다(배치가 null이면 옷, 아니면 가구).
+ * 옷이어도 룹은 이미 쓰였으므로 던지지 않고 결과를 돌려준다. 가구인데 배치를 읽지 못하면 가구 주문처럼 실패로 본다.
+ */
+export async function orderHomeShoppingAny(request: { type: string; price: number }): Promise<HomeShoppingAnyOrderResult> {
+  const response = await apiFetch("/api/home-shopping/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+  if (!response.ok) {
+    throw await parseApiError(response, "주문하지 못했어요. 다시 시도해 주세요");
+  }
+  const payload = (await response.json()) as { type: string; price: number; balance: number; owned: number; itemId?: string | null; layout?: unknown; wardrobe?: unknown };
+  if (payload.layout === null || payload.layout === undefined) {
+    const wardrobe = payload.wardrobe && typeof payload.wardrobe === "object" && !Array.isArray(payload.wardrobe) ? (payload.wardrobe as Wardrobe) : null;
+    return { type: payload.type, price: payload.price, balance: payload.balance, owned: payload.owned, itemId: null, layout: null, wardrobe };
+  }
+  const layout = parseLobbyLayoutPayload(payload.layout);
+  if (!layout || !payload.itemId) {
+    throw new Error("주문하지 못했어요. 다시 시도해 주세요");
+  }
+  return { type: payload.type, price: payload.price, balance: payload.balance, owned: payload.owned, itemId: payload.itemId, layout };
+}
+
+/**
+ * 라룹 홈쇼핑 옷 주문(같은 주문 API). 옷은 배치를 바꾸지 않아 배치가 null이고, 주문 뒤 옷장을 함께 받는다(읽지 못해도 주문은 된 것이다).
+ * 이미 가진 옷이면 409 ALREADY_OWNED.
+ */
+export async function orderHomeShoppingWearable(request: { type: string; price: number }): Promise<HomeShoppingWearableOrderResult> {
+  const response = await apiFetch("/api/home-shopping/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+  if (!response.ok) {
+    throw await parseApiError(response, "주문하지 못했어요. 다시 시도해 주세요");
+  }
+  const payload = (await response.json()) as { type: string; price: number; balance: number; owned: number; wardrobe?: unknown };
+  const wardrobe = payload.wardrobe && typeof payload.wardrobe === "object" && !Array.isArray(payload.wardrobe) ? (payload.wardrobe as Wardrobe) : null;
+  return { type: payload.type, price: payload.price, balance: payload.balance, owned: payload.owned, itemId: null, layout: null, wardrobe };
+}
+
 export async function getTodayWritingStatus(): Promise<TodayWritingStatus | null> {
   const response = await apiFetch("/api/history/today-status");
 
@@ -1821,7 +2001,8 @@ export async function completeFeedbackSession(
     throw await parseApiError(response, "답변 루프를 완료하지 못했어요.");
   }
 
-  return (await response.json()) as FeedbackSessionStatus;
+  const status = (await response.json()) as FeedbackSessionStatus;
+  return { ...status, loopPoints: readLoopPoints(status.loopPoints) };
 }
 
 export async function getDiaryEntries(): Promise<DiaryEntry[]> {

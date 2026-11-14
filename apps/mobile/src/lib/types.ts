@@ -1,3 +1,5 @@
+import type { LobbyLayout } from "./lobby3d/lobby-layout";
+
 export type DailyDifficulty = "I" | "A" | "B" | "C";
 export type PromptDifficulty = "I" | "A" | "B" | "C";
 export type MobilePlatform = "ios" | "android";
@@ -410,6 +412,75 @@ export interface NowInEnglishReflectionEntryRequest {
   createdAt?: string;
 }
 
+/** GET /api/loop-points 중 앱이 쓰는 룹 잔액. */
+export interface LoopPointsSummary {
+  balance: number;
+}
+
+/** 라룹 홈쇼핑 가구 한 칸. salePrice는 그날 방송 상품만 있다. */
+export interface HomeShoppingItem {
+  type: string;
+  price: number;
+  salePrice: number | null;
+  owned: number;
+}
+
+/** GET /api/home-shopping */
+export interface HomeShopping {
+  balance: number;
+  broadcast: { type: string; price: number; salePrice: number };
+  items: HomeShoppingItem[];
+}
+
+/** POST /api/home-shopping/orders의 가구 주문 결과. layout은 주문 뒤 저장된 배치다(서버의 wardrobe는 null). */
+export interface HomeShoppingOrderResult {
+  type: string;
+  price: number;
+  balance: number;
+  owned: number;
+  itemId: string;
+  layout: LobbyLayout;
+  wardrobe?: null;
+}
+
+/** POST /api/home-shopping/orders의 옷 주문 결과. 배치를 바꾸지 않아 itemId·layout이 null이고, wardrobe는 주문 뒤 옷장이다(읽지 못했으면 null). */
+export interface HomeShoppingWearableOrderResult {
+  type: string;
+  price: number;
+  balance: number;
+  owned: number;
+  itemId: null;
+  layout: null;
+  wardrobe: Wardrobe | null;
+}
+
+/** 주문 결과(가구나 옷). layout이 null이면 옷 주문이다. */
+export type HomeShoppingAnyOrderResult = HomeShoppingOrderResult | HomeShoppingWearableOrderResult;
+
+/** 라룹이 착용 부위(캐릭터 꾸미기). 부위마다 한 번에 하나만 입는다. */
+export type WardrobeSlot = "hat" | "top" | "bottom" | "shoes" | "face" | "back" | "accessory";
+
+/** 가진 착용 아이템 하나. */
+export interface WardrobeItem {
+  type: string;
+  slot: WardrobeSlot;
+  acquiredAt: string;
+}
+
+/** GET /api/wardrobe, PUT /api/wardrobe/equipped 응답. equipped는 부위별 입은 아이템 종류(입지 않은 부위는 null)다. */
+export interface Wardrobe {
+  items: WardrobeItem[];
+  equipped: Record<WardrobeSlot, string | null>;
+}
+
+/** 완료 응답에 붙는 이번 룹 적립 결과(라룹 홈쇼핑에서 쓰는 포인트). 적립 시점이 아니면 null이다. */
+export interface LoopPointsReward {
+  activity: "question" | "diary" | "nowInEnglish";
+  earned: number;
+  balance: number;
+  dailyLimitReached: boolean;
+}
+
 export interface NowInEnglishEntryPayload {
   id: string;
   text: string;
@@ -417,6 +488,8 @@ export interface NowInEnglishEntryPayload {
   polishedFromText?: string | null;
   createdAt: string;
   dateKey: string;
+  /** 이번 요청으로 룹을 적립하는 때에만 있다(완료 응답). */
+  loopPoints?: LoopPointsReward | null;
 }
 
 export interface NowInEnglishEntryRequest {
@@ -650,6 +723,8 @@ export interface PreviousMissionResult {
 export interface FeedbackSessionStatus {
   sessionId: string;
   status: "IN_PROGRESS" | "READY_TO_FINISH" | "COMPLETED";
+  /** 이번 요청으로 룹을 적립하는 때에만 있다(완료 응답). */
+  loopPoints?: LoopPointsReward | null;
 }
 
 export type DiaryAnswerBand =
@@ -719,6 +794,8 @@ export interface DiaryFeedback {
   diaryExpressions: DiaryExpression[];
   nextDiaryMission: DiaryMission;
   safetyFlags: string[];
+  /** 이번 요청으로 룹을 적립하는 때에만 있다(완료 응답). */
+  loopPoints?: LoopPointsReward | null;
 }
 
 export interface DiaryEntryRequest {

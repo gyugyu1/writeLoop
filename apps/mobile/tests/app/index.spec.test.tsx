@@ -2,19 +2,30 @@
 // 홈 화면(src/app/index.tsx) 전체를 렌더하고 사용자처럼 눌러, 지금 보이는 문구·구조·접근성 속성과 부르는 API·기기 저장
 // 동작을 좋고 나쁨과 관계없이 그대로 적는다. 화면 조각·순수 함수·스타일을 옮긴 뒤에도, 데이터·튜토리얼·월 달력 상태를
 // 훅으로 옮기는 다음 단계에서도 이 테스트가 그대로 통과해야 한다.
+// 작업 060-03(홈을 로비로)에서 고침: 홈이 3D 로비로 바뀌어, 옮겨진 칸(학습 일지·추천 질문·난이도·영어일기·지금 영어로·월 달력)은
+// 로비의 메뉴로 판(시트)을 연 뒤 같은 것을 보고, 이어 쓰기는 학습 일지 카드의 줄 대신 말풍선 "이어 쓰기" 버튼에서 보고,
+// 튜토리얼은 같은 규칙의 로비 안내(세 장소)로 본다. 없어진 것(당겨서 새로 고침, 홈의 의견 보내기·가이드 보기, 이어 쓰기 줄의
+// 설명 글, 옛 튜토리얼 단계·스크롤)의 테스트는 지웠다. 분류는 060-03의 02-qa-scenarios.md 표와 03-main-decision.md를 따른다.
 // 가짜로 두는 것: API(@/lib/api), 기기 저장소(이어 쓰기 상태 @/lib/incomplete-loop, 이 기기 임시저장 @/lib/writing-drafts,
-// 저장된 피드백 상태 불러오기, 튜토리얼 저장 @/lib/home-tutorial, 지금 영어로 요약 @/lib/now-in-english), 로그인 상태
-// (@/lib/session), 앱 업데이트 안내 상태(@/lib/app-overlay-status), 라우터(expo-router), 포커스(@react-navigation/native의
-// useFocusEffect: 화면이 포커스를 잃고 다시 받는 것을 흉내 낸다), 네이티브 모듈(expo-symbols, 화면 위치 재기 measureInWindow).
+// 저장된 피드백 상태 불러오기, 튜토리얼 저장 @/lib/home-tutorial, 지금 영어로 요약 @/lib/now-in-english, 카메라 거리 저장은
+// AsyncStorage 메모리 가짜), 로그인 상태(@/lib/session), 앱 업데이트 안내 상태(@/lib/app-overlay-status), 라우터(expo-router),
+// 포커스(@react-navigation/native의 useFocusEffect: 화면이 포커스를 잃고 다시 받는 것을 흉내 낸다), 네이티브 모듈(expo-symbols),
+// 3D 그리기(lobby3d-canvas: Jest에서 돌지 않으므로 받은 속성만 잡는다).
 // 튜토리얼 컴포넌트(HomeFeatureTutorial)는 실제 컴포넌트를 그리되, 홈이 넘긴 속성을 보려고 한 겹 감싼다.
 // 날짜 계산이 오늘에 기대므로 모든 테스트를 가짜 시계로 돌린다(2026-11-12T03:00:00Z = 서울 2026-11-12(목) 12:00에서 멈춤).
+// 작업 079 03 결정(사용자 2026-11-11 "가짜 그림판이 신호를 보내게"): 방이 처음 보이기 전에는 이름표·장소 안내·말풍선을 숨기므로,
+// 가짜 3D 그림판이 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 준비만 바꿨다. 단언·기대값·입력은 그대로다.
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { isValidElement, type ComponentProps, type ReactElement } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { format, plugins } from "pretty-format";
+import { type ComponentProps } from "react";
+import { StyleSheet } from "react-native";
 import type { TestInstance } from "test-renderer";
 import HomeScreen from "@/app/index";
 import type HomeFeatureTutorial from "@/components/home-feature-tutorial";
+import type { Lobby3dCanvasProps, LobbyProjection } from "@/components/lobby3d/lobby3d-canvas";
 import {
   getDiaryCalendarSummary,
   getFeaturedDailyPrompt,
@@ -50,6 +61,7 @@ type TutorialProps = ComponentProps<typeof HomeFeatureTutorial>;
 // 포커스 흉내: focused를 바꾸고 listeners를 부르면, 각 useFocusEffect가 포커스를 잃을 때 정리하고 다시 받을 때 다시 돈다.
 const mockFocus = { focused: true, listeners: new Set<() => void>() };
 const mockTutorialProps: TutorialProps[] = [];
+const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
 
 jest.mock("expo-router", () => {
   const React = jest.requireActual<typeof import("react")>("react");
@@ -91,6 +103,25 @@ jest.mock("expo-secure-store", () => ({
   deleteItemAsync: jest.fn(() => Promise.resolve())
 }));
 jest.mock("react-native-safe-area-context", () => jest.requireActual("react-native-safe-area-context/jest/mock").default);
+jest.mock("@react-native-async-storage/async-storage", () =>
+  jest.requireActual("@react-native-async-storage/async-storage/jest/async-storage-mock")
+);
+jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
+  const React = jest.requireActual<typeof import("react")>("react");
+  // 처음 그려진 뒤 '방이 보였다'를 한 번 알린다(작업 079 03 결정)
+  function MockLobby3dCanvas(props: Lobby3dCanvasProps) {
+    mockCanvas.props = props;
+    const onRoomShown = (props as Lobby3dCanvasProps & { onRoomShown?: () => void }).onRoomShown;
+    const roomShownSent = React.useRef(false);
+    React.useEffect(() => {
+      if (roomShownSent.current || !onRoomShown) return;
+      roomShownSent.current = true;
+      onRoomShown();
+    }, [onRoomShown]);
+    return React.createElement("Lobby3dCanvasMock");
+  }
+  return { __esModule: true, default: MockLobby3dCanvas };
+});
 jest.mock("@/components/home-feature-tutorial", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   const actual = jest.requireActual<typeof import("@/components/home-feature-tutorial")>(
@@ -105,6 +136,7 @@ jest.mock("@/components/home-feature-tutorial", () => {
 jest.mock("@/lib/api", () => ({
   getDiaryCalendarSummary: jest.fn(),
   getFeaturedDailyPrompt: jest.fn(),
+  getLobbyLayout: jest.fn(() => Promise.resolve(null)),
   getMobileHomeSnapshot: jest.fn(),
   getMonthWritingStatus: jest.fn(),
   getTodayWritingStatus: jest.fn(),
@@ -133,9 +165,11 @@ const NOW = new Date("2026-11-12T03:00:00.000Z");
 const TODAY_KEY = "2026-11-12";
 const NOW_BODY = "지금 뭐하고 있나요?, 무슨 생각하고 있나요?";
 const FEATURED_FALLBACK = "오늘의 추천 질문을 준비하고 있어요.";
-const FEEDBACK_ENTRY_LABEL = "라이트루프에 의견 보내기";
 const REMINDER_LABEL = "루프 알림 설정 열기";
 const SKIP_LABEL = "홈 사용법 건너뛰기";
+const RESUME_LABEL = "이어 쓰기";
+// 로비 안내 단계(060-03 명세의 문구, 결정 Q4: 단계와 문구·짚는 대상만 바뀌고 규칙은 옛 튜토리얼과 같다).
+const LOBBY_TUTORIAL_FIRST = "여기서 오늘의 질문에 답해요";
 
 const signedInUser: AuthUser = { id: 7, email: "learner@example.com", displayName: "학습자", admin: false };
 
@@ -262,9 +296,8 @@ function monthStatus(year: number, month: number, completedDates: string[], star
   };
 }
 
-// 이어 쓰기 상태의 저장 시각은 이 기기 시간대의 09:05로 만든다. 화면은 ko-KR의 시(숫자)·분(두 자리)로 보인다.
+// 이어 쓰기 상태의 저장 시각은 이 기기 시간대의 09:05로 만든다.
 const SAVED_AT = new Date(2026, 10, 12, 9, 5).toISOString();
-const SAVED_TIME = new Intl.DateTimeFormat("ko-KR", { hour: "numeric", minute: "2-digit" }).format(new Date(SAVED_AT));
 
 function loop(step: IncompleteLoopState["step"], overrides: Partial<IncompleteLoopState> = {}): IncompleteLoopState {
   return {
@@ -318,20 +351,21 @@ function feedbackState(): PracticeFeedbackState {
   };
 }
 
-// 튜토리얼 위치 재기: 스크롤 뷰를 감싼 바깥 View(뷰포트)와 튜토리얼 대상 구역에 서로 다른 사각형을 돌려준다.
-type Rect = { x: number; y: number; width: number; height: number };
-const VIEWPORT_RECT: Rect = { x: 0, y: 80, width: 750, height: 1100 };
-const TARGET_RECT: Rect = { x: 20, y: 300, width: 335, height: 180 };
-// 스크롤 0에서: 대상의 내용 안 위치 = 0 + 300 - 80 = 220, 위 여백 = max(18, min(64, 1334 * 0.06)) = 64 → y = 156
-// 테스트 창 크기는 React Native 테스트 설정의 750 x 1334다.
-// 강조 영역 = 왼쪽 max(8, 20-7)=13, 위 max(8, 300-7)=293, 오른쪽 min(742, 20+335+7)=362, 아래 min(1326, 300+180+16)=496
-const SPOTLIGHT = { x: 13, y: 293, width: 349, height: 203 };
+// 로비 안내가 장소를 짚으려면 3D가 장소 이름표 좌표를 보내야 한다. 테스트 창(750 x 1334) 안에 서로 떨어진 좌표를 준다.
+/** 기존 네 장소. 작업 062(책장 장소를 더함) 04 결정 2로, 장소마다 값을 적어 둔 테스트 데이터의 타입만 이 넷으로 좁혔다(값과 단언은 그대로).
+ * 3D가 보내는 좌표(LobbyProjection)로 넘길 때는 그 타입으로 바꿔 넘긴다(넘기는 값은 그대로). */
+type PlaceId = "board" | "window" | "desk" | "door";
+type PlaceLabels = Record<PlaceId, { x: number; y: number }>;
+const LABELS: PlaceLabels = {
+  board: { x: 150, y: 260 },
+  window: { x: 560, y: 260 },
+  desk: { x: 150, y: 900 },
+  door: { x: 690, y: 300 }
+};
 
 // ---------- 도우미 ----------
 
 const refreshSession = jest.fn<Promise<AuthUser | null>, []>();
-const viewMeasureInWindow = (View as unknown as { prototype: { measureInWindow: jest.Mock } }).prototype.measureInWindow;
-const scrollViewScrollTo = (ScrollView as unknown as { prototype: { scrollTo: jest.Mock } }).prototype.scrollTo;
 
 function setSessionUser(currentUser: AuthUser | null, isHydrating = false) {
   jest.mocked(useSession).mockReturnValue({
@@ -380,10 +414,11 @@ async function renderScreen() {
   await flushAsync();
 }
 
-// 홈 데이터를 다 불러온 화면까지 그린다.
+// 홈 데이터를 다 불러온 로비까지 그린다. 옮겨진 칸은 판을 열어야 보이므로, 로비가 그려졌고 스냅샷을 불렀는지로 본다.
 async function renderLoaded() {
   await renderScreen();
-  expect(screen.getByText(featuredPrompt.questionEn)).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "질문에 답하기" })).toBeOnTheScreen();
+  expect(getMobileHomeSnapshot).toHaveBeenCalled();
 }
 
 async function setFocused(focused: boolean) {
@@ -412,41 +447,69 @@ function modalHosts() {
   return findHost(screen.root!, "Modal");
 }
 
-function openModal() {
-  const modals = modalHosts();
+// ---------- 판(시트) ----------
+// 로비의 아래 메뉴 이름이 판의 제목이다. 판은 아래에서 올라오는 Modal이고 제목은 머리(role header)다.
+
+type SheetKind = "question" | "diary" | "thought";
+const SHEET_TITLES: Record<SheetKind, string> = {
+  question: "질문에 답하기",
+  diary: "영어일기",
+  thought: "지금 생각나는대로"
+};
+
+function sheetIfOpen(kind: SheetKind): TestInstance | null {
+  const sheets = modalHosts().filter(
+    (modal) =>
+      modal.props.animationType === "slide" &&
+      within(modal).queryAllByRole("header", { name: SHEET_TITLES[kind] }).length > 0
+  );
+  expect(sheets.length).toBeLessThanOrEqual(1);
+  return sheets[0] ?? null;
+}
+
+function sheet(kind: SheetKind) {
+  const found = sheetIfOpen(kind);
+  expect(found).not.toBeNull();
+  return found!;
+}
+
+async function openSheet(kind: SheetKind) {
+  await fireEvent.press(screen.getByRole("button", { name: SHEET_TITLES[kind] }));
+  await flushAsync();
+  return sheet(kind);
+}
+
+async function closeSheet(kind: SheetKind) {
+  await fireEvent.press(within(sheet(kind)).getByRole("button", { name: "닫기" }));
+  await flushAsync();
+  expect(sheetIfOpen(kind)).toBeNull();
+}
+
+// 판이 열려 있으면 그 판, 아니면 열어서 돌려준다(판 안에서 다른 화면으로 가도 판이 닫히는지는 명세에 없다).
+async function ensureSheet(kind: SheetKind) {
+  return sheetIfOpen(kind) ?? (await openSheet(kind));
+}
+
+// 월 달력 모달: 판(slide)·로비 안내(fade, statusBarTranslucent)와 구분되는 fade Modal.
+function calendarModals() {
+  return modalHosts().filter((modal) => modal.props.animationType === "fade" && !modal.props.statusBarTranslucent);
+}
+
+function calendarModal() {
+  const modals = calendarModals();
   expect(modals).toHaveLength(1);
   return modals[0];
 }
 
-function scrollHost() {
-  return findHost(screen.root!, "RCTScrollView")[0];
-}
-
-type RefreshControlElement = ReactElement<{ refreshing: boolean; onRefresh: () => void }>;
-
-function refreshControl() {
-  return scrollHost().props.refreshControl as RefreshControlElement;
-}
-
-async function pullToRefresh() {
-  await act(async () => {
-    refreshControl().props.onRefresh();
-  });
-  await flushAsync();
-}
-
-function pressText(text: string) {
-  return fireEvent.press(screen.getByText(text));
-}
-
 async function openCalendar() {
-  // 요일 줄을 누른다(오늘 요일 칸의 글자, 요일 줄이 영어일기 요일 머리보다 앞에 있다).
-  await fireEvent.press(screen.getAllByText("목")[0]);
+  // 질문 판의 요일 줄을 누른다(오늘 요일 칸의 글자, 요일 줄이 판 안 월 달력보다 앞에 있다).
+  const question = await ensureSheet("question");
+  await fireEvent.press(within(question).getAllByText("목")[0]);
   await flushAsync();
 }
 
-function weekRowChips() {
-  const weekRow = screen.getAllByText("목")[0].parent!.parent!;
+function weekRowChips(root: TestInstance) {
+  const weekRow = within(root).getAllByText("목")[0].parent!.parent!;
   return weekRow.children.map((chip) => {
     const chipInstance = chip as TestInstance;
     const text = chipInstance.children[0] as TestInstance;
@@ -462,16 +525,11 @@ function lastTutorialProps() {
   return mockTutorialProps.at(-1)!;
 }
 
-function installMeasure(viewport: Rect = VIEWPORT_RECT, target: Rect = TARGET_RECT) {
-  viewMeasureInWindow.mockImplementation(function (
-    this: { props: { children?: unknown } },
-    callback: (x: number, y: number, width: number, height: number) => void
-  ) {
-    const children = this.props.children;
-    const isViewport = isValidElement(children) && children.type === ScrollView;
-    const rect = isViewport ? viewport : target;
-    callback(rect.x, rect.y, rect.width, rect.height);
+async function sendProjection() {
+  await act(async () => {
+    mockCanvas.props!.onProject({ bubble: { x: 375, y: 600 }, labels: LABELS as LobbyProjection["labels"], fps: 60 });
   });
+  await flushAsync();
 }
 
 const DOT_COLORS: Record<string, string> = { "#EA920D": "작문", "#32835B": "일기", "#2F74C0": "영어조각" };
@@ -537,10 +595,77 @@ function screenStructure() {
   return structureOf(screen.root!);
 }
 
+// ---------- 칸 구조 비교(060-03 결정 Q8) ----------
+// 로비로 바뀌기 전 화면 전체 스냅샷(__fixtures__/home-before-lobby.snap.txt, 커밋 d6aabd0에서 떼어 옴)에서, 판 안의 칸과
+// 같은 부분을 찾는다. 칸 하나를 Jest 스냅샷과 같은 형식으로 글로 만들고, 옛 기록 안에서 들여쓰기만 다른 같은 줄 묶음이 있으면 같다.
+
+const BEFORE_LOBBY = (() => {
+  const text = readFileSync(join(__dirname, "__fixtures__", "home-before-lobby.snap.txt"), "utf8");
+  const entries: Record<string, string> = {};
+  const pattern = /exports\[`([^`]+)`\] = `\n([\s\S]*?)\n`;\n/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text))) {
+    entries[match[1]] = match[2].replace(/\\(`|\\|\$\{)/g, "$1");
+  }
+  return entries;
+})();
+
+function serializeStructure(node: TestInstance) {
+  return format(structureOf(node), {
+    escapeRegex: true,
+    escapeString: false,
+    indent: 2,
+    plugins: [plugins.ReactTestComponent, plugins.ReactElement],
+    printBasicPrototype: false,
+    printFunctionName: false
+  });
+}
+
+function containsBlock(oldText: string, block: string) {
+  const oldLines = oldText.split("\n");
+  const blockLines = block.split("\n");
+  const indentOf = (line: string) => line.length - line.trimStart().length;
+  for (let start = 0; start + blockLines.length <= oldLines.length; start += 1) {
+    if (oldLines[start].trim() !== blockLines[0].trim()) {
+      continue;
+    }
+    const offset = indentOf(oldLines[start]) - indentOf(blockLines[0]);
+    if (offset < 0) {
+      continue;
+    }
+    const pad = " ".repeat(offset);
+    if (blockLines.every((line, index) => oldLines[start + index] === (line === "" ? "" : pad + line))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// 판의 스크롤 안쪽 칸들(판 내용 View의 자식).
+function sheetSections(root: TestInstance) {
+  const scroll = findHost(root, "RCTScrollView")[0];
+  const content = scroll.children[0] as TestInstance;
+  return content.children.filter((child): child is TestInstance => typeof child !== "string");
+}
+
+function expectSectionsMatchBefore(entryName: string, sections: Record<string, TestInstance[]>) {
+  const oldText = BEFORE_LOBBY[`[spec] 화면 구조 [spec] ${entryName} 1`];
+  expect(oldText).toBeDefined();
+  const missing = Object.entries(sections).flatMap(([name, nodes]) =>
+    nodes.flatMap((node, index) => (containsBlock(oldText, serializeStructure(node)) ? [] : [`${name}[${index}]`]))
+  );
+  expect(missing).toEqual([]);
+}
+
+function childrenOf(node: TestInstance) {
+  return node.children.filter((child): child is TestInstance => typeof child !== "string");
+}
+
 beforeEach(() => {
   jest.useFakeTimers({ now: NOW });
   mockFocus.focused = true;
   mockTutorialProps.length = 0;
+  mockCanvas.props = null;
   jest.mocked(router.push).mockReset();
   jest.mocked(router.replace).mockReset();
   jest.mocked(getMobileHomeSnapshot).mockReset().mockResolvedValue(homeSnapshot());
@@ -558,8 +683,6 @@ beforeEach(() => {
   jest.mocked(consumeHomeTutorialReplay).mockReset().mockResolvedValue(false);
   jest.mocked(hasCompletedHomeTutorial).mockReset().mockResolvedValue(true);
   jest.mocked(completeHomeTutorial).mockReset().mockResolvedValue(undefined);
-  viewMeasureInWindow.mockReset();
-  scrollViewScrollTo.mockClear();
   refreshSession.mockReset().mockResolvedValue(signedInUser);
   setSessionUser(signedInUser);
   setAppUpdatePhase("settled");
@@ -609,8 +732,9 @@ describe("[spec] 홈 데이터", () => {
 
     // 이어 쓰기 상태를 확인하는 동안: 스냅샷을 부르지 않고, 불러오는 중 표시 없이 추천 질문 자리에 준비 문구가 보인다.
     expect(getMobileHomeSnapshot).not.toHaveBeenCalled();
-    expect(spinners()).toHaveLength(0);
-    expect(screen.getByText(FEATURED_FALLBACK)).toBeOnTheScreen();
+    const question = await openSheet("question");
+    expect(spinners(question)).toHaveLength(0);
+    expect(within(question).getByText(FEATURED_FALLBACK)).toBeOnTheScreen();
 
     await act(async () => {
       pendingLoop.resolve(null);
@@ -619,12 +743,15 @@ describe("[spec] 홈 데이터", () => {
 
     expect(getMobileHomeSnapshot).toHaveBeenCalledTimes(1);
     expect(getMobileHomeSnapshot).toHaveBeenCalledWith("I");
-    expect(screen.getByText("작문 2일 연속")).toBeOnTheScreen();
-    expect(screen.getByText("일기 3일 연속")).toBeOnTheScreen();
-    expect(screen.getByText("총 1,234문항 작성 · 총 12개의 일기 작성")).toBeOnTheScreen();
-    expect(screen.getByText("총 4개의 영어조각")).toBeOnTheScreen();
-    expect(screen.getByText(featuredPrompt.questionEn)).toBeOnTheScreen();
-    expect(screen.getByText("오늘 일기 이어보기")).toBeOnTheScreen();
+    const loaded = sheet("question");
+    expect(within(loaded).getByText("작문 2일 연속")).toBeOnTheScreen();
+    expect(within(loaded).getByText("일기 3일 연속")).toBeOnTheScreen();
+    expect(within(loaded).getByText("총 1,234문항 작성 · 총 12개의 일기 작성")).toBeOnTheScreen();
+    expect(within(loaded).getByText("총 4개의 영어조각")).toBeOnTheScreen();
+    expect(within(loaded).getByText(featuredPrompt.questionEn)).toBeOnTheScreen();
+    await closeSheet("question");
+    const diary = await openSheet("diary");
+    expect(within(diary).getByText("오늘 일기 이어보기")).toBeOnTheScreen();
     expect(getTodayWritingStatus).not.toHaveBeenCalled();
     expect(getDiaryCalendarSummary).not.toHaveBeenCalled();
     expect(getFeaturedDailyPrompt).not.toHaveBeenCalled();
@@ -645,31 +772,44 @@ describe("[spec] 홈 데이터", () => {
     jest.mocked(getMobileHomeSnapshot).mockReturnValue(pending.promise);
     await renderScreen();
 
-    const indicators = spinners();
-    expect(indicators).toHaveLength(2);
-    indicators.forEach((indicator) => expect(indicator.props.color).toBe("#E38B12"));
-    expect(screen.queryByText(FEATURED_FALLBACK)).toBeNull();
-    expect(screen.queryByText(featuredPrompt.questionEn)).toBeNull();
-    expect(screen.getByText("작문 대기 중")).toBeOnTheScreen();
+    // 판은 한 번에 하나만 열리므로, 추천 질문(질문 판) 1개와 영어일기 달력(일기 판) 1개를 나눠 센다.
+    const question = await openSheet("question");
+    const questionIndicators = spinners(question);
+    expect(questionIndicators).toHaveLength(1);
+    expect(questionIndicators[0].props.color).toBe("#E38B12");
+    expect(within(question).queryByText(FEATURED_FALLBACK)).toBeNull();
+    expect(within(question).queryByText(featuredPrompt.questionEn)).toBeNull();
+    expect(within(question).getByText("작문 대기 중")).toBeOnTheScreen();
+    await closeSheet("question");
+    const diary = await openSheet("diary");
+    const diaryIndicators = spinners(diary);
+    expect(diaryIndicators).toHaveLength(1);
+    expect(diaryIndicators[0].props.color).toBe("#E38B12");
 
     await act(async () => {
       pending.resolve(homeSnapshot());
     });
     await flushAsync();
 
-    expect(spinners()).toHaveLength(0);
-    expect(screen.getByText(featuredPrompt.questionEn)).toBeOnTheScreen();
+    expect(spinners(sheet("diary"))).toHaveLength(0);
+    await closeSheet("diary");
+    const loaded = await openSheet("question");
+    expect(spinners(loaded)).toHaveLength(0);
+    expect(within(loaded).getByText(featuredPrompt.questionEn)).toBeOnTheScreen();
   });
 
   it("[spec] 스냅샷의 값이 비어 있으면 대기 중 배지, 0 통계, 추천 질문 준비 문구를 보인다", async () => {
     jest.mocked(getMobileHomeSnapshot).mockResolvedValue({});
     await renderScreen();
 
-    expect(screen.getByText("작문 대기 중")).toBeOnTheScreen();
-    expect(screen.getByText("일기 대기 중")).toBeOnTheScreen();
-    expect(screen.getByText("총 0문항 작성 · 총 0개의 일기 작성")).toBeOnTheScreen();
-    expect(screen.getByText(FEATURED_FALLBACK)).toBeOnTheScreen();
-    expect(screen.getByText("오늘의 일기 쓰기")).toBeOnTheScreen();
+    const question = await openSheet("question");
+    expect(within(question).getByText("작문 대기 중")).toBeOnTheScreen();
+    expect(within(question).getByText("일기 대기 중")).toBeOnTheScreen();
+    expect(within(question).getByText("총 0문항 작성 · 총 0개의 일기 작성")).toBeOnTheScreen();
+    expect(within(question).getByText(FEATURED_FALLBACK)).toBeOnTheScreen();
+    await closeSheet("question");
+    const diary = await openSheet("diary");
+    expect(within(diary).getByText("오늘의 일기 쓰기")).toBeOnTheScreen();
   });
 
   it("[spec] 스냅샷이 실패하면 오늘 상태·일기 달력·추천 질문을 하나씩 다시 불러 그린다", async () => {
@@ -683,12 +823,16 @@ describe("[spec] 홈 데이터", () => {
     expect(getDiaryCalendarSummary).toHaveBeenCalledTimes(1);
     expect(getFeaturedDailyPrompt).toHaveBeenCalledTimes(1);
     expect(getFeaturedDailyPrompt).toHaveBeenCalledWith("I");
-    expect(screen.getByText("작문 5일 연속")).toBeOnTheScreen();
-    expect(screen.getByText("일기 대기 중")).toBeOnTheScreen();
-    expect(screen.getByText("총 9문항 작성 · 총 1개의 일기 작성")).toBeOnTheScreen();
-    expect(screen.getByText(otherPrompt.questionEn)).toBeOnTheScreen();
     expect(screen.queryByText("스냅샷 실패")).toBeNull();
-    expect(spinners()).toHaveLength(0);
+    const question = await openSheet("question");
+    expect(within(question).getByText("작문 5일 연속")).toBeOnTheScreen();
+    expect(within(question).getByText("일기 대기 중")).toBeOnTheScreen();
+    expect(within(question).getByText("총 9문항 작성 · 총 1개의 일기 작성")).toBeOnTheScreen();
+    expect(within(question).getByText(otherPrompt.questionEn)).toBeOnTheScreen();
+    expect(screen.queryByText("스냅샷 실패")).toBeNull();
+    expect(spinners(question)).toHaveLength(0);
+    await closeSheet("question");
+    expect(spinners(await openSheet("diary"))).toHaveLength(0);
   });
 
   it("[spec] 다시 부른 것도 실패하면 학습 일지·영어일기·추천 질문 자리에 각 오류 문구를 보인다", async () => {
@@ -698,11 +842,15 @@ describe("[spec] 홈 데이터", () => {
     jest.mocked(getFeaturedDailyPrompt).mockRejectedValue(new Error("추천 서버 오류"));
     await renderScreen();
 
-    expect(screen.getByText("학습 일지 서버 오류")).toBeOnTheScreen();
-    expect(screen.getByText("일기 서버 오류")).toBeOnTheScreen();
-    expect(screen.getByText("추천 서버 오류")).toBeOnTheScreen();
-    expect(screen.queryByText(FEATURED_FALLBACK)).toBeNull();
-    expect(spinners()).toHaveLength(0);
+    const question = await openSheet("question");
+    expect(within(question).getByText("학습 일지 서버 오류")).toBeOnTheScreen();
+    expect(within(question).getByText("추천 서버 오류")).toBeOnTheScreen();
+    expect(within(question).queryByText(FEATURED_FALLBACK)).toBeNull();
+    expect(spinners(question)).toHaveLength(0);
+    await closeSheet("question");
+    const diary = await openSheet("diary");
+    expect(within(diary).getByText("일기 서버 오류")).toBeOnTheScreen();
+    expect(spinners(diary)).toHaveLength(0);
   });
 
   it("[spec] 오류가 Error가 아니면 기본 오류 문구를 보인다", async () => {
@@ -712,54 +860,11 @@ describe("[spec] 홈 데이터", () => {
     jest.mocked(getFeaturedDailyPrompt).mockRejectedValue("featured");
     await renderScreen();
 
-    expect(screen.getByText("학습 일지를 불러오지 못했어요.")).toBeOnTheScreen();
-    expect(screen.getByText("영어일기 달력을 불러오지 못했어요.")).toBeOnTheScreen();
-    expect(screen.getByText("오늘의 추천 질문을 불러오지 못했어요.")).toBeOnTheScreen();
-  });
-
-  it("[spec] 당겨서 새로고침하면 세션 확인 → 지금 영어로 요약 → 홈 스냅샷 순서로 부르고, 도는 동안만 새로고침 표시가 켜진다", async () => {
-    await renderLoaded();
-    expect(refreshControl().props.refreshing).toBe(false);
-    const pendingSession = deferred<AuthUser | null>();
-    refreshSession.mockReturnValue(pendingSession.promise);
-    jest.mocked(getMobileHomeSnapshot).mockResolvedValue(homeSnapshot({ todayStatus: todayStatus({ streakDays: 9 }) }));
-
-    await pullToRefresh();
-    expect(refreshControl().props.refreshing).toBe(true);
-    expect(getNowInEnglishSummary).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      pendingSession.resolve(signedInUser);
-    });
-    await flushAsync();
-
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-    expect(getNowInEnglishSummary).toHaveBeenCalledTimes(2);
-    expect(getMobileHomeSnapshot).toHaveBeenCalledTimes(2);
-    expect(getMobileHomeSnapshot).toHaveBeenLastCalledWith("I");
-    expect(refreshSession.mock.invocationCallOrder[0]).toBeLessThan(
-      jest.mocked(getNowInEnglishSummary).mock.invocationCallOrder[1]
-    );
-    expect(jest.mocked(getNowInEnglishSummary).mock.invocationCallOrder[1]).toBeLessThan(
-      jest.mocked(getMobileHomeSnapshot).mock.invocationCallOrder[1]
-    );
-    expect(screen.getByText("작문 9일 연속")).toBeOnTheScreen();
-    expect(refreshControl().props.refreshing).toBe(false);
-  });
-
-  it("[spec] 새로고침에서 세션이 없어졌으면 홈 데이터를 비우고 스냅샷을 다시 부르지 않는다", async () => {
-    await renderLoaded();
-    refreshSession.mockResolvedValue(null);
-
-    await pullToRefresh();
-
-    expect(getNowInEnglishSummary).toHaveBeenCalledTimes(2);
-    expect(getMobileHomeSnapshot).toHaveBeenCalledTimes(1);
-    expect(screen.getByText("작문 대기 중")).toBeOnTheScreen();
-    expect(screen.getByText("일기 대기 중")).toBeOnTheScreen();
-    expect(screen.getByText("총 0문항 작성 · 총 0개의 일기 작성")).toBeOnTheScreen();
-    expect(screen.getByText(FEATURED_FALLBACK)).toBeOnTheScreen();
-    expect(refreshControl().props.refreshing).toBe(false);
+    const question = await openSheet("question");
+    expect(within(question).getByText("학습 일지를 불러오지 못했어요.")).toBeOnTheScreen();
+    expect(within(question).getByText("오늘의 추천 질문을 불러오지 못했어요.")).toBeOnTheScreen();
+    await closeSheet("question");
+    expect(within(await openSheet("diary")).getByText("영어일기 달력을 불러오지 못했어요.")).toBeOnTheScreen();
   });
 
   it("[spec] 포커스를 다시 받으면 이어 쓰기 상태·일기 달력·지금 영어로 요약·튜토리얼 요청을 다시 확인하고 스냅샷도 다시 부른다", async () => {
@@ -798,18 +903,17 @@ describe("[spec] 홈 데이터", () => {
 });
 
 // ---------- 이어 쓰기 ----------
+// 이어 쓰기 줄(학습 일지 카드)은 없어졌고, 같은 상태 확인 규칙으로 로비 기본 말풍선의 "이어 쓰기" 버튼이 보인다.
 
 describe("[spec] 이어 쓰기", () => {
-  it("[spec] 이어 쓰기 상태가 없으면 학습 일지 카드에 이어 쓰기 줄이 없다", async () => {
+  it("[spec] 이어 쓰기 상태가 없으면 말풍선에 이어 쓰기 버튼이 없다", async () => {
     await renderLoaded();
 
-    expect(screen.queryByText("이어서 쓰기 >")).toBeNull();
-    expect(screen.queryByText("다시 쓰기 >")).toBeNull();
-    expect(screen.queryByText("피드백 이어보기 >")).toBeNull();
+    expect(screen.queryByRole("button", { name: RESUME_LABEL })).toBeNull();
     expect(clearIncompleteLoop).not.toHaveBeenCalled();
   });
 
-  it("[spec] 피드백 단계는 저장된 피드백 상태가 있으면 '피드백 이어보기' 줄을 보이고, 누르면 피드백 화면으로 간다", async () => {
+  it("[spec] 피드백 단계는 저장된 피드백 상태가 있으면 이어 쓰기 버튼을 보이고, 누르면 피드백 화면으로 간다", async () => {
     jest.mocked(getIncompleteLoop).mockResolvedValue(loop("feedback", { difficulty: "B" }));
     jest.mocked(hydratePracticeFeedbackState).mockResolvedValue(feedbackState());
     await renderLoaded();
@@ -817,10 +921,8 @@ describe("[spec] 이어 쓰기", () => {
     expect(hydratePracticeFeedbackState).toHaveBeenCalledWith("B", "prompt-loop");
     expect(getLocalWritingDraft).not.toHaveBeenCalled();
     expect(getWritingDraft).not.toHaveBeenCalled();
-    expect(screen.getByText("피드백 이어보기 >")).toBeOnTheScreen();
-    expect(screen.getByText(`받아둔 피드백이 있어요 · ${SAVED_TIME}`)).toBeOnTheScreen();
 
-    await pressText("피드백 이어보기 >");
+    await fireEvent.press(screen.getByRole("button", { name: RESUME_LABEL }));
 
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith({
@@ -829,17 +931,17 @@ describe("[spec] 이어 쓰기", () => {
     });
   });
 
-  it("[spec] 피드백 단계인데 저장된 피드백 상태가 없으면 이어 쓰기 상태를 지우고 줄을 숨긴다", async () => {
+  it("[spec] 피드백 단계인데 저장된 피드백 상태가 없으면 이어 쓰기 상태를 지우고 버튼을 숨긴다", async () => {
     jest.mocked(getIncompleteLoop).mockResolvedValue(loop("feedback"));
     jest.mocked(hydratePracticeFeedbackState).mockResolvedValue(null);
     await renderLoaded();
 
     expect(clearIncompleteLoop).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("피드백 이어보기 >")).toBeNull();
+    expect(screen.queryByRole("button", { name: RESUME_LABEL })).toBeNull();
     expect(getMobileHomeSnapshot).toHaveBeenCalledWith("I");
   });
 
-  it("[spec] 답 단계는 이 기기와 서버의 답 초안을 확인하고, 서버 초안만 있어도 '이어서 쓰기' 줄을 보이며 누르면 작문 화면으로 간다", async () => {
+  it("[spec] 답 단계는 이 기기와 서버의 답 초안을 확인하고, 서버 초안만 있어도 이어 쓰기 버튼을 보이며 누르면 작문 화면으로 간다", async () => {
     jest.mocked(getIncompleteLoop).mockResolvedValue(loop("answer"));
     jest.mocked(getLocalWritingDraft).mockResolvedValue(null);
     jest.mocked(getWritingDraft).mockResolvedValue(writingDraft());
@@ -847,10 +949,8 @@ describe("[spec] 이어 쓰기", () => {
 
     expect(getLocalWritingDraft).toHaveBeenCalledWith("prompt-loop", "ANSWER");
     expect(getWritingDraft).toHaveBeenCalledWith("prompt-loop", "ANSWER");
-    expect(screen.getByText("이어서 쓰기 >")).toBeOnTheScreen();
-    expect(screen.getByText(`쓰던 답안이 있어요 · ${SAVED_TIME}`)).toBeOnTheScreen();
 
-    await pressText("이어서 쓰기 >");
+    await fireEvent.press(screen.getByRole("button", { name: RESUME_LABEL }));
 
     expect(router.push).toHaveBeenCalledWith({
       pathname: "/practice/write",
@@ -858,7 +958,7 @@ describe("[spec] 이어 쓰기", () => {
     });
   });
 
-  it("[spec] 다시 쓰기 단계는 다시 쓰기 초안을 확인하고, 이 기기 초안만 있어도 '다시 쓰기' 줄을 보이며 누르면 이어 쓰는 다시 쓰기로 간다", async () => {
+  it("[spec] 다시 쓰기 단계는 다시 쓰기 초안을 확인하고, 이 기기 초안만 있어도 이어 쓰기 버튼을 보이며 누르면 이어 쓰는 다시 쓰기로 간다", async () => {
     jest.mocked(getIncompleteLoop).mockResolvedValue(loop("rewrite"));
     jest.mocked(getLocalWritingDraft).mockResolvedValue(writingDraft({ draftType: "REWRITE" }));
     jest.mocked(getWritingDraft).mockResolvedValue(null);
@@ -866,10 +966,8 @@ describe("[spec] 이어 쓰기", () => {
 
     expect(getLocalWritingDraft).toHaveBeenCalledWith("prompt-loop", "REWRITE");
     expect(getWritingDraft).toHaveBeenCalledWith("prompt-loop", "REWRITE");
-    expect(screen.getByText("다시 쓰기 >")).toBeOnTheScreen();
-    expect(screen.getByText(`다시 쓰던 답안이 있어요 · ${SAVED_TIME}`)).toBeOnTheScreen();
 
-    await pressText("다시 쓰기 >");
+    await fireEvent.press(screen.getByRole("button", { name: RESUME_LABEL }));
 
     expect(router.push).toHaveBeenCalledWith({
       pathname: "/practice/write",
@@ -884,46 +982,38 @@ describe("[spec] 이어 쓰기", () => {
 
     expect(getLocalWritingDraft).toHaveBeenCalledWith("prompt-loop", "REWRITE");
     expect(getWritingDraft).toHaveBeenCalledWith("prompt-loop", "REWRITE");
-    expect(screen.getByText("이어서 쓰기 >")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: RESUME_LABEL })).toBeOnTheScreen();
   });
 
-  it("[spec] 이 기기와 서버에 초안이 모두 없으면 이어 쓰기 상태를 지우고 줄을 숨긴다", async () => {
+  it("[spec] 이 기기와 서버에 초안이 모두 없으면 이어 쓰기 상태를 지우고 버튼을 숨긴다", async () => {
     jest.mocked(getIncompleteLoop).mockResolvedValue(loop("answer"));
     await renderLoaded();
 
     expect(clearIncompleteLoop).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("이어서 쓰기 >")).toBeNull();
+    expect(screen.queryByRole("button", { name: RESUME_LABEL })).toBeNull();
     expect(getMobileHomeSnapshot).toHaveBeenCalledWith("I");
   });
 
-  it("[spec] 서버 초안 확인이 실패하면 이 기기 초안이 없어도 줄을 남긴다", async () => {
+  it("[spec] 서버 초안 확인이 실패하면 이 기기 초안이 없어도 버튼을 남긴다", async () => {
     jest.mocked(getIncompleteLoop).mockResolvedValue(loop("answer"));
     jest.mocked(getWritingDraft).mockRejectedValue(new Error("네트워크 오류"));
     await renderLoaded();
 
     expect(clearIncompleteLoop).not.toHaveBeenCalled();
-    expect(screen.getByText("이어서 쓰기 >")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: RESUME_LABEL })).toBeOnTheScreen();
     expect(getMobileHomeSnapshot).toHaveBeenCalledWith("A");
   });
 
-  it("[spec] 저장 시각을 읽을 수 없으면 이어 쓰기 줄에 단계 문구만 보인다", async () => {
-    jest.mocked(getIncompleteLoop).mockResolvedValue(loop("answer", { updatedAt: "not-a-date" }));
-    jest.mocked(getWritingDraft).mockResolvedValue(writingDraft());
-    await renderLoaded();
-
-    expect(screen.getByText("쓰던 답안이 있어요")).toBeOnTheScreen();
-  });
-
-  it("[spec] 포커스를 다시 받을 때 이어 쓰기 상태가 없어졌으면 줄을 숨기고 기본 난이도로 스냅샷을 다시 부른다", async () => {
+  it("[spec] 포커스를 다시 받을 때 이어 쓰기 상태가 없어졌으면 버튼을 숨기고 기본 난이도로 스냅샷을 다시 부른다", async () => {
     jest.mocked(getIncompleteLoop).mockResolvedValue(loop("answer"));
     jest.mocked(getWritingDraft).mockResolvedValue(writingDraft());
     await renderLoaded();
-    expect(screen.getByText("이어서 쓰기 >")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: RESUME_LABEL })).toBeOnTheScreen();
 
     jest.mocked(getIncompleteLoop).mockResolvedValue(null);
     await refocus();
 
-    expect(screen.queryByText("이어서 쓰기 >")).toBeNull();
+    expect(screen.queryByRole("button", { name: RESUME_LABEL })).toBeNull();
     expect(getMobileHomeSnapshot).toHaveBeenLastCalledWith("I");
   });
 
@@ -938,29 +1028,14 @@ describe("[spec] 이어 쓰기", () => {
   });
 });
 
-// ---------- 머리 줄 ----------
-
-describe("[spec] 머리 줄", () => {
-  it("[spec] 의견 보내기 버튼을 누르면 홈에서 보낸 의견 화면으로 간다", async () => {
-    await renderLoaded();
-
-    const button = screen.getByRole("button", { name: FEEDBACK_ENTRY_LABEL });
-    expect(within(button).getByText("의견 보내기")).toBeOnTheScreen();
-    await fireEvent.press(button);
-
-    expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith({ pathname: "/support-feedback", params: { source: "home" } });
-  });
-});
-
-// ---------- 학습 일지 카드 ----------
+// ---------- 학습 일지 카드(질문 판) ----------
 
 describe("[spec] 학습 일지 카드", () => {
   it("[spec] 연속 일수에 맞는 마스코트를 보인다", async () => {
     jest.mocked(getMobileHomeSnapshot).mockResolvedValue(homeSnapshot({ todayStatus: todayStatus({ streakDays: 7 }) }));
     await renderLoaded();
 
-    const images = findHost(screen.root!, "Image");
+    const images = findHost(await openSheet("question"), "Image");
     expect(images).toHaveLength(1);
     expect(images[0].props.source).toEqual(require("@/assets/images/streak-mascot/streak-07.png"));
   });
@@ -968,7 +1043,7 @@ describe("[spec] 학습 일지 카드", () => {
   it("[spec] 연속 일수가 3일보다 적으면 기본 마스코트를 보인다", async () => {
     await renderLoaded();
 
-    expect(findHost(screen.root!, "Image")[0].props.source).toEqual(
+    expect(findHost(await openSheet("question"), "Image")[0].props.source).toEqual(
       require("@/assets/images/streak-mascot/streak-default.png")
     );
   });
@@ -977,7 +1052,7 @@ describe("[spec] 학습 일지 카드", () => {
     jest.mocked(getMobileHomeSnapshot).mockResolvedValue(homeSnapshot({ todayStatus: todayStatus({ streakDays: 0 }) }));
     await renderLoaded();
 
-    expect(screen.getByText("작문 1일 연속")).toBeOnTheScreen();
+    expect(within(await openSheet("question")).getByText("작문 1일 연속")).toBeOnTheScreen();
   });
 
   it("[spec] 오늘 일기가 없으면 어제부터 이어진 날로 일기 연속을 센다", async () => {
@@ -986,13 +1061,13 @@ describe("[spec] 학습 일지 카드", () => {
     );
     await renderLoaded();
 
-    expect(screen.getByText("일기 2일 연속")).toBeOnTheScreen();
+    expect(within(await openSheet("question")).getByText("일기 2일 연속")).toBeOnTheScreen();
   });
 
   it("[spec] 학습 일지 카드를 누르면 기록 화면으로 간다", async () => {
     await renderLoaded();
 
-    await pressText("학습 일지");
+    await fireEvent.press(within(await openSheet("question")).getByText("학습 일지"));
 
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith("/records");
@@ -1001,7 +1076,7 @@ describe("[spec] 학습 일지 카드", () => {
   it("[spec] 요일 줄은 오늘이 맨 오른쪽인 7일이고, 오늘 완료했으면 오늘부터 연속 일수만큼 완료로 표시한다", async () => {
     await renderLoaded();
 
-    const chips = weekRowChips();
+    const chips = weekRowChips(await openSheet("question"));
     expect(chips.map((chip) => chip.label)).toEqual(["금", "토", "일", "월", "화", "수", "목"]);
     // 오늘(목): 오늘 표시가 완료 표시를 덮는다.
     expect(chips[6].chipStyle).toMatchObject({ backgroundColor: "#FFF8F1", borderWidth: 3, borderColor: "#F2C28A" });
@@ -1023,7 +1098,7 @@ describe("[spec] 학습 일지 카드", () => {
     );
     await renderLoaded();
 
-    const chips = weekRowChips();
+    const chips = weekRowChips(await openSheet("question"));
     expect(chips[6].chipStyle).toMatchObject({ backgroundColor: "#FFF8F1" });
     expect(chips[5].chipStyle).toMatchObject({ backgroundColor: "#FFE8CB" });
     expect(chips[4].chipStyle).toMatchObject({ backgroundColor: "#FFE8CB" });
@@ -1032,28 +1107,30 @@ describe("[spec] 학습 일지 카드", () => {
 
   it("[spec] 요일 줄을 누르면 월 달력 모달이 열린다", async () => {
     await renderLoaded();
-    expect(modalHosts()).toHaveLength(0);
+    await openSheet("question");
+    expect(calendarModals()).toHaveLength(0);
 
     await openCalendar();
 
-    const modal = openModal();
+    const modal = calendarModal();
     expect(within(modal).getByText("2026년 11월")).toBeOnTheScreen();
   });
 });
 
-// ---------- 지금 영어로 ----------
+// ---------- 지금 영어로(생각 판) ----------
 
 describe("[spec] 지금 영어로", () => {
   it("[spec] 안내 문구, 오늘 남긴 조각 수, 루프 알림 ON을 보이고 알림을 누르면 /now 알림 설정을 연다", async () => {
     await renderLoaded();
 
-    expect(screen.getByText("지금 영어로")).toBeOnTheScreen();
-    expect(screen.getByText(NOW_BODY)).toBeOnTheScreen();
-    expect(screen.getByText("오늘 남긴 조각")).toBeOnTheScreen();
-    const reminder = screen.getByRole("button", { name: REMINDER_LABEL });
+    const thought = await openSheet("thought");
+    expect(within(thought).getByText("지금 영어로")).toBeOnTheScreen();
+    expect(within(thought).getByText(NOW_BODY)).toBeOnTheScreen();
+    expect(within(thought).getByText("오늘 남긴 조각")).toBeOnTheScreen();
+    const reminder = within(thought).getByRole("button", { name: REMINDER_LABEL });
     expect(within(reminder).getByText("ON")).toBeOnTheScreen();
     expect(within(reminder).getByText("루프 알림")).toBeOnTheScreen();
-    expect(screen.getByText("오늘 남긴 조각").parent!.children[0]).toHaveTextContent("1");
+    expect(within(thought).getByText("오늘 남긴 조각").parent!.children[0]).toHaveTextContent("1");
 
     await fireEvent.press(reminder);
 
@@ -1065,110 +1142,71 @@ describe("[spec] 지금 영어로", () => {
     jest.mocked(getNowInEnglishSummary).mockReturnValue(pending.promise);
     await renderLoaded();
 
-    expect(within(screen.getByRole("button", { name: REMINDER_LABEL })).getByText("OFF")).toBeOnTheScreen();
-    expect(screen.getByText("오늘 남긴 조각").parent!.children[0]).toHaveTextContent("0");
-    expect(screen.getByText("총 0개의 영어조각")).toBeOnTheScreen();
+    let thought = await openSheet("thought");
+    expect(within(within(thought).getByRole("button", { name: REMINDER_LABEL })).getByText("OFF")).toBeOnTheScreen();
+    expect(within(thought).getByText("오늘 남긴 조각").parent!.children[0]).toHaveTextContent("0");
+    await closeSheet("thought");
+    // "총 N개의 영어조각"은 학습 일지 카드(질문 판)의 통계다.
+    expect(within(await openSheet("question")).getByText("총 0개의 영어조각")).toBeOnTheScreen();
+    await closeSheet("question");
 
     await act(async () => {
       pending.resolve(nowSummary({ todayCount: 3 }, false));
     });
     await flushAsync();
 
-    expect(within(screen.getByRole("button", { name: REMINDER_LABEL })).getByText("OFF")).toBeOnTheScreen();
-    expect(screen.getByText("오늘 남긴 조각").parent!.children[0]).toHaveTextContent("3");
+    thought = await openSheet("thought");
+    expect(within(within(thought).getByRole("button", { name: REMINDER_LABEL })).getByText("OFF")).toBeOnTheScreen();
+    expect(within(thought).getByText("오늘 남긴 조각").parent!.children[0]).toHaveTextContent("3");
   });
 
   it("[spec] 지금 쓰기는 /now로, 기록 보기는 기록 화면의 지금 영어로 탭으로 간다", async () => {
     await renderLoaded();
 
-    await pressText("지금 쓰기");
+    await fireEvent.press(within(await openSheet("thought")).getByText("지금 쓰기"));
     expect(router.push).toHaveBeenLastCalledWith("/now");
 
-    await pressText("기록 보기");
+    await fireEvent.press(within(await ensureSheet("thought")).getByText("기록 보기"));
     expect(router.push).toHaveBeenLastCalledWith({ pathname: "/records", params: { tab: "now" } });
     expect(router.push).toHaveBeenCalledTimes(2);
   });
 });
 
-// ---------- 질문 답하기와 학습 가이드 ----------
-
-describe("[spec] 질문 답하기와 학습 가이드", () => {
-  it("[spec] 가이드 보기를 누르면 학습 가이드 모달이 열려 단계 4개와 팁을 보이고, 닫기를 누르면 닫힌다", async () => {
-    await renderLoaded();
-    expect(screen.getByText("질문 답하기")).toBeOnTheScreen();
-
-    await pressText("가이드 보기");
-
-    const modal = openModal();
-    expect(within(modal).getByText("바로 보는 학습 가이드")).toBeOnTheScreen();
-    expect(within(modal).getByText("질문 선택, 코치 도움, 피드백까지 한 흐름으로 이어집니다.")).toBeOnTheScreen();
-    const steps: [string, string, string][] = [
-      ["1", "난이도 고르기", "지금 컨디션에 맞는 난이도를 하나 고르면 오늘 질문 세트가 바로 열려요."],
-      ["2", "질문 하나 선택하기", "마음에 드는 질문을 고른 뒤 2~4문장 정도로 가볍게 먼저 써 보세요."],
-      ["3", "AI 코치 활용하기", "표현이 막히면 작문칸 안의 마스코트를 눌러 코치에게 첫 문장이나 표현을 물어볼 수 있어요."],
-      ["4", "피드백으로 다시 쓰기", "피드백에서 잘한 점과 다음 루프 제안을 보고 한 번 더 다듬으면 실력이 훨씬 빨리 붙어요."]
-    ];
-    for (const [index, title, body] of steps) {
-      expect(within(modal).getByText(index)).toBeOnTheScreen();
-      expect(within(modal).getByText(title)).toBeOnTheScreen();
-      expect(within(modal).getByText(body)).toBeOnTheScreen();
-    }
-    expect(within(modal).getByText("작게 시작하는 게 가장 좋아요.")).toBeOnTheScreen();
-    expect(
-      within(modal).getByText(
-        "완벽하게 길게 쓰려고 하기보다, 짧게 먼저 쓰고 AI 코치와 피드백으로 한 번 더 다듬는 방식이 가장 안정적으로 늘어요."
-      )
-    ).toBeOnTheScreen();
-    expect(modal.props.animationType).toBe("slide");
-
-    await fireEvent.press(within(modal).getByText("닫기"));
-
-    expect(modalHosts()).toHaveLength(0);
-  });
-
-  it("[spec] 학습 가이드 모달은 뒤로가기(닫기 요청)로도 닫힌다", async () => {
-    await renderLoaded();
-    await pressText("가이드 보기");
-
-    await fireEvent(openModal(), "requestClose");
-
-    expect(modalHosts()).toHaveLength(0);
-  });
-});
-
-// ---------- 오늘의 추천 질문 ----------
+// ---------- 오늘의 추천 질문(질문 판) ----------
 
 describe("[spec] 오늘의 추천 질문", () => {
-  function featuredHeader() {
-    return screen.getByText("오늘의 추천 질문").parent!;
+  function featuredHeader(root: TestInstance) {
+    return within(root).getByText("오늘의 추천 질문").parent!;
   }
 
   it("[spec] 추천의 난이도 배지, 질문, 이유, 주제, 해석 보기를 보이고 해석은 처음에 숨겨져 있다", async () => {
     await renderLoaded();
 
-    const badgeText = within(featuredHeader()).getByText("보통");
+    const question = await openSheet("question");
+    const badgeText = within(featuredHeader(question)).getByText("보통");
     expect(badgeText).toHaveStyle({ color: "#2D7DA8" });
     expect(StyleSheet.flatten(badgeText.parent!.props.style)).toMatchObject({
       backgroundColor: "#E6F4FB",
       borderColor: "#2D7DA8"
     });
-    expect(screen.getByText(featuredPrompt.questionEn)).toBeOnTheScreen();
-    expect(screen.getByText("요즘 여행 이야기를 자주 썼어요.")).toBeOnTheScreen();
-    expect(screen.getByText("Travel")).toBeOnTheScreen();
-    expect(screen.getByText("해석 보기")).toBeOnTheScreen();
-    expect(screen.queryByText(featuredPrompt.questionKo)).toBeNull();
+    expect(within(question).getByText(featuredPrompt.questionEn)).toBeOnTheScreen();
+    expect(within(question).getByText("요즘 여행 이야기를 자주 썼어요.")).toBeOnTheScreen();
+    expect(within(question).getByText("Travel")).toBeOnTheScreen();
+    expect(within(question).getByText("해석 보기")).toBeOnTheScreen();
+    expect(within(question).queryByText(featuredPrompt.questionKo)).toBeNull();
   });
 
   it("[spec] 해석 보기를 누르면 해석이 보이고 해석 숨기기로 바뀌며, 다시 누르면 숨긴다. 질문으로 넘어가지 않는다", async () => {
     await renderLoaded();
+    await openSheet("question");
 
-    await pressText("해석 보기");
-    expect(screen.getByText(featuredPrompt.questionKo)).toBeOnTheScreen();
-    expect(screen.getByText("해석 숨기기")).toBeOnTheScreen();
+    await fireEvent.press(within(sheet("question")).getByText("해석 보기"));
+    expect(within(sheet("question")).getByText(featuredPrompt.questionKo)).toBeOnTheScreen();
+    expect(within(sheet("question")).getByText("해석 숨기기")).toBeOnTheScreen();
 
-    await pressText("해석 숨기기");
-    expect(screen.queryByText(featuredPrompt.questionKo)).toBeNull();
-    expect(screen.getByText("해석 보기")).toBeOnTheScreen();
+    await fireEvent.press(within(sheet("question")).getByText("해석 숨기기"));
+    expect(within(sheet("question")).queryByText(featuredPrompt.questionKo)).toBeNull();
+    expect(within(sheet("question")).getByText("해석 보기")).toBeOnTheScreen();
     expect(router.push).not.toHaveBeenCalled();
     expect(trackDailyPromptClick).not.toHaveBeenCalled();
   });
@@ -1176,7 +1214,7 @@ describe("[spec] 오늘의 추천 질문", () => {
   it("[spec] 추천 질문을 누르면 클릭을 기록하고 추천 난이도로 작문 화면에 간다", async () => {
     await renderLoaded();
 
-    await pressText(featuredPrompt.questionEn);
+    await fireEvent.press(within(await openSheet("question")).getByText(featuredPrompt.questionEn));
 
     expect(trackDailyPromptClick).toHaveBeenCalledTimes(1);
     expect(trackDailyPromptClick).toHaveBeenCalledWith("prompt-featured");
@@ -1191,7 +1229,7 @@ describe("[spec] 오늘의 추천 질문", () => {
     jest.mocked(trackDailyPromptClick).mockRejectedValue(new Error("기록 실패"));
     await renderLoaded();
 
-    await pressText(featuredPrompt.questionEn);
+    await fireEvent.press(within(await openSheet("question")).getByText(featuredPrompt.questionEn));
     await flushAsync();
 
     expect(router.push).toHaveBeenCalledTimes(1);
@@ -1204,16 +1242,18 @@ describe("[spec] 오늘의 추천 질문", () => {
     );
     await renderLoaded();
 
-    expect(screen.queryByText("요즘 여행 이야기를 자주 썼어요.")).toBeNull();
-    expect(screen.getByText("Travel")).toBeOnTheScreen();
+    const question = await openSheet("question");
+    expect(within(question).queryByText("요즘 여행 이야기를 자주 썼어요.")).toBeNull();
+    expect(within(question).getByText("Travel")).toBeOnTheScreen();
   });
 
   it("[spec] 추천 질문이 없으면 준비 문구를 보이고, 배지는 이어 쓰기 난이도(없으면 입문)를 쓴다", async () => {
     jest.mocked(getMobileHomeSnapshot).mockResolvedValue(homeSnapshot({ featuredRecommendation: null }));
     await renderScreen();
 
-    expect(screen.getByText(FEATURED_FALLBACK)).toBeOnTheScreen();
-    expect(within(featuredHeader()).getByText("입문")).toHaveStyle({ color: "#F29A2E" });
+    const question = await openSheet("question");
+    expect(within(question).getByText(FEATURED_FALLBACK)).toBeOnTheScreen();
+    expect(within(featuredHeader(question)).getByText("입문")).toHaveStyle({ color: "#F29A2E" });
   });
 
   it("[spec] 추천에 질문이 없고 이어 쓰기 상태가 C 난이도면 배지는 도전이다", async () => {
@@ -1223,49 +1263,27 @@ describe("[spec] 오늘의 추천 질문", () => {
     jest.mocked(getMobileHomeSnapshot).mockReturnValue(pending.promise);
     await renderScreen();
 
-    expect(within(featuredHeader()).getByText("도전")).toBeOnTheScreen();
+    expect(within(featuredHeader(await openSheet("question"))).getByText("도전")).toBeOnTheScreen();
 
     await act(async () => {
       pending.resolve(homeSnapshot({ featuredRecommendation: null }));
     });
     await flushAsync();
 
-    expect(within(featuredHeader()).getByText("도전")).toBeOnTheScreen();
-    expect(screen.getByText(FEATURED_FALLBACK)).toBeOnTheScreen();
-  });
-
-  it("[spec] 새로고침으로 추천 질문이 바뀌면 펼쳤던 해석이 다시 숨겨진다", async () => {
-    await renderLoaded();
-    await pressText("해석 보기");
-    expect(screen.getByText(featuredPrompt.questionKo)).toBeOnTheScreen();
-    jest.mocked(getMobileHomeSnapshot).mockResolvedValue(homeSnapshot({ featuredRecommendation: featured({ prompt: otherPrompt }) }));
-
-    await pullToRefresh();
-
-    expect(screen.getByText(otherPrompt.questionEn)).toBeOnTheScreen();
-    expect(screen.queryByText(otherPrompt.questionKo)).toBeNull();
-    expect(screen.getByText("해석 보기")).toBeOnTheScreen();
-  });
-
-  it("[spec] 새로고침해도 같은 추천 질문이면 펼쳤던 해석이 그대로 보인다", async () => {
-    await renderLoaded();
-    await pressText("해석 보기");
-
-    await pullToRefresh();
-
-    expect(screen.getByText(featuredPrompt.questionKo)).toBeOnTheScreen();
-    expect(screen.getByText("해석 숨기기")).toBeOnTheScreen();
+    expect(within(featuredHeader(sheet("question"))).getByText("도전")).toBeOnTheScreen();
+    expect(within(sheet("question")).getByText(FEATURED_FALLBACK)).toBeOnTheScreen();
   });
 });
 
-// ---------- 난이도별 질문 ----------
+// ---------- 난이도별 질문(질문 판) ----------
 
 describe("[spec] 난이도별 질문", () => {
   it("[spec] 난이도 카드 4개를 보이고, 누르면 그 난이도의 질문 목록으로 간다", async () => {
     await renderLoaded();
 
-    expect(screen.getByText("난이도별 질문")).toBeOnTheScreen();
-    expect(screen.getByText("내 수준에 맞게 골라 보세요.")).toBeOnTheScreen();
+    const question = await openSheet("question");
+    expect(within(question).getByText("난이도별 질문")).toBeOnTheScreen();
+    expect(within(question).getByText("내 수준에 맞게 골라 보세요.")).toBeOnTheScreen();
     const cards: [DailyDifficulty, string][] = [
       ["I", "짧은 한두 문장으로 가볍게 시작해 보세요."],
       ["A", "쉬운 문장으로 부담 없이 이어가 보세요."],
@@ -1273,59 +1291,65 @@ describe("[spec] 난이도별 질문", () => {
       ["C", "비교와 전환 표현으로 더 탄탄하게 써 보세요."]
     ];
     for (const [difficulty, subtitle] of cards) {
-      await pressText(subtitle);
+      await fireEvent.press(within(await ensureSheet("question")).getByText(subtitle));
       expect(router.push).toHaveBeenLastCalledWith({ pathname: "/practice/[difficulty]", params: { difficulty } });
     }
     expect(router.push).toHaveBeenCalledTimes(4);
+    const shown = await ensureSheet("question");
     for (const title of ["입문", "쉬움", "도전"]) {
-      expect(screen.getByText(title)).toBeOnTheScreen();
+      expect(within(shown).getByText(title)).toBeOnTheScreen();
     }
     // "보통"은 추천 질문 배지에도 있다.
-    expect(screen.getAllByText("보통")).toHaveLength(2);
+    expect(within(shown).getAllByText("보통")).toHaveLength(2);
   });
 });
 
-// ---------- 영어일기 ----------
+// ---------- 영어일기(일기 판) ----------
 
 describe("[spec] 영어일기", () => {
   it("[spec] 전체 보기를 누르면 영어일기 목록으로 간다", async () => {
     await renderLoaded();
-    expect(screen.getByText("영어일기")).toBeOnTheScreen();
+    const diary = await openSheet("diary");
+    // 판 제목(머리)과 별도로 영어일기 칸의 제목이 있다.
+    expect(within(diary).getAllByText("영어일기").filter((node) => node.props.accessibilityRole !== "header")).toHaveLength(1);
 
-    await pressText("전체 보기");
+    await fireEvent.press(within(diary).getByText("전체 보기"));
 
     expect(router.push).toHaveBeenCalledWith("/diary");
   });
 
   it("[spec] 이번 달 달력을 보이고, 다음 달 버튼은 막혀 있으며 이전 달로 갔다가 돌아올 수 있다", async () => {
     await renderLoaded();
+    await openSheet("diary");
+    const diary = () => within(sheet("diary"));
 
-    expect(screen.getByText("2026년 11월")).toBeOnTheScreen();
-    expect(screen.getByText(">")).toBeDisabled();
-    expect(screen.getByText(">")).toHaveStyle({ color: "#BFAE9D" });
-    await pressText(">");
-    expect(screen.getByText("2026년 11월")).toBeOnTheScreen();
+    expect(diary().getByText("2026년 11월")).toBeOnTheScreen();
+    expect(diary().getByText(">")).toBeDisabled();
+    expect(diary().getByText(">")).toHaveStyle({ color: "#BFAE9D" });
+    await fireEvent.press(diary().getByText(">"));
+    expect(diary().getByText("2026년 11월")).toBeOnTheScreen();
 
-    await pressText("<");
-    expect(screen.getByText("2026년 10월")).toBeOnTheScreen();
-    expect(screen.getByText(">")).toBeEnabled();
-    expect(screen.getByText(">")).toHaveStyle({ color: "#8A6431" });
-    expect(screen.getByRole("button", { name: "2026-09-27 영어일기 보기" })).toBeOnTheScreen();
-    expect(screen.getAllByRole("button", { name: /영어일기 보기$/ })).toHaveLength(35);
+    await fireEvent.press(diary().getByText("<"));
+    expect(diary().getByText("2026년 10월")).toBeOnTheScreen();
+    expect(diary().getByText(">")).toBeEnabled();
+    expect(diary().getByText(">")).toHaveStyle({ color: "#8A6431" });
+    expect(diary().getByRole("button", { name: "2026-09-27 영어일기 보기" })).toBeOnTheScreen();
+    expect(diary().getAllByRole("button", { name: /영어일기 보기$/ })).toHaveLength(35);
 
-    await pressText(">");
-    expect(screen.getByText("2026년 11월")).toBeOnTheScreen();
+    await fireEvent.press(diary().getByText(">"));
+    expect(diary().getByText("2026년 11월")).toBeOnTheScreen();
     expect(getDiaryCalendarSummary).not.toHaveBeenCalled();
   });
 
   it("[spec] 요일 머리와 이번 달 칸 35개(11월 1일 ~ 12월 5일)를 보인다", async () => {
     await renderLoaded();
+    const diary = await openSheet("diary");
 
-    const cells = screen.getAllByRole("button", { name: /영어일기 보기$/ });
+    const cells = within(diary).getAllByRole("button", { name: /영어일기 보기$/ });
     expect(cells).toHaveLength(35);
     expect(cells[0]).toHaveAccessibleName("2026-11-01 영어일기 보기");
     expect(cells[34]).toHaveAccessibleName("2026-12-05 영어일기 보기");
-    const weekHeader = screen.getAllByText("일").at(-1)!.parent!;
+    const weekHeader = within(diary).getAllByText("일").at(-1)!.parent!;
     expect(weekHeader.children.map((child) => (child as TestInstance).children[0])).toEqual([
       "일",
       "월",
@@ -1339,27 +1363,28 @@ describe("[spec] 영어일기", () => {
 
   it("[spec] 칸의 모양: 일기 있음·오늘·다른 달·미래", async () => {
     await renderLoaded();
+    const diary = await openSheet("diary");
 
-    const withEntry = screen.getByRole("button", { name: "2026-11-07 영어일기 보기" });
+    const withEntry = within(diary).getByRole("button", { name: "2026-11-07 영어일기 보기" });
     expect(withEntry).toHaveStyle({ backgroundColor: "#FFF0D7" });
     expect(within(withEntry).getByText("7")).toHaveStyle({ color: "#8A5A1E" });
     expect(cellHasDot(withEntry)).toBe(true);
 
-    const today = screen.getByRole("button", { name: "2026-11-12 영어일기 보기" });
+    const today = within(diary).getByRole("button", { name: "2026-11-12 영어일기 보기" });
     expect(today).toHaveStyle({ borderWidth: 1, borderColor: "#F2A14A", backgroundColor: "#FFF0D7" });
     expect(within(today).getByText("12")).toHaveStyle({ color: "#2E2416" });
 
-    const empty = screen.getByRole("button", { name: "2026-11-08 영어일기 보기" });
+    const empty = within(diary).getByRole("button", { name: "2026-11-08 영어일기 보기" });
     expect(cellHasDot(empty)).toBe(false);
     expect(within(empty).getByText("8")).toHaveStyle({ color: "#5E5247" });
     expect(empty).toBeEnabled();
 
-    const future = screen.getByRole("button", { name: "2026-11-13 영어일기 보기" });
+    const future = within(diary).getByRole("button", { name: "2026-11-13 영어일기 보기" });
     expect(future).toHaveStyle({ opacity: 0.25 });
     expect(within(future).getByText("13")).toHaveStyle({ color: "#C4B8AC" });
     expect(future).toBeDisabled();
 
-    const outside = screen.getByRole("button", { name: "2026-12-01 영어일기 보기" });
+    const outside = within(diary).getByRole("button", { name: "2026-12-01 영어일기 보기" });
     expect(outside).toHaveStyle({ opacity: 0.25 });
     expect(outside).toBeDisabled();
   });
@@ -1373,41 +1398,41 @@ describe("[spec] 영어일기", () => {
   it("[spec] 일기가 있는 칸을 누르면 그 일기를 연다", async () => {
     await renderLoaded();
 
-    await fireEvent.press(screen.getByRole("button", { name: "2026-11-07 영어일기 보기" }));
+    await fireEvent.press(within(await openSheet("diary")).getByRole("button", { name: "2026-11-07 영어일기 보기" }));
     expect(router.push).toHaveBeenLastCalledWith({ pathname: "/diary/[entryId]", params: { entryId: "diary-1107" } });
 
-    await fireEvent.press(screen.getByRole("button", { name: "2026-11-12 영어일기 보기" }));
+    await fireEvent.press(within(await ensureSheet("diary")).getByRole("button", { name: "2026-11-12 영어일기 보기" }));
     expect(router.push).toHaveBeenLastCalledWith({ pathname: "/diary/[entryId]", params: { entryId: "diary-1112" } });
   });
 
   it("[spec] 일기가 없는 지난 날은 목록으로, 미래 칸은 눌러도 아무 일이 없다", async () => {
     await renderLoaded();
 
-    await fireEvent.press(screen.getByRole("button", { name: "2026-11-08 영어일기 보기" }));
+    await fireEvent.press(within(await openSheet("diary")).getByRole("button", { name: "2026-11-08 영어일기 보기" }));
     expect(router.push).toHaveBeenLastCalledWith("/diary");
 
-    await fireEvent.press(screen.getByRole("button", { name: "2026-11-13 영어일기 보기" }));
-    await fireEvent.press(screen.getByRole("button", { name: "2026-12-01 영어일기 보기" }));
+    await fireEvent.press(within(await ensureSheet("diary")).getByRole("button", { name: "2026-11-13 영어일기 보기" }));
+    await fireEvent.press(within(await ensureSheet("diary")).getByRole("button", { name: "2026-12-01 영어일기 보기" }));
     expect(router.push).toHaveBeenCalledTimes(1);
   });
 
   it("[spec] 지난달의 다른 달 칸(9월)도 일기가 없으면 목록으로, 지난달 일기 칸은 그 일기로 간다", async () => {
     await renderLoaded();
-    await pressText("<");
+    await fireEvent.press(within(await openSheet("diary")).getByText("<"));
 
-    const september = screen.getByRole("button", { name: "2026-09-30 영어일기 보기" });
+    const september = within(sheet("diary")).getByRole("button", { name: "2026-09-30 영어일기 보기" });
     expect(september).toHaveStyle({ opacity: 0.45 });
     await fireEvent.press(september);
     expect(router.push).toHaveBeenLastCalledWith("/diary");
 
-    await fireEvent.press(screen.getByRole("button", { name: "2026-10-30 영어일기 보기" }));
+    await fireEvent.press(within(await ensureSheet("diary")).getByRole("button", { name: "2026-10-30 영어일기 보기" }));
     expect(router.push).toHaveBeenLastCalledWith({ pathname: "/diary/[entryId]", params: { entryId: "diary-1030" } });
   });
 
   it("[spec] 오늘 일기가 있으면 '오늘 일기 이어보기'로 그 일기를 연다", async () => {
     await renderLoaded();
 
-    await pressText("오늘 일기 이어보기");
+    await fireEvent.press(within(await openSheet("diary")).getByText("오늘 일기 이어보기"));
 
     expect(router.push).toHaveBeenCalledWith({ pathname: "/diary/[entryId]", params: { entryId: "diary-1112" } });
   });
@@ -1418,16 +1443,17 @@ describe("[spec] 영어일기", () => {
     );
     await renderLoaded();
 
-    await pressText("오늘의 일기 쓰기");
+    await fireEvent.press(within(await openSheet("diary")).getByText("오늘의 일기 쓰기"));
     expect(router.push).toHaveBeenLastCalledWith("/diary/write");
 
-    await fireEvent.press(screen.getByRole("button", { name: "2026-11-12 영어일기 보기" }));
+    await fireEvent.press(within(await ensureSheet("diary")).getByRole("button", { name: "2026-11-12 영어일기 보기" }));
     expect(router.push).toHaveBeenLastCalledWith("/diary/write");
     expect(router.push).toHaveBeenCalledTimes(2);
   });
 
   it("[spec] 포커스를 다시 받아 일기 달력을 부르는 동안 달력에 불러오는 중 표시가 보인다", async () => {
     await renderLoaded();
+    await openSheet("diary");
     const pendingDiary = deferred<DiaryCalendarSummary>();
     jest.mocked(getDiaryCalendarSummary).mockReturnValue(pendingDiary.promise);
     const pendingSnapshot = deferred<MobileHomeSnapshot>();
@@ -1435,25 +1461,25 @@ describe("[spec] 영어일기", () => {
 
     await refocus();
 
-    // 일기 달력 표시 1개 + 다시 부른 스냅샷의 추천 질문 표시 1개
-    expect(spinners()).toHaveLength(2);
+    // 일기 판 안에서는 일기 달력 표시 1개(추천 질문 표시는 질문 판에 있다)
+    expect(spinners(sheet("diary"))).toHaveLength(1);
 
     await act(async () => {
       pendingSnapshot.resolve(homeSnapshot());
     });
     await flushAsync();
     // 스냅샷이 끝나면 일기 달력을 기다리는 중이어도 표시를 끈다.
-    expect(spinners()).toHaveLength(0);
+    expect(spinners(sheet("diary"))).toHaveLength(0);
 
     await act(async () => {
       pendingDiary.resolve(diarySummary());
     });
     await flushAsync();
-    expect(spinners()).toHaveLength(0);
+    expect(spinners(sheet("diary"))).toHaveLength(0);
   });
 });
 
-// ---------- 월 달력 모달 ----------
+// ---------- 월 달력 모달(질문 판의 요일 줄) ----------
 
 describe("[spec] 월 달력 모달", () => {
   it("[spec] 열면 그 달 기록을 부르고, 부르는 동안 불러오는 중 표시를 보인다", async () => {
@@ -1465,7 +1491,7 @@ describe("[spec] 월 달력 모달", () => {
 
     expect(getMonthWritingStatus).toHaveBeenCalledTimes(1);
     expect(getMonthWritingStatus).toHaveBeenCalledWith(2026, 11);
-    const modal = openModal();
+    const modal = calendarModal();
     expect(spinners(modal)).toHaveLength(1);
     expect(spinners(modal)[0].props.color).toBe("#E38B12");
     expect(modal.props.transparent).toBe(true);
@@ -1476,14 +1502,14 @@ describe("[spec] 월 달력 모달", () => {
     });
     await flushAsync();
 
-    expect(spinners(openModal())).toHaveLength(0);
+    expect(spinners(calendarModal())).toHaveLength(0);
   });
 
   it("[spec] 제목, 이번 달에서 막힌 다음 달 버튼, 요약 문구, 범례, 총 문장 수를 보인다", async () => {
     await renderLoaded();
     await openCalendar();
 
-    const modal = openModal();
+    const modal = calendarModal();
     expect(within(modal).getByText("2026년 11월")).toBeOnTheScreen();
     expect(within(modal).getByText(">")).toBeDisabled();
     expect(within(modal).getByText(">")).toHaveStyle({ color: "#B7A38A" });
@@ -1501,7 +1527,7 @@ describe("[spec] 월 달력 모달", () => {
     await renderLoaded();
     await openCalendar();
 
-    const modal = openModal();
+    const modal = calendarModal();
     const cases: [string, string[]][] = [
       ["12일, 작문 완료, 일기 작성, 영어조각 작성", ["작문", "일기", "영어조각"]],
       ["11일, 작문 완료, 일기 작성", ["작문", "일기"]],
@@ -1526,33 +1552,33 @@ describe("[spec] 월 달력 모달", () => {
     await renderLoaded();
     await openCalendar();
 
-    await fireEvent.press(within(openModal()).getByRole("button", { name: "7일, 일기 작성" }));
+    await fireEvent.press(within(calendarModal()).getByRole("button", { name: "7일, 일기 작성" }));
 
-    expect(modalHosts()).toHaveLength(0);
+    expect(calendarModals()).toHaveLength(0);
     expect(router.push).toHaveBeenCalledWith({ pathname: "/diary/[entryId]", params: { entryId: "diary-1107" } });
   });
 
   it("[spec] 작문 없이 영어조각이 있는 칸은 닫고 기록 화면의 지금 영어로 탭으로 간다(일기가 함께 있어도)", async () => {
     await renderLoaded();
     await openCalendar();
-    await fireEvent.press(within(openModal()).getByRole("button", { name: "5일, 영어조각 작성" }));
-    expect(modalHosts()).toHaveLength(0);
+    await fireEvent.press(within(calendarModal()).getByRole("button", { name: "5일, 영어조각 작성" }));
+    expect(calendarModals()).toHaveLength(0);
     expect(router.push).toHaveBeenLastCalledWith({ pathname: "/records", params: { tab: "now" } });
 
     await openCalendar();
-    await fireEvent.press(within(openModal()).getByRole("button", { name: "10일, 일기 작성, 영어조각 작성" }));
+    await fireEvent.press(within(calendarModal()).getByRole("button", { name: "10일, 일기 작성, 영어조각 작성" }));
     expect(router.push).toHaveBeenLastCalledWith({ pathname: "/records", params: { tab: "now" } });
   });
 
   it("[spec] 작문이 있거나 아무 기록이 없는 칸은 닫고 그 날짜의 기록 화면으로 간다", async () => {
     await renderLoaded();
     await openCalendar();
-    await fireEvent.press(within(openModal()).getByRole("button", { name: "12일, 작문 완료, 일기 작성, 영어조각 작성" }));
-    expect(modalHosts()).toHaveLength(0);
+    await fireEvent.press(within(calendarModal()).getByRole("button", { name: "12일, 작문 완료, 일기 작성, 영어조각 작성" }));
+    expect(calendarModals()).toHaveLength(0);
     expect(router.push).toHaveBeenLastCalledWith({ pathname: "/records", params: { date: "2026-11-12" } });
 
     await openCalendar();
-    await fireEvent.press(within(openModal()).getByRole("button", { name: "8일" }));
+    await fireEvent.press(within(calendarModal()).getByRole("button", { name: "8일" }));
     expect(router.push).toHaveBeenLastCalledWith({ pathname: "/records", params: { date: "2026-11-08" } });
   });
 
@@ -1561,11 +1587,11 @@ describe("[spec] 월 달력 모달", () => {
     await openCalendar();
     jest.mocked(getMonthWritingStatus).mockResolvedValue(monthStatus(2026, 10, ["2026-10-05", "2026-10-20"]));
 
-    await fireEvent.press(within(openModal()).getByText("<"));
+    await fireEvent.press(within(calendarModal()).getByText("<"));
     await flushAsync();
 
     expect(getMonthWritingStatus).toHaveBeenLastCalledWith(2026, 10);
-    const modal = openModal();
+    const modal = calendarModal();
     expect(within(modal).getByText("2026년 10월")).toBeOnTheScreen();
     expect(within(modal).getByText(">")).toBeEnabled();
     expect(within(modal).getByText("2일 기록이 있어요")).toBeOnTheScreen();
@@ -1575,7 +1601,7 @@ describe("[spec] 월 달력 모달", () => {
     await fireEvent.press(within(modal).getByText(">"));
     await flushAsync();
     expect(getMonthWritingStatus).toHaveBeenLastCalledWith(2026, 11);
-    expect(within(openModal()).getByText("2026년 11월")).toBeOnTheScreen();
+    expect(within(calendarModal()).getByText("2026년 11월")).toBeOnTheScreen();
   });
 
   it("[spec] 기록이 없는 달은 '기록이 없어요'", async () => {
@@ -1583,10 +1609,10 @@ describe("[spec] 월 달력 모달", () => {
     await openCalendar();
     jest.mocked(getMonthWritingStatus).mockResolvedValue(null);
 
-    await fireEvent.press(within(openModal()).getByText("<"));
+    await fireEvent.press(within(calendarModal()).getByText("<"));
     await flushAsync();
 
-    expect(within(openModal()).getByText("기록이 없어요")).toBeOnTheScreen();
+    expect(within(calendarModal()).getByText("기록이 없어요")).toBeOnTheScreen();
   });
 
   it("[spec] 이번 달에 연속이 1일 이하이고 오늘 완료했으면 '오늘도 학습 기록이 쌓였어요'", async () => {
@@ -1594,7 +1620,7 @@ describe("[spec] 월 달력 모달", () => {
     await renderLoaded();
     await openCalendar();
 
-    expect(within(openModal()).getByText("오늘도 학습 기록이 쌓였어요")).toBeOnTheScreen();
+    expect(within(calendarModal()).getByText("오늘도 학습 기록이 쌓였어요")).toBeOnTheScreen();
   });
 
   it("[spec] 이번 달이라도 연속이 없고 오늘 완료하지 않았으면 그 달 기록 수를 보인다", async () => {
@@ -1604,30 +1630,30 @@ describe("[spec] 월 달력 모달", () => {
     await renderLoaded();
     await openCalendar();
 
-    expect(within(openModal()).getByText("1일 기록이 있어요")).toBeOnTheScreen();
+    expect(within(calendarModal()).getByText("1일 기록이 있어요")).toBeOnTheScreen();
   });
 
   it("[spec] 닫기 버튼, 바깥 배경, 닫기 요청으로 닫히고, 다시 열면 이번 달로 돌아온다", async () => {
     await renderLoaded();
     await openCalendar();
 
-    await fireEvent.press(within(openModal()).getByText("닫기"));
-    expect(modalHosts()).toHaveLength(0);
+    await fireEvent.press(within(calendarModal()).getByText("닫기"));
+    expect(calendarModals()).toHaveLength(0);
 
     await openCalendar();
-    const overlay = openModal().children[0] as TestInstance;
+    const overlay = calendarModal().children[0] as TestInstance;
     await fireEvent.press(overlay.children[0] as TestInstance);
-    expect(modalHosts()).toHaveLength(0);
+    expect(calendarModals()).toHaveLength(0);
 
     await openCalendar();
-    await fireEvent.press(within(openModal()).getByText("<"));
+    await fireEvent.press(within(calendarModal()).getByText("<"));
     await flushAsync();
-    expect(within(openModal()).getByText("2026년 10월")).toBeOnTheScreen();
-    await fireEvent(openModal(), "requestClose");
-    expect(modalHosts()).toHaveLength(0);
+    expect(within(calendarModal()).getByText("2026년 10월")).toBeOnTheScreen();
+    await fireEvent(calendarModal(), "requestClose");
+    expect(calendarModals()).toHaveLength(0);
 
     await openCalendar();
-    expect(within(openModal()).getByText("2026년 11월")).toBeOnTheScreen();
+    expect(within(calendarModal()).getByText("2026년 11월")).toBeOnTheScreen();
     expect(getMonthWritingStatus).toHaveBeenLastCalledWith(2026, 11);
     expect(router.push).not.toHaveBeenCalled();
   });
@@ -1637,8 +1663,8 @@ describe("[spec] 월 달력 모달", () => {
     await renderLoaded();
     await openCalendar();
 
-    expect(within(openModal()).getByText("달력 서버 오류")).toBeOnTheScreen();
-    expect(spinners(openModal())).toHaveLength(0);
+    expect(within(calendarModal()).getByText("달력 서버 오류")).toBeOnTheScreen();
+    expect(spinners(calendarModal())).toHaveLength(0);
   });
 
   it("[spec] 오류가 Error가 아니면 기본 오류 문구를 보인다", async () => {
@@ -1646,93 +1672,60 @@ describe("[spec] 월 달력 모달", () => {
     await renderLoaded();
     await openCalendar();
 
-    expect(within(openModal()).getByText("달력을 불러오지 못했어요.")).toBeOnTheScreen();
+    expect(within(calendarModal()).getByText("달력을 불러오지 못했어요.")).toBeOnTheScreen();
   });
 });
 
-// ---------- 튜토리얼 ----------
+// ---------- 튜토리얼(로비 안내) ----------
+// 규칙은 옛 홈 튜토리얼과 같고(060-03 결정 Q4), 단계와 문구·짚는 대상(방의 세 장소)만 바뀌었다.
+// 로비 안내는 3D가 보낸 장소 좌표가 있어야 짚을 곳을 정하므로, 그린 뒤 가짜 캔버스로 좌표를 한 번 보낸다.
 
 describe("[spec] 튜토리얼", () => {
   async function renderWithTutorialRequested() {
     jest.mocked(hasCompletedHomeTutorial).mockResolvedValue(false);
-    installMeasure();
     await renderLoaded();
+    await sendProjection();
   }
-
-  it("[spec] 처음 보는 사용자면 첫 불러오기 뒤 180ms에 1단계를 띄우고, 대상 위치로 스크롤한 뒤 강조 영역을 넘긴다", async () => {
-    await renderWithTutorialRequested();
-    expect(consumeHomeTutorialReplay).toHaveBeenCalledTimes(1);
-    expect(hasCompletedHomeTutorial).toHaveBeenCalledTimes(1);
-
-    await advance(179);
-    expect(lastTutorialProps().visible).toBe(false);
-    expect(modalHosts()).toHaveLength(0);
-
-    await advance(1);
-    expect(lastTutorialProps()).toMatchObject({ visible: true, stepIndex: 0, spotlight: null, isPositioning: true });
-    expect(scrollViewScrollTo).toHaveBeenCalledTimes(1);
-    expect(scrollViewScrollTo).toHaveBeenLastCalledWith({ y: 156, animated: false });
-
-    await advance(119);
-    expect(lastTutorialProps()).toMatchObject({ spotlight: null, isPositioning: true });
-
-    await advance(1);
-    expect(lastTutorialProps()).toMatchObject({ visible: true, stepIndex: 0, spotlight: SPOTLIGHT, isPositioning: false });
-    expect(screen.getByText("1/4 지금 영어로")).toBeOnTheScreen();
-    expect(screen.getByText("떠오른 생각을 바로 영어로 바꿔 봐요")).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: SKIP_LABEL })).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "다음" })).toBeOnTheScreen();
-  });
-
-  it("[spec] 스크롤한 만큼을 더해 대상 위치로 스크롤한다", async () => {
-    await renderWithTutorialRequested();
-    await fireEvent.scroll(scrollHost(), { nativeEvent: { contentOffset: { x: 0, y: 400 } } });
-
-    await advance(180);
-
-    expect(scrollViewScrollTo).toHaveBeenLastCalledWith({ y: 556, animated: false });
-  });
 
   it("[spec] 다시 보기 요청이 있으면 완료했어도 띄우고, 완료 여부는 읽지 않는다", async () => {
     jest.mocked(consumeHomeTutorialReplay).mockResolvedValue(true);
-    installMeasure();
     await renderLoaded();
+    await sendProjection();
 
     await advance(180);
-    await advance(120);
 
     expect(hasCompletedHomeTutorial).not.toHaveBeenCalled();
-    expect(screen.getByText("1/4 지금 영어로")).toBeOnTheScreen();
+    expect(screen.getByText(LOBBY_TUTORIAL_FIRST)).toBeOnTheScreen();
   });
 
   it("[spec] 이미 완료했고 다시 보기 요청이 없으면 띄우지 않는다", async () => {
-    installMeasure();
     await renderLoaded();
+    await sendProjection();
 
     await advance(2000);
 
     expect(lastTutorialProps().visible).toBe(false);
-    expect(scrollViewScrollTo).not.toHaveBeenCalled();
+    expect(screen.queryByText(LOBBY_TUTORIAL_FIRST)).toBeNull();
     expect(modalHosts()).toHaveLength(0);
   });
 
   it("[spec] 저장소를 읽지 못하면 띄우지 않고 홈은 그대로 보인다", async () => {
     jest.mocked(consumeHomeTutorialReplay).mockRejectedValue(new Error("저장소 오류"));
-    installMeasure();
     await renderLoaded();
+    await sendProjection();
 
     await advance(2000);
 
     expect(lastTutorialProps().visible).toBe(false);
-    expect(screen.getByText("학습 일지")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "질문에 답하기" })).toBeOnTheScreen();
   });
 
   it("[spec] 첫 불러오기가 끝나기 전에는 띄우지 않고, 끝난 뒤 180ms에 띄운다", async () => {
     jest.mocked(hasCompletedHomeTutorial).mockResolvedValue(false);
-    installMeasure();
     const pending = deferred<MobileHomeSnapshot>();
     jest.mocked(getMobileHomeSnapshot).mockReturnValue(pending.promise);
     await renderScreen();
+    await sendProjection();
 
     await advance(1000);
     expect(lastTutorialProps().visible).toBe(false);
@@ -1777,8 +1770,9 @@ describe("[spec] 튜토리얼", () => {
     await renderWithTutorialRequested();
     const pending = deferred<MobileHomeSnapshot>();
     jest.mocked(getMobileHomeSnapshot).mockReturnValue(pending.promise);
-    await pullToRefresh();
-    expect(spinners().length).toBeGreaterThan(0);
+    // 당겨서 새로 고침이 없어져, 포커스를 다시 받아 다시 불러오게 한다.
+    await refocus();
+    expect(getMobileHomeSnapshot).toHaveBeenCalledTimes(2);
 
     setAppUpdatePhase("settled");
     await screen.rerender(<HomeScreen />);
@@ -1794,75 +1788,29 @@ describe("[spec] 튜토리얼", () => {
     expect(lastTutorialProps().visible).toBe(true);
   });
 
-  it("[spec] 학습 가이드가 열려 있으면 띄우지 않고(기다리던 180ms도 취소), 닫으면 180ms 뒤에 띄운다", async () => {
-    await renderWithTutorialRequested();
-    await advance(100);
-    await pressText("가이드 보기");
-
-    await advance(1000);
-    expect(lastTutorialProps().visible).toBe(false);
-
-    await fireEvent.press(within(openModal()).getByText("닫기"));
-    await advance(179);
-    expect(lastTutorialProps().visible).toBe(false);
-    await advance(1);
-    expect(lastTutorialProps().visible).toBe(true);
-  });
-
-  it("[spec] 월 달력이 열려 있으면 띄우지 않고, 닫으면 180ms 뒤에 띄운다", async () => {
+  it("[spec] 월 달력(과 그것을 연 질문 판)이 열려 있으면 띄우지 않고, 닫으면 180ms 뒤에 띄운다", async () => {
     await renderWithTutorialRequested();
     await openCalendar();
 
     await advance(1000);
     expect(lastTutorialProps().visible).toBe(false);
 
-    await fireEvent.press(within(openModal()).getByText("닫기"));
-    await advance(180);
-    expect(lastTutorialProps().visible).toBe(true);
-  });
-
-  it("[spec] 다음을 누르면 단계가 넘어가며 애니메이션으로 스크롤하고, 마지막 단계의 시작하기를 누르면 완료를 저장하고 닫는다", async () => {
-    await renderWithTutorialRequested();
-    await advance(180);
-    await advance(120);
-
-    const steps: [string, string][] = [
-      ["2/4 질문 답변", "질문을 따라 문장을 완성해요"],
-      ["3/4 난이도별 질문", "내 수준에 맞게 골라요"],
-      ["4/4 영어일기", "하루를 영어로 기록해요"]
-    ];
-    for (const [index, [eyebrow, title]] of steps.entries()) {
-      await fireEvent.press(screen.getByRole("button", { name: "다음" }));
-      await flushAsync();
-      expect(lastTutorialProps()).toMatchObject({ visible: true, stepIndex: index + 1, spotlight: null, isPositioning: true });
-      expect(scrollViewScrollTo).toHaveBeenLastCalledWith({ y: 156, animated: true });
-
-      await advance(519);
-      expect(lastTutorialProps().isPositioning).toBe(true);
-      await advance(1);
-      expect(lastTutorialProps()).toMatchObject({ stepIndex: index + 1, spotlight: SPOTLIGHT, isPositioning: false });
-      expect(screen.getByText(eyebrow)).toBeOnTheScreen();
-      expect(screen.getByText(title)).toBeOnTheScreen();
-    }
-    expect(screen.queryByRole("button", { name: "다음" })).toBeNull();
-    expect(completeHomeTutorial).not.toHaveBeenCalled();
-
-    await fireEvent.press(screen.getByRole("button", { name: "시작하기" }));
-    await flushAsync();
-
-    expect(completeHomeTutorial).toHaveBeenCalledTimes(1);
-    expect(lastTutorialProps()).toMatchObject({ visible: false, spotlight: null, isPositioning: false });
-    expect(modalHosts()).toHaveLength(0);
-    expect(scrollViewScrollTo).toHaveBeenCalledTimes(4);
-
-    await advance(2000);
+    await fireEvent.press(within(calendarModal()).getByText("닫기"));
+    await advance(1000);
+    // 월 달력을 연 질문 판도 로비 위의 다른 창이다.
     expect(lastTutorialProps().visible).toBe(false);
+
+    await closeSheet("question");
+    await advance(179);
+    expect(lastTutorialProps().visible).toBe(false);
+    await advance(1);
+    expect(lastTutorialProps().visible).toBe(true);
   });
 
   it("[spec] 건너뛰기를 누르면 완료를 저장하고 닫으며, 다시 띄우지 않는다", async () => {
     await renderWithTutorialRequested();
     await advance(180);
-    await advance(120);
+    expect(screen.getByText(LOBBY_TUTORIAL_FIRST)).toBeOnTheScreen();
 
     await fireEvent.press(screen.getByRole("button", { name: SKIP_LABEL }));
     await flushAsync();
@@ -1879,7 +1827,7 @@ describe("[spec] 튜토리얼", () => {
     jest.mocked(completeHomeTutorial).mockRejectedValue(new Error("저장 실패"));
     await renderWithTutorialRequested();
     await advance(180);
-    await advance(120);
+    expect(screen.getByText(LOBBY_TUTORIAL_FIRST)).toBeOnTheScreen();
 
     await fireEvent.press(screen.getByRole("button", { name: SKIP_LABEL }));
     await flushAsync();
@@ -1887,34 +1835,12 @@ describe("[spec] 튜토리얼", () => {
     expect(lastTutorialProps().visible).toBe(false);
     expect(screen.queryByText("저장 실패")).toBeNull();
   });
-
-  it("[spec] 대상 위치를 6번(100ms 간격) 재지 못하면 완료를 저장하지 않고 조용히 닫는다", async () => {
-    jest.mocked(hasCompletedHomeTutorial).mockResolvedValue(false);
-    installMeasure(VIEWPORT_RECT, { x: 20, y: 300, width: 0, height: 180 });
-    await renderLoaded();
-
-    await advance(180);
-    expect(lastTutorialProps()).toMatchObject({ visible: true, isPositioning: true });
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      await advance(100);
-    }
-    expect(lastTutorialProps()).toMatchObject({ visible: true, isPositioning: true, spotlight: null });
-
-    await advance(100);
-
-    expect(lastTutorialProps()).toMatchObject({ visible: false, isPositioning: false });
-    expect(completeHomeTutorial).not.toHaveBeenCalled();
-    expect(scrollViewScrollTo).not.toHaveBeenCalled();
-
-    await advance(2000);
-    expect(lastTutorialProps().visible).toBe(false);
-  });
 });
 
 // ---------- 화면 구조 ----------
 // 문구·구조·접근성 속성·스타일 값이 지금과 같은지 호스트 트리 스냅샷으로 기록한다(tests/app/__snapshots__).
-// 이어 쓰기 줄의 저장 시각은 실행 환경의 ko-KR 시각 형식에 따라 달라서, 시각을 읽을 수 없는 이어 쓰기 상태로 찍는다.
-// 튜토리얼(HomeFeatureTutorial)은 이번에 옮기지 않는 컴포넌트라 찍지 않는다.
+// 060-03: 홈 전체 구조는 로비로 바뀌어, 판 안의 칸 구조가 로비 전 기록(__fixtures__)의 같은 칸과 같은지 비교한다(결정 Q8).
+// 이어 쓰기 줄은 학습 일지 카드에서 빠졌으므로(명세) 학습 일지 카드는 머리 부분과 요일 줄만 비교한다.
 
 describe("[spec] 화면 구조", () => {
   it("[spec] 세션 확인 중 화면", async () => {
@@ -1924,49 +1850,92 @@ describe("[spec] 화면 구조", () => {
     expect(screenStructure()).toMatchSnapshot();
   });
 
-  it("[spec] 홈 데이터를 불러오는 중 화면", async () => {
+  async function sectionsOfAllSheets() {
+    const question = await openSheet("question");
+    const [statusPanel, featuredSection, difficultySection, ...rest] = sheetSections(question);
+    expect(rest).toHaveLength(0);
+    // 이어 쓰기 줄이 없으므로 학습 일지 카드의 자식은 머리 부분과 요일 줄 둘이다.
+    expect(childrenOf(statusPanel)).toHaveLength(2);
+    const questionSections = {
+      학습일지: childrenOf(statusPanel),
+      추천질문: childrenOf(featuredSection),
+      난이도: childrenOf(difficultySection)
+    };
+    await closeSheet("question");
+    return questionSections;
+  }
+
+  async function diaryAndNowSections(prepareDiary?: (diary: TestInstance) => Promise<void>) {
+    const diary = await openSheet("diary");
+    if (prepareDiary) {
+      await prepareDiary(diary);
+    }
+    const diarySections = sheetSections(sheet("diary"));
+    const diarySection = diarySections.at(-1)!;
+    const result: Record<string, TestInstance[]> = { 영어일기: childrenOf(diarySection) };
+    await closeSheet("diary");
+    const thought = await openSheet("thought");
+    const [nowSection, ...rest] = sheetSections(thought);
+    expect(rest).toHaveLength(0);
+    result.지금영어로 = childrenOf(nowSection);
+    await closeSheet("thought");
+    return result;
+  }
+
+  it("[spec] 홈 데이터를 불러오는 중 판 안의 칸(로비 전 '홈 데이터를 불러오는 중 화면'의 같은 칸과 같음)", async () => {
     jest.mocked(getMobileHomeSnapshot).mockReturnValue(new Promise(() => undefined));
     await renderScreen();
 
-    expect(screenStructure()).toMatchSnapshot();
+    const sections = { ...(await sectionsOfAllSheets()), ...(await diaryAndNowSections()) };
+
+    expectSectionsMatchBefore("홈 데이터를 불러오는 중 화면", sections);
   });
 
-  it("[spec] 다 불러온 홈(이어 쓰기 줄, 해석 펼친 추천 질문, 알림 ON)", async () => {
+  it("[spec] 다 불러온 판 안의 칸(해석 펼친 추천 질문, 알림 ON. 로비 전 '다 불러온 홈'의 같은 칸과 같음)", async () => {
     jest.mocked(getIncompleteLoop).mockResolvedValue(loop("rewrite", { updatedAt: "" }));
     jest.mocked(getWritingDraft).mockResolvedValue(writingDraft({ draftType: "REWRITE" }));
     await renderLoaded();
-    await pressText("해석 보기");
+    await fireEvent.press(within(await openSheet("question")).getByText("해석 보기"));
+    await closeSheet("question");
 
-    expect(screenStructure()).toMatchSnapshot();
+    const sections = { ...(await sectionsOfAllSheets()), ...(await diaryAndNowSections()) };
+
+    expectSectionsMatchBefore("다 불러온 홈(이어 쓰기 줄, 해석 펼친 추천 질문, 알림 ON)", sections);
   });
 
-  it("[spec] 오류 화면(학습 일지·영어일기·추천 질문 오류, 지난달 일기 달력)", async () => {
+  it("[spec] 오류 판 안의 칸(학습 일지·영어일기·추천 질문 오류, 지난달 일기 달력. 로비 전 '오류 화면'의 같은 칸과 같음)", async () => {
     jest.mocked(getMobileHomeSnapshot).mockRejectedValue(new Error("스냅샷 실패"));
     jest.mocked(getTodayWritingStatus).mockRejectedValue(new Error("학습 일지 서버 오류"));
     jest.mocked(getDiaryCalendarSummary).mockRejectedValue(new Error("일기 서버 오류"));
     jest.mocked(getFeaturedDailyPrompt).mockRejectedValue(new Error("추천 서버 오류"));
     jest.mocked(getNowInEnglishSummary).mockResolvedValue(nowSummary({ todayCount: 0 }, false));
     await renderScreen();
-    await pressText("<");
 
-    expect(screenStructure()).toMatchSnapshot();
+    const sections = {
+      ...(await sectionsOfAllSheets()),
+      ...(await diaryAndNowSections(async (diary) => {
+        await fireEvent.press(within(diary).getByText("<"));
+      }))
+    };
+
+    expectSectionsMatchBefore("오류 화면(학습 일지·영어일기·추천 질문 오류, 지난달 일기 달력)", sections);
   });
 
   it("[spec] 월 달력 모달(점과 접근성 이름)", async () => {
     await renderLoaded();
     await openCalendar();
 
-    expect(structureOf(openModal())).toMatchSnapshot();
+    expect(structureOf(calendarModal())).toMatchSnapshot();
   });
 
   it("[spec] 월 달력 모달(불러오는 중, 지난달)", async () => {
     await renderLoaded();
     await openCalendar();
     jest.mocked(getMonthWritingStatus).mockReturnValue(new Promise(() => undefined));
-    await fireEvent.press(within(openModal()).getByText("<"));
+    await fireEvent.press(within(calendarModal()).getByText("<"));
     await flushAsync();
 
-    expect(structureOf(openModal())).toMatchSnapshot();
+    expect(structureOf(calendarModal())).toMatchSnapshot();
   });
 
   it("[spec] 월 달력 모달(오류)", async () => {
@@ -1974,13 +1943,6 @@ describe("[spec] 화면 구조", () => {
     await renderLoaded();
     await openCalendar();
 
-    expect(structureOf(openModal())).toMatchSnapshot();
-  });
-
-  it("[spec] 학습 가이드 모달", async () => {
-    await renderLoaded();
-    await pressText("가이드 보기");
-
-    expect(structureOf(openModal())).toMatchSnapshot();
+    expect(structureOf(calendarModal())).toMatchSnapshot();
   });
 });

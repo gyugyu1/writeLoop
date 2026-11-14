@@ -446,7 +446,9 @@ function CelebrationFireworks() {
 }
 
 export default function PracticeCompleteScreen() {
-  const params = useLocalSearchParams<{ difficulty?: string; promptId?: string }>();
+  const params = useLocalSearchParams<{ difficulty?: string; promptId?: string; loopNotice?: string }>();
+  // 피드백 화면에서 '루프 완료하기'로 왔을 때만 있는 룹 적립 안내
+  const loopNotice = typeof params.loopNotice === "string" && params.loopNotice.trim() ? params.loopNotice : null;
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
   const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "I";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
@@ -679,6 +681,11 @@ export default function PracticeCompleteScreen() {
           <View style={styles.storyCopy}>
             <Text style={styles.storyHeading}>{completionHeading}</Text>
             <Text style={styles.storyBody}>{completionSubcopy}</Text>
+            {loopNotice ? (
+              <View accessibilityLabel={loopNotice} style={styles.loopNotice}>
+                <Text style={styles.loopNoticeText}>{loopNotice}</Text>
+              </View>
+            ) : null}
           </View>
 
           {answerComparison ? (
@@ -821,6 +828,17 @@ export default function PracticeCompleteScreen() {
 }
 
 const styles = StyleSheet.create({
+  loopNotice: {
+    alignSelf: "center",
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#FFF1D6",
+    borderWidth: 1,
+    borderColor: "#E38B12"
+  },
+  loopNoticeText: { fontSize: 14, fontWeight: "800", color: "#B5650A" },
   safeArea: {
     flex: 1,
     backgroundColor: "#F7F2EB"

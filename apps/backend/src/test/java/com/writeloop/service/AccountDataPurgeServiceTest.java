@@ -8,6 +8,7 @@ import com.writeloop.persistence.DiaryEntryRepository;
 import com.writeloop.persistence.EmailVerificationTokenRepository;
 import com.writeloop.persistence.FeedbackDiagnosisLogRepository;
 import com.writeloop.persistence.FeedbackTimingLogRepository;
+import com.writeloop.persistence.LobbyLayoutRepository;
 import com.writeloop.persistence.NowInEnglishEntryRepository;
 import com.writeloop.persistence.NowInEnglishReflectionRepository;
 import com.writeloop.persistence.PasswordResetTokenRepository;
@@ -67,6 +68,9 @@ class AccountDataPurgeServiceTest {
     private FeedbackTimingLogRepository feedbackTimingLogRepository;
 
     @Mock
+    private LobbyLayoutRepository lobbyLayoutRepository;
+
+    @Mock
     private NowInEnglishEntryRepository nowInEnglishEntryRepository;
 
     @Mock
@@ -109,6 +113,7 @@ class AccountDataPurgeServiceTest {
                 emailVerificationTokenRepository,
                 feedbackDiagnosisLogRepository,
                 feedbackTimingLogRepository,
+                lobbyLayoutRepository,
                 nowInEnglishEntryRepository,
                 nowInEnglishReflectionRepository,
                 passwordResetTokenRepository,

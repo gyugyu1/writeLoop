@@ -258,9 +258,51 @@ describe("[spec] 089-⑤ F: 착용 모델 파일과 칸 그림 파일", () => {
 
   // 작업 089 ⑤ 08·12-B·24-main-decision.md(사용자 결정: qa가 새 동작에 맞게 고침): 22 결정으로 라룹이 몸을 고글 없는 새 몸으로 바꿨으므로
   // 견주는 파일을 기준 커밋 6e2f069의 옛 몸에서 새 몸을 넣은 커밋 d6338fa의 파일로 바꿨다(확인하는 내용 "라룹이 모델이 정한 파일과 바이트까지 같다"는 그대로).
-  it("F4 라룹이 모델(writeloop.glb)은 새 몸을 넣은 커밋(d6338fa)의 파일과 바이트가 같다", () => {
+  // 작업 095 고글 밀착·앞머리(명세 "고칠 기존 테스트", qa가 새 동작에 맞게 고침): 라룹이 몸에서 앞머리를 지워(점 자리와 그 둘레 법선·외곽선 방향만 바뀜)
+  // 몸 파일이 새 몸 커밋(d6338fa)의 파일과 바이트로는 달라진다. 새 파일은 아직 커밋되지 않았으므로, "정한 파일과 같다"를
+  // "d6338fa 파일과 바이트는 다르고, 앞머리를 지워도 그대로인 것(점 수·삼각형 인덱스·UV·뼈 번호·무게·_OUTLINE_BIAS·질감 그림·동작 클립 수)은 같다"로 바꿨다.
+  it("F4 라룹이 모델(writeloop.glb)은 새 몸을 넣은 커밋(d6338fa)의 파일에서 앞머리만 지운 것이다: 바이트는 다르고, 점 수·삼각형 인덱스·UV·뼈 번호·무게·_OUTLINE_BIAS·질감 그림·동작 클립 수는 같다", () => {
     const newBody = execFileSync("git", ["show", "d6338fa:apps/mobile/assets/models/writeloop.glb"], { cwd: REPO, maxBuffer: 64 * 1024 * 1024 });
-    expect(readFileSync(CHARACTER).equals(newBody)).toBe(true);
+    const now = readFileSync(CHARACTER);
+    expect(now.equals(newBody)).toBe(false);
+    type Full = {
+      meshes: { primitives: { attributes: Record<string, number>; indices: number }[] }[];
+      accessors: { bufferView: number; byteOffset?: number; count: number; componentType: number; type: string }[];
+      bufferViews: { byteOffset?: number; byteLength: number; byteStride?: number }[];
+      images?: { bufferView: number }[];
+      animations?: unknown[];
+    };
+    const read = (buf: Buffer) => {
+      const jsonLength = buf.readUInt32LE(12);
+      const json = JSON.parse(buf.toString("utf8", 20, 20 + jsonLength)) as Full;
+      const binStart = 20 + jsonLength + 8;
+      const bin = buf.subarray(binStart, binStart + buf.readUInt32LE(20 + jsonLength));
+      const sizes: Record<string, number> = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
+      const bytes: Record<number, number> = { 5121: 1, 5123: 2, 5125: 4, 5126: 4 };
+      const raw = (index: number) => {
+        const a = json.accessors[index];
+        const view = json.bufferViews[a.bufferView];
+        const width = sizes[a.type] * bytes[a.componentType];
+        const stride = view.byteStride ?? width;
+        const start = (view.byteOffset ?? 0) + (a.byteOffset ?? 0);
+        return Buffer.concat(Array.from({ length: a.count }, (_, i) => bin.subarray(start + i * stride, start + i * stride + width)));
+      };
+      const prim = json.meshes[0].primitives[0];
+      const image = json.bufferViews[json.images![0].bufferView];
+      return {
+        count: json.accessors[prim.attributes.POSITION].count,
+        indices: raw(prim.indices).toString("hex"),
+        uv: raw(prim.attributes.TEXCOORD_0).toString("hex"),
+        joints: raw(prim.attributes.JOINTS_0).toString("hex"),
+        weights: raw(prim.attributes.WEIGHTS_0).toString("hex"),
+        bias: raw(prim.attributes._OUTLINE_BIAS).toString("hex"),
+        image: createHash("sha256").update(bin.subarray(image.byteOffset ?? 0, (image.byteOffset ?? 0) + image.byteLength)).digest("hex"),
+        clips: (json.animations ?? []).length
+      };
+    };
+    const a = read(now);
+    const b = read(newBody);
+    for (const key of Object.keys(b) as (keyof typeof b)[]) expect({ key, same: a[key] === b[key] }).toEqual({ key, same: true });
   });
 
   it("F5 열여섯 칸 그림이 모두 있고, PNG이며 투명 채널이 있고, 내용이 서로 다르다", () => {

@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ApiError, completeRegistration, sendRegistrationCode } from "@/lib/api";
+import { leaveAuthScreens, useAuthNavigation } from "@/lib/auth-navigation";
 import { resolvePostLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
 
@@ -80,6 +81,7 @@ export default function SignupScreen() {
   const [error, setError] = useState("");
   const [hasSentVerificationCode, setHasSentVerificationCode] = useState(false);
   const postLoginHref = useMemo(() => resolvePostLoginHref(params.redirectTo), [params.redirectTo]);
+  const navigation = useAuthNavigation();
   const loginHref = useMemo<Href>(() => {
     const redirectTo = normalizeQueryParam(params.redirectTo);
     return (redirectTo ? `/login?redirectTo=${encodeURIComponent(redirectTo)}` : "/login") as Href;
@@ -179,7 +181,7 @@ export default function SignupScreen() {
         password,
         rememberMe: true
       });
-      router.replace(postLoginHref);
+      leaveAuthScreens(navigation, postLoginHref);
     } catch (caughtError) {
       setError(caughtError instanceof ApiError ? caughtError.message : "회원가입을 완료하지 못했어요.");
     } finally {

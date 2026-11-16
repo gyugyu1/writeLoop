@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ApiError } from "@/lib/api";
+import { isTopScreen, leaveAuthScreens, useAuthNavigation } from "@/lib/auth-navigation";
 import { resolvePostLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
 import type { SocialProvider } from "@/lib/types";
@@ -106,6 +107,7 @@ export default function LoginScreen() {
   const [activeAction, setActiveAction] = useState<"email" | "apple" | SocialProvider | null>(null);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const postLoginHref = useMemo(() => resolvePostLoginHref(params.redirectTo), [params.redirectTo]);
+  const navigation = useAuthNavigation();
   const loginMode = useMemo(() => normalizeQueryParam(params.mode), [params.mode]);
   const redirectTo = useMemo(() => normalizeQueryParam(params.redirectTo), [params.redirectTo]);
   const isPasswordResetDone = normalizeQueryParam(params.reset) === "done";
@@ -142,10 +144,11 @@ export default function LoginScreen() {
   }
 
   useEffect(() => {
-    if (!isHydrating && currentUser) {
-      router.replace(postLoginHref);
+    // 쌓인 로그인 화면이 모두 다시 그려지므로, 맨 위 화면만 갈 곳으로 보낸다
+    if (!isHydrating && currentUser && isTopScreen(navigation)) {
+      leaveAuthScreens(navigation, postLoginHref);
     }
-  }, [currentUser, isHydrating, postLoginHref]);
+  }, [currentUser, isHydrating, navigation, postLoginHref]);
 
   useEffect(() => {
     let cancelled = false;
@@ -202,7 +205,7 @@ export default function LoginScreen() {
         password,
         rememberMe
       });
-      router.replace(postLoginHref);
+      leaveAuthScreens(navigation, postLoginHref);
     } catch (caughtError) {
       setError(caughtError instanceof ApiError ? caughtError.message : "지금은 로그인을 진행할 수 없어요.");
     } finally {
@@ -218,7 +221,7 @@ export default function LoginScreen() {
       setError("");
       const result = await signInWithSocial(provider);
       if (result.status === "logged_in") {
-        router.replace(postLoginHref);
+        leaveAuthScreens(navigation, postLoginHref);
         return;
       }
 
@@ -260,7 +263,7 @@ export default function LoginScreen() {
         email: credential.email,
         fullName: formatAppleFullName(credential.fullName)
       });
-      router.replace(postLoginHref);
+      leaveAuthScreens(navigation, postLoginHref);
     } catch (caughtError) {
       const errorCode = typeof caughtError === "object" && caughtError !== null
         ? (caughtError as { code?: string }).code

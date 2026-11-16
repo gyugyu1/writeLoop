@@ -18,6 +18,7 @@ import {
   completeSocialRegistration,
   getPendingSocialRegistration
 } from "@/lib/api";
+import { leaveAuthScreens, useAuthNavigation } from "@/lib/auth-navigation";
 import { resolvePostLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
 
@@ -58,6 +59,7 @@ export default function SocialSignupScreen() {
   const token = useMemo(() => normalizeQueryParam(params.token), [params.token]);
   const redirectTo = useMemo(() => normalizeQueryParam(params.redirectTo), [params.redirectTo]);
   const postLoginHref = useMemo(() => resolvePostLoginHref(redirectTo), [redirectTo]);
+  const navigation = useAuthNavigation();
   const loginHref = useMemo<Href>(() => {
     return (redirectTo ? `/login?redirectTo=${encodeURIComponent(redirectTo)}` : "/login") as Href;
   }, [redirectTo]);
@@ -127,7 +129,7 @@ export default function SocialSignupScreen() {
         displayName: displayName.trim()
       });
       setSessionUser(user);
-      router.replace(postLoginHref);
+      leaveAuthScreens(navigation, postLoginHref);
     } catch (caughtError) {
       setError(
         caughtError instanceof ApiError

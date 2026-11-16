@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +14,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardFrame } from "@/components/keyboard-frame";
 import { ApiError } from "@/lib/api";
 import { isTopScreen, leaveAuthScreens, useAuthNavigation } from "@/lib/auth-navigation";
 import { resolvePostLoginHref } from "@/lib/login-redirect";
@@ -292,10 +292,7 @@ export default function LoginScreen() {
   if (loginMode === "email") {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-        <KeyboardAvoidingView
-          style={styles.keyboardFrame}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
+        <KeyboardFrame style={styles.keyboardFrame}>
           <ScrollView contentContainerStyle={styles.emailPageContent} keyboardShouldPersistTaps="handled">
             <View style={styles.emailPageHeader}>
               <Pressable
@@ -379,17 +376,14 @@ export default function LoginScreen() {
               </View>
             </View>
           </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardFrame>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <KeyboardAvoidingView
-        style={styles.keyboardFrame}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <KeyboardFrame style={styles.keyboardFrame}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.heroSection}>
             <View style={styles.heroCopy}>
@@ -557,7 +551,7 @@ export default function LoginScreen() {
             </View>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardFrame>
     </SafeAreaView>
   );
 }

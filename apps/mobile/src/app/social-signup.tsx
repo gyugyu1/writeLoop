@@ -3,8 +3,6 @@ import type { Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +16,7 @@ import {
   completeSocialRegistration,
   getPendingSocialRegistration
 } from "@/lib/api";
+import { KeyboardFrame } from "@/components/keyboard-frame";
 import { leaveAuthScreens, useAuthNavigation } from "@/lib/auth-navigation";
 import { resolvePostLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
@@ -143,10 +142,7 @@ export default function SocialSignupScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.keyboardFrame}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <KeyboardFrame style={styles.keyboardFrame}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.topBar}>
             <Pressable style={styles.ghostButton} onPress={() => router.replace(loginHref)}>
@@ -199,7 +195,7 @@ export default function SocialSignupScreen() {
             </Text>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardFrame>
     </SafeAreaView>
   );
 }

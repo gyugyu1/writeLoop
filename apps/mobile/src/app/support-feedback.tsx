@@ -5,7 +5,6 @@ import { SymbolView } from "expo-symbols";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +14,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardFrame } from "@/components/keyboard-frame";
 import { submitUserFeedback } from "@/lib/api";
 import type { UserFeedbackCategory } from "@/lib/types";
 
@@ -116,10 +116,7 @@ export default function SupportFeedbackScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right", "bottom"]}>
-      <KeyboardAvoidingView
-        style={styles.keyboardFrame}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <KeyboardFrame style={styles.keyboardFrame}>
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
@@ -258,7 +255,7 @@ export default function SupportFeedbackScreen() {
             </Pressable>
           </ScrollView>
         )}
-      </KeyboardAvoidingView>
+      </KeyboardFrame>
     </SafeAreaView>
   );
 }

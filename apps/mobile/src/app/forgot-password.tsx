@@ -3,8 +3,6 @@ import type { Href } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +11,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardFrame } from "@/components/keyboard-frame";
 import { ApiError, resetPassword, sendPasswordResetCode, verifyPasswordResetCode } from "@/lib/api";
 
 // 서버의 재설정 코드 유효 시간(AuthService.VERIFICATION_CODE_TTL)과 같다.
@@ -255,10 +254,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <KeyboardAvoidingView
-        style={styles.keyboardFrame}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <KeyboardFrame style={styles.keyboardFrame}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <Pressable
@@ -383,7 +379,7 @@ export default function ForgotPasswordScreen() {
             ) : null}
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardFrame>
     </SafeAreaView>
   );
 }

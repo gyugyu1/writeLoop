@@ -4,7 +4,6 @@ import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   RefreshControl,
@@ -14,7 +13,8 @@ import {
   TextInput,
   View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardFrame } from "@/components/keyboard-frame";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import DevLobbyEntry from "@/components/lobby3d/dev-lobby-entry";
@@ -43,6 +43,7 @@ function getLoginMethodLabel(user: AuthUser) {
 
 export default function MeScreen() {
   const { currentUser, isHydrating, refreshSession, setSessionUser, signOut } = useSession();
+  const insets = useSafeAreaInsets();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -248,10 +249,7 @@ export default function MeScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <View style={styles.screen}>
-        <KeyboardAvoidingView
-          style={styles.keyboardFrame}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
+        <KeyboardFrame style={styles.keyboardFrame} androidOffset={insets.top}>
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
@@ -540,7 +538,7 @@ export default function MeScreen() {
             <Text style={styles.appVersionText}>버전 {APP_VERSION}</Text>
             <DevLobbyEntry />
           </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardFrame>
 
         <MobileNavBar activeTab="me" />
       </View>

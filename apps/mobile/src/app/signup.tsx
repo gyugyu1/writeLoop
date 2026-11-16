@@ -3,8 +3,6 @@ import type { Href } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +11,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardFrame } from "@/components/keyboard-frame";
 import { ApiError, completeRegistration, sendRegistrationCode } from "@/lib/api";
 import { leaveAuthScreens, useAuthNavigation } from "@/lib/auth-navigation";
 import { resolvePostLoginHref } from "@/lib/login-redirect";
@@ -200,10 +199,7 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.keyboardFrame}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <KeyboardFrame style={styles.keyboardFrame}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.topBar}>
             <Pressable style={styles.ghostButton} onPress={() => router.replace(loginHref)}>
@@ -345,7 +341,7 @@ export default function SignupScreen() {
             </Text>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardFrame>
     </SafeAreaView>
   );
 }

@@ -1,7 +1,8 @@
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from "react-native";
+import { Alert, ScrollView, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardFrame } from "@/components/keyboard-frame";
 import MobileNavBar from "@/components/mobile-nav-bar";
 import { loopPointsNotice } from "@/lib/loop-points";
 import {
@@ -305,11 +306,7 @@ export default function NowInEnglishScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <KeyboardAvoidingView
-        style={styles.screen}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
-      >
+      <KeyboardFrame style={styles.screen} iosOffset={12}>
         <ScrollView
           ref={scrollViewRef}
           keyboardShouldPersistTaps="handled"
@@ -380,7 +377,7 @@ export default function NowInEnglishScreen() {
           />
         </ScrollView>
         <MobileNavBar activeTab="home" />
-      </KeyboardAvoidingView>
+      </KeyboardFrame>
 
       <NowReminderSettingsModal
         handleDisableReminder={handleDisableReminder}

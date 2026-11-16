@@ -33,11 +33,13 @@ function readStack(navigation: AuthNavigation) {
   }
 }
 
-// href의 경로를 루트 Stack 화면 이름으로("/" → "index", "/records" → "records"). 물음표 뒤 값이 있으면 null(같은 화면이라 보지 않는다).
-function routeNameOf(href: Href): string | null {
-  if (typeof href !== "string" || href.includes("?")) return null;
+// 루트 Stack 화면 이름(name)이 갈 곳(href)과 같은 화면인가. "/" → "index", "/records" → "records",
+// 폴더의 첫 화면 "/diary" → "diary" 또는 "diary/index". 물음표 뒤 값이 있거나 동적 경로면 같은 화면으로 보지 않는다.
+function isSameScreen(name: string, href: Href): boolean {
+  if (typeof href !== "string" || href.includes("?")) return false;
   const path = href.replace(/^\/+/, "").replace(/\/+$/, "");
-  return path === "" ? "index" : path;
+  if (path === "") return name === "index";
+  return name === path || name === `${path}/index`;
 }
 
 // 마지막으로 치운 맨 위 화면. 같은 화면에서 버튼과 효과가 잇달아 부르면(쌓임이 아직 바뀌기 전) 한 번만 치운다.
@@ -65,7 +67,7 @@ export function leaveAuthScreens(navigation: AuthNavigation, href: Href) {
   lastLeftKey = topKey;
   const canDismiss = typeof router.dismiss === "function";
   const below = routes[routes.length - 1 - count];
-  if (canDismiss && below && below.name === routeNameOf(href)) {
+  if (canDismiss && below && isSameScreen(below.name, href)) {
     router.dismiss(count);
     return;
   }

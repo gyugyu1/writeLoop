@@ -294,7 +294,7 @@ export default function LoginScreen() {
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         <KeyboardAvoidingView
           style={styles.keyboardFrame}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <ScrollView contentContainerStyle={styles.emailPageContent} keyboardShouldPersistTaps="handled">
             <View style={styles.emailPageHeader}>
@@ -388,7 +388,7 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
         style={styles.keyboardFrame}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.heroSection}>

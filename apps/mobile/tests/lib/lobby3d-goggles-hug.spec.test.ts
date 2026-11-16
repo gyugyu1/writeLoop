@@ -12,8 +12,9 @@
 // - 매끈한 이마: 앞에서 본 깊이 지도(1cm 간격)에서 이마 가운데(x -0.10~0.10, y 0.68~0.84)의 2cm 간격 2차 차분이 0.3cm 이하(오목하게 꺼지거나
 //   솟은 데가 없다), 이마 양옆(x 0.01~0.26, y 0.66~0.88)은 좌우 깊이 차가 1.0cm 이하(기준 몸에서 앞머리 밖은 0.5cm 안으로 좌우 대칭이다).
 //   06 결정 2로 관자놀이(x 0.23~0.26, y 0.77~0.80)는 기준 몸의 좌우 차와 1.0cm 중 큰 값까지 본다(기준 몸이 이미 1.0~1.2cm 비대칭).
-// - 고글이 붙음: 몸을 향한 고글 면(면 법선과 가장 가까운 몸 점 방향의 cos > 0.5)의 가운데가 모두 몸에서 1.0cm 안.
-//   명세가 지금 띠의 "1~2cm"를 뜬 것으로 본다.
+// - 고글이 붙음(14 결정으로 나눔): 렌즈 판은 기준 판을 돌리고 옮기기만 하고(G7, 판 점 사이 거리 0.1mm 안), 판 가운데 뒷면이 기준 고글보다
+//   평균 1mm 넘게 이마에 가깝다(G3a). 띠는 몸을 향하고 다른 고글 면에 가려지지 않은 면의 가운데가 모두 몸에서 1.0cm 안(G3b, 03 결정 1).
+//   16 결정으로 판 끝에서 머리까지의 이음 구간(판 점에서 판 끝 뒷면의 뜬 거리 + 2cm 안)은 판에서 멀어질수록 머리까지 거리가 늘지 않는지만 본다.
 // - 파고들지 않음: 고글 표본점(꼭짓점·삼각형 가운데·변 가운데)이 몸 속(감은 수 > 0.5)에 1mm보다 깊이 들지 않는다.
 // - 크기·높이가 같음: 높이(y 범위)와 높이 75% 위 부분의 폭(x 범위, 띠가 닿지 않는 렌즈 판 윗부분)이 기준의 ±5%, y 최저·최고가 기준의 ±1cm.
 import { execFileSync, spawnSync } from "node:child_process";
@@ -501,39 +502,238 @@ describe("[spec] 095 바뀔 동작 2: 고글이 이마에 붙어 보인다(새 �
     SLOW
   );
 
+  // 14 결정(사용자 "그냥 기존에서 살짝만 더 붙이는거로하자, 렌즈 모형을 변형시키지 않는선에서"): 처음 G3(몸을 향한 고글 면 모두 1cm 안)를
+  // 렌즈 판의 가까워짐(G3a)과 띠(G3b)로 나누고, 렌즈 판 모양이 그대로인지(G7)를 더했다. 렌즈 판을 찾고 짝짓는 방법은 plateOf 주석에 적었다.
+
   it(
-    "G3 렌즈 판 뒷면과 띠 안쪽이 머리에서 뜨지 않는다: 몸을 향한 고글 면(면 법선과 가장 가까운 몸 점 방향의 cos > 0.5)의 가운데가 모두 몸에서 1.0cm 안이다",
+    "G3a 렌즈 판 가운데 뒷면(기준 판에서 |x| ≤ 0.10, 뒤를 향한 면)이 지금 몸에서 잰 평균 거리로 기준 고글보다 1mm 넘게 이마에 가깝다",
     () => {
-      const { now, gNow } = files();
-      const g = gNow;
-      let facing = 0;
-      const floating: { at: number[]; cm: number }[] = [];
-      for (let t = 0; t < g.I.length; t += 3) {
-        const [a, b, c] = [3 * g.I[t], 3 * g.I[t + 1], 3 * g.I[t + 2]];
-        const center = [0, 1, 2].map((k) => (g.P[a + k] + g.P[b + k] + g.P[c + k]) / 3);
-        const u = [0, 1, 2].map((k) => g.P[b + k] - g.P[a + k]);
-        const w = [0, 1, 2].map((k) => g.P[c + k] - g.P[a + k]);
-        let n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
-        const length = Math.hypot(n[0], n[1], n[2]);
-        if (length < 1e-12) continue;
-        n = n.map((v) => v / length);
-        // 면 방향은 파일의 꼭짓점 법선(화면에서 쓰는 방향)에 맞춘다.
-        const vn = [0, 1, 2].map((k) => g.N[a + k] + g.N[b + k] + g.N[c + k]);
-        if (n[0] * vn[0] + n[1] * vn[1] + n[2] * vn[2] < 0) n = n.map((v) => -v);
-        const { point, distance } = closestOnBody(center, now.P, now.I);
-        if (distance < 1e-4) { facing += 1; continue; }
-        const dir = [0, 1, 2].map((k) => (point[k] - center[k]) / distance);
-        if (n[0] * dir[0] + n[1] * dir[1] + n[2] * dir[2] <= 0.5) continue;
-        facing += 1;
-        if (distance > 0.01) floating.push({ at: center.map((v) => round(v, 3)), cm: cm(distance) });
-      }
-      // 몸을 향한 면이 거의 없으면 이 판정이 아무것도 보지 않은 것이다(기준 고글은 삼각형 2,399개 중 수백 개).
-      expect(facing).toBeGreaterThan(200);
-      expect({ count: floating.length, worst: floating.sort((p, q) => q.cm - p.cm).slice(0, 15) }).toEqual({ count: 0, worst: [] });
+      const { now, gNow, gBase } = files();
+      const plate = plateOf(gBase);
+      const match = matchPlate(gBase, gNow, plate);
+      expect({ unmatched: match.unmatched.length }).toEqual({ unmatched: 0 });
+      const faces = centralBackFaces(gBase, plate);
+      // 기준 판의 가운데 뒷면이 몇 개는 있어야 이 판정이 무언가를 본다.
+      expect(faces.length).toBeGreaterThan(20);
+      const meanGap = (position: (i: number) => number[]) =>
+        faces.reduce((sum, [a, b, c]) => {
+          const center = [0, 1, 2].map((k) => (position(a)[k] + position(b)[k] + position(c)[k]) / 3);
+          return sum + closestOnBody(center, now.P, now.I).distance;
+        }, 0) / faces.length;
+      const before = meanGap((i) => [gBase.P[3 * i], gBase.P[3 * i + 1], gBase.P[3 * i + 2]]);
+      const after = meanGap((i) => {
+        const j = match.toNew.get(i)!;
+        return [gNow.P[3 * j], gNow.P[3 * j + 1], gNow.P[3 * j + 2]];
+      });
+      expect({ closerByMoreThan1mm: after < before - 0.001, beforeCm: cm(before), afterCm: cm(after) }).toEqual({ closerByMoreThan1mm: true, beforeCm: cm(before), afterCm: cm(after) });
     },
     SLOW
   );
+
+  // 16 결정(사용자 "응"): 판 끝에서 띠가 머리에 닿기까지의 이음 구간은 "판 끝에서 멀어질수록 머리까지 거리가 줄어든다(늘지 않는다)"만 보고,
+  // 그 밖의 띠는 1cm 안(가려진 면 뺌)이다. 이음 구간은 좌우 따로, 판 점에서 (그쪽 판 끝 뒷면이 몸에서 뜬 가장 큰 거리 + 2cm) 안의 띠 면이다.
+  //   판 끝 뒷면 = 세 점이 모두 판 점이고 가운데가 그쪽으로 |x| > 0.15이며 몸을 향한(cos > 0.5) 판 삼각형. 띠가 판 끝에서 머리까지 그 거리만큼은
+  //   옮겨 가야 하므로 그만큼에 2cm 여유를 둔다.
+  //   "줄어든다"는 판 점에서의 거리 1cm 칸마다 띠 면의 가장 큰 뜬 거리를 잡아, 먼 칸이 가까운 칸보다 2mm 넘게 크지 않은지로 본다(삼각형 크기만큼의 흔들림을 봐준다).
+  it(
+    "G3b 띠(렌즈 판이 아닌 고글 면) 안쪽이 머리에서 뜨지 않는다: 몸을 향하고 다른 고글 면에 가려지지 않은 띠 면 중, 판 끝에서 머리까지의 이음 구간(판 점에서 판 끝 뒷면의 뜬 거리 + 2cm 안)은 판에서 멀어질수록 머리까지 거리가 늘지 않고(1cm 칸, 2mm 봐줌), 그 밖은 가운데가 모두 몸에서 1.0cm 안이다",
+    () => {
+      const { now, gNow, gBase } = files();
+      const g = gNow;
+      const plateNow = new Set(matchPlate(gBase, gNow, plateOf(gBase)).toNew.values());
+      const platePoints = [...plateNow].map((i) => [g.P[3 * i], g.P[3 * i + 1], g.P[3 * i + 2]]);
+      expect(platePoints.length).toBeGreaterThan(0);
+      /** 고글 삼각형 t가 몸을 향하고 가려지지 않았으면 가운데와 몸까지 거리, 아니면 null. */
+      const facingGap = (t: number): { center: number[]; gap: number } | null => {
+        const [a, b, c] = [3 * g.I[t], 3 * g.I[t + 1], 3 * g.I[t + 2]];
+        const center = [0, 1, 2].map((k) => (g.P[a + k] + g.P[b + k] + g.P[c + k]) / 3);
+        const n = faceNormal(g, t);
+        if (!n) return null;
+        const { point, distance } = closestOnBody(center, now.P, now.I);
+        if (distance < 1e-4) return { center, gap: distance };
+        const dir = [0, 1, 2].map((k) => (point[k] - center[k]) / distance);
+        if (n[0] * dir[0] + n[1] * dir[1] + n[2] * dir[2] <= 0.5) return null;
+        // 가운데에서 가장 가까운 몸 점까지 가는 선분이 다른 고글 면(이 면과 꼭짓점을 함께 쓰지 않는 면)을 지나면 가려진 면이다.
+        if (blockedByGoggles(g, t, center, point)) return null;
+        return { center, gap: distance };
+      };
+      // 좌우 판 끝 뒷면이 몸에서 뜬 가장 큰 거리.
+      const endGap = new Map<number, number>([[-1, 0], [1, 0]]);
+      for (let t = 0; t < g.I.length; t += 3) {
+        const tri = [g.I[t], g.I[t + 1], g.I[t + 2]];
+        if (!tri.every((i) => plateNow.has(i))) continue;
+        const x = (g.P[3 * tri[0]] + g.P[3 * tri[1]] + g.P[3 * tri[2]]) / 3;
+        if (Math.abs(x) <= 0.15) continue;
+        const face = facingGap(t);
+        if (face) endGap.set(Math.sign(x), Math.max(endGap.get(Math.sign(x))!, face.gap));
+      }
+      let facing = 0;
+      const floating: { at: number[]; cm: number }[] = [];
+      const bridge = new Map<number, Map<number, number>>([[-1, new Map()], [1, new Map()]]);
+      for (let t = 0; t < g.I.length; t += 3) {
+        if ([g.I[t], g.I[t + 1], g.I[t + 2]].some((i) => plateNow.has(i))) continue;
+        const face = facingGap(t);
+        if (!face) continue;
+        facing += 1;
+        const { center, gap } = face;
+        const side = center[0] < 0 ? -1 : 1;
+        const fromPlate = Math.min(...platePoints.map((p) => Math.hypot(p[0] - center[0], p[1] - center[1], p[2] - center[2])));
+        if (fromPlate <= endGap.get(side)! + 0.02) {
+          const bin = Math.floor(fromPlate / 0.01);
+          const bins = bridge.get(side)!;
+          bins.set(bin, Math.max(bins.get(bin) ?? 0, gap));
+        } else if (gap > 0.01) {
+          floating.push({ at: center.map((v) => round(v, 3)), cm: cm(gap) });
+        }
+      }
+      // 몸을 향한 띠 면이 거의 없으면 이 판정이 아무것도 보지 않은 것이다.
+      expect(facing).toBeGreaterThan(30);
+      const rising: { side: number; nearCm: number; nearGapCm: number; farCm: number; farGapCm: number }[] = [];
+      for (const [side, bins] of bridge) {
+        const sorted = [...bins.entries()].sort((p, q) => p[0] - q[0]);
+        for (let i = 0; i < sorted.length; i += 1) {
+          for (let j = i + 1; j < sorted.length; j += 1) {
+            if (sorted[j][1] > sorted[i][1] + 0.002) rising.push({ side, nearCm: sorted[i][0], nearGapCm: cm(sorted[i][1]), farCm: sorted[j][0], farGapCm: cm(sorted[j][1]) });
+          }
+        }
+      }
+      const ends = { leftEndGapCm: cm(endGap.get(-1)!), rightEndGapCm: cm(endGap.get(1)!) };
+      expect({ ...ends, rising: rising.slice(0, 10), count: floating.length, worst: floating.sort((p, q) => q.cm - p.cm).slice(0, 15) }).toEqual({ ...ends, rising: [], count: 0, worst: [] });
+    },
+    SLOW
+  );
+
+  it("G7 렌즈 판은 기준 고글의 렌즈 판을 돌리고 옮기기만 한 것이다: 기준 판의 점마다 같은 UV의 점이 지금 고글에 있고, 판 점 사이 거리가 모두 기준과 같으며(0.1mm 안), 거울상이 아니다", () => {
+    const { gNow, gBase } = files();
+    const plate = plateOf(gBase);
+    // 기준 판이 판 점을 충분히 잡아야 이 판정이 무언가를 본다(기준 고글은 점 2,467개 중 1,761개).
+    expect(plate.length).toBeGreaterThan(1500);
+    const match = matchPlate(gBase, gNow, plate);
+    expect({ unmatched: match.unmatched.length, sample: match.unmatched.slice(0, 5) }).toEqual({ unmatched: 0, sample: [] });
+    const before = (i: number) => [gBase.P[3 * i], gBase.P[3 * i + 1], gBase.P[3 * i + 2]];
+    const after = (i: number) => { const j = match.toNew.get(i)!; return [gNow.P[3 * j], gNow.P[3 * j + 1], gNow.P[3 * j + 2]]; };
+    let worst = 0;
+    for (let x = 0; x < plate.length; x += 1) {
+      const a0 = before(plate[x]), a1 = after(plate[x]);
+      for (let y = x + 1; y < plate.length; y += 1) {
+        const b0 = before(plate[y]), b1 = after(plate[y]);
+        const d = Math.abs(Math.hypot(a0[0] - b0[0], a0[1] - b0[1], a0[2] - b0[2]) - Math.hypot(a1[0] - b1[0], a1[1] - b1[1], a1[2] - b1[2]));
+        if (d > worst) worst = d;
+      }
+    }
+    expect({ sameDistances: worst <= 1e-4, worstMm: round(worst * 1000, 3) }).toEqual({ sameDistances: true, worstMm: round(worst * 1000, 3) });
+    // 거울상이면 거리는 같아도 네 점이 이루는 부피의 부호가 뒤집힌다. 판 끝 넷(가장 왼쪽·오른쪽·위·앞)으로 본다.
+    const pick = (score: (p: number[]) => number) => plate.reduce((best, i) => (score(before(i)) > score(before(best)) ? i : best), plate[0]);
+    const corners = [pick((p) => -p[0]), pick((p) => p[0]), pick((p) => p[1]), pick((p) => p[2])];
+    const volume = (pos: (i: number) => number[]) => {
+      const [o, p, q, r] = corners.map(pos);
+      const u = [0, 1, 2].map((k) => p[k] - o[k]), v = [0, 1, 2].map((k) => q[k] - o[k]), w = [0, 1, 2].map((k) => r[k] - o[k]);
+      return u[0] * (v[1] * w[2] - v[2] * w[1]) - u[1] * (v[0] * w[2] - v[2] * w[0]) + u[2] * (v[0] * w[1] - v[1] * w[0]);
+    };
+    expect(Math.abs(volume(before))).toBeGreaterThan(1e-6);
+    expect(Math.sign(volume(after))).toBe(Math.sign(volume(before)));
+  });
 });
+
+/**
+ * 렌즈 판: 기준 고글에서 UV 섬(인덱스로 이어진 점 묶음) 가운데 모든 점이 z ≥ 0.19(머리 앞쪽)인 섬의 점들.
+ * 띠의 섬은 옆·뒤로 이어져 z가 0.19보다 작은 점을 품는다(기준 고글: 판 1,761점, 띠 706점).
+ * 지금 고글의 판 점은 UV가 똑같은 점으로 짝짓는다(기준 고글의 UV는 점마다 모두 다르다). 판을 돌리고 옮기기만 하면 UV는 그대로이고,
+ * 띠는 새로 만들어도 되므로 점 수가 달라도 된다.
+ */
+function plateOf(g: Goggles): number[] {
+  const n = g.P.length / 3;
+  const parent = Array.from({ length: n }, (_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  for (let t = 0; t < g.I.length; t += 3) {
+    parent[find(g.I[t])] = find(g.I[t + 1]);
+    parent[find(g.I[t + 1])] = find(g.I[t + 2]);
+  }
+  const islands = new Map<number, number[]>();
+  for (let i = 0; i < n; i += 1) {
+    const root = find(i);
+    const list = islands.get(root) ?? [];
+    list.push(i);
+    islands.set(root, list);
+  }
+  return [...islands.values()].filter((island) => island.every((i) => g.P[3 * i + 2] >= 0.19)).flat().sort((a, b) => a - b);
+}
+
+function uvOf(g: Goggles): number[] {
+  const prim = g.glb.json.meshes[meshNodes(g.glb)[0].mesh!].primitives[0];
+  return values(g.glb, prim.attributes.TEXCOORD_0);
+}
+
+/** 기준 판 점 → 지금 고글에서 UV가 똑같은 점. */
+function matchPlate(base: Goggles, now: Goggles, plate: number[]): { toNew: Map<number, number>; unmatched: number[] } {
+  const uvNow = uvOf(now);
+  const byUv = new Map<string, number[]>();
+  for (let j = 0; j < uvNow.length / 2; j += 1) {
+    const key = `${uvNow[2 * j]},${uvNow[2 * j + 1]}`;
+    byUv.set(key, [...(byUv.get(key) ?? []), j]);
+  }
+  const uvBase = uvOf(base);
+  const toNew = new Map<number, number>();
+  const unmatched: number[] = [];
+  for (const i of plate) {
+    const found = byUv.get(`${uvBase[2 * i]},${uvBase[2 * i + 1]}`) ?? [];
+    if (found.length === 1) toNew.set(i, found[0]);
+    else unmatched.push(i);
+  }
+  return { toNew, unmatched };
+}
+
+/** 삼각형 t의 면 법선(파일의 꼭짓점 법선 쪽으로 맞춤). 넓이가 0이면 null. */
+function faceNormal(g: Goggles, t: number): number[] | null {
+  const [a, b, c] = [3 * g.I[t], 3 * g.I[t + 1], 3 * g.I[t + 2]];
+  const u = [0, 1, 2].map((k) => g.P[b + k] - g.P[a + k]);
+  const w = [0, 1, 2].map((k) => g.P[c + k] - g.P[a + k]);
+  let n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+  const length = Math.hypot(n[0], n[1], n[2]);
+  if (length < 1e-12) return null;
+  n = n.map((v) => v / length);
+  const vn = [0, 1, 2].map((k) => g.N[a + k] + g.N[b + k] + g.N[c + k]);
+  if (n[0] * vn[0] + n[1] * vn[1] + n[2] * vn[2] < 0) n = n.map((v) => -v);
+  return n;
+}
+
+/** 기준 판의 가운데 뒷면: 세 점이 모두 판 점이고, 가운데의 |x| ≤ 0.10이며, 면 법선이 뒤(-z)를 향하는(n_z < -0.5) 삼각형의 세 점. */
+function centralBackFaces(g: Goggles, plate: number[]): number[][] {
+  const inPlate = new Set(plate);
+  const out: number[][] = [];
+  for (let t = 0; t < g.I.length; t += 3) {
+    const tri = [g.I[t], g.I[t + 1], g.I[t + 2]];
+    if (!tri.every((i) => inPlate.has(i))) continue;
+    const x = (g.P[3 * tri[0]] + g.P[3 * tri[1]] + g.P[3 * tri[2]]) / 3;
+    const n = faceNormal(g, t);
+    if (Math.abs(x) <= 0.1 && n && n[2] < -0.5) out.push(tri);
+  }
+  return out;
+}
+
+/** 선분 from→to가 삼각형 self와 꼭짓점을 함께 쓰지 않는 고글 삼각형을 지나는가(Möller–Trumbore). */
+function blockedByGoggles(g: Goggles, self: number, from: number[], to: number[]): boolean {
+  const own = new Set([g.I[self], g.I[self + 1], g.I[self + 2]]);
+  const d = [0, 1, 2].map((k) => to[k] - from[k]);
+  for (let t = 0; t < g.I.length; t += 3) {
+    if (t === self || own.has(g.I[t]) || own.has(g.I[t + 1]) || own.has(g.I[t + 2])) continue;
+    const [a, b, c] = [3 * g.I[t], 3 * g.I[t + 1], 3 * g.I[t + 2]];
+    const e1 = [0, 1, 2].map((k) => g.P[b + k] - g.P[a + k]);
+    const e2 = [0, 1, 2].map((k) => g.P[c + k] - g.P[a + k]);
+    const p = [d[1] * e2[2] - d[2] * e2[1], d[2] * e2[0] - d[0] * e2[2], d[0] * e2[1] - d[1] * e2[0]];
+    const det = e1[0] * p[0] + e1[1] * p[1] + e1[2] * p[2];
+    if (Math.abs(det) < 1e-15) continue;
+    const s = [0, 1, 2].map((k) => from[k] - g.P[a + k]);
+    const u = (s[0] * p[0] + s[1] * p[1] + s[2] * p[2]) / det;
+    if (u < 0 || u > 1) continue;
+    const q = [s[1] * e1[2] - s[2] * e1[1], s[2] * e1[0] - s[0] * e1[2], s[0] * e1[1] - s[1] * e1[0]];
+    const v = (d[0] * q[0] + d[1] * q[1] + d[2] * q[2]) / det;
+    if (v < 0 || u + v > 1) continue;
+    const along = (e2[0] * q[0] + e2[1] * q[1] + e2[2] * q[2]) / det;
+    if (along > 1e-6 && along < 1 - 1e-6) return true;
+  }
+  return false;
+}
 
 // ---------- 그대로 둘 동작: 고글의 크기·높이·색·붙는 방식 ----------
 
@@ -593,7 +793,7 @@ describe("[spec] 095 그대로: 고글의 크기(앞에서 본 폭·높이), 붙
 // ---------- 바뀔 동작 3: 만드는 스크립트, 고글 아이콘, 출처 ----------
 
 describe("[spec] 095 바뀔 동작 3: 고글 만드는 스크립트, 고글 아이콘, CREDITS", () => {
-  it("M1 scripts/lobby3d/build-goggles.py가 있고 기준 커밋의 파일과 내용이 다르다(감싸기 단계를 더함)", () => {
+  it("M1 scripts/lobby3d/build-goggles.py가 있고 기준 커밋의 파일과 내용이 다르다(고글을 머리에 맞추는 단계를 바꿈. 14 결정으로 감싸기 대신 렌즈 판을 옮기고 띠를 맞춤)", () => {
     expect(text(nowFile(BUILD_PATH)) === text(baseFile(BUILD_PATH))).toBe(false);
   });
 

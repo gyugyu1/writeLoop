@@ -1,6 +1,8 @@
 # 받은 고글 모델을 착용 모델(wear-goggles.glb)로 만든다: 맞춤 변환(안 A)을 마무리된 몸 좌표에 굳히고, 삼각형과 질감을 줄인다.
 #   blender -b --factory-startup -P scripts/lobby3d/build-goggles.py -- <고글.glb> <goggles-fit.json> <안 이름> <writeloop.glb.frame.json> <out.glb> [이름=값 ...]
 # 이름=값: tris(삼각형 목표, 기본 2400), tex(질감 한 변, 기본 512), fmt(JPEG|PNG, 기본 JPEG), body(확인용 몸 glb)
+# 앱에 든 고글은 이 결과를 scripts/lobby3d/fit-goggles-to-head.py에 한 번 더 넣어 만든다(렌즈 판은 모양 그대로 앞머리 없는 이마에 더 붙이고, 띠는 머리를 따라 새로 만든다):
+#   blender -b --factory-startup -P scripts/lobby3d/fit-goggles-to-head.py -- <이 스크립트의 out.glb> apps/mobile/assets/models/writeloop.glb apps/mobile/assets/models/wear-goggles.glb
 # 결과: 메시 노드 하나(이름 wear-goggles), 노드 변환 없음. 좌표는 라룹이 쉬는 자세의 몸 좌표(앱 규격: Y 위, 앞 +Z, 키 1, 원점 발 가운데).
 #       앱은 이것을 head 뼈에 붙인다(다른 착용 모델과 같은 형식. 참고: 저장소의 catalog/files/wear-sunglasses.glb, wear-hat.glb).
 import json

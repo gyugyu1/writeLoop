@@ -564,7 +564,10 @@ describe("[spec] 095 그대로: 고글의 크기(앞에서 본 폭·높이), 붙
     expect(imageBytes(gNow.glb, 0).equals(imageBytes(gBase.glb, 0))).toBe(true);
   });
 
-  it("G6 붙는 방식: 메시가 있는 노드는 wear-goggles 하나이고 노드 변환·skin이 없으며(기준과 같음), 앱 코드(apps/mobile/src)가 기준 커밋과 같다", () => {
+  // 10 결정(사용자 "095 커밋만 보게"): 같은 브랜치의 다른 작업(096 84796ec, 097 a23400d)이 apps/mobile/src를 바꾸므로, "앱 코드를 바꾸지 않는다"는
+  // 기준 커밋과의 전체 차이가 아니라 095 작업의 커밋만 본다. 095 작업의 커밋은 기준 커밋 뒤로 095가 다루는 파일(몸·고글 모델, 고글 아이콘,
+  // build-goggles.py, CREDITS.md, 이 테스트 파일)을 바꾼 커밋이고, 그 커밋들 중 apps/mobile/src를 건드린 것이 없어야 한다.
+  it("G6 붙는 방식: 메시가 있는 노드는 wear-goggles 하나이고 노드 변환·skin이 없으며(기준과 같음), 095 작업의 커밋(기준 커밋 뒤로 095가 다루는 파일을 바꾼 커밋)이 앱 코드(apps/mobile/src)를 바꾸지 않는다", () => {
     const { gNow, gBase } = files();
     const shape = (g: Glb) => ({
       nodes: g.json.nodes.map((n) => ({ name: n.name, mesh: n.mesh !== undefined, skin: n.skin, translation: n.translation, rotation: n.rotation, scale: n.scale, matrix: n.matrix })),
@@ -572,9 +575,18 @@ describe("[spec] 095 그대로: 고글의 크기(앞에서 본 폭·높이), 붙
     });
     expect(shape(gNow.glb)).toEqual(shape(gBase.glb));
     expect(meshNodes(gNow.glb).map((n) => n.name)).toEqual(["wear-goggles"]);
-    const diff = spawnSync("git", ["diff", "--name-only", BASE, "--", "apps/mobile/src"], { cwd: REPO, encoding: "utf8" });
-    expect(diff.status).toBe(0);
-    expect(diff.stdout.trim()).toBe("");
+    const ownPaths = [BODY_PATH, GOGGLES_PATH, ICON_PATH, BUILD_PATH, CREDITS_PATH, "apps/mobile/tests/lib/lobby3d-goggles-hug.spec.test.ts"];
+    const log = spawnSync("git", ["log", "--format=%H", `${BASE}..HEAD`, "--", ...ownPaths], { cwd: REPO, encoding: "utf8" });
+    expect(log.status).toBe(0);
+    const commits = log.stdout.split(/\s+/).filter(Boolean);
+    // 095의 테스트 커밋이 이미 있으므로 095 커밋이 하나도 없으면 찾는 방법이 잘못된 것이다.
+    expect(commits.length).toBeGreaterThan(0);
+    const touched = commits.flatMap((commit) => {
+      const changed = spawnSync("git", ["diff-tree", "--no-commit-id", "--name-only", "-r", commit, "--", "apps/mobile/src"], { cwd: REPO, encoding: "utf8" });
+      expect({ commit, status: changed.status }).toEqual({ commit, status: 0 });
+      return changed.stdout.split(/\r?\n/).filter(Boolean).map((file) => `${commit.slice(0, 7)} ${file}`);
+    });
+    expect(touched).toEqual([]);
   });
 });
 

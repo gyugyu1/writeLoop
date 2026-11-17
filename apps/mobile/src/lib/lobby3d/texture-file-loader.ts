@@ -11,7 +11,7 @@ import * as THREE from "three";
 type Load = THREE.TextureLoader["load"];
 
 /** r3f가 예전에 GLB 안 그림을 쓰던 이름(캐시 폴더 맨 위의 uuid v4 + 그림 확장자). */
-const OLD_IMAGE_FILE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(png|jpe?g|webp)$/i;
+const OLD_IMAGE_FILE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(png|jpe?g|webp)$/;
 /** 내용 이름으로 쓴 그림 파일의 앞머리. */
 const IMAGE_FILE_PREFIX = "model-image-";
 
@@ -60,7 +60,17 @@ export async function embeddedImageFile(url: string): Promise<string> {
   if (pending) return pending;
   const job = (async () => {
     const info = await LegacyFS.getInfoAsync(uri);
-    if (!info.exists) await LegacyFS.writeAsStringAsync(uri, data, { encoding: LegacyFS.EncodingType.Base64 });
+    if (!info.exists) {
+      // 임시 이름에 다 쓴 뒤 옮긴다: 쓰다 끊기면(저장 공간 부족, 앱 종료) 내용 이름으로 잘린 파일이 남아 다시 쓰이지 않는 것을 막는다
+      const part = `${uri}.part`;
+      try {
+        await LegacyFS.writeAsStringAsync(part, data, { encoding: LegacyFS.EncodingType.Base64 });
+        await LegacyFS.moveAsync({ from: part, to: uri });
+      } catch (error) {
+        await LegacyFS.deleteAsync(part, { idempotent: true }).catch(() => undefined);
+        throw error;
+      }
+    }
     return uri;
   })();
   writing.set(uri, job);

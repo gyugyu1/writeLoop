@@ -1,5 +1,6 @@
 import "@/lib/lobby3d/hermes-polyfills";
 import "@/lib/lobby3d/model-file-loader";
+import { removeOldEmbeddedImageFiles } from "@/lib/lobby3d/texture-file-loader";
 import { useLoader } from "@react-three/fiber/native";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -21,11 +22,18 @@ const LOBBY_MODEL_ASSETS = [
 const VILLAGE_MODEL_ASSET = require("../../../assets/models/lobby-village.glb") as string;
 /* eslint-enable @typescript-eslint/no-require-imports */
 
+let oldImagesCleaned = false;
+
 /**
  * 세 모델 읽기를 시작한다. useLoader와 같은 곳에 두므로, 로비가 열릴 때 다 읽혔으면 바로 쓰고 읽는 중이면 그 읽기를 기다린다.
  * 읽지 못해도 여기서는 아무 일도 하지 않는다(로비에서 그 부분만 대신 그린다).
  */
 export function preloadLobbyModels(): void {
+  // 예전 방식으로 캐시에 쌓인 모델 안 그림 파일을 한 번 치운다(지금은 그림 내용 이름으로 한 파일만 둔다. 기다리지 않는다)
+  if (!oldImagesCleaned) {
+    oldImagesCleaned = true;
+    void removeOldEmbeddedImageFiles();
+  }
   for (const asset of LOBBY_MODEL_ASSETS) {
     useLoader.preload(GLTFLoader, asset);
   }

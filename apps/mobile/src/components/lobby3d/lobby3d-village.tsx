@@ -656,8 +656,9 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     const buildings = new Map<VillageBuildingId, { materials: THREE.MeshLambertMaterial[]; opacity: number }>();
     const glows: THREE.Mesh[] = [];
     const glowMat = new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, toneMapped: false, depthWrite: false });
-    // 가게 통유리: 낮에는 옅은 하늘색으로 안이 비치고, 밤에는 따뜻한 안쪽 불빛 색으로 밝아진다(두 가게가 함께 쓴다)
-    const glassMat = new THREE.MeshLambertMaterial({
+    // 가게 통유리: 낮에는 옅은 하늘색으로 안이 비치고, 밤에는 따뜻한 안쪽 불빛 색으로 밝아진다.
+    // 건물마다 하나씩 두어, 라룹이를 가려 그 건물이 옅어질 때 유리도 같이 옅어지게 한다(아래 glassOf)
+    const glassBase = new THREE.MeshLambertMaterial({
       color: 0xdcefff,
       emissive: 0xffc878,
       emissiveIntensity: 0,
@@ -667,7 +668,20 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       side: THREE.DoubleSide
     });
     const hedgeMats: THREE.MeshLambertMaterial[] = [];
-    const owned: THREE.Material[] = [glowMat, glassMat];
+    const owned: THREE.Material[] = [glowMat, glassBase];
+    const glasses: { material: THREE.MeshLambertMaterial; building: VillageBuildingId | null }[] = [];
+    const glassByBuilding = new Map<string, THREE.MeshLambertMaterial>();
+    const glassOf = (group: string): THREE.MeshLambertMaterial => {
+      const id = /^bld-([A-Za-z]+)/.exec(group)?.[1] ?? "";
+      let material = glassByBuilding.get(id);
+      if (!material) {
+        material = glassBase.clone();
+        owned.push(material);
+        glassByBuilding.set(id, material);
+        glasses.push({ material, building: id ? (id as VillageBuildingId) : null });
+      }
+      return material;
+    };
     const pick: THREE.Object3D[] = [];
     // 묶음 이름(합친 메시는 뒤에 "-mesh"가 붙는다: bld-home-mesh, props-mesh 등)
     const groupOf = (o: THREE.Object3D): string => {
@@ -710,7 +724,7 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       const source = o.material as THREE.MeshStandardMaterial;
       if (/^glass/.test(source.name)) {
         // 유리는 건물 재질과 따로 그리고(라룹이를 가릴 때 옅어지는 건물 재질에 넣지 않는다) 누르기 대상에서 뺀다(건물 메시가 받는다)
-        o.material = glassMat;
+        o.material = glassOf(name);
         o.raycast = () => {};
         return;
       }
@@ -773,7 +787,7 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
         if (part === "leaf") leaves.push({ mesh, spots: mine });
       }
     }
-    return { root, buildings, glows, glowMat, glassMat, hedgeMats, owned, pick, leaves, rotor: rotor as THREE.Mesh | null, season: { shown: null as Season | null } };
+    return { root, buildings, glows, glowMat, glasses, hedgeMats, owned, pick, leaves, rotor: rotor as THREE.Mesh | null, season: { shown: null as Season | null } };
   }, [gltf]);
 
   useEffect(() => {
@@ -804,8 +818,13 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     }
     // 밤 불빛: 천장 조명과 같은 때(새벽·어스름·밤) 켜진다. 켜고 끌 때는 천장 조명처럼 부드럽게
     built.glowMat.opacity = 0.9 * daylight.ceiling;
-    built.glassMat.opacity = GLASS_DAY_OPACITY + (GLASS_NIGHT_OPACITY - GLASS_DAY_OPACITY) * daylight.ceiling;
-    built.glassMat.emissiveIntensity = GLASS_NIGHT_GLOW * daylight.ceiling;
+    // 유리: 하루의 때를 따르고, 그 건물이 라룹이를 가려 옅어지면 같은 비율로 옅어진다
+    const glassOpacity = GLASS_DAY_OPACITY + (GLASS_NIGHT_OPACITY - GLASS_DAY_OPACITY) * daylight.ceiling;
+    for (const { material, building } of built.glasses) {
+      const fade = building ? (built.buildings.get(building)?.opacity ?? 1) : 1;
+      material.opacity = glassOpacity * fade;
+      material.emissiveIntensity = GLASS_NIGHT_GLOW * daylight.ceiling * fade;
+    }
     for (const g of built.glows) g.visible = daylight.ceiling > 0.01;
     const season = daylight.target.season;
     if (built.season.shown !== season) {

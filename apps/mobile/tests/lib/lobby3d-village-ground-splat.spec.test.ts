@@ -6,6 +6,8 @@
 // 함수의 모양은 qa가 정했다(tests/__fixtures__/village-splat-102.ts 머리말, 02-qa-tests.md "부르는 방법"). 구현 전에는 모듈이 없어 모두 실패한다(바뀔 동작).
 // 지도는 그래픽 카드처럼 이웃 네 픽셀을 고르게 섞어 읽는다(sampleMap). 명세에 수가 없어 qa가 정한 값(02-qa-tests.md "가정"):
 // - "길 가장자리" = 둥근 길 밖으로 경계에서 0.25~0.75칸(길 판의 바래는 띠 바깥). "문 앞 둘레" = 문 가운데 앞(장소의 faceTo)에서 1.5칸 안.
+// - G4(07 결정으로 고침): 문 앞 둘레의 맨땅이 길가 맨땅과 따로 섞였는지 보려고, 같은 길 거리(±0.1칸)인 문에서 4칸 넘게 떨어진 길가보다 평균 0.1 이상 많은지 본다.
+//   문 앞 1.5칸 안에 풀밭 점(길 경계에서 0.25칸 넘게)이 10개 안 되는 건물(문 앞이 거의 다 길·건물)은 건너뛰고, 확인하는 건물이 둘 이상이어야 한다.
 // - "섞는다" = 그곳의 맨땅·이끼 몫 평균이 0.25 이상. "~에만" = 길 칸에서 3.5칸, 문 앞에서 3칸 넘게 떨어진 곳은 맨땅 몫이 3/255 이하.
 // - "나무 가까이" = 마을 나무 가운데에서 0.6~1.4칸. "생울타리 가까이" = 마을 끝(뒤쪽·양옆)에서 1~2칸 안쪽 띠.
 //   이끼가 자리로 정해진다 = 나무·생울타리에서 4칸 넘게 떨어진 풀밭의 이끼 평균이 나무 둘레 평균의 절반 이하.
@@ -13,7 +15,7 @@
 import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_PLACES, VILLAGE_TREES } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { freshSplatModule, rectsDistance, sampleMap, splatModule, type VillageGroundPlaceMap } from "../__fixtures__/village-splat-102";
-import { shapeIndex, type PathShape, type Rect, type RoundedPathShapes } from "../__fixtures__/village-paths-099";
+import { boundaryDistance, shapeIndex, type PathShape, type Rect, type RoundedPathShapes } from "../__fixtures__/village-paths-099";
 
 function pathShapes(): PathShape[] {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -98,14 +100,45 @@ describe("[spec] 102 바뀔 동작: 맨땅·이끼를 섞을 자리 지도(명�
     });
   });
 
-  it("G4 맨땅은 건물 문 앞 둘레에 섞는다: 건물마다 문 앞(faceTo)에서 1.5칸 안(둥근 길과 건물 땅 밖)의 맨땅 몫 평균이 0.25 이상이다", () => {
-    const index = shapeIndex(pathShapes());
-    const result = doorFronts().map((door) => {
-      const near = gridAround(door, 1.5, 0.1).filter((p) => Math.hypot(p.x - door.x, p.z - door.z) <= 1.5 && !inBuilding(p) && !index.inside(p) && !(index.distance(p) < 0.25));
-      const bare = near.map((p) => sampleMap(map, 0, p.x, p.z));
-      return { id: door.id, points: near.length >= 10, enough: near.length > 0 && mean(bare) >= 0.25, mean: near.length ? Number(mean(bare).toFixed(3)) : null };
+  it("G4 맨땅은 건물 문 앞 둘레에 섞는다(07 결정으로 고침): 문 앞(faceTo)에서 1.5칸 안 풀밭(둥근 길·건물 땅 밖, 경계에서 0.25칸 넘게) 점이 10개 이상인 건물(둘 이상)마다, 그 점들의 맨땅 몫 평균이 0.25 이상이고, 같은 길 거리(±0.1칸)인 문에서 4칸 넘게 떨어진 길가보다 평균 0.1 이상 많다. 문 앞이 거의 다 길·건물인 건물은 건너뛴다", () => {
+    const shapes = pathShapes();
+    const index = shapeIndex(shapes);
+    const doors = doorFronts();
+    // 견줄 길가: 마을 안, 길·건물 밖, 길 경계에서 2.5칸 안, 모든 문에서 4칸 넘게 떨어진 점의 (길 거리, 맨땅 몫)
+    const baseline: { d: number; bare: number }[] = [];
+    for (const p of villageGrid()) {
+      if (inBuilding(p) || index.inside(p) || rectsDistance(VILLAGE_PATH_RECTS, p) > 3) continue;
+      if (doors.some((door) => Math.hypot(p.x - door.x, p.z - door.z) <= 4)) continue;
+      const d = boundaryDistance(shapes, p);
+      if (d <= 2.5) baseline.push({ d, bare: sampleMap(map, 0, p.x, p.z) });
+    }
+    expect(baseline.length).toBeGreaterThan(1000);
+    const baselineAt = (d: number) => {
+      const same = baseline.filter((b) => Math.abs(b.d - d) <= 0.1);
+      return same.length >= 5 ? mean(same.map((b) => b.bare)) : null;
+    };
+    const result = doors.map((door) => {
+      const near = gridAround(door, 1.5, 0.1)
+        .filter((p) => Math.hypot(p.x - door.x, p.z - door.z) <= 1.5 && !inBuilding(p) && !index.inside(p))
+        .map((p) => ({ p, d: boundaryDistance(shapes, p) }))
+        .filter((q) => q.d > 0.25);
+      if (near.length < 10) return { id: door.id, skipped: true };
+      const bare = near.map((q) => sampleMap(map, 0, q.p.x, q.p.z));
+      const base = near.map((q) => baselineAt(q.d));
+      const excess = mean(bare.map((b, k) => b - (base[k] ?? 0)));
+      return {
+        id: door.id,
+        skipped: false,
+        mean: Number(mean(bare).toFixed(3)),
+        excess: Number(excess.toFixed(3)),
+        baselineFound: base.every((b) => b !== null),
+        enough: mean(bare) >= 0.25,
+        moreThanPathSide: excess >= 0.1
+      };
     });
-    expect(result).toEqual(result.map((r) => ({ ...r, points: true, enough: true })));
+    const checked = result.filter((r) => !r.skipped);
+    expect({ checked: checked.map((r) => r.id), atLeastTwo: checked.length >= 2 }).toEqual({ checked: checked.map((r) => r.id), atLeastTwo: true });
+    expect(checked).toEqual(checked.map((r) => ({ ...r, baselineFound: true, enough: true, moreThanPathSide: true })));
   });
 
   it("G5 맨땅은 마을 안 길·문 앞 둘레에만: 지도 전체(마을 밖 둘레 포함)에서 길 칸에서 3.5칸, 문 앞에서 3칸 넘게 떨어진 픽셀의 맨땅 몫이 3/255 이하다", () => {

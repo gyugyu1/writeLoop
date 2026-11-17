@@ -18,6 +18,14 @@
 //   찍은 자리(세계 변환의 옮김 x, z)가 모두 장식 자리 함수(villageDecorSpots)의 자리와 0.001칸 안에서 맞고 모양에 높이가 있는(0.01칸 넘는) 것을 "장식 메시",
 //   모두 자국 자리 함수(villageGrassMarks)의 자리와 맞고 납작한(높이 0.01칸 이하) 것을 "자국 메시"로 본다. 자리 함수의 모양은 village-decor-101.ts 머리말.
 //   (큰 얼룩처럼 이 둘에 들지 않는 인스턴스 메시는 보지 않는다.)
+//
+// 작업 103(마을 흩뿌림·흙길) 명세의 "그 때문에 고칠 기존 테스트"(사용자 2026-11-18 "진행해": 101 qa 테스트 중 풀 자국을 보는 것)로 qa가 고쳤다.
+// 103은 풀 자국(계절 색을 곱한 회색 그림 판) 대신 계절마다 다른 색칠된 흩뿌림 조각(가을 낙엽, 봄 꽃잎, 여름 초록 잎, 겨울 없음)을 흩고, 계절 색을 곱하지 않는다.
+// - "자국 자리 함수"는 계절마다 villageSeasonScatter(season)이다(모양은 tests/__fixtures__/village-ground-103.ts 머리말). 자국 메시 찾기는 그대로다.
+// - S3: 가을·봄·여름마다 그 계절의 조각 자리를 본다(단언은 그대로). S4: "자국 색이 계절 색을 따른다" 대신 "조각 재질 색은 회색이고 계절이 바뀌어도 같으며,
+//   인스턴스 색도 회색이다. 겨울에는 조각이 그려지지 않는다". S5·S6: 풀 자국 대신 가을 조각으로 본다(단언은 그대로).
+// - 계절을 바꾸면 조각 메시를 새로 만들어도 되지만, 그린 장면의 뿌리(<primitive object>)와 장식 메시는 그대로여야 한다(S2가 같은 메시의 보임을 본다).
+//   그래서 S3·S4는 계절을 바꿀 때마다 조각 메시를 다시 찾는다. S1·S2(장식)는 단언·입력이 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -28,7 +36,8 @@ import { daylightAt, type Season } from "@/lib/lobby3d/daylight";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import { VILLAGE_START } from "@/lib/lobby3d/village";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
-import { decorModule, type VillageDecorSpot, type VillageGrassMark } from "../__fixtures__/village-decor-101";
+import { decorModule, type VillageDecorSpot } from "../__fixtures__/village-decor-101";
+import { SCATTER_SEASONS, scatterModule, type VillageScatterPiece } from "../__fixtures__/village-ground-103";
 import {
   allObjects,
   drawnVisible,
@@ -163,7 +172,7 @@ function spotFinder(spots: Spot[]) {
 type Found = { meshes: THREE.InstancedMesh[]; matched: Set<number> };
 
 /** 그린 장면에서 장식 메시와 자국 메시(머리말의 정의)를 찾는다. 찍은 자리가 맞은 자리 번호도 모은다. */
-function findDecorAndMarks(drawn: Drawn, decor: VillageDecorSpot[], marks: VillageGrassMark[]): { decor: Found; marks: Found } {
+function findDecorAndMarks(drawn: Drawn, decor: VillageDecorSpot[], marks: VillageScatterPiece[]): { decor: Found; marks: Found } {
   const fromModel = sourceGeometries(drawn.source).all;
   const findDecor = spotFinder(decor);
   const findMark = spotFinder(marks);
@@ -186,41 +195,23 @@ function findDecorAndMarks(drawn: Drawn, decor: VillageDecorSpot[], marks: Villa
   return out;
 }
 
-function spots() {
-  const mod = decorModule();
-  return { decor: mod.villageDecorSpots(), marks: mod.villageGrassMarks() };
+/** 장식 자리와, 계절을 주면 그 계절의 흩뿌림 조각 자리(103: 풀 자국 대신). 장식만 보는 S1·S2는 계절을 주지 않는다(조각 자리 없음). */
+function spots(season?: Season) {
+  return { decor: decorModule().villageDecorSpots(), marks: season ? scatterModule().villageSeasonScatter(season) : [] };
 }
 
 const materialsOf = (m: THREE.Mesh) => (Array.isArray(m.material) ? m.material : [m.material]);
 
-/** 자국 메시들의 보이는 색 평균(선형): 재질 색 × 인스턴스 색(있으면). */
-function meanMarkColor(meshes: THREE.InstancedMesh[]): THREE.Color {
-  const sum = new THREE.Color(0, 0, 0);
-  let n = 0;
-  const c = new THREE.Color();
-  for (const mesh of meshes) {
-    const base = (materialsOf(mesh)[0] as THREE.MeshLambertMaterial).color ?? new THREE.Color(1, 1, 1);
-    for (let i = 0; i < mesh.count; i += 1) {
-      c.copy(base);
-      if (mesh.instanceColor) {
-        const ic = new THREE.Color();
-        mesh.getColorAt(i, ic);
-        c.multiply(ic);
-      }
-      sum.r += c.r;
-      sum.g += c.g;
-      sum.b += c.b;
-      n += 1;
-    }
-  }
-  return new THREE.Color(sum.r / n, sum.g / n, sum.b / n);
-}
+const isGray = (c: THREE.Color) => Math.abs(c.r - c.g) < 1e-6 && Math.abs(c.g - c.b) < 1e-6;
 
-const srgb255 = (c: THREE.Color) => {
-  const s = c.clone().convertLinearToSRGB();
-  return [s.r, s.g, s.b].map((v) => Math.round(v * 255));
-};
-const luminance = (c: THREE.Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+/** 그린 장면에서 그려지는 납작한 인스턴스 메시(마을 모델 도형이 아닌 것). 겨울에 조각이 남았는지 볼 때 쓴다. */
+function drawnFlatInstances(drawn: Drawn): THREE.InstancedMesh[] {
+  const fromModel = sourceGeometries(drawn.source).all;
+  return allObjects(drawn.roots).filter((o): o is THREE.InstancedMesh => {
+    if (!(o instanceof THREE.InstancedMesh) || fromModel.has(o.geometry) || !drawnVisible(o, drawn.roots)) return false;
+    return Math.max(...instanceWorldMatrices(o).map((w) => instanceHeight(o, w))) <= 0.01;
+  });
+}
 
 const matrixKey = (mesh: THREE.InstancedMesh) => instanceWorldMatrices(mesh).map((m) => m.elements.map((v) => v.toFixed(5)).join(",")).join(";");
 
@@ -262,9 +253,10 @@ describe("[spec] 101 바뀔 동작: 꽃·풀 장식(3D 모델)과 풀 자국 그
     }
   });
 
-  it("S3 풀 자국(03 결정 1): 자국 자리마다 그림을 입힌 납작한 판이 인스턴스로 찍혀 그려지고, 판 재질에 그림(map)이 있고 그림의 빈 곳이 비친다(transparent 또는 alphaTest), 메시 하나가 평균 5개 이상을 찍는다", async () => {
-    const { decor, marks } = spots();
+  it.each(SCATTER_SEASONS)("S3 풀 자국(03 결정 1. 103에서 %s 흩뿌림 조각으로 바꿈): 자국 자리마다 그림을 입힌 납작한 판이 인스턴스로 찍혀 그려지고, 판 재질에 그림(map)이 있고 그림의 빈 곳이 비친다(transparent 또는 alphaTest), 메시 하나가 평균 5개 이상을 찍는다", async (season) => {
+    const { decor, marks } = spots(season);
     const drawn = await draw("summer");
+    if (season !== "summer") await setSeason(drawn, season);
     const found = findDecorAndMarks(drawn, decor, marks).marks;
     expect(found.meshes.length).toBeGreaterThan(0);
     const missing = marks.filter((_, i) => !found.matched.has(i)).map((m) => `${m.x.toFixed(2)},${m.z.toFixed(2)}`);
@@ -280,32 +272,41 @@ describe("[spec] 101 바뀔 동작: 꽃·풀 장식(3D 모델)과 풀 자국 그
     expect(instances / found.meshes.length).toBeGreaterThanOrEqual(5);
   });
 
-  it("S4 자국 색은 계절 색을 따른다(03 결정 1): 봄·여름·가을의 자국 색(재질 색 × 인스턴스 색의 평균)이 서로 다르고, 겨울에는 자국이 숨거나 여름보다 옅다(밝다)", async () => {
-    const { decor, marks } = spots();
+  it("S4 흩뿌림 조각은 계절 색을 곱하지 않는다(103 명세 1. 101의 '자국 색은 계절 색을 따른다'를 바꿈): 가을·봄·여름의 조각 재질 색은 모두 같은 회색(r = g = b)이고 인스턴스 색도 회색이다. 겨울에는 조각(납작한 인스턴스)이 그려지지 않는다", async () => {
     const drawn = await draw("summer");
-    const meshes = findDecorAndMarks(drawn, decor, marks).marks.meshes;
-    expect(meshes.length).toBeGreaterThan(0);
-    const colors = new Map<Season, THREE.Color>();
-    for (const season of ["summer", "autumn", "spring", "winter"] as Season[]) {
-      if (season !== "summer") await setSeason(drawn, season);
-      colors.set(season, meanMarkColor(meshes));
+    const colors: string[] = [];
+    for (const season of ["summer", "autumn", "spring", "winter", "summer"] as Season[]) {
+      await setSeason(drawn, season);
       if (season === "winter") {
-        const hidden = meshes.every((m) => !drawnVisible(m, drawn.roots));
-        const lighter = luminance(colors.get("winter")!) > luminance(colors.get("summer")!);
-        expect({ hiddenOrLighter: hidden || lighter }).toEqual({ hiddenOrLighter: true });
+        expect({ season, drawn: drawnFlatInstances(drawn).map((m) => `${m.name || "이름 없음"} ${m.count}개`) }).toEqual({ season, drawn: [] });
+        continue;
       }
+      const { decor, marks } = spots(season);
+      const meshes = findDecorAndMarks(drawn, decor, marks).marks.meshes;
+      expect({ season, meshes: meshes.length > 0 }).toEqual({ season, meshes: true });
+      const notGray: string[] = [];
+      for (const mesh of meshes) {
+        for (const mat of materialsOf(mesh)) {
+          const c = (mat as THREE.MeshLambertMaterial).color;
+          colors.push(c.getHexString());
+          if (!isGray(c)) notGray.push(`재질 ${c.getHexString()}`);
+        }
+        if (mesh.instanceColor) {
+          const ic = new THREE.Color();
+          for (let i = 0; i < mesh.count; i += 1) {
+            mesh.getColorAt(i, ic);
+            if (!isGray(ic)) notGray.push(`인스턴스 ${i} ${ic.getHexString()}`);
+          }
+        }
+      }
+      expect({ season, notGray: notGray.slice(0, 10) }).toEqual({ season, notGray: [] });
     }
-    const [sp, su, au] = (["spring", "summer", "autumn"] as Season[]).map((s) => srgb255(colors.get(s)!).join("/"));
-    expect({ springVsSummer: sp !== su, summerVsAutumn: su !== au, springVsAutumn: sp !== au }).toEqual({
-      springVsSummer: true,
-      summerVsAutumn: true,
-      springVsAutumn: true
-    });
+    expect([...new Set(colors)].length).toBe(1);
   });
 
-  it("S5 장식과 자국은 누르기 대상이 아니다(01의 3, 03 결정 1): 누르기 판정 목록에 없고, 목록의 물체 아래에도 위에도 없다", async () => {
-    const { decor, marks } = spots();
-    const drawn = await draw("summer");
+  it("S5 장식과 자국은 누르기 대상이 아니다(01의 3, 03 결정 1. 103에서 자국 대신 가을 흩뿌림 조각): 누르기 판정 목록에 없고, 목록의 물체 아래에도 위에도 없다", async () => {
+    const { decor, marks } = spots("autumn");
+    const drawn = await draw("autumn");
     const found = findDecorAndMarks(drawn, decor, marks);
     const ours = [...found.decor.meshes, ...found.marks.meshes];
     expect(ours.length).toBeGreaterThan(0);
@@ -325,9 +326,9 @@ describe("[spec] 101 바뀔 동작: 꽃·풀 장식(3D 모델)과 풀 자국 그
     expect(tangled).toEqual([]);
   });
 
-  it("S6 라룹이가 지나가도 장식과 자국은 그대로다(01의 3): 라룹이를 장식 자리와 자국 자리에 세우고 프레임을 돌려도 찍은 자리와 보임이 같다", async () => {
-    const { decor, marks } = spots();
-    const drawn = await draw("summer");
+  it("S6 라룹이가 지나가도 장식과 자국은 그대로다(01의 3. 103에서 자국 대신 가을 흩뿌림 조각): 라룹이를 장식 자리와 자국 자리에 세우고 프레임을 돌려도 찍은 자리와 보임이 같다", async () => {
+    const { decor, marks } = spots("autumn");
+    const drawn = await draw("autumn");
     const found = findDecorAndMarks(drawn, decor, marks);
     const ours = [...found.decor.meshes, ...found.marks.meshes];
     expect(found.decor.meshes.length > 0 && found.marks.meshes.length > 0).toBe(true);

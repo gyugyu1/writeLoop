@@ -2,15 +2,20 @@
  * @jest-environment node
  */
 // [spec] qa 테스트(작업 099 마을 길 둥글게, 기능 변경, 모바일): 길 칸을 합친 모양의 둥근 경계를 계산하는 함수(명세 바뀌는 동작 1).
-// 기대값은 명세(private 작업 폴더 099-2026-11-17-마을-길-둥글게/01-main-spec.md)에서만 가져온다.
+// 기대값은 명세(private 작업 폴더 099-2026-11-17-마을-길-둥글게/01-main-spec.md, 모서리 반지름은 103-2026-11-18-마을-흩뿌림-흙길/01-main-spec.md)에서만 가져온다.
 // 모두 바뀔 동작이다(구현 전 실패: 함수가 아직 없다).
 // 함수의 부르는 방법은 명세에 없어 qa가 정했다(tests/__fixtures__/village-paths-099.ts 머리말, 02-qa-tests.md "부르는 방법"):
 //   import { roundedPathShapes } from "@/lib/lobby3d/village-paths";  roundedPathShapes(rects) → { outer, holes }[]
 //
+// 작업 103(마을 흩뿌림·흙길) 명세의 "그 때문에 고칠 기존 테스트"(사용자 2026-11-18 "진행해")로 qa가 S2·S3·S4·S7의 모서리 범위를 고쳤다.
+// 103은 바깥 모서리 반지름을 약 1.0칸, 안쪽 모서리를 약 0.7칸으로 키운다(099는 0.8·0.5). 범위를 정하는 방법(반지름 "약" ±0.1칸과 굽이 ±0.1칸)은 그대로다.
+// 굽이가 있어 이 범위로는 옛 반지름과 새 반지름을 가르지 못한다. 새 반지름은 103 테스트 lobby3d-village-path-corners.spec.test.ts(E1)가 굽이 없이 본다.
+//
 // 명세의 값과 이 테스트가 받는 범위:
-// - 바깥 모서리(볼록, 길 끝 포함) 반지름 약 0.8칸: 반지름 r로 깎으면 모서리 점에서 길 쪽 대각선으로 r(√2−1)만큼 가야 길 안이 된다(0.8이면 0.331).
-//   "약"과 굽이(±0.1)를 생각해 0.22~0.45칸에서 길 안이 되면 받는다.
-// - 안쪽 모서리(오목) 반지름 약 0.5칸: 채우면 모서리 점에서 빈 쪽 대각선으로 r(√2−1)까지 길이다(0.5이면 0.207). 0.10~0.31칸에서 길 밖이 되면 받는다.
+// - 바깥 모서리(볼록, 길 끝 포함) 반지름 약 1.0칸(103): 반지름 r로 깎으면 모서리 점에서 길 쪽 대각선으로 r(√2−1)만큼 가야 길 안이 된다(1.0이면 0.414).
+//   "약"(0.9~1.1칸 → 0.373~0.456)과 굽이(±0.1)를 생각해 0.27~0.56칸에서 길 안이 되면 받는다(099의 0.8칸 때는 0.22~0.45칸).
+// - 안쪽 모서리(오목) 반지름 약 0.7칸(103): 채우면 모서리 점에서 빈 쪽 대각선으로 r(√2−1)까지 길이다(0.7이면 0.290).
+//   "약"(0.6~0.8칸 → 0.249~0.331)과 굽이를 생각해 0.15~0.43칸에서 길 밖이 되면 받는다(099의 0.5칸 때는 0.10~0.31칸).
 // - 곧은 가장자리 굽이 약 ±0.1칸: 곧은 가장자리 가운데 점들이 원래 선에서 0.15칸 안이고, 안팎 양쪽으로 0.03칸 넘게 굽은 점이 있으면 받는다.
 // - 원래 길 칸 밖으로 0.2칸 안(채운 안쪽 모서리 말고): 경계의 모든 점이 길 칸에서 0.2칸 안. 안쪽 모서리(와 명세가 정하지 않은 대각선 맞닿음) 둘레 0.75칸 안의 점은
 //   채운 반지름 0.5칸 안으로 받는다.
@@ -99,7 +104,7 @@ describe("[spec] 099 바뀔 동작: 둥근 길 경계 함수(명세 1)", () => {
     expect(load()([])).toEqual([]);
   });
 
-  it("S2 곧은 길 하나: 조각 하나(구멍 없음), 칸 가운데는 모두 길 안, 길 끝 네 모서리는 둥글게 깎였다(대각선 0.22~0.45칸에서 길 안)", () => {
+  it("S2 곧은 길 하나: 조각 하나(구멍 없음), 칸 가운데는 모두 길 안, 길 끝 네 모서리는 둥글게 깎였다(대각선 0.27~0.56칸에서 길 안)", () => {
     const shapes = load()(STRAIGHT);
     expect(shapes).toHaveLength(1);
     expect(shapes[0].holes).toEqual([]);
@@ -108,11 +113,11 @@ describe("[spec] 099 바뀔 동작: 둥근 길 경계 함수(명세 1)", () => {
     expect(convex).toHaveLength(4);
     for (const c of convex) {
       const s = firstAlongDiagonal(shapes, c, true);
-      expect({ corner: [c.x, c.z], inRange: s !== null && s >= 0.22 && s <= 0.45, s }).toEqual({ corner: [c.x, c.z], inRange: true, s });
+      expect({ corner: [c.x, c.z], inRange: s !== null && s >= 0.27 && s <= 0.56, s }).toEqual({ corner: [c.x, c.z], inRange: true, s });
     }
   });
 
-  it("S3 T자 길: 바깥 모서리 여섯은 깎이고(대각선 0.22~0.45칸에서 길 안), 안쪽 모서리 (5,2)·(7,2)는 채워졌다(모서리 점은 길 안, 빈 쪽 대각선 0.10~0.31칸에서 길 밖)", () => {
+  it("S3 T자 길: 바깥 모서리 여섯은 깎이고(대각선 0.27~0.56칸에서 길 안), 안쪽 모서리 (5,2)·(7,2)는 채워졌다(모서리 점은 길 안, 빈 쪽 대각선 0.15~0.43칸에서 길 밖)", () => {
     const shapes = load()(TEE);
     expect(shapes).toHaveLength(1);
     expect(uncoveredTileCenters(TEE, shapes)).toEqual([]);
@@ -124,12 +129,12 @@ describe("[spec] 099 바뀔 동작: 둥근 길 경계 함수(명세 1)", () => {
     ]);
     for (const c of convex) {
       const s = firstAlongDiagonal(shapes, c, true);
-      expect({ corner: [c.x, c.z], inRange: s !== null && s >= 0.22 && s <= 0.45, s }).toEqual({ corner: [c.x, c.z], inRange: true, s });
+      expect({ corner: [c.x, c.z], inRange: s !== null && s >= 0.27 && s <= 0.56, s }).toEqual({ corner: [c.x, c.z], inRange: true, s });
     }
     for (const c of concave) {
       expect({ corner: [c.x, c.z], cornerInside: inShapes(shapes, alongDiagonal(c, 0)) }).toEqual({ corner: [c.x, c.z], cornerInside: true });
       const s = firstAlongDiagonal(shapes, c, false);
-      expect({ corner: [c.x, c.z], inRange: s !== null && s >= 0.1 && s <= 0.31, s }).toEqual({ corner: [c.x, c.z], inRange: true, s });
+      expect({ corner: [c.x, c.z], inRange: s !== null && s >= 0.15 && s <= 0.43, s }).toEqual({ corner: [c.x, c.z], inRange: true, s });
     }
   });
 
@@ -139,11 +144,11 @@ describe("[spec] 099 바뀔 동작: 둥근 길 경계 함수(명세 1)", () => {
     expect(uncoveredTileCenters(ELL, shapes)).toEqual([]);
     const outer = { x: 10, z: 0, dx: -1, dz: 1 };
     const s = firstAlongDiagonal(shapes, outer, true);
-    expect({ inRange: s !== null && s >= 0.22 && s <= 0.45, s }).toEqual({ inRange: true, s });
+    expect({ inRange: s !== null && s >= 0.27 && s <= 0.56, s }).toEqual({ inRange: true, s });
     const inner = { x: 8, z: 2, dx: -1, dz: 1 };
     expect(inShapes(shapes, alongDiagonal(inner, 0))).toBe(true);
     const e = firstAlongDiagonal(shapes, inner, false);
-    expect({ inRange: e !== null && e >= 0.1 && e <= 0.31, e }).toEqual({ inRange: true, e });
+    expect({ inRange: e !== null && e >= 0.15 && e <= 0.43, e }).toEqual({ inRange: true, e });
   });
 
   it("S5 곧은 가장자리는 약 ±0.1칸으로 굽이친다: T의 위 가장자리(z 0, x 1.5~10.5)와 세로 길 양옆(x 5·7, z 3~7)의 경계 점이 선에서 0.15칸 안이고, 안팎으로 0.03칸 넘게 굽은 점이 있으며, 0.2칸 안쪽은 길이고 0.2칸 바깥은 길이 아니다", () => {
@@ -204,7 +209,7 @@ describe("[spec] 099 바뀔 동작: 둥근 길 경계 함수(명세 1)", () => {
     for (const c of concave) {
       expect({ corner: [c.x, c.z], cornerInside: inShapes(shapes, alongDiagonal(c, 0)) }).toEqual({ corner: [c.x, c.z], cornerInside: true });
       const s = firstAlongDiagonal(shapes, c, false);
-      expect({ corner: [c.x, c.z], inRange: s !== null && s >= 0.1 && s <= 0.31, s }).toEqual({ corner: [c.x, c.z], inRange: true, s });
+      expect({ corner: [c.x, c.z], inRange: s !== null && s >= 0.15 && s <= 0.43, s }).toEqual({ corner: [c.x, c.z], inRange: true, s });
     }
   });
 

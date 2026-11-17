@@ -24,7 +24,11 @@
 //   (풀밭 y −0.02보다 위, 0.1 이하)에 있으며, 가로·깊이로 마을 안(0~70, 0~60)에 드는 것. 풀밭 판(y −0.02, 마을보다 넓다)과 나무·풍차 날개는 여기에 들지 않는다.
 // - 판 한 점의 "색 배율" = 재질 색 × 꼭짓점 색(재질이 vertexColors이고 도형에 color가 있을 때). 그림(map)은 이 배율에 곱해져 보인다.
 // - 판 한 점의 "불투명도" = 재질이 transparent이면 재질 opacity × 꼭짓점 알파(재질이 vertexColors이고 color가 4성분일 때), 아니면 1.
-//   alphaTest보다 작으면 0. 판 재질에 알파 그림(alphaMap)이나 셰이더 고침(onBeforeCompile)이 있으면 이 테스트가 계산할 수 없어 실패한다(04-qa-tests.md 가정).
+//   alphaTest보다 작으면 0. 판 재질에 알파 그림(alphaMap)이 있으면 이 테스트가 계산할 수 없어 실패한다(04-qa-tests.md 가정).
+//   작업 103(마을 흩뿌림·흙길) 명세의 "그 때문에 고칠 기존 테스트"(P3·P4)로 qa가 고쳤다: 103은 길 판에 흙 무늬 셋을 잡음으로 섞고 바래는 정도를 잡음으로
+//   살짝 흔드는 셰이더 고침(onBeforeCompile)을 더한다. 그래서 셰이더 고침이 있으면 실패하던 조건을 빼고, 꼭짓점 알파로 만든 바탕 불투명도만 계산한다
+//   (셰이더가 흔드는 몫은 보지 않는다. 셰이더에 넘기는 값은 103 테스트 lobby3d-village-scatter-paths.spec.test.tsx가 본다).
+//   P3·P4의 0.5칸은 그대로다(103의 바래는 폭 약 0.45칸 < 0.5칸).
 //   한 점에 판이 여럿 겹치면 흙이 보이는 정도 = 1 − Π(1 − 판마다 불투명도).
 // - 부드러운 가장자리: 둥근 경계에서 안쪽 0.5칸은 불투명도 1(흙만 보임), 바깥 0.5칸은 0(흙 없음)이고, 그 사이에서 바깥으로 갈수록 줄어들며(0.01까지 봐줌),
 //   0.02~0.98 사이 값이 있고, 둥근 경계 바로 안(0.04칸)이 0.98보다 작거나 바로 밖(0.04칸)이 0.02보다 크다(경계가 바래는 곳 안에 있다).
@@ -228,13 +232,10 @@ type Tri = {
   test: number;
 };
 
-/** 꼭짓점의 색 배율(선형)과 불투명도(머리말의 정의). 알파 그림·셰이더 고침이 있으면 이 테스트가 계산할 수 없어 실패한다. */
+/** 꼭짓점의 색 배율(선형)과 불투명도(머리말의 정의). 알파 그림이 있으면 이 테스트가 계산할 수 없어 실패한다. 셰이더 고침이 흔드는 몫은 계산하지 않는다(103). */
 function vertexLooks(mesh: THREE.Mesh): { colors: THREE.Color[]; alphas: number[] } {
   const material = mesh.material as THREE.MeshLambertMaterial;
-  expect({ alphaMap: material.alphaMap ?? null, customShader: material.onBeforeCompile !== THREE.Material.prototype.onBeforeCompile }).toEqual({
-    alphaMap: null,
-    customShader: false
-  });
+  expect({ alphaMap: material.alphaMap ?? null }).toEqual({ alphaMap: null });
   const colorAttr = material.vertexColors ? mesh.geometry.getAttribute("color") : undefined;
   const count = mesh.geometry.getAttribute("position").count;
   const colors: THREE.Color[] = [];

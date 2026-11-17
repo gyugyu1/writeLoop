@@ -4,6 +4,8 @@
 // react-three-fiber useLoader로 읽는 것, useFrame으로 계절을 바꾸는 것, 장면을 <primitive object>로 넘기는 것)을 알려고만 읽었다.
 //
 // 바뀔 동작(구현 전 실패): R1~R8. 그대로 둘 동작(구현 전·뒤 통과): K10·K11.
+// R7은 작업 103(마을 흩뿌림·흙길) 03 결정(사용자 2026-11-18 "둘 다 고침")으로 qa가 고쳤다. 103은 풀 자국을 계절 흩뿌림 조각으로 바꾸므로,
+// 인스턴스를 가려내는 "자국 자리"를 villageGrassMarks()에서 여름 흩뿌림 자리 villageSeasonScatter("summer")로 바꿨다(모양은 tests/__fixtures__/village-ground-103.ts). 단언은 그대로다.
 //
 // 어떻게 보나(02-qa-tests.md "관찰하는 방법"):
 // - react-three-fiber만 가짜로 둔다. 가짜 useLoader(village-splat-102.ts의 splatUseLoader)는 그림에 빈 THREE.Texture를 주며 어느 파일인지 적어 두고,
@@ -25,6 +27,7 @@ import type { LobbySim } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_START } from "@/lib/lobby3d/village";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { decorModule } from "../__fixtures__/village-decor-101";
+import { scatterModule } from "../__fixtures__/village-ground-103";
 import { allObjects, drawnVisible, instanceWorldMatrices, loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb, sourceGeometries } from "../__fixtures__/village-scene-101";
 import {
   GROUND_LAYERS,
@@ -316,7 +319,8 @@ describe("[spec] 102 바뀔 동작: 풀밭 바탕을 여러 무늬의 섞임으�
     const templates = byGroup.get("tree-templates")!;
     const mod = decorModule();
     const atDecor = spotFinder(mod.villageDecorSpots());
-    const atMark = spotFinder(mod.villageGrassMarks());
+    // 작업 103: 풀 자국 대신 계절 흩뿌림 조각(여름)의 자리로 가려낸다
+    const atMark = spotFinder(scatterModule().villageSeasonScatter("summer"));
     const objects = allObjects(drawn.roots);
     const strangers: string[] = [];
     const markMeshes = new Set<THREE.Object3D>();

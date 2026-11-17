@@ -3,9 +3,15 @@
 // 함수의 모양은 qa가 정했다(tests/__fixtures__/village-decor-101.ts 머리말, 04-qa-tests.md "부르는 방법"). 구현 전에는 모듈이 없어 모두 실패한다(바뀔 동작).
 // 명세에 수가 없어 qa가 정한 값(04-qa-tests.md "가정"): 장식의 "그 둘레" = 둥근 길 경계와 막힌 칸에서 0.5칸, "몇 개씩 모임" = 1.5칸 안 이웃,
 // 자국의 "조금씩 달리" = 다른 값 10가지 이상·밝기 0.6~1.4, "빽빽한 정도를 다르게" = 5칸 네모 구역의 자국 밀도 상위 10%가 하위 10%의 2배 이상.
+//
+// 작업 103(마을 흩뿌림·흙길) 명세의 "그 때문에 고칠 기존 테스트"(사용자 2026-11-18 "진행해")로 qa가 M1~M4를 고쳤다. 103은 풀 자국 대신 계절 흩뿌림 조각을 흩고,
+// 자리 규칙은 101의 풀 자국 규칙을 따른다(계절마다 조각 수가 다를 수 있다). 그래서 M1~M4가 부르는 함수를 villageGrassMarks()에서
+// 계절마다 villageSeasonScatter(가을·봄·여름)로 바꿨다(모양은 tests/__fixtures__/village-ground-103.ts 머리말). 단언과 값은 그대로다.
+// 겨울(조각 없음)과 계절마다 쓰는 그림 칸·조각 수는 103 테스트 lobby3d-village-scatter.spec.test.ts가 본다.
 import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_SOLID_TILES } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { DECOR_KINDS, clusterSizes, decorModule, freshDecorModule, solidDistance } from "../__fixtures__/village-decor-101";
+import { SCATTER_SEASONS, freshScatterModule, scatterModule } from "../__fixtures__/village-ground-103";
 import { shapeIndex, tilesOf, type PathShape, type Rect, type RoundedPathShapes } from "../__fixtures__/village-paths-099";
 
 function pathShapes(): PathShape[] {
@@ -70,16 +76,18 @@ describe("[spec] 101 바뀔 동작: 꽃·풀 장식 자리(01의 3, 03 결정 3)
   });
 });
 
-describe("[spec] 101 바뀔 동작: 풀 자국 자리(03 결정 1)", () => {
+describe.each(SCATTER_SEASONS)("[spec] 101 바뀔 동작: 풀 자국 자리(03 결정 1). 103에서 %s 흩뿌림 조각 자리로 바꿈", (season) => {
+  const marksOf = () => scatterModule().villageSeasonScatter(season);
+
   it("M1 자리는 정해진 씨앗값으로 늘 같다: 두 번 불러도, 모듈을 새로 읽어 불러도 같은 목록이고, 자국이 있다", () => {
-    const a = decorModule().villageGrassMarks();
+    const a = marksOf();
     expect(a.length).toBeGreaterThan(0);
-    expect(decorModule().villageGrassMarks()).toEqual(a);
-    expect(freshDecorModule().villageGrassMarks()).toEqual(a);
+    expect(marksOf()).toEqual(a);
+    expect(freshScatterModule().villageSeasonScatter(season)).toEqual(a);
   });
 
   it("M2 자국은 여러 종류(3가지 이상)이고, 자국마다 방향·크기·밝기가 조금씩 다르다(각각 다른 값 10가지 이상, 밝기 0.6~1.4, 크기는 양수)", () => {
-    const marks = decorModule().villageGrassMarks();
+    const marks = marksOf();
     for (const m of marks) {
       expect({
         kind: Number.isInteger(m.kind) && m.kind >= 0,
@@ -98,7 +106,7 @@ describe("[spec] 101 바뀔 동작: 풀 자국 자리(03 결정 1)", () => {
   });
 
   it("M3 길·건물 땅 위에는 두지 않는다: 자국 가운데가 둥근 길 밖에서 경계까지 자국 반 변(size/2) 이상 떨어지고, 건물 땅을 반 변만큼 넓힌 네모 밖이다", () => {
-    const marks = decorModule().villageGrassMarks();
+    const marks = marksOf();
     const index = shapeIndex(pathShapes());
     const wrong = marks
       .map((m) => {
@@ -118,7 +126,7 @@ describe("[spec] 101 바뀔 동작: 풀 자국 자리(03 결정 1)", () => {
   });
 
   it("M4 자리마다 빽빽한 정도가 다르다: 마을 안 5칸 네모 구역(풀 칸 10개 이상)의 풀 칸당 자국 수에서 상위 10%가 하위 10%의 2배 이상이다", () => {
-    const marks = decorModule().villageGrassMarks();
+    const marks = marksOf();
     const pathTiles = tilesOf(LAYOUT.paths as unknown as Rect[]);
     const densities: number[] = [];
     for (let bx = 0; bx + 5 <= VILLAGE.width; bx += 5) {

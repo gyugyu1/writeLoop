@@ -289,6 +289,10 @@ describe("[spec] 앱이 시작되면 마을 땅 그림 여덟과 꽃 모델을 �
   });
 });
 
+// 05-main-decision.md(사용자 결정 2026-11-18 "qa가 시간 제한을 늘림"): P2·P3은 땅 꾸밈을 실제로 만들어 혼자 돌려도 약 3.5초 걸리고,
+// 모바일 테스트 전체를 함께 돌리면 Jest 기본 시간 제한 5초를 넘는다. 두 테스트에만 시간 제한 30초를 둔다(단언·입력은 그대로).
+const VILLAGE_TEST_TIMEOUT_MS = 30000;
+
 describe("[spec] 땅 꾸밈은 미리 읽은 것을 함께 써서 마을에 나가는 순간 다시 읽지 않는다(104 고치는 방법 2)", () => {
   test("[재현] P2: 미리 읽기가 다 끝난 뒤 마을에 나가면, 땅 그림과 꽃 모델을 하나도 다시 읽지 않는다", async () => {
     const m = loadModules();
@@ -301,7 +305,7 @@ describe("[spec] 땅 꾸밈은 미리 읽은 것을 함께 써서 마을에 나�
     expect(groundLoads(before)).toEqual([]);
     // 땅 꾸밈이 그려졌다(P4에서 빠지는 것과 대조)
     expect(drawn().some((o) => o.name === "village-ground")).toBe(true);
-  });
+  }, VILLAGE_TEST_TIMEOUT_MS);
 
   test("[재현] P3: 미리 읽기가 아직 끝나지 않았을 때 마을에 나가도, 땅 그림과 꽃 모델을 다시 읽지 않는다(같은 읽기를 함께 쓴다)", async () => {
     const m = loadModules();
@@ -312,7 +316,7 @@ describe("[spec] 땅 꾸밈은 미리 읽은 것을 함께 써서 마을에 나�
     expect(groundLoads(before)).toEqual([]);
     await settleLoads(m);
     expect(groundLoads(before)).toEqual([]);
-  });
+  }, VILLAGE_TEST_TIMEOUT_MS);
 });
 
 describe("[spec] 그림을 못 읽으면 그 부분만 빠진다(104 그대로여야 할 동작 2)", () => {

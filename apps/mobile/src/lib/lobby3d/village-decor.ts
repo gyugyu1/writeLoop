@@ -62,17 +62,19 @@ function smoothNoise(x: number, z: number, seed: number): number {
   return a + (b - a) * sx + (c - a) * sz + (a - b - c + d) * sx * sz;
 }
 
-interface PathIndex {
+export interface PathIndex {
   /** 점이 둥근 길 안인가. */
   inside(x: number, z: number): boolean;
-  /** 점에서 둥근 길 경계까지의 거리(멀리 떨어지면 큰 값). */
+  /** 점에서 둥근 길 경계까지의 거리. 경계에서 SEG_REACH칸 넘게 떨어지면 Infinity. */
   distance(x: number, z: number): number;
 }
 
 let pathIndexCache: PathIndex | null = null;
+/** 길 경계 변을 둘레 몇 칸까지의 칸에 넣어 둘지. 이 거리 안에서는 경계까지의 거리를 정확히 잰다(땅 무늬 섞기의 맨땅이 약 2.4칸까지 바랜다). */
+const SEG_REACH = 3;
 
-/** 둥근 길 경계를 칸별로 나눠 두고 가까운 변만 견주는 색인. */
-function pathIndex(): PathIndex {
+/** 둥근 길 경계를 칸별로 나눠 두고 가까운 변만 견주는 색인(땅 무늬 섞기의 맨땅 자리도 쓴다). */
+export function villagePathIndex(): PathIndex {
   if (pathIndexCache) return pathIndexCache;
   const shapes = roundedPathShapes(VILLAGE_PATH_RECTS);
   const loops: { outer: PathPoint[]; holes: PathPoint[][] }[] = shapes.map((s) => ({
@@ -81,10 +83,10 @@ function pathIndex(): PathIndex {
   }));
   const segs = new Map<string, [number, number, number, number][]>();
   const addSeg = (a: PathPoint, b: PathPoint) => {
-    const c0 = Math.floor(Math.min(a[0], b[0])) - 1;
-    const c1 = Math.floor(Math.max(a[0], b[0])) + 1;
-    const r0 = Math.floor(Math.min(a[1], b[1])) - 1;
-    const r1 = Math.floor(Math.max(a[1], b[1])) + 1;
+    const c0 = Math.floor(Math.min(a[0], b[0])) - SEG_REACH;
+    const c1 = Math.floor(Math.max(a[0], b[0])) + SEG_REACH;
+    const r0 = Math.floor(Math.min(a[1], b[1])) - SEG_REACH;
+    const r1 = Math.floor(Math.max(a[1], b[1])) + SEG_REACH;
     for (let c = c0; c <= c1; c += 1) {
       for (let r = r0; r <= r1; r += 1) {
         const k = `${c},${r}`;
@@ -108,8 +110,8 @@ function pathIndex(): PathIndex {
     },
     distance(x, z) {
       const list = segs.get(`${Math.floor(x)},${Math.floor(z)}`);
-      if (!list) return 2;
-      let best = 2;
+      if (!list) return Infinity;
+      let best = Infinity;
       for (const [ax, az, bx, bz] of list) {
         const dx = bx - ax;
         const dz = bz - az;
@@ -143,7 +145,7 @@ function decorFits(x: number, z: number): boolean {
   if (!(x > 1 && x < VILLAGE.width - 1 && z > 1 && z < VILLAGE.depth - 1)) return false;
   if (VILLAGE_SOLID_TILES.has(`${Math.floor(x)},${Math.floor(z)}`)) return false;
   if (solidDistance(x, z) <= DECOR_CLEAR) return false;
-  const paths = pathIndex();
+  const paths = villagePathIndex();
   return !paths.inside(x, z) && paths.distance(x, z) > DECOR_CLEAR;
 }
 
@@ -196,7 +198,7 @@ let marksCache: VillageGrassMark[] | null = null;
 export function villageGrassMarks(): VillageGrassMark[] {
   if (marksCache) return marksCache.map((m) => ({ ...m }));
   const rnd = seeded(4049);
-  const paths = pathIndex();
+  const paths = villagePathIndex();
   const marks: VillageGrassMark[] = [];
   for (let c = 0; c < VILLAGE.width; c += 1) {
     for (let r = 0; r < VILLAGE.depth; r += 1) {

@@ -15,6 +15,9 @@
 //   벽 가로 6, 벽 깊이 4.986, 높이 4.907이다(명세 2 "벽 깊이 약 4.99칸", "높이는 약 4.9칸"). 벽 앞면을 z 12에 두면 벽 뒷면은 z 7.014다.
 //
 // 바뀔 동작(구현 전 실패): N1~N6. 그대로 둘 동작(구현 전·뒤 통과): S1~S4.
+// N6은 작업 101(마을 땅 무늬) 11 결정(사용자 2026-11-17 "N6을 고침 (추천)")으로 qa가 고쳤다. 작업 101이 새 모델(village-flowers.glb)을 넣으며
+// 모델마다 출처를 적는 규칙대로 CREDITS.md에 그 줄을 더하므로, "다른 줄은 기준 커밋과 같다" 대신 "기준 커밋의 다른 줄은 차례 그대로 모두 있고,
+// 더해진 줄은 기준 커밋에 없던 모델 파일(.glb/.gltf)의 표 줄뿐이다"로 본다. lobby-village.glb 줄에 대한 단언은 그대로다.
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -158,7 +161,7 @@ describe("[spec] 100 바뀔 동작: 각진 집 모델, 땅, 스크립트 머리�
     expect(header).not.toContain(OLD_MODEL_PATH_TAIL);
   });
 
-  it("N6 출처 기록(명세 3): CREDITS.md의 lobby-village.glb 줄이 라룹이 집을 각진 벽돌집으로 적고(라룹이 집·Tripo 출처 그대로), 그 줄의 Kenney 부분과 라이선스 칸, 다른 줄은 기준 커밋과 같다", () => {
+  it("N6 출처 기록(명세 3): CREDITS.md의 lobby-village.glb 줄이 라룹이 집을 각진 벽돌집으로 적고(라룹이 집·Tripo 출처 그대로), 그 줄의 Kenney 부분과 라이선스 칸은 기준 커밋과 같고, 다른 줄은 기준 커밋 그대로 차례대로 있으며 더해진 줄은 새 모델 파일의 출처 줄뿐이다", () => {
     const now = nowText(CREDITS_PATH);
     const base = baseText(CREDITS_PATH);
     const line = villageCreditLine(now);
@@ -175,7 +178,21 @@ describe("[spec] 100 바뀔 동작: 각진 집 모델, 땅, 스크립트 머리�
     expect(cells[2].startsWith(baseKenney)).toBe(true);
     expect([cells[0], cells[1], cells[3], cells[4]]).toEqual([baseCells[0], baseCells[1], baseCells[3], baseCells[4]]);
     const others = (text: string) => text.split("\n").filter((l) => !l.includes("`lobby-village.glb`"));
-    expect(others(now)).toEqual(others(base));
+    // 기준 커밋의 다른 줄은 차례 그대로 모두 있고, 그 사이에 더해진 줄은 기준 커밋에 없던 모델 파일의 표 줄(| `이름.glb` | 출처 | 라이선스 |)뿐이다
+    const baseLines = others(base);
+    const baseFiles = new Set([...base.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]));
+    const added: string[] = [];
+    let at = 0;
+    for (const l of others(now)) {
+      if (at < baseLines.length && l === baseLines[at]) at += 1;
+      else added.push(l);
+    }
+    expect({ missingFromBase: baseLines.slice(at) }).toEqual({ missingFromBase: [] });
+    const notNewModelRow = added.filter((l) => {
+      const m = /^\| `([^`]+\.(?:glb|gltf))` \|[^|]*\S[^|]*\|[^|]*\S[^|]*\|$/.exec(l);
+      return !m || baseFiles.has(m[1]);
+    });
+    expect(notNewModelRow).toEqual([]);
   });
 });
 

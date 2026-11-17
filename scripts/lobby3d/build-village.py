@@ -1,7 +1,11 @@
 # 라룹이 마을(방 밖)의 건물·소품을 Kenney Fantasy Town Kit(CC0)에서 골라 조립하고 한 glb로 묶는다.
-# 쓰는 법: blender -b -P scripts/lobby3d/build-village.py -- <Kenney "Models/GLB format" 폴더> <라룹이 집 glb> <출력 glb> [미리 보기 png]
-#   라룹이 집 glb: WriteLoop이 Tripo로 만든 각진 1층 벽돌집(C:\WriteLoop-asset\마을-건물\라룹이-집\단계\07-앱용-불빛\laroopi-house-angular-app.glb).
-#   배치 파일에서 "model"이 있는 건물은 부품으로 조립하지 않고 이 모델을 땅(rect)에 맞춰 놓는다
+# 쓰는 법: blender -b -P scripts/lobby3d/build-village.py -- <Kenney "Models/GLB format" 폴더> <출력 glb> [미리 보기 png] --model <이름>=<glb> ...
+#   --model: 배치 파일의 'model' 이름마다 건물 모델 glb(WriteLoop이 Tripo로 만들고 다듬은 앱용 모델, 저장소 밖).
+#     laroopi-house=C:\WriteLoop-asset\마을-건물\라룹이-집\단계\09-나무-프레임\laroopi-house-angular-app3.glb
+#     furniture-shop=C:\WriteLoop-asset\마을-건물\가구점\단계\01-앱용-유리\furniture-shop-app.glb
+#     clothing-shop=C:\WriteLoop-asset\마을-건물\옷집\단계\02-옥상-다듬기\clothing-shop-app2.glb
+#   배치 파일에서 'model'이 있는 건물은 부품으로 조립하지 않고 그 모델을 땅(rect)에 맞춰 놓는다.
+#   모델의 유리(재질 이름 glass)는 이름 그대로 남긴다(앱이 반투명 유리로 그린다)
 #   (Blender 5.2에서 확인. 출력은 apps/mobile/assets/models/lobby-village.glb로 복사한다)
 # 배치는 앱과 같은 apps/mobile/src/lib/lobby3d/village-layout.json을 읽는다(앱은 같은 파일로 막힌 칸·장소를 계산한다).
 # 묶음 이름(앱이 찾는다):
@@ -25,8 +29,19 @@ import bpy
 from mathutils import Matrix
 
 args = sys.argv[sys.argv.index("--") + 1 :]
-src, home_model, out = args[0], args[1], args[2]
-preview = args[3] if len(args) > 3 else None
+MODELS = {}
+rest = []
+i = 0
+while i < len(args):
+    if args[i] == "--model":
+        name, path = args[i + 1].split("=", 1)
+        MODELS[name] = path
+        i += 2
+    else:
+        rest.append(args[i])
+        i += 1
+src, out = rest[0], rest[1]
+preview = rest[2] if len(rest) > 2 else None
 HERE = os.path.dirname(os.path.abspath(__file__))
 LAYOUT_PATH = os.path.join(HERE, "..", "..", "apps", "mobile", "src", "lib", "lobby3d", "village-layout.json")
 with open(LAYOUT_PATH, encoding="utf-8") as f:
@@ -264,7 +279,9 @@ def place_model(b, path):
 
 for b in LAYOUT["buildings"]:
     if b.get("model"):
-        place_model(b, home_model)
+        if b["model"] not in MODELS:
+            raise SystemExit("모델 파일이 없습니다: --model " + b["model"] + "=<glb>")
+        place_model(b, MODELS[b["model"]])
     else:
         build_house(b)
 

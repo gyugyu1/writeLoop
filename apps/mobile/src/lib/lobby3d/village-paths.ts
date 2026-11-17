@@ -180,7 +180,11 @@ function roundLoop(corners: V[], o: Required<PathOutlineOptions>): PathPoint[] {
   });
   const pts: V[] = [];
   const normalOf = (d: V): V => [-d[1], d[0]]; // 진행 방향에 수직인 길 바깥쪽
+  let last: V | null = null;
+  // 굽이는 늘 길 바깥쪽 방향(nx, nz)으로 민다. 둥근 모서리 둘이 맞닿는 곳처럼 같은 자리가 잇달아 오면 한 번만 넣는다
   const pushWobbled = (x: number, z: number, nx: number, nz: number) => {
+    if (last && Math.abs(last[0] - x) < 1e-9 && Math.abs(last[1] - z) < 1e-9) return;
+    last = [x, z];
     const w = o.wobble * noise(x * 0.9, z * 0.9, o.seed);
     pts.push([x - nx * w, z - nz * w]);
   };
@@ -203,14 +207,15 @@ function roundLoop(corners: V[], o: Required<PathOutlineOptions>): PathPoint[] {
     while (da > Math.PI) da -= Math.PI * 2;
     while (da < -Math.PI) da += Math.PI * 2;
     a1 = a0 + da;
+    // 둥근 모서리의 굽이 방향: 원 가운데에서 나가는 방향을 길 바깥쪽으로 맞춘 것(볼록은 그대로, 오목은 반대).
+    // 모서리 양 끝에서 곧은 가장자리의 바깥쪽과 같아져 굽이가 끊기지 않는다
+    const outIn = normalOf(din);
+    const side = Math.cos(a0) * outIn[0] + Math.sin(a0) * outIn[1] >= 0 ? 1 : -1;
     for (let k = 0; k <= o.arcSegments; k += 1) {
       const a = a0 + (da * k) / o.arcSegments;
       const x = cx + Math.cos(a) * r;
       const z = cz + Math.sin(a) * r;
-      // 모서리의 굽이 방향: 들어오는 변과 나가는 변의 수직 방향 평균
-      const across = normalOf([(dout[0] - din[0]) / 2 || dout[0], (dout[1] - din[1]) / 2 || dout[1]]);
-      const nl = Math.hypot(across[0], across[1]) || 1;
-      pushWobbled(x, z, across[0] / nl, across[1] / nl);
+      pushWobbled(x, z, Math.cos(a) * side, Math.sin(a) * side);
     }
     // 곧은 가장자리: 다음 모서리의 둥근 시작까지 step 간격으로 나눈다
     const next = corners[(i + 1) % n];
@@ -226,6 +231,12 @@ function roundLoop(corners: V[], o: Required<PathOutlineOptions>): PathPoint[] {
       const t = k / steps;
       pushWobbled(fromX + (toX - fromX) * t, fromZ + (toZ - fromZ) * t, nrm[0], nrm[1]);
     }
+  }
+  // 고리의 끝과 처음이 같은 자리면 하나를 뺀다
+  if (pts.length > 1) {
+    const [fx, fz] = pts[0];
+    const [lx, lz] = pts[pts.length - 1];
+    if (Math.abs(fx - lx) < 1e-9 && Math.abs(fz - lz) < 1e-9) pts.pop();
   }
   return pts;
 }
@@ -248,9 +259,15 @@ export function buildPathOutlines(rects: readonly PathRect[], options: PathOutli
   const rounded = loops.map((corners) => ({ corners, pts: roundLoop(corners, o), area: signedArea(corners) }));
   const outers = rounded.filter((l) => l.area < 0);
   const holes = rounded.filter((l) => l.area > 0);
+  // 구멍은 그 구멍을 품은 바깥 경계 중 가장 작은 것에 넣는다(구멍 안에 또 길 섬이 있는 모양도 맞게 나눈다)
+  const owner = holes.map((h) => {
+    const containing = outers.filter((l) => pointInLoop(h.corners[0], l.corners));
+    containing.sort((a, b) => Math.abs(a.area) - Math.abs(b.area));
+    return containing[0];
+  });
   return outers.map((l) => ({
     outer: l.pts,
-    holes: holes.filter((h) => pointInLoop(h.corners[0], l.corners)).map((h) => h.pts)
+    holes: holes.filter((_, i) => owner[i] === l).map((h) => h.pts)
   }));
 }
 

@@ -1,7 +1,8 @@
 // 바깥 마을 땅의 꽃·풀 장식(3D 모델)과 풀 자국(납작한 그림 판)을 둘 자리. 정해진 씨앗값으로 늘 같은 자리를 준다.
 // 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다. 좌표는 마을 칸 단위(x 왼쪽→오른쪽, z 뒤→앞).
 // - 장식: 걸을 수 있는 풀밭에 몇 개씩 모아 심는다. 길 경계와 막힌 칸(건물·나무·바위·소품·가장자리)에서 떨어뜨린다.
-// - 풀 자국: 마을 땅 전체에 흩되, 자리마다 빽빽한 정도를 부드러운 잡음으로 달리한다. 길과 건물 땅 위에는 두지 않는다.
+// - 계절 흩뿌림: 가을 낙엽·봄 꽃잎·여름 잎을 마을 땅에 흩되, 자리마다 빽빽한 정도를 부드러운 잡음으로 달리한다. 길과 건물 땅 위에는 두지 않는다. 겨울에는 없다(눈).
+import type { Season } from "./daylight";
 import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_SOLID_TILES } from "./village";
 import { pathCells, pointInLoop, roundedPathShapes, type PathPoint } from "./village-paths";
 
@@ -17,20 +18,24 @@ export interface VillageDecorSpot {
   scale: number;
 }
 
-export interface VillageGrassMark {
-  /** 자국 그림 번호(0~15, 그림 모음의 4×4 칸을 왼쪽 위부터). */
+export interface VillageScatterPiece {
+  /** 조각 그림 모음(4×4 칸)의 칸 번호 0~15(왼쪽 위부터 줄마다). 가을 0~7, 봄 8~11, 여름 12~15. */
   kind: number;
   x: number;
   z: number;
   turn: number;
-  /** 자국 판의 한 변(칸). */
+  /** 조각 판의 한 변(칸). */
   size: number;
-  /** 밝기 배율(1 = 기본). */
+  /** 밝기 배율(1 = 그림 그대로). */
   shade: number;
 }
 
-/** 자국 그림 종류 수(그림 모음 4×4). */
-export const GRASS_MARK_KINDS = 16;
+/** 계절마다 쓰는 조각 칸, 칸당 가장 빽빽할 때의 수(가을이 가장 많다), 씨앗값. 겨울은 없다. */
+const SCATTER_SEASONS: Record<Exclude<Season, "winter">, { kinds: number[]; maxPerCell: number; seed: number }> = {
+  autumn: { kinds: [0, 1, 2, 3, 4, 5, 6, 7], maxPerCell: 2.4, seed: 4049 },
+  spring: { kinds: [8, 9, 10, 11], maxPerCell: 1.4, seed: 5051 },
+  summer: { kinds: [12, 13, 14, 15], maxPerCell: 0.8, seed: 6067 }
+};
 
 function seeded(seed: number) {
   let s = seed;
@@ -192,32 +197,35 @@ export function villageDecorSpots(): VillageDecorSpot[] {
   return spots.map((s) => ({ ...s }));
 }
 
-let marksCache: VillageGrassMark[] | null = null;
+const scatterCache = new Map<Season, VillageScatterPiece[]>();
 
-/** 풀 자국 자리. 칸마다 빽빽한 정도(부드러운 잡음)만큼 찍고, 종류·방향·크기·밝기를 조금씩 달리한다. 늘 같은 결과다. */
-export function villageGrassMarks(): VillageGrassMark[] {
-  if (marksCache) return marksCache.map((m) => ({ ...m }));
-  const rnd = seeded(4049);
+/** 계절 흩뿌림 조각 자리. 칸마다 빽빽한 정도(부드러운 잡음)만큼 찍고, 종류·방향·크기·밝기를 조금씩 달리한다. 계절마다 늘 같은 결과이고 겨울에는 빈 목록이다. */
+export function villageSeasonScatter(season: Season): VillageScatterPiece[] {
+  if (season === "winter") return [];
+  const cached = scatterCache.get(season);
+  if (cached) return cached.map((m) => ({ ...m }));
+  const conf = SCATTER_SEASONS[season];
+  const rnd = seeded(conf.seed);
   const paths = villagePathIndex();
-  const marks: VillageGrassMark[] = [];
+  const pieces: VillageScatterPiece[] = [];
   for (let c = 0; c < VILLAGE.width; c += 1) {
     for (let r = 0; r < VILLAGE.depth; r += 1) {
-      // 빽빽한 정도: 큰 얼룩(약 9칸)과 작은 얼룩(약 3칸)을 섞은 0~1 값 → 칸당 0~2.4개(그리기 속도를 위해 마을 전체 약 2천 개)
+      // 빽빽한 정도: 큰 얼룩(약 9칸)과 작은 얼룩(약 3칸)을 섞은 0~1 값 → 칸당 0~maxPerCell개
       const n = smoothNoise(c / 9, r / 9, 11) * 0.7 + smoothNoise(c / 3, r / 3, 23) * 0.3;
-      const density = Math.max(0, (n - 0.25) / 0.75) ** 1.4 * 2.4;
+      const density = Math.max(0, (n - 0.25) / 0.75) ** 1.4 * conf.maxPerCell;
       let count = Math.floor(density);
       if (rnd() < density - count) count += 1;
       for (let k = 0; k < count; k += 1) {
         const x = c + rnd();
         const z = r + rnd();
-        const size = 0.32 + rnd() * 0.36;
+        const size = 0.3 + rnd() * 0.25;
         const half = size / 2;
         if (VILLAGE_BUILDINGS.some((b) => x > b.rect[0] - half && x < b.rect[2] + half && z > b.rect[1] - half && z < b.rect[3] + half)) continue;
         if (paths.inside(x, z) || paths.distance(x, z) < half) continue;
-        marks.push({ kind: Math.floor(rnd() * GRASS_MARK_KINDS), x, z, turn: rnd() * Math.PI * 2, size, shade: 0.8 + rnd() * 0.4 });
+        pieces.push({ kind: conf.kinds[Math.floor(rnd() * conf.kinds.length)], x, z, turn: rnd() * Math.PI * 2, size, shade: 0.85 + rnd() * 0.3 });
       }
     }
   }
-  marksCache = marks;
-  return marks.map((m) => ({ ...m }));
+  scatterCache.set(season, pieces);
+  return pieces.map((m) => ({ ...m }));
 }

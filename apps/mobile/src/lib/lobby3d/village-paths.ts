@@ -30,8 +30,8 @@ export interface PathOutlineOptions {
 }
 
 export const PATH_OUTLINE_DEFAULTS = {
-  outerRadius: 0.8,
-  innerRadius: 0.5,
+  outerRadius: 1.0,
+  innerRadius: 0.7,
   wobble: 0.1,
   seed: 7,
   arcSegments: 6,

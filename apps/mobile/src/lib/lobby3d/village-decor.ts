@@ -200,9 +200,9 @@ export function villageGrassMarks(): VillageGrassMark[] {
   const marks: VillageGrassMark[] = [];
   for (let c = 0; c < VILLAGE.width; c += 1) {
     for (let r = 0; r < VILLAGE.depth; r += 1) {
-      // 빽빽한 정도: 큰 얼룩(약 9칸)과 작은 얼룩(약 3칸)을 섞은 0~1 값 → 칸당 0~3.4개
+      // 빽빽한 정도: 큰 얼룩(약 9칸)과 작은 얼룩(약 3칸)을 섞은 0~1 값 → 칸당 0~2.4개(그리기 속도를 위해 마을 전체 약 2천 개)
       const n = smoothNoise(c / 9, r / 9, 11) * 0.7 + smoothNoise(c / 3, r / 3, 23) * 0.3;
-      const density = Math.max(0, (n - 0.25) / 0.75) ** 1.4 * 3.4;
+      const density = Math.max(0, (n - 0.25) / 0.75) ** 1.4 * 2.4;
       let count = Math.floor(density);
       if (rnd() < density - count) count += 1;
       for (let k = 0; k < count; k += 1) {

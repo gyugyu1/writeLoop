@@ -283,6 +283,8 @@ const DECOR_MESH: Record<VillageDecorKind, string> = {
 };
 /** 풀 자국 높이(풀밭 -0.02 위, 길 띠 아래). */
 const MARK_Y = -0.016;
+/** 풀 자국 밝기(계절 풀밭 색에 곱한다. 1보다 커서 자국이 풀밭보다 밝은 풀 포기로 보인다). */
+const MARK_BRIGHTNESS = 1.35;
 /** 큰 얼룩 높이와 수, 세기(밝게·어둡게 섞는 불투명도). */
 const PATCH_Y = -0.018;
 const PATCH_COUNT = 70;
@@ -330,7 +332,8 @@ function VillageGround({ daylight, pathMaterials }: VillageGroundProps) {
     // 큰 얼룩: 밝은 얼룩과 어두운 얼룩을 섞어 풀밭 색을 넓게 흔든다
     const patchTex = patchTexture();
     const patchGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-    const patchMats = [0xffffff, 0x000000].map((c) => new THREE.MeshBasicMaterial({ color: c, map: patchTex, transparent: true, opacity: PATCH_OPACITY, depthWrite: false }));
+    // 빛을 받는 재질이라 밤·어스름에는 얼룩도 풀밭과 함께 어두워진다
+    const patchMats = [0xffffff, 0x000000].map((c) => new THREE.MeshLambertMaterial({ color: c, map: patchTex, transparent: true, opacity: PATCH_OPACITY, depthWrite: false }));
     owned.push(patchTex, patchGeo, ...patchMats);
     const rnd = seeded(31);
     patchMats.forEach((mat, which) => {
@@ -426,8 +429,8 @@ function VillageGround({ daylight, pathMaterials }: VillageGroundProps) {
     if (built.season.shown === season) return;
     built.season.shown = season;
     const winter = season === "winter";
-    // 자국은 계절 풀밭 색을 따르고(그림의 흰·회색이 풀밭보다 조금 밝고 어두운 자국이 된다), 겨울에는 자국과 장식을 숨긴다
-    built.markMat.color.set(SEASON_COLORS[season].ground);
+    // 자국은 계절 풀밭 색보다 조금 밝게 칠한다(그림의 흰 부분이 풀밭보다 밝은 풀 포기, 회색 그늘이 풀밭쯤이 된다). 겨울에는 자국과 장식을 숨긴다
+    built.markMat.color.set(SEASON_COLORS[season].ground).multiplyScalar(MARK_BRIGHTNESS);
     for (const m of built.markMeshes) m.visible = !winter;
     for (const m of built.decorMeshes) m.visible = !winter;
     built.patchMats[1].opacity = winter ? PATCH_OPACITY / 3 : PATCH_OPACITY;

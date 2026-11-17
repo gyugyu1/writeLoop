@@ -1,0 +1,184 @@
+/**
+ * @jest-environment node
+ */
+// [spec] qa 테스트(작업 102 마을 땅 무늬 섞기, 기능 변경, 모바일): 맨땅·이끼를 섞을 자리 지도(villageGroundPlaceMap)의 규칙.
+// 기대값은 명세(private 작업 폴더 102-2026-11-17-마을-땅-무늬-섞기/01-main-spec.md "바뀌는 동작" 1)에서만 가져온다.
+// 함수의 모양은 qa가 정했다(tests/__fixtures__/village-splat-102.ts 머리말, 02-qa-tests.md "부르는 방법"). 구현 전에는 모듈이 없어 모두 실패한다(바뀔 동작).
+// 지도는 그래픽 카드처럼 이웃 네 픽셀을 고르게 섞어 읽는다(sampleMap). 명세에 수가 없어 qa가 정한 값(02-qa-tests.md "가정"):
+// - "길 가장자리" = 둥근 길 밖으로 경계에서 0.25~0.75칸(길 판의 바래는 띠 바깥). "문 앞 둘레" = 문 가운데 앞(장소의 faceTo)에서 1.5칸 안.
+// - "섞는다" = 그곳의 맨땅·이끼 몫 평균이 0.25 이상. "~에만" = 길 칸에서 3.5칸, 문 앞에서 3칸 넘게 떨어진 곳은 맨땅 몫이 3/255 이하.
+// - "나무 가까이" = 마을 나무 가운데에서 0.6~1.4칸. "생울타리 가까이" = 마을 끝(뒤쪽·양옆)에서 1~2칸 안쪽 띠.
+//   이끼가 자리로 정해진다 = 나무·생울타리에서 4칸 넘게 떨어진 풀밭의 이끼 평균이 나무 둘레 평균의 절반 이하.
+// - "부드럽게 섞인다" = 이웃 픽셀 사이에서 맨땅·이끼 몫이 1칸당 0.5 넘게 바뀌지 않는다(픽셀 크기에 비례, 반올림 2/255 봐줌). 픽셀 한 변은 1칸 이하.
+import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_PLACES, VILLAGE_TREES } from "@/lib/lobby3d/village";
+import LAYOUT from "@/lib/lobby3d/village-layout.json";
+import { freshSplatModule, rectsDistance, sampleMap, splatModule, type VillageGroundPlaceMap } from "../__fixtures__/village-splat-102";
+import { shapeIndex, type PathShape, type Rect, type RoundedPathShapes } from "../__fixtures__/village-paths-099";
+
+function pathShapes(): PathShape[] {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require("@/lib/lobby3d/village-paths") as { roundedPathShapes: RoundedPathShapes };
+  return mod.roundedPathShapes(LAYOUT.paths as unknown as Rect[]);
+}
+
+const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
+const inVillage = (p: { x: number; z: number }) => p.x > 0 && p.x < VILLAGE.width && p.z > 0 && p.z < VILLAGE.depth;
+const inBuilding = (p: { x: number; z: number }) => VILLAGE_BUILDINGS.some((b) => p.x >= b.rect[0] && p.x <= b.rect[2] && p.z >= b.rect[1] && p.z <= b.rect[3]);
+const doorFronts = () => VILLAGE_BUILDINGS.map((b) => ({ id: b.id, ...VILLAGE_PLACES[b.id].faceTo }));
+const treeDistance = (p: { x: number; z: number }) => Math.min(...VILLAGE_TREES.map(([x, z]) => Math.hypot(p.x - x, p.z - z)));
+/** 마을 끝 뒤쪽(z 0)·양옆(x 0, x 끝)의 생울타리 줄(가장자리 한 칸)에서의 거리. 앞쪽(z 끝)은 나무 울타리라 넣지 않는다. */
+const hedgeDistance = (p: { x: number; z: number }) => Math.min(Math.abs(p.x - 1), Math.abs(VILLAGE.width - 1 - p.x), Math.abs(p.z - 1));
+
+/** 0.25칸 간격으로 마을 안 점들. */
+function villageGrid(step = 0.25): { x: number; z: number }[] {
+  const out: { x: number; z: number }[] = [];
+  for (let x = step / 2; x < VILLAGE.width; x += step) for (let z = step / 2; z < VILLAGE.depth; z += step) out.push({ x, z });
+  return out;
+}
+
+/** 점 둘레(가로·깊이 ±r) 격자. */
+function gridAround(c: { x: number; z: number }, r: number, step: number): { x: number; z: number }[] {
+  const out: { x: number; z: number }[] = [];
+  for (let x = c.x - r; x <= c.x + r + 1e-9; x += step) for (let z = c.z - r; z <= c.z + r + 1e-9; z += step) if (inVillage({ x, z })) out.push({ x, z });
+  return out;
+}
+
+let map: VillageGroundPlaceMap;
+
+beforeAll(() => {
+  map = splatModule().villageGroundPlaceMap();
+});
+
+jest.setTimeout(120000);
+
+describe("[spec] 102 바뀔 동작: 맨땅·이끼를 섞을 자리 지도(명세 1)", () => {
+  it("G1 같은 마을이면 늘 같다: 두 번 불러도, 모듈을 새로 읽어 불러도 같은 지도다. 모양이 맞고(data 길이 = width × height × 4) 픽셀 한 변이 1칸 이하다", () => {
+    const again = splatModule().villageGroundPlaceMap();
+    const fresh = freshSplatModule().villageGroundPlaceMap();
+    const shape = (m: VillageGroundPlaceMap) => ({
+      area: [m.x0, m.z0, m.x1, m.z1],
+      size: [m.width, m.height],
+      integers: Number.isInteger(m.width) && Number.isInteger(m.height) && m.width > 0 && m.height > 0,
+      ordered: m.x0 < m.x1 && m.z0 < m.z1,
+      bytes: m.data instanceof Uint8Array && m.data.length === m.width * m.height * 4
+    });
+    expect(shape(map)).toEqual({ ...shape(map), integers: true, ordered: true, bytes: true });
+    expect(shape(again)).toEqual(shape(map));
+    expect(shape(fresh)).toEqual(shape(map));
+    expect(Buffer.compare(Buffer.from(again.data), Buffer.from(map.data))).toBe(0);
+    expect(Buffer.compare(Buffer.from(fresh.data), Buffer.from(map.data))).toBe(0);
+    const cell = { x: (map.x1 - map.x0) / map.width, z: (map.z1 - map.z0) / map.height };
+    expect({ cellX: cell.x <= 1, cellZ: cell.z <= 1 }).toEqual({ cellX: true, cellZ: true });
+  });
+
+  it("G2 지도는 마을 전체와 둘레를 덮는다(x0 ≤ 0, x1 ≥ 마을 폭, z0 ≤ 0, z1 ≥ 마을 깊이). 픽셀마다 맨땅 몫 + 이끼 몫이 1을 넘지 않는다(R + G ≤ 256)", () => {
+    expect({ x0: map.x0 <= 0, z0: map.z0 <= 0, x1: map.x1 >= VILLAGE.width, z1: map.z1 >= VILLAGE.depth }).toEqual({ x0: true, z0: true, x1: true, z1: true });
+    const over: string[] = [];
+    for (let k = 0; k < map.width * map.height; k += 1) {
+      const r = map.data[k * 4];
+      const g = map.data[k * 4 + 1];
+      if (r + g > 256) over.push(`${k % map.width},${Math.floor(k / map.width)} R${r} G${g}`);
+    }
+    expect({ count: over.length, first: over.slice(0, 10) }).toEqual({ count: 0, first: [] });
+  });
+
+  it("G3 맨땅은 길 가장자리에 섞는다: 마을 안 둥근 길 밖으로 경계에서 0.25~0.75칸 띠의 맨땅 몫 평균이 0.25 이상이다", () => {
+    const index = shapeIndex(pathShapes());
+    const band = villageGrid().filter((p) => {
+      if (!inVillage(p) || inBuilding(p) || index.inside(p)) return false;
+      const d = index.distance(p);
+      return d >= 0.25 && d <= 0.75;
+    });
+    expect(band.length).toBeGreaterThan(500);
+    const bare = band.map((p) => sampleMap(map, 0, p.x, p.z));
+    expect({ points: band.length, mean: Number(mean(bare).toFixed(3)), enough: mean(bare) >= 0.25 }).toEqual({
+      points: band.length,
+      mean: Number(mean(bare).toFixed(3)),
+      enough: true
+    });
+  });
+
+  it("G4 맨땅은 건물 문 앞 둘레에 섞는다: 건물마다 문 앞(faceTo)에서 1.5칸 안(둥근 길과 건물 땅 밖)의 맨땅 몫 평균이 0.25 이상이다", () => {
+    const index = shapeIndex(pathShapes());
+    const result = doorFronts().map((door) => {
+      const near = gridAround(door, 1.5, 0.1).filter((p) => Math.hypot(p.x - door.x, p.z - door.z) <= 1.5 && !inBuilding(p) && !index.inside(p) && !(index.distance(p) < 0.25));
+      const bare = near.map((p) => sampleMap(map, 0, p.x, p.z));
+      return { id: door.id, points: near.length >= 10, enough: near.length > 0 && mean(bare) >= 0.25, mean: near.length ? Number(mean(bare).toFixed(3)) : null };
+    });
+    expect(result).toEqual(result.map((r) => ({ ...r, points: true, enough: true })));
+  });
+
+  it("G5 맨땅은 마을 안 길·문 앞 둘레에만: 지도 전체(마을 밖 둘레 포함)에서 길 칸에서 3.5칸, 문 앞에서 3칸 넘게 떨어진 픽셀의 맨땅 몫이 3/255 이하다", () => {
+    const doors = doorFronts();
+    const wrong: string[] = [];
+    let checked = 0;
+    for (let j = 0; j < map.height; j += 1) {
+      for (let i = 0; i < map.width; i += 1) {
+        const p = { x: map.x0 + ((i + 0.5) * (map.x1 - map.x0)) / map.width, z: map.z0 + ((j + 0.5) * (map.z1 - map.z0)) / map.height };
+        if (rectsDistance(VILLAGE_PATH_RECTS, p) <= 3.5 || doors.some((d) => Math.hypot(p.x - d.x, p.z - d.z) <= 3)) continue;
+        checked += 1;
+        const r = map.data[(j * map.width + i) * 4];
+        if (r > 3) wrong.push(`${p.x.toFixed(2)},${p.z.toFixed(2)} R${r}`);
+      }
+    }
+    expect(checked).toBeGreaterThan(1000);
+    expect({ count: wrong.length, first: wrong.slice(0, 10) }).toEqual({ count: 0, first: [] });
+  });
+
+  it("G6 나무·생울타리 가까이는 이끼: 마을 나무 가운데에서 0.6~1.4칸(길에서 1칸 넘게)과, 생울타리 안쪽 띠(마을 끝에서 1~2칸, 나무에서 2칸·길에서 1칸 넘게)의 이끼 몫 평균이 각각 0.25 이상이다", () => {
+    const index = shapeIndex(pathShapes());
+    const awayFromPath = (p: { x: number; z: number }) => !index.inside(p) && index.distance(p) === Infinity;
+    const nearTree = villageGrid().filter((p) => {
+      const d = treeDistance(p);
+      return inVillage(p) && d >= 0.6 && d <= 1.4 && awayFromPath(p) && !inBuilding(p);
+    });
+    const nearHedge = villageGrid().filter((p) => {
+      const d = hedgeDistance(p);
+      return inVillage(p) && d >= 0 && d <= 1 && p.x >= 1 && p.x <= VILLAGE.width - 1 && p.z >= 1 && treeDistance(p) > 2 && awayFromPath(p) && !inBuilding(p);
+    });
+    expect({ tree: nearTree.length > 200, hedge: nearHedge.length > 200 }).toEqual({ tree: true, hedge: true });
+    const treeMoss = mean(nearTree.map((p) => sampleMap(map, 1, p.x, p.z)));
+    const hedgeMoss = mean(nearHedge.map((p) => sampleMap(map, 1, p.x, p.z)));
+    expect({ tree: Number(treeMoss.toFixed(3)), hedge: Number(hedgeMoss.toFixed(3)), treeEnough: treeMoss >= 0.25, hedgeEnough: hedgeMoss >= 0.25 }).toEqual({
+      tree: Number(treeMoss.toFixed(3)),
+      hedge: Number(hedgeMoss.toFixed(3)),
+      treeEnough: true,
+      hedgeEnough: true
+    });
+  });
+
+  it("G7 이끼는 자리로 정한다: 나무·생울타리에서 4칸 넘게 떨어진 마을 안 풀밭(길 칸에서 3.5칸 넘게)의 이끼 몫 평균이 나무 둘레(G6) 평균의 절반 이하다", () => {
+    const index = shapeIndex(pathShapes());
+    const nearTree = villageGrid().filter((p) => {
+      const d = treeDistance(p);
+      return inVillage(p) && d >= 0.6 && d <= 1.4 && !index.inside(p) && index.distance(p) === Infinity && !inBuilding(p);
+    });
+    const far = villageGrid().filter((p) => inVillage(p) && treeDistance(p) > 4 && hedgeDistance(p) > 4 && rectsDistance(VILLAGE_PATH_RECTS, p) > 3.5 && !inBuilding(p));
+    expect({ tree: nearTree.length > 200, far: far.length > 1000 }).toEqual({ tree: true, far: true });
+    const treeMoss = mean(nearTree.map((p) => sampleMap(map, 1, p.x, p.z)));
+    const farMoss = mean(far.map((p) => sampleMap(map, 1, p.x, p.z)));
+    expect({ tree: Number(treeMoss.toFixed(3)), far: Number(farMoss.toFixed(3)), placed: farMoss <= treeMoss / 2 }).toEqual({
+      tree: Number(treeMoss.toFixed(3)),
+      far: Number(farMoss.toFixed(3)),
+      placed: true
+    });
+  });
+
+  it("G8 경계는 부드럽게 섞인다: 이웃 픽셀 사이에서 맨땅·이끼 몫이 1칸당 0.5 넘게 바뀌지 않는다(딱 끊기지 않음)", () => {
+    const cellX = (map.x1 - map.x0) / map.width;
+    const cellZ = (map.z1 - map.z0) / map.height;
+    const limitX = 0.5 * cellX * 255 + 2;
+    const limitZ = 0.5 * cellZ * 255 + 2;
+    const wrong: string[] = [];
+    const at = (i: number, j: number, c: number) => map.data[(j * map.width + i) * 4 + c];
+    for (let j = 0; j < map.height; j += 1) {
+      for (let i = 0; i < map.width; i += 1) {
+        for (const c of [0, 1]) {
+          if (i + 1 < map.width && Math.abs(at(i + 1, j, c) - at(i, j, c)) > limitX) wrong.push(`${"RG"[c]} x ${i},${j} ${at(i, j, c)}→${at(i + 1, j, c)}`);
+          if (j + 1 < map.height && Math.abs(at(i, j + 1, c) - at(i, j, c)) > limitZ) wrong.push(`${"RG"[c]} z ${i},${j} ${at(i, j, c)}→${at(i, j + 1, c)}`);
+        }
+      }
+    }
+    expect({ count: wrong.length, first: wrong.slice(0, 10) }).toEqual({ count: 0, first: [] });
+  });
+});

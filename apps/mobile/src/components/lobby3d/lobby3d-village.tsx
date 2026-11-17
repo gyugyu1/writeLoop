@@ -1,15 +1,17 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber/native";
-import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import type { Season } from "@/lib/lobby3d/daylight";
 import { VILLAGE, VILLAGE_PATH_RECTS, VILLAGE_TREES, VILLAGE_WINDMILL, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
+import { GRASS_MARK_KINDS, villageDecorSpots, villageGrassMarks, type VillageDecorKind } from "@/lib/lobby3d/village-decor";
 import { buildPathOutlines, insetLoop, type PathPoint } from "@/lib/lobby3d/village-paths";
 import type { DaylightState } from "./lobby3d-daylight";
 import { SEASON_COLORS } from "./lobby3d-outdoor";
 
 // 바깥 마을 그리기. 풀밭·하늘·길(코드로 짓고 풀밭은 계절·하루의 때를 따른다. 길은 칸 모양의 경계를 둥글게 다듬어 짓는다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·풍차·나무 틀)을 그린다.
+// 땅에는 큰 얼룩과 여러 풀 자국 무늬를 흩고, 3D 꽃·풀 장식(village-flowers.glb)을 무리 지어 심으며, 길에 흙 무늬를 입힌다(VillageGround. 그림·모델을 못 불러오면 빼고 그린다).
 // 나무는 모델의 나무 틀을 마을 나무 자리와 둘레 숲에 여러 그루 찍고(인스턴스), 잎을 계절 색으로 칠한다.
 // 모델을 불러오지 못하면 풀밭·길·하늘만 보인다(길은 배치 파일에서 코드로 짓는다. 걸어갈 수 없는 곳은 village.ts 데이터대로 막는다).
 // 라룹이를 가리는 건물은 반투명하게 하고, 새벽·어스름·밤에는 창과 가로등에 불을 켠다. 풍차 날개는 천천히 돈다.
@@ -33,17 +35,19 @@ function seeded(seed: number) {
 
 interface Nature {
   group: THREE.Group;
+  paths: Paths;
   setSeason(season: Season): void;
   dispose(): void;
 }
 
-/** 길 색(흙). 마을 모델의 옛 Kenney 길 조각 윗면 색(색 그림 #dcbd8e, 꼭짓점 색 1.0)과 같다. 가장자리 띠는 조금 짙다. */
+/** 길 색(흙). 마을 모델의 옛 Kenney 길 조각 윗면 색(#dcbd8e)과 같다. 흙 무늬 그림을 불러오면 그림이 색을 내고 재질 색은 흰색이 된다. */
 const PATH_COLOR = 0xdcbd8e;
-const PATH_EDGE_COLOR = 0xb89c72;
-/** 길 가장자리 띠의 폭(칸). */
-const PATH_EDGE_WIDTH = 0.15;
+/** 길 가장자리에서 흙이 풀로 바래는 폭(경계 안팎으로 이만큼씩, 칸). */
+const PATH_FADE = 0.25;
+/** 흙 무늬 그림 한 장이 덮는 칸 수(가로·세로). */
+const DIRT_TILE = 3;
 
-/** 경계 고리들로 땅 위에 눕힌 판 하나를 짓는다(마을 x, z → 판 x, -y. 눕히면 다시 x, z). */
+/** 경계 고리들로 땅 위에 눕힌 판 하나를 짓는다(마을 x, z → 판 x, -y. 눕히면 다시 x, z). uv는 판 좌표 그대로(x, -z)다. */
 function flatShapeGeometry(outlines: { outer: readonly PathPoint[]; holes: readonly (readonly PathPoint[])[] }[]): THREE.BufferGeometry {
   const shapes = outlines.map((o) => {
     const shape = new THREE.Shape(o.outer.map(([x, z]) => new THREE.Vector2(x, -z)));
@@ -55,30 +59,78 @@ function flatShapeGeometry(outlines: { outer: readonly PathPoint[]; holes: reado
   return geometry;
 }
 
-/** 둥근 길(가장자리 띠와 안쪽 흙). 칸 배치는 village-layout.json의 길 사각형을 따른다. */
-function buildPaths(): { group: THREE.Group; dispose(): void } {
+/** 두 고리(같은 점 수: 안쪽 선 a는 불투명, 바깥 선 b는 투명) 사이를 잇는 띠. 꼭짓점 알파로 흙이 풀로 바랜다. uv는 판과 같게 (x, -z)다. */
+function fadeBandGeometry(loops: [readonly PathPoint[], readonly PathPoint[]][]): THREE.BufferGeometry {
+  const pos: number[] = [];
+  const uv: number[] = [];
+  const col: number[] = [];
+  const index: number[] = [];
+  for (const [a, b] of loops) {
+    const base = pos.length / 3;
+    const n = a.length;
+    for (let i = 0; i < n; i += 1) {
+      for (const [p, alpha] of [
+        [a[i], 1],
+        [b[i], 0]
+      ] as const) {
+        pos.push(p[0], 0, p[1]);
+        uv.push(p[0], -p[1]);
+        col.push(1, 1, 1, alpha);
+      }
+    }
+    for (let i = 0; i < n; i += 1) {
+      const j = (i + 1) % n;
+      const ai = base + i * 2;
+      const bi = ai + 1;
+      const aj = base + j * 2;
+      const bj = aj + 1;
+      // 위(+y)를 보는 면: 이 파일의 고리 방향(길이 진행 방향의 오른쪽)에서 안쪽 선 a, 바깥 선 b 순서
+      index.push(ai, bi, aj, aj, bi, bj);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  geometry.setAttribute("color", new THREE.Float32BufferAttribute(col, 4));
+  geometry.setIndex(index);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+interface Paths {
+  group: THREE.Group;
+  /** 흙 무늬를 입힐 재질(안쪽 흙, 바래는 띠). */
+  materials: THREE.MeshLambertMaterial[];
+  dispose(): void;
+}
+
+/** 둥근 길(안쪽 흙과 풀로 바래는 가장자리 띠). 칸 배치는 village-layout.json의 길 사각형을 따른다. */
+function buildPaths(): Paths {
   const group = new THREE.Group();
   const outlines = buildPathOutlines(VILLAGE_PATH_RECTS);
-  const inner = outlines.map((o) => ({ outer: insetLoop(o.outer, PATH_EDGE_WIDTH), holes: o.holes.map((h) => insetLoop(h, PATH_EDGE_WIDTH)) }));
-  const edgeMat = new THREE.MeshLambertMaterial({ color: PATH_EDGE_COLOR });
+  const loops = outlines.flatMap((o) => [o.outer, ...o.holes]);
+  const inner = outlines.map((o) => ({ outer: insetLoop(o.outer, PATH_FADE), holes: o.holes.map((h) => insetLoop(h, PATH_FADE)) }));
   const fillMat = new THREE.MeshLambertMaterial({ color: PATH_COLOR });
-  const edge = new THREE.Mesh(flatShapeGeometry(outlines), edgeMat);
+  // 띠는 양면으로 그려 고리 방향과 관계없이 위에서 보인다
+  const fadeMat = new THREE.MeshLambertMaterial({ color: PATH_COLOR, vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide });
   const fill = new THREE.Mesh(flatShapeGeometry(inner), fillMat);
-  // 풀밭(-0.02) 위에 띠, 그 위에 안쪽 흙을 조금씩 띄워 겹친 면이 깜빡이지 않게 한다
-  edge.position.y = 0.004;
+  const fade = new THREE.Mesh(fadeBandGeometry(loops.map((l) => [insetLoop(l, PATH_FADE), insetLoop(l, -PATH_FADE)])), fadeMat);
+  // 풀밭(-0.02)과 풀 자국 위, 바래는 띠 위에 안쪽 흙을 조금씩 띄워 겹친 면이 깜빡이지 않게 한다
+  fade.position.y = 0.004;
   fill.position.y = 0.008;
-  for (const m of [edge, fill]) {
+  for (const m of [fade, fill]) {
     m.raycast = () => {};
     group.add(m);
   }
   group.name = "village-paths";
   return {
     group,
+    materials: [fillMat, fadeMat],
     dispose() {
-      edge.geometry.dispose();
       fill.geometry.dispose();
-      edgeMat.dispose();
+      fade.geometry.dispose();
       fillMat.dispose();
+      fadeMat.dispose();
     }
   };
 }
@@ -97,6 +149,7 @@ function buildNature(): Nature {
   let shownSeason: Season | null = null;
   return {
     group,
+    paths,
     setSeason(season) {
       if (season === shownSeason) return;
       shownSeason = season;
@@ -199,8 +252,206 @@ export function VillageNature({ daylight }: VillageNatureProps) {
       <primitive object={sun} />
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={sun.target} />
+      <Suspense fallback={null}>
+        <VillageGroundErrorBoundary>
+          <VillageGround daylight={daylight} pathMaterials={nature.paths.materials} />
+        </VillageGroundErrorBoundary>
+      </Suspense>
     </>
   );
+}
+
+// 땅 그림과 장식 모델(앱 번들 자산). 쓰는 때에 불러온다: 모듈을 읽을 때 불러오지 않아, 이 자산을 모르는 화면·테스트에서도 마을 그리기 모듈을 읽을 수 있다.
+const GRASS_MARKS_TEXTURE = "grass-marks";
+const DIRT_TEXTURE = "dirt";
+function groundAsset(name: "grass-marks" | "dirt" | "flowers"): unknown {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  if (name === GRASS_MARKS_TEXTURE) return require("../../../assets/textures/village/grass-marks.png");
+  if (name === DIRT_TEXTURE) return require("../../../assets/textures/village/dirt.jpg");
+  return require("../../../assets/models/village-flowers.glb");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+}
+
+/** 장식 종류 → 모델 안 메시 이름. */
+const DECOR_MESH: Record<VillageDecorKind, string> = {
+  flowerWhite: "flower-white",
+  flowerYellow: "flower-yellow",
+  flowerPink: "flower-pink",
+  flowerRed: "flower-red",
+  clover: "clover",
+  grassTuft: "grass-tuft"
+};
+/** 풀 자국 높이(풀밭 -0.02 위, 길 띠 아래). */
+const MARK_Y = -0.016;
+/** 큰 얼룩 높이와 수, 세기(밝게·어둡게 섞는 불투명도). */
+const PATCH_Y = -0.018;
+const PATCH_COUNT = 70;
+const PATCH_OPACITY = 0.16;
+
+/** 가운데가 진하고 가장자리로 바래는 둥근 얼룩 그림(코드로 만든다). */
+function patchTexture(): THREE.DataTexture {
+  const n = 64;
+  const data = new Uint8Array(n * n * 4);
+  for (let y = 0; y < n; y += 1) {
+    for (let x = 0; x < n; x += 1) {
+      const d = Math.hypot(x - n / 2 + 0.5, y - n / 2 + 0.5) / (n / 2);
+      const i = (y * n + x) * 4;
+      data[i] = 255;
+      data[i + 1] = 255;
+      data[i + 2] = 255;
+      data[i + 3] = Math.round(Math.max(0, 1 - d) ** 1.6 * 255);
+    }
+  }
+  const tex = new THREE.DataTexture(data, n, n);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+interface VillageGroundProps {
+  daylight: DaylightState;
+  /** 흙 무늬를 입힐 길 재질. */
+  pathMaterials: THREE.MeshLambertMaterial[];
+}
+
+/**
+ * 땅 꾸밈: 큰 얼룩(밝고 어두운 풀), 풀 자국(그림 모음의 무늬 16가지를 자리마다 다르게, 인스턴스), 3D 꽃·풀 장식(종류마다 인스턴스), 길의 흙 무늬.
+ * 자국은 계절 풀밭 색을 따르고, 겨울에는 자국과 장식을 숨긴다(눈). 모두 누르기 대상이 아니고 걷기를 막지 않는다.
+ */
+function VillageGround({ daylight, pathMaterials }: VillageGroundProps) {
+  const [marksTexture, dirtTexture] = useLoader(THREE.TextureLoader, [groundAsset("grass-marks"), groundAsset("dirt")] as string[]) as THREE.Texture[];
+  const flowers = useLoader(GLTFLoader, groundAsset("flowers") as string) as GLTF;
+  const built = useMemo(() => {
+    const root = new THREE.Group();
+    root.name = "village-ground";
+    const owned: { dispose(): void }[] = [];
+    const m4 = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    // 큰 얼룩: 밝은 얼룩과 어두운 얼룩을 섞어 풀밭 색을 넓게 흔든다
+    const patchTex = patchTexture();
+    const patchGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+    const patchMats = [0xffffff, 0x000000].map((c) => new THREE.MeshBasicMaterial({ color: c, map: patchTex, transparent: true, opacity: PATCH_OPACITY, depthWrite: false }));
+    owned.push(patchTex, patchGeo, ...patchMats);
+    const rnd = seeded(31);
+    patchMats.forEach((mat, which) => {
+      const count = PATCH_COUNT / 2;
+      const mesh = new THREE.InstancedMesh(patchGeo, mat, count);
+      for (let i = 0; i < count; i += 1) {
+        const size = 6 + rnd() * 10;
+        m4.compose(new THREE.Vector3(rnd() * VILLAGE.width, PATCH_Y + which * 0.0005, rnd() * VILLAGE.depth), q.identity(), new THREE.Vector3(size, 1, size * (0.6 + rnd() * 0.8)));
+        mesh.setMatrixAt(i, m4);
+      }
+      mesh.raycast = () => {};
+      root.add(mesh);
+    });
+    // 풀 자국: 그림 모음(4×4)의 칸마다 판 하나, 그 칸을 쓰는 자국 자리에 찍는다
+    marksTexture.colorSpace = THREE.SRGBColorSpace;
+    const markMat = new THREE.MeshLambertMaterial({ map: marksTexture, alphaTest: 0.4 });
+    owned.push(markMat);
+    const marks = villageGrassMarks();
+    const markMeshes: THREE.InstancedMesh[] = [];
+    const shade = new THREE.Color();
+    for (let kind = 0; kind < GRASS_MARK_KINDS; kind += 1) {
+      const mine = marks.filter((m) => m.kind === kind);
+      if (mine.length === 0) continue;
+      const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+      // 이 무늬의 그림 칸으로 uv를 옮긴다(그림 맨 위 줄이 0~3번)
+      const col = kind % 4;
+      const row = Math.floor(kind / 4);
+      const uv = geo.getAttribute("uv");
+      for (let i = 0; i < uv.count; i += 1) uv.setXY(i, (col + uv.getX(i)) / 4, (3 - row + uv.getY(i)) / 4);
+      owned.push(geo);
+      const mesh = new THREE.InstancedMesh(geo, markMat, mine.length);
+      mine.forEach((m, i) => {
+        q.setFromAxisAngle(up, m.turn);
+        m4.compose(new THREE.Vector3(m.x, MARK_Y, m.z), q, new THREE.Vector3(m.size, 1, m.size));
+        mesh.setMatrixAt(i, m4);
+        mesh.setColorAt(i, shade.setScalar(m.shade));
+      });
+      mesh.raycast = () => {};
+      markMeshes.push(mesh);
+      root.add(mesh);
+    }
+    // 3D 꽃·풀 장식: 종류마다 모델 메시 하나를 인스턴스로 찍는다
+    const decor = villageDecorSpots();
+    const decorMeshes: THREE.InstancedMesh[] = [];
+    for (const kind of Object.keys(DECOR_MESH) as VillageDecorKind[]) {
+      const mine = decor.filter((d) => d.kind === kind);
+      let source: THREE.Mesh | null = null;
+      flowers.scene.getObjectByName(DECOR_MESH[kind])?.traverse((o) => {
+        if (!source && o instanceof THREE.Mesh) source = o;
+      });
+      if (!source || mine.length === 0) continue;
+      const src = source as THREE.Mesh;
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: src.geometry.hasAttribute("color") });
+      owned.push(mat);
+      const mesh = new THREE.InstancedMesh(src.geometry, mat, mine.length);
+      mine.forEach((d, i) => {
+        q.setFromAxisAngle(up, d.turn);
+        m4.compose(new THREE.Vector3(d.x, 0, d.z), q, new THREE.Vector3(d.scale, d.scale, d.scale));
+        mesh.setMatrixAt(i, m4);
+      });
+      mesh.raycast = () => {};
+      decorMeshes.push(mesh);
+      root.add(mesh);
+    }
+    return { root, markMat, patchMats, markMeshes, decorMeshes, owned, season: { shown: null as Season | null } };
+  }, [marksTexture, flowers]);
+
+  useEffect(() => {
+    // 길에 흙 무늬를 입힌다(한 장이 DIRT_TILE칸을 덮게 되풀이)
+    dirtTexture.colorSpace = THREE.SRGBColorSpace;
+    dirtTexture.wrapS = THREE.RepeatWrapping;
+    dirtTexture.wrapT = THREE.RepeatWrapping;
+    dirtTexture.repeat.set(1 / DIRT_TILE, 1 / DIRT_TILE);
+    dirtTexture.needsUpdate = true;
+    for (const m of pathMaterials) {
+      m.map = dirtTexture;
+      m.color.set(0xffffff);
+      m.needsUpdate = true;
+    }
+    return () => {
+      for (const m of pathMaterials) {
+        m.map = null;
+        m.color.set(PATH_COLOR);
+        m.needsUpdate = true;
+      }
+    };
+  }, [dirtTexture, pathMaterials]);
+
+  useEffect(() => () => built.owned.forEach((o) => o.dispose()), [built]);
+
+  useFrame(() => {
+    const season = daylight.target.season;
+    if (built.season.shown === season) return;
+    built.season.shown = season;
+    const winter = season === "winter";
+    // 자국은 계절 풀밭 색을 따르고(그림의 흰·회색이 풀밭보다 조금 밝고 어두운 자국이 된다), 겨울에는 자국과 장식을 숨긴다
+    built.markMat.color.set(SEASON_COLORS[season].ground);
+    for (const m of built.markMeshes) m.visible = !winter;
+    for (const m of built.decorMeshes) m.visible = !winter;
+    built.patchMats[1].opacity = winter ? PATCH_OPACITY / 3 : PATCH_OPACITY;
+  });
+
+  // eslint-disable-next-line react/no-unknown-property
+  return <primitive object={built.root} />;
+}
+
+/** 땅 그림·장식 모델을 불러오지 못하면 땅 꾸밈만 빼고 그린다(풀밭·길·마을은 그대로). 오류는 개발 콘솔에 남긴다. */
+class VillageGroundErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.warn("[lobby3d] 마을 땅 그림·장식을 불러오지 못했습니다", error);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
 }
 
 interface VillageModelProps {

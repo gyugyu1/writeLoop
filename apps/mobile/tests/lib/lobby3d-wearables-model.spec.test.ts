@@ -113,9 +113,13 @@ describe("[spec] 착용 모델 파일(M1~M7)", () => {
       "| `lobby-furniture.glb` | [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) 2.0의 가구(책상, 의자, 책장, 닫힌 책장, 러그, 책, 미닫이 창, 둥근 탁상 스탠드, 1인 침대, 협탁, 둥근 바닥 스탠드, 화분, 작은 화분)를 `scripts/lobby3d/build-furniture.py`로 골라 크기·모서리를 다듬고 한 파일로 묶었다. "
     )).toBe(true);
     expect(furnitureLines[0].endsWith(" 게시판·창틀·액자는 같은 모양새로 새로 만들었다 | CC0 1.0(출처 표기 의무 없음) |")).toBe(true);
-    expect(lines).toContain(
-      "| `lobby-village.glb` | [Kenney Fantasy Town Kit](https://kenney.nl/assets/fantasy-town-kit) 2.0의 벽·문·창·지붕(건물 넷으로 조립), 분수, 가로등, 노점, 벤치, 바위, 길, 생울타리, 나무 울타리를 `scripts/lobby3d/build-village.py`로 골라 배치하고 한 파일로 묶었다(색 그림의 회벽·벽 아래 띠 색을 바꿨다). 밤 불빛 판은 새로 만들었다 | CC0 1.0(출처 표기 의무 없음) |"
-    );
+    // 작업 098 03-main-decision.md 2(사용자 답 "M7을 고침"): 마을 라룹이 집을 Tripo로 만든 모델로 바꿔 lobby-village.glb 줄에 라룹이 집 출처가 더해진다.
+    // 그 줄이 하나이고 Kenney 출처와 라룹이 집 출처(Tripo)가 들어 있는지 본다.
+    const villageLines = lines.filter((line) => line.includes("`lobby-village.glb`"));
+    expect(villageLines).toHaveLength(1);
+    expect(villageLines[0]).toContain("[Kenney Fantasy Town Kit](https://kenney.nl/assets/fantasy-town-kit)");
+    expect(villageLines[0]).toMatch(/라룹이.*집/);
+    expect(villageLines[0]).toContain("Tripo");
     expect(lines).toContain("| `lobby-room.glb` | WriteLoop이 `scripts/lobby3d/bake-room.py`로 만들었다 | 저장소와 같다 |");
     // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침", 답 2): 22 결정으로 라룹이 몸을 Tripo 웹으로 만든 고글 없는 새 몸으로
     // 바꿔 writeloop.glb 줄이 새 몸 설명이 되었다. 그 줄이 하나이고 앞(파일 이름·"WriteLoop 캐릭터 모델")과 끝(라이선스)이 그대로이며 새 몸 설명(Tripo, 고글 없는 몸)이 있는지 본다.

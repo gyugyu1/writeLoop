@@ -118,7 +118,7 @@ function buildPaths(): Paths {
   const fadeMat = new THREE.MeshLambertMaterial({ color: PATH_COLOR, vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide });
   const fill = new THREE.Mesh(flatShapeGeometry(inner), fillMat);
   const fade = new THREE.Mesh(fadeBandGeometry(loops.map((l) => [insetLoop(l, PATH_FADE), insetLoop(l, -PATH_FADE)])), fadeMat);
-  // 풀밭(-0.02)과 풀 자국 위, 바래는 띠 위에 안쪽 흙을 조금씩 띄워 겹친 면이 깜빡이지 않게 한다
+  // 풀밭(-0.02)과 계절 흩뿌림 위, 바래는 띠 위에 안쪽 흙을 조금씩 띄워 겹친 면이 깜빡이지 않게 한다
   fade.position.y = 0.004;
   fill.position.y = 0.008;
   for (const m of [fade, fill]) {
@@ -490,8 +490,8 @@ interface VillageGroundProps {
 }
 
 /**
- * 땅 꾸밈: 풀밭 바탕의 무늬 섞기(셰이더), 풀 자국(그림 모음의 무늬 16가지를 자리마다 다르게, 인스턴스), 3D 꽃·풀 장식(종류마다 인스턴스), 길의 흙 무늬.
- * 자국은 계절 풀밭 색을 따르고, 겨울에는 자국과 장식을 숨기며 맨땅도 눈으로 덮는다. 모두 누르기 대상이 아니고 걷기를 막지 않는다.
+ * 땅 꾸밈: 풀밭 바탕의 무늬 섞기(셰이더), 계절 흩뿌림(그림 모음의 조각 16가지 중 그 계절 것, 인스턴스), 3D 꽃·풀 장식(종류마다 인스턴스), 길의 흙 무늬.
+ * 흩뿌림은 계절 색을 곱하지 않고 그 계절 조각만 보이며, 겨울에는 흩뿌림과 장식을 숨기고 맨땅도 눈으로 덮는다. 모두 누르기 대상이 아니고 걷기를 막지 않는다.
  */
 function VillageGround({ daylight, pathMaterials, groundMaterial }: VillageGroundProps) {
   // 불러온 그림 목록은 불러오기가 같은 배열을 돌려주므로 그대로 의존값으로 쓴다(나눠 담은 새 배열은 그릴 때마다 달라진다)

@@ -4,11 +4,12 @@ import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import type { Season } from "@/lib/lobby3d/daylight";
-import { VILLAGE, VILLAGE_TREES, VILLAGE_WINDMILL, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
+import { VILLAGE, VILLAGE_PATH_RECTS, VILLAGE_TREES, VILLAGE_WINDMILL, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
+import { buildPathOutlines, insetLoop, type PathPoint } from "@/lib/lobby3d/village-paths";
 import type { DaylightState } from "./lobby3d-daylight";
 import { SEASON_COLORS } from "./lobby3d-outdoor";
 
-// 바깥 마을 그리기. 풀밭·하늘(코드로 짓고 계절·하루의 때를 따른다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·풍차·나무 틀)을 그린다.
+// 바깥 마을 그리기. 풀밭·하늘·길(코드로 짓고 풀밭은 계절·하루의 때를 따른다. 길은 칸 모양의 경계를 둥글게 다듬어 짓는다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·풍차·나무 틀)을 그린다.
 // 나무는 모델의 나무 틀을 마을 나무 자리와 둘레 숲에 여러 그루 찍고(인스턴스), 잎을 계절 색으로 칠한다.
 // 모델을 불러오지 못하면 풀밭·하늘만 보인다(걸어갈 수 없는 곳은 village.ts 데이터대로 막는다).
 // 라룹이를 가리는 건물은 반투명하게 하고, 새벽·어스름·밤에는 창과 가로등에 불을 켠다. 풍차 날개는 천천히 돈다.
@@ -36,7 +37,53 @@ interface Nature {
   dispose(): void;
 }
 
-/** 풀밭(마을 안팎). 계절 색을 따른다. */
+/** 길 색(흙). 마을 모델의 옛 Kenney 길 조각 윗면 색(색 그림 #dcbd8e, 꼭짓점 색 1.0)과 같다. 가장자리 띠는 조금 짙다. */
+const PATH_COLOR = 0xdcbd8e;
+const PATH_EDGE_COLOR = 0xb89c72;
+/** 길 가장자리 띠의 폭(칸). */
+const PATH_EDGE_WIDTH = 0.15;
+
+/** 경계 고리들로 땅 위에 눕힌 판 하나를 짓는다(마을 x, z → 판 x, -y. 눕히면 다시 x, z). */
+function flatShapeGeometry(outlines: { outer: readonly PathPoint[]; holes: readonly (readonly PathPoint[])[] }[]): THREE.BufferGeometry {
+  const shapes = outlines.map((o) => {
+    const shape = new THREE.Shape(o.outer.map(([x, z]) => new THREE.Vector2(x, -z)));
+    shape.holes = o.holes.map((h) => new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, -z))));
+    return shape;
+  });
+  const geometry = new THREE.ShapeGeometry(shapes);
+  geometry.rotateX(-Math.PI / 2);
+  return geometry;
+}
+
+/** 둥근 길(가장자리 띠와 안쪽 흙). 칸 배치는 village-layout.json의 길 사각형을 따른다. */
+function buildPaths(): { group: THREE.Group; dispose(): void } {
+  const group = new THREE.Group();
+  const outlines = buildPathOutlines(VILLAGE_PATH_RECTS);
+  const inner = outlines.map((o) => ({ outer: insetLoop(o.outer, PATH_EDGE_WIDTH), holes: o.holes.map((h) => insetLoop(h, PATH_EDGE_WIDTH)) }));
+  const edgeMat = new THREE.MeshLambertMaterial({ color: PATH_EDGE_COLOR });
+  const fillMat = new THREE.MeshLambertMaterial({ color: PATH_COLOR });
+  const edge = new THREE.Mesh(flatShapeGeometry(outlines), edgeMat);
+  const fill = new THREE.Mesh(flatShapeGeometry(inner), fillMat);
+  // 풀밭(-0.02) 위에 띠, 그 위에 안쪽 흙을 조금씩 띄워 겹친 면이 깜빡이지 않게 한다
+  edge.position.y = 0.004;
+  fill.position.y = 0.008;
+  for (const m of [edge, fill]) {
+    m.raycast = () => {};
+    group.add(m);
+  }
+  group.name = "village-paths";
+  return {
+    group,
+    dispose() {
+      edge.geometry.dispose();
+      fill.geometry.dispose();
+      edgeMat.dispose();
+      fillMat.dispose();
+    }
+  };
+}
+
+/** 풀밭(마을 안팎)과 둥근 길. 풀밭은 계절 색을 따른다. */
 function buildNature(): Nature {
   const group = new THREE.Group();
   const groundMat = new THREE.MeshLambertMaterial({ color: 0x8cc76a });
@@ -45,6 +92,8 @@ function buildNature(): Nature {
   ground.position.set(VILLAGE.width / 2, -0.02, VILLAGE.depth / 2);
   ground.raycast = () => {};
   group.add(ground);
+  const paths = buildPaths();
+  group.add(paths.group);
   let shownSeason: Season | null = null;
   return {
     group,
@@ -57,6 +106,7 @@ function buildNature(): Nature {
     dispose() {
       ground.geometry.dispose();
       groundMat.dispose();
+      paths.dispose();
     }
   };
 }
@@ -203,6 +253,12 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
         o.material = glowMat;
         o.raycast = () => {};
         glows.push(o);
+        return;
+      }
+      if (name.startsWith("paths")) {
+        // 옛 Kenney 길 조각은 그리지 않는다(길은 VillageNature가 둥글게 짓는다)
+        o.visible = false;
+        o.raycast = () => {};
         return;
       }
       const source = o.material as THREE.MeshStandardMaterial;

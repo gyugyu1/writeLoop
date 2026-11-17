@@ -56,18 +56,20 @@ describe("둥근 길 경계의 모양 세부", () => {
     for (const loop of allLoops(narrow)) expect(selfCrossings(insetLoop(loop, 0.15))).toBe(0);
   });
 
-  it("구멍 안에 길 섬이 있으면 섬은 따로 한 조각이 되고, 구멍은 그 구멍을 품은 바깥 고리에만 들어간다", () => {
-    // 9×9 고리(폭 2) 안 가운데에 1×1 섬
-    const ring: PathRect[] = [
-      [0, 0, 9, 2],
-      [0, 7, 9, 9],
-      [0, 2, 2, 7],
-      [7, 2, 9, 7],
-      [4, 4, 5, 5]
+  it("구멍 안에 구멍 있는 길 섬이 있으면, 구멍은 저마다 그 구멍을 품은 가장 작은 바깥 고리에만 들어간다", () => {
+    // 13×13 고리(폭 2)의 구멍 안 가운데에, 또 구멍이 있는 5×5 고리 섬(폭 1)
+    const rings: PathRect[] = [
+      [0, 0, 13, 2],
+      [0, 11, 13, 13],
+      [0, 2, 2, 11],
+      [11, 2, 13, 11],
+      [4, 4, 9, 5],
+      [4, 8, 9, 9],
+      [4, 5, 5, 8],
+      [8, 5, 9, 8]
     ];
-    const outlines = buildPathOutlines(ring);
+    const outlines = buildPathOutlines(rings);
     expect(outlines).toHaveLength(2);
-    const holeCounts = outlines.map((o) => o.holes.length).sort();
-    expect(holeCounts).toEqual([0, 1]);
+    expect(outlines.map((o) => o.holes.length)).toEqual([1, 1]);
   });
 });

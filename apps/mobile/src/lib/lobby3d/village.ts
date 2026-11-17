@@ -4,7 +4,7 @@ import LAYOUT from "./village-layout.json";
 // 배치는 village-layout.json 하나에서 읽는다(마을 모델을 만드는 scripts/lobby3d/build-village.py도 같은 파일을 읽는다).
 // 좌표는 방과 같은 칸 단위(x 왼쪽→오른쪽, z 뒤→앞, 앞이 카메라 쪽). 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 
-export type VillageBuildingId = "home" | "furnitureShop" | "cafe" | "library";
+export type VillageBuildingId = "home" | "furnitureShop" | "clothingShop";
 
 export interface VillagePoint {
   x: number;

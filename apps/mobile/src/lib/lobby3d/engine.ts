@@ -116,8 +116,7 @@ export const MARKS: Record<MarkId, MarkInfo> = {
 const VILLAGE_PROMPTS: Record<VillageBuildingId, { prompt: string; buttonLabel: string }> = {
   home: { prompt: "집으로 들어갈까?", buttonLabel: "들어가기" },
   furnitureShop: { prompt: "가구점은 곧 열려요", buttonLabel: "" },
-  cafe: { prompt: "카페는 곧 열려요", buttonLabel: "" },
-  library: { prompt: "도서관은 곧 열려요", buttonLabel: "" }
+  clothingShop: { prompt: "옷집은 곧 열려요", buttonLabel: "" }
 };
 
 /** 마을의 장소(건물 문 앞). */
@@ -174,7 +173,7 @@ export function roomPlaceIds(): readonly PlaceId[] {
   return roomPlaces;
 }
 /** 마을의 장소. */
-export const VILLAGE_MARK_IDS: readonly PlaceId[] = ["home", "furnitureShop", "cafe", "library"];
+export const VILLAGE_MARK_IDS: readonly PlaceId[] = ["home", "furnitureShop", "clothingShop"];
 
 let area: LobbyArea = "room";
 

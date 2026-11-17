@@ -30,6 +30,10 @@ import type { ComponentType, MutableRefObject, ReactNode } from "react";
 // 파일(assets/models/furniture/<id>.glb)을 읽는다. 이 목록과 일곱 파일을 이름 문자열로 바꾸는 가짜만 바꿨고, 단언은 그대로다.
 // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침", 답 1: 앱 시작 때 고글 모델도 미리 읽는다): 앱에 든 라룹이 고글
 // 모델(assets/models/wear-goggles.glb)을 이 목록에 더하고 그 파일을 이름 문자열로 바꾸는 가짜를 더했다. 단언은 그대로다.
+// 작업 104(마을 진입 오류, 버그 수정) 01-main-spec.md "고치는 방법 2"·"고칠 수 있는 기존 테스트": 앱이 시작될 때 마을 땅 꾸밈의 꽃 모델
+// (assets/models/village-flowers.glb)도 미리 읽는다. 이 목록에 더하고 그 파일을 이름 문자열로 바꾸는 가짜를 더했다. 함께 미리 읽는 땅 그림 여덟은
+// GLTFLoader가 아니라 그림 불러오기(THREE.TextureLoader)로 읽으므로 이 목록에 들지 않는다. Jest에서는 r3f가 바꿔 둔 그림 불러오기가 돌지 않아
+// (기기의 그림 크기 읽기를 부른다) 끝내지 않는 가짜로 바꿨다(땅 그림 미리 읽기 자체는 tests/app/lobby-village-ground-preload.spec.test.tsx가 본다). 단언은 그대로다.
 const MODEL_FILES = [
   "furniture/board.glb",
   "furniture/bookcase.glb",
@@ -40,6 +44,7 @@ const MODEL_FILES = [
   "furniture/window.glb",
   "lobby-room.glb",
   "lobby-village.glb",
+  "village-flowers.glb",
   "wear-goggles.glb",
   "writeloop.glb"
 ];
@@ -59,6 +64,11 @@ jest.mock("three", () => {
 jest.mock("@react-three/fiber/native", () => {
   const actual = jest.requireActual("@react-three/fiber/native");
   const React = jest.requireActual<typeof import("react")>("react");
+  // 작업 104: 그림 불러오기는 끝내지 않는 가짜다(위 MODEL_FILES 머리말)
+  const T = jest.requireMock<typeof import("three")>("three");
+  T.TextureLoader.prototype.load = function load() {
+    return new T.Texture();
+  } as unknown as typeof T.TextureLoader.prototype.load;
   return {
     ...actual,
     Canvas: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
@@ -125,6 +135,7 @@ jest.mock("@/assets/models/furniture/rug.glb", () => "furniture/rug.glb");
 jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
 jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
+jest.mock("@/assets/models/village-flowers.glb", () => "village-flowers.glb");
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");
   return {

@@ -1,5 +1,7 @@
 # 라룹이 마을(방 밖)의 건물·소품을 Kenney Fantasy Town Kit(CC0)에서 골라 조립하고 한 glb로 묶는다.
-# 쓰는 법: blender -b -P scripts/lobby3d/build-village.py -- <Kenney "Models/GLB format" 폴더> <출력 glb> [미리 보기 png]
+# 쓰는 법: blender -b -P scripts/lobby3d/build-village.py -- <Kenney "Models/GLB format" 폴더> <라룹이 집 glb> <출력 glb> [미리 보기 png]
+#   라룹이 집 glb: WriteLoop이 Tripo로 만든 1층 벽돌집(C:\WriteLoop-asset\마을-건물\라룹이-집\창문-불빛\laroopi-house-app-b.glb).
+#   배치 파일에서 "model"이 있는 건물은 부품으로 조립하지 않고 이 모델을 땅(rect)에 맞춰 놓는다
 #   (Blender 5.2에서 확인. 출력은 apps/mobile/assets/models/lobby-village.glb로 복사한다)
 # 배치는 앱과 같은 apps/mobile/src/lib/lobby3d/village-layout.json을 읽는다(앱은 같은 파일로 막힌 칸·장소를 계산한다).
 # 묶음 이름(앱이 찾는다):
@@ -23,8 +25,8 @@ import bpy
 from mathutils import Matrix
 
 args = sys.argv[sys.argv.index("--") + 1 :]
-src, out = args[0], args[1]
-preview = args[2] if len(args) > 2 else None
+src, home_model, out = args[0], args[1], args[2]
+preview = args[3] if len(args) > 3 else None
 HERE = os.path.dirname(os.path.abspath(__file__))
 LAYOUT_PATH = os.path.join(HERE, "..", "..", "apps", "mobile", "src", "lib", "lobby3d", "village-layout.json")
 with open(LAYOUT_PATH, encoding="utf-8") as f:
@@ -220,8 +222,51 @@ def build_house(b):
     return root
 
 
+def place_model(b, path):
+    """만든 건물 모델(glb, 메시 하나)을 땅 rect에 맞춰 놓는다. 벽 둘레(바닥에서 높이 1/4 아래 꼭짓점)의 가로를 땅 가로에 맞춰
+    고르게 키우고, 벽 가로 가운데를 땅 가운데에, 벽 앞면을 땅 앞(z1)에 둔다. 처마는 땅 밖으로 조금 나온다.
+    모델은 glTF 방향(+Y 위, 문이 +Z)이고, 불러오면 Blender에서 문이 -Y(앱 앞)를 본다."""
+    x0, z0, x1, z1 = b["rect"]
+    root = group("bld-" + b["id"])
+    before = set(scene.objects)
+    bpy.ops.import_scene.gltf(filepath=path)
+    new = [o for o in scene.objects if o not in before]
+    meshes = [o for o in new if o.type == "MESH"]
+    for o in meshes:
+        o.data = o.data.copy()
+        o.data.transform(o.matrix_world)
+        o.parent = None
+        o.matrix_world = Matrix.Identity(4)
+    for o in new:
+        if o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    if len(meshes) > 1:
+        bpy.ops.object.select_all(action="DESELECT")
+        for o in meshes:
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = meshes[0]
+        bpy.ops.object.join()
+    o = meshes[0]
+    vs = [v.co for v in o.data.vertices]
+    top = max(v.z for v in vs)
+    low = [v for v in vs if v.z < top / 4]
+    wx0, wx1 = min(v.x for v in low), max(v.x for v in low)
+    wfront = min(v.y for v in low)  # 벽 앞면(Blender -Y가 앱 앞)
+    wback = max(v.y for v in low)
+    k = (x1 - x0) / (wx1 - wx0)
+    o.data.transform(Matrix.Diagonal((k, k, k, 1)))
+    o.location = ((x0 + x1) / 2 - (wx0 + wx1) / 2 * k, -z1 - wfront * k, 0)
+    o.name = "bld-" + b["id"] + "-model"
+    o.parent = root
+    print("model", b["id"], "scale", round(k, 5), "height", round(top * k, 3), "wall", round((wx1 - wx0) * k, 3), "depth", round((wback - wfront) * k, 3))
+    return root
+
+
 for b in LAYOUT["buildings"]:
-    build_house(b)
+    if b.get("model"):
+        place_model(b, home_model)
+    else:
+        build_house(b)
 
 # ---------- 소품 ----------
 props = group("props")

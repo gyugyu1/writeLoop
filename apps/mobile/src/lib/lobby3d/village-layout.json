@@ -7,14 +7,13 @@
       "id": "home",
       "label": "라룹이 집",
       "rect": [
-        31,
-        6,
-        40,
+        32.5,
+        7.4,
+        38.5,
         12
       ],
-      "floors": 2,
-      "wall": "plaster",
-      "roof": "red",
+      "floors": 1,
+      "model": "laroopi-house",
       "door": 35.5
     },
     {

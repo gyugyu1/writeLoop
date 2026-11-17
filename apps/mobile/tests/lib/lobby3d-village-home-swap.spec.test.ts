@@ -17,6 +17,7 @@
 //
 // 바뀔 동작(구현 전 실패): C1~C3, C5~C10. 그대로 둘 동작(구현 전·뒤 통과): K1~K6.
 // K6(명세 3 자리)은 명세의 "바뀌는 동작" 목록에 있지만 문 가운데 x 35.5·앞면 z 12를 "그대로 둔다"는 항목이라, 지금 2층 집도 통과하는 그대로 둘 동작으로 나눴다.
+// 작업 100(마을 각진 집) 04 결정으로 C3에서 위 옛 모델의 크기 상자와 견주던 비율 단언을 뺐다(C3 앞 주석).
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -45,8 +46,6 @@ import {
 
 /** 지금(기준 커밋) 라룹이 집 땅. */
 const OLD_HOME_RECT = [31, 6, 40, 12] as const;
-/** 넣을 모델의 크기 상자(모델 단위). */
-const MODEL = { width: 48.931480407714844 - -48.95906448364258, height: 76.78611755371094, depth: 37.61770248413086 - -37.60267639160156 };
 /** 넣을 모델의 삼각형 수(명세 1 "삼각형 1만"). */
 const MODEL_TRIANGLES = 10000;
 const DOOR_X = 35.5;
@@ -126,17 +125,14 @@ describe("[spec] 098 바뀔 동작: 라룹이 집 모델·크기·땅·가리기
     expect(imageSize(imageBytes(glb, image))).toEqual({ width: 1024, height: 1024 });
   });
 
-  it("C3 크기(명세 2): 마을 모델 안 집은 가로 약 6.5칸(6.2~6.8), 높이 약 5칸(4.8~5.4)이고, 모델 비율 그대로 고르게 키웠다(가로:높이, 가로:깊이가 모델과 1% 안)", () => {
+  // 작업 100 04 결정(사용자 2026-11-17 "비율 확인만 빼기"): 옛 둥근 집의 크기 상자(모델 단위)와 견주던 "모델 비율 그대로 고르게 키웠다" 단언을 뺐다.
+  // 집 모델을 각진 집으로 바꾸면 비율이 달라져서다. 넣은 모델 기준의 고르게 키움은 작업 100 qa 테스트 N2(lobby3d-village-angular-home.spec.test.ts)가 본다.
+  it("C3 크기(명세 2): 마을 모델 안 집은 가로 약 6.5칸(6.2~6.8), 높이 약 5칸(4.8~5.4)이다", () => {
     const box = boxOf(homePoints(nowVillageGlb()));
     const width = box.maxX - box.minX;
     const height = box.maxY - box.minY;
-    const depth = box.maxZ - box.minZ;
     expect({ width, inRange: width >= 6.2 && width <= 6.8 }).toEqual({ width, inRange: true });
     expect({ height, inRange: height >= 4.8 && height <= 5.4 }).toEqual({ height, inRange: true });
-    const heightRatio = width / height / (MODEL.width / MODEL.height);
-    const depthRatio = width / depth / (MODEL.width / MODEL.depth);
-    expect({ heightRatio, uniform: Math.abs(heightRatio - 1) <= 0.01 }).toEqual({ heightRatio, uniform: true });
-    expect({ depthRatio, uniform: Math.abs(depthRatio - 1) <= 0.01 }).toEqual({ depthRatio, uniform: true });
   });
 
   it("C5 땅(명세 4): 배치 파일과 앱 데이터의 라룹이 집 층수가 1이다", () => {

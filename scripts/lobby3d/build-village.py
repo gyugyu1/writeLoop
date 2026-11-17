@@ -1,6 +1,6 @@
 # 라룹이 마을(방 밖)의 건물·소품을 Kenney Fantasy Town Kit(CC0)에서 골라 조립하고 한 glb로 묶는다.
 # 쓰는 법: blender -b -P scripts/lobby3d/build-village.py -- <Kenney "Models/GLB format" 폴더> <라룹이 집 glb> <출력 glb> [미리 보기 png]
-#   라룹이 집 glb: WriteLoop이 Tripo로 만든 1층 벽돌집(C:\WriteLoop-asset\마을-건물\라룹이-집\창문-불빛\laroopi-house-app-b.glb).
+#   라룹이 집 glb: WriteLoop이 Tripo로 만든 각진 1층 벽돌집(C:\WriteLoop-asset\마을-건물\라룹이-집\단계\07-앱용-불빛\laroopi-house-angular-app.glb).
 #   배치 파일에서 "model"이 있는 건물은 부품으로 조립하지 않고 이 모델을 땅(rect)에 맞춰 놓는다
 #   (Blender 5.2에서 확인. 출력은 apps/mobile/assets/models/lobby-village.glb로 복사한다)
 # 배치는 앱과 같은 apps/mobile/src/lib/lobby3d/village-layout.json을 읽는다(앱은 같은 파일로 막힌 칸·장소를 계산한다).

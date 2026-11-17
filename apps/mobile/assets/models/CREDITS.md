@@ -8,3 +8,4 @@
 | `lobby-wearables.glb` | 옛 라룹이 몸(고글이 그려진 몸) 때의 캐릭터 꾸미기 착용 원본: 야구모자는 WriteLoop이 Tripo로 만든 모델(`C:\WriteLoop-asset\캡모자`)을, 상의·하의 껍질과 신발은 WriteLoop이 그때의 라룹이 모델에서 만들었다. 지금은 쓰지 않는다(새 몸의 착용 모델은 `scripts/lobby3d/build-wearables.py`가 모델마다 바로 만들어 서버 아이템 목록에 둔다) | 저장소와 같다 |
 | `writeloop.glb` | WriteLoop 캐릭터 모델(라룹이). 고글 없는 몸을 WriteLoop이 Tripo 웹으로 만들고 뼈대를 붙였으며, 꼬리 자리·얼굴(눈·코 크기와 색)·동작 클립·외곽선을 손보고 이마의 앞머리를 지워 매끈한 이마로 만들었다 | 저장소와 같다 |
 | `wear-goggles.glb` | 라룹이 고글(얼굴장식, 모두 처음부터 가짐). WriteLoop이 Tripo 웹으로 만든 고글을 `scripts/lobby3d/build-goggles.py`로 줄이고 라룹이 머리에 맞춘 뒤, `scripts/lobby3d/fit-goggles-to-head.py`로 렌즈 판은 모양 그대로 이마에 더 붙이고 띠는 머리를 따라 감기게 새로 만들었다 | 저장소와 같다 |
+| `village-flowers.glb` | 마을 땅의 3D 꽃 무리(흰·노랑·분홍·빨강)·클로버·풀 포기. WriteLoop이 Blender 스크립트로 만들었다(꼭짓점 색, 텍스처 없음) | 저장소와 같다 |

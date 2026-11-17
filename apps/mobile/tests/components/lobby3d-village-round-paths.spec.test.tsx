@@ -5,40 +5,49 @@
 //
 // 바뀔 동작(구현 전 실패): P1~P5. 그대로 둘 동작(구현 전·뒤 통과): K1~K3.
 //
+// 작업 101(마을 땅 무늬) 02 결정(사용자 2026-11-17 "진행": 명세의 "그 때문에 고칠 기존 테스트")으로 qa가 고쳤다. 작업 101은 둥근 길의 안쪽에
+// 한 가지 흙색 대신 흙 무늬 그림을 입히고, 짙은 가장자리 띠 대신 흙이 풀로 부드럽게 바래는 경계로 바꾼다(길 모양과 계절과 관계없는 색은 그대로).
+// - P2: "색 그림 없는 불투명 재질" 대신 "흙 무늬 그림(map)을 반복으로 입힌 Lambert 재질". P3: 판이 덮는 곳을 "흙이 보이는 정도(불투명도)"로 보고,
+//   부드러운 가장자리 몫으로 경계 양쪽 0.5칸은 보지 않는다. P4: "#dcbd8e 한 가지와 짙은 띠" 대신 "가장자리는 짙어지지 않고 불투명도가 바랜다".
+//   P5: 계절마다 같은지 보는 값에 불투명도와 그림을 더했다. 도우미 vertexColors의 "색 그림이 없어야 한다" 단언은 뺐다(그림은 P2가 본다).
+// - 작업 101은 그림·모델을 불러오는 방식을 구현이 정한다(03 결정). 그래서 가짜 불러오기를 tests/__fixtures__/village-scene-101.ts로 바꾸고,
+//   마을 그리기 모듈은 Jest가 읽지 못하는 자산(.glb 등)을 가짜로 바꾼 뒤 require한다. P1·K1~K3의 단언·입력은 바꾸지 않았다.
+//
 // 어떻게 보나:
 // - react-three-fiber만 가짜로 둔다. 가짜 useLoader는 저장소의 진짜 마을 모델(lobby-village.glb)을 이 테스트가 직접 풀어 만든 장면을 준다
-//   (098 테스트 lobby3d-village-home-model.spec.test.tsx와 같은 방법. 그림 픽셀은 풀지 않고 빈 THREE.Texture로 둔다).
+//   (098 테스트 lobby3d-village-home-model.spec.test.tsx와 같은 방법. 그림 픽셀은 풀지 않고 빈 THREE.Texture로 둔다). 그 밖의 그림에는 빈 THREE.Texture를 준다.
 // - VillageNature와 VillageModel을 마을 화면(lobby3d-canvas의 VillageLayer)처럼 함께 그리고, 둘이 넘긴 <primitive object> 전부를 그린 장면으로 본다.
 //   둥근 길을 어느 쪽이 그리는지는 명세가 정하지 않아 가리지 않는다.
 // - 가짜 useFrame은 받은 프레임 함수를 모두 적어 두고, 테스트가 delta 0.1초로 모두 부른다.
 // - "그려진다" = 메시와 그 위 모든 부모의 visible이 true다(떼어 내 장면에 없으면 그려지지 않는다).
 // - "둥근 길 판" = 그린 장면의 메시(인스턴스 메시 빼고) 가운데 마을 모델에서 온 모양(glb 메시의 도형)이 아니고, 모든 점이 땅 높이
 //   (풀밭 y −0.02보다 위, 0.1 이하)에 있으며, 가로·깊이로 마을 안(0~70, 0~60)에 드는 것. 풀밭 판(y −0.02, 마을보다 넓다)과 나무·풍차 날개는 여기에 들지 않는다.
-// - 길 색: 지금 길(Kenney 길 조각 road)의 윗면은 마을 모델의 색 그림 writeloop-village-colormap(UV 0.156, 0.625)의 #dcbd8e를 꼭짓점 색 1.0(흰색)으로
-//   곱한 Lambert 재질이다(기준 커밋의 glb에서 잰 값: 윗면 꼭짓점 1169개 중 689개가 1.0, 나머지는 돌 틈 그늘). 그래서 "같은 흙색"을
-//   Lambert 재질로 칠한 #dcbd8e로 본다. 판의 색은 재질 색 × 꼭짓점 색(재질이 vertexColors이고 도형에 color가 있을 때)으로 계산한다.
-//   무늬 그림을 넣지 않으므로(명세 2) 판 재질에 색 그림(map)이 없어야 한다.
-// - 한 자리에 판이 여럿 겹치면 renderOrder가 큰 것, 같으면 그 자리 높이(y)가 높은 것이 보이는 것으로 본다.
-// - 가장자리 띠(약 0.15칸, 조금 짙게): 둥근 경계에서 0.05칸 안쪽까지는 가운데 색보다 짙고(밝기 0.99배 미만, 0.5배 이상, 어느 채널도 더 밝지 않음),
-//   경계에서 0.3칸 넘게 안쪽은 #dcbd8e다. "조금"의 아래 끝 0.5배는 qa가 정한 값이다(02-qa-tests.md 가정).
+// - 판 한 점의 "색 배율" = 재질 색 × 꼭짓점 색(재질이 vertexColors이고 도형에 color가 있을 때). 그림(map)은 이 배율에 곱해져 보인다.
+// - 판 한 점의 "불투명도" = 재질이 transparent이면 재질 opacity × 꼭짓점 알파(재질이 vertexColors이고 color가 4성분일 때), 아니면 1.
+//   alphaTest보다 작으면 0. 판 재질에 알파 그림(alphaMap)이나 셰이더 고침(onBeforeCompile)이 있으면 이 테스트가 계산할 수 없어 실패한다(04-qa-tests.md 가정).
+//   한 점에 판이 여럿 겹치면 흙이 보이는 정도 = 1 − Π(1 − 판마다 불투명도).
+// - 부드러운 가장자리: 둥근 경계에서 안쪽 0.5칸은 불투명도 1(흙만 보임), 바깥 0.5칸은 0(흙 없음)이고, 그 사이에서 바깥으로 갈수록 줄어들며(0.01까지 봐줌),
+//   0.02~0.98 사이 값이 있고, 둥근 경계 바로 안(0.04칸)이 0.98보다 작거나 바로 밖(0.04칸)이 0.02보다 크다(경계가 바래는 곳 안에 있다).
+//   바래는 곳에서 보이는 판(위 판들에 가려지지 않은 판)의 색 배율은 그 자리에서 0.5칸 안쪽의 맨 위 판 색 배율보다 짙지 않다
+//   (밝기 0.99배 이상, 어느 채널도 0.004 넘게 어둡지 않음). 0.5칸은 qa가 정한 값이다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
 import * as THREE from "three";
-import { VillageModel, VillageNature } from "@/components/lobby3d/lobby3d-village";
+import type * as VillageModule from "@/components/lobby3d/lobby3d-village";
 import type { DaylightState } from "@/components/lobby3d/lobby3d-daylight";
 import { SEASON_COLORS } from "@/components/lobby3d/lobby3d-outdoor";
 import { daylightAt, type Season } from "@/lib/lobby3d/daylight";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_START } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
-import { accessorValues, nowVillageGlb, sceneRoots, type Glb } from "../__fixtures__/village-glb-098";
+import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { shapeIndex, tilesOf, type PathShape, type Rect, type RoundedPathShapes } from "../__fixtures__/village-paths-099";
+import { loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb } from "../__fixtures__/village-scene-101";
 
 type FramePart = (state: unknown, delta: number) => void;
 
 const mockFrames: FramePart[] = [];
-const mockGltf: { value: unknown } = { value: null };
 const mockScene: { background: unknown } = { background: null };
 
 jest.mock("three", () => {
@@ -58,10 +67,12 @@ jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
 jest.mock("@react-three/fiber/native", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  const loader = { clear: () => {} };
+  const fake = (loader: unknown, input: unknown) =>
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    (require("../__fixtures__/village-scene-101") as typeof import("../__fixtures__/village-scene-101")).fakeUseLoader(loader, input);
   return {
     Canvas: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
-    useThree: () => ({ camera: null, scene: mockScene, size: { width: 400, height: 800 } }),
+    useThree: () => ({ camera: null, scene: mockScene, size: { width: 400, height: 800 }, gl: { capabilities: { getMaxAnisotropy: () => 1 } } }),
     useFrame: (callback: FramePart) => {
       React.useEffect(() => {
         mockFrames.push(callback);
@@ -71,61 +82,17 @@ jest.mock("@react-three/fiber/native", () => {
         };
       });
     },
-    useLoader: Object.assign(() => mockGltf.value, loader)
+    useLoader: Object.assign(fake, { clear: () => {}, preload: () => {} })
   };
 });
 
-// ---------- 진짜 마을 모델을 장면으로(098 테스트와 같은 방법) ----------
+let village: typeof VillageModule;
 
-function sceneFromGlb(glb: Glb): THREE.Group {
-  const textures = new Map<number, THREE.Texture>();
-  const materials = (glb.json.materials ?? []).map((m) => {
-    const material = new THREE.MeshStandardMaterial();
-    material.name = m.name ?? "";
-    const factor = m.pbrMetallicRoughness?.baseColorFactor;
-    if (factor) material.color.setRGB(factor[0], factor[1], factor[2]);
-    const ref = m.pbrMetallicRoughness?.baseColorTexture;
-    if (ref) {
-      if (!textures.has(ref.index)) textures.set(ref.index, new THREE.Texture());
-      material.map = textures.get(ref.index)!;
-    }
-    return material;
-  });
-  const build = (index: number): THREE.Object3D => {
-    const node = glb.json.nodes[index];
-    let object: THREE.Object3D;
-    if (node.mesh !== undefined) {
-      const mesh = glb.json.meshes[node.mesh];
-      const parts = mesh.primitives.map((p) => {
-        const geometry = new THREE.BufferGeometry();
-        const points = accessorValues(glb, p.attributes.POSITION);
-        geometry.setAttribute("position", new THREE.Float32BufferAttribute(points.flat(), 3));
-        if (p.attributes.COLOR_0 !== undefined) geometry.setAttribute("color", new THREE.Float32BufferAttribute(new Array(points.length * 4).fill(1), 4));
-        if (p.indices !== undefined) geometry.setIndex(accessorValues(glb, p.indices).flat());
-        return new THREE.Mesh(geometry, p.material !== undefined ? materials[p.material] : new THREE.MeshStandardMaterial());
-      });
-      if (parts.length === 1) object = parts[0];
-      else {
-        object = new THREE.Group();
-        parts.forEach((part, i) => {
-          part.name = `${mesh.name ?? node.name}_${i}`;
-          object.add(part);
-        });
-      }
-    } else object = new THREE.Group();
-    object.name = node.name ?? "";
-    if (node.matrix) new THREE.Matrix4().fromArray(node.matrix).decompose(object.position, object.quaternion, object.scale);
-    if (node.translation) object.position.fromArray(node.translation);
-    if (node.rotation) object.quaternion.fromArray(node.rotation);
-    if (node.scale) object.scale.fromArray(node.scale);
-    (node.children ?? []).forEach((c) => object.add(build(c)));
-    return object;
-  };
-  const scene = new THREE.Group();
-  scene.name = "Scene";
-  sceneRoots(glb).forEach((r) => scene.add(build(r)));
-  return scene;
-}
+beforeAll(() => {
+  mockUnreadableAssets();
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  village = require("@/components/lobby3d/lobby3d-village") as typeof VillageModule;
+});
 
 // ---------- 그리기 ----------
 
@@ -150,11 +117,11 @@ async function draw(season: Season = "summer"): Promise<Drawn> {
   const pick: MutableRefObject<THREE.Object3D[]> = { current: [] };
   const sim = { x: VILLAGE_START.x, z: VILLAGE_START.z, reduceMotion: true };
   const light = lightAt(season);
-  const source = (mockGltf.value as { scene: THREE.Object3D }).scene;
+  const source = (loaderState.village as { scene: THREE.Object3D }).scene;
   const view = await render(
     <>
-      <VillageNature daylight={light as unknown as DaylightState} />
-      <VillageModel sim={sim as unknown as LobbySim} daylight={light as unknown as DaylightState} pickTargets={pick} />
+      <village.VillageNature daylight={light as unknown as DaylightState} />
+      <village.VillageModel sim={sim as unknown as LobbySim} daylight={light as unknown as DaylightState} pickTargets={pick} />
     </>
   );
   const roots = view.container
@@ -213,6 +180,19 @@ function sourceGeometries(source: THREE.Object3D) {
   return { all, byGroup };
 }
 
+/** 마을 모델(glb) 재질이 쓰는 그림들. */
+function sourceTextures(source: THREE.Object3D): Set<THREE.Texture> {
+  const out = new Set<THREE.Texture>();
+  source.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+      const map = (m as THREE.MeshStandardMaterial).map;
+      if (map) out.add(map);
+    }
+  });
+  return out;
+}
+
 function worldPositions(mesh: THREE.Mesh): THREE.Vector3[] {
   const pos = mesh.geometry.getAttribute("position");
   const out: THREE.Vector3[] = [];
@@ -232,35 +212,73 @@ function plates(drawn: Drawn): THREE.Mesh[] {
   });
 }
 
-type Tri = { a: THREE.Vector3; b: THREE.Vector3; c: THREE.Vector3; ca: THREE.Color; cb: THREE.Color; cc: THREE.Color; order: number };
+type Tri = {
+  a: THREE.Vector3;
+  b: THREE.Vector3;
+  c: THREE.Vector3;
+  ca: THREE.Color;
+  cb: THREE.Color;
+  cc: THREE.Color;
+  aa: number;
+  ab: number;
+  ac: number;
+  order: number;
+  mesh: number;
+  map: string;
+  test: number;
+};
 
-/** 꼭짓점의 보이는 색(선형): 재질 색 × 꼭짓점 색. 색 그림이 있으면 이 테스트가 계산할 수 없어 실패한다. */
-function vertexColors(mesh: THREE.Mesh): THREE.Color[] {
+/** 꼭짓점의 색 배율(선형)과 불투명도(머리말의 정의). 알파 그림·셰이더 고침이 있으면 이 테스트가 계산할 수 없어 실패한다. */
+function vertexLooks(mesh: THREE.Mesh): { colors: THREE.Color[]; alphas: number[] } {
   const material = mesh.material as THREE.MeshLambertMaterial;
-  expect({ map: material.map ?? null }).toEqual({ map: null });
+  expect({ alphaMap: material.alphaMap ?? null, customShader: material.onBeforeCompile !== THREE.Material.prototype.onBeforeCompile }).toEqual({
+    alphaMap: null,
+    customShader: false
+  });
   const colorAttr = material.vertexColors ? mesh.geometry.getAttribute("color") : undefined;
   const count = mesh.geometry.getAttribute("position").count;
-  const out: THREE.Color[] = [];
+  const colors: THREE.Color[] = [];
+  const alphas: number[] = [];
   for (let i = 0; i < count; i += 1) {
     const c = material.color.clone();
     if (colorAttr) c.multiply(new THREE.Color(colorAttr.getX(i), colorAttr.getY(i), colorAttr.getZ(i)));
-    out.push(c);
+    colors.push(c);
+    let a = 1;
+    if (material.transparent) {
+      a = material.opacity * (colorAttr && colorAttr.itemSize === 4 ? colorAttr.getW(i) : 1);
+    }
+    alphas.push(a);
   }
-  return out;
+  return { colors, alphas };
 }
 
 function trianglesOf(meshes: THREE.Mesh[]): Tri[] {
   const out: Tri[] = [];
-  for (const mesh of meshes) {
+  meshes.forEach((mesh, meshIndex) => {
     const points = worldPositions(mesh);
-    const colors = vertexColors(mesh);
+    const { colors, alphas } = vertexLooks(mesh);
+    const map = (mesh.material as THREE.MeshLambertMaterial).map?.uuid ?? "그림 없음";
     const index = mesh.geometry.getIndex();
     const ids = index ? Array.from({ length: index.count }, (_, i) => index.getX(i)) : points.map((_, i) => i);
     for (let i = 0; i + 2 < ids.length; i += 3) {
       const [ia, ib, ic] = [ids[i], ids[i + 1], ids[i + 2]];
-      out.push({ a: points[ia], b: points[ib], c: points[ic], ca: colors[ia], cb: colors[ib], cc: colors[ic], order: mesh.renderOrder });
+      out.push({
+        a: points[ia],
+        b: points[ib],
+        c: points[ic],
+        ca: colors[ia],
+        cb: colors[ib],
+        cc: colors[ic],
+        aa: alphas[ia],
+        ab: alphas[ib],
+        ac: alphas[ic],
+        order: mesh.renderOrder,
+        mesh: meshIndex,
+        map,
+        test: (mesh.material as THREE.Material).alphaTest
+      });
     }
-  }
+  });
   return out;
 }
 
@@ -281,10 +299,13 @@ function bucketed(tris: Tri[]) {
   return (px: number, pz: number) => map.get(`${Math.floor(px)},${Math.floor(pz)}`) ?? [];
 }
 
-/** 점 (x, z)에서 보이는 판의 색(선형)과 높이. 판이 없으면 null. */
-function plateAt(find: (x: number, z: number) => Tri[], x: number, z: number): { color: THREE.Color; y: number; order: number } | null {
-  let best: { color: THREE.Color; y: number; order: number } | null = null;
+type Hit = { color: THREE.Color; alpha: number; y: number; order: number; map: string };
+
+/** 점 (x, z)를 덮는 판마다(판 하나에 한 번) 색 배율·불투명도(alphaTest보다 작으면 0)·높이. */
+function hitsAt(find: (x: number, z: number) => Tri[], x: number, z: number): Hit[] {
+  const byMesh = new Map<number, Hit>();
   for (const t of find(x, z)) {
+    if (byMesh.has(t.mesh)) continue;
     const d = (t.b.z - t.c.z) * (t.a.x - t.c.x) + (t.c.x - t.b.x) * (t.a.z - t.c.z);
     if (Math.abs(d) < 1e-12) continue;
     const u = ((t.b.z - t.c.z) * (x - t.c.x) + (t.c.x - t.b.x) * (z - t.c.z)) / d;
@@ -292,10 +313,22 @@ function plateAt(find: (x: number, z: number) => Tri[], x: number, z: number): {
     const w = 1 - u - v;
     if (u < -1e-9 || v < -1e-9 || w < -1e-9) continue;
     const y = u * t.a.y + v * t.b.y + w * t.c.y;
-    if (best && (t.order < best.order || (t.order === best.order && y <= best.y))) continue;
     const color = new THREE.Color(u * t.ca.r + v * t.cb.r + w * t.cc.r, u * t.ca.g + v * t.cb.g + w * t.cc.g, u * t.ca.b + v * t.cb.b + w * t.cc.b);
-    best = { color, y, order: t.order };
+    const alpha = u * t.aa + v * t.ab + w * t.ac;
+    byMesh.set(t.mesh, { color, alpha: alpha < t.test ? 0 : alpha, y, order: t.order, map: t.map });
   }
+  return [...byMesh.values()];
+}
+
+/** 흙이 보이는 정도: 1 − Π(1 − 판마다 불투명도). */
+function opacityOf(hits: Hit[]): number {
+  return 1 - hits.reduce((keep, h) => keep * (1 - Math.min(1, Math.max(0, h.alpha))), 1);
+}
+
+/** 맨 위에 보이는 판(renderOrder가 큰 것, 같으면 높은 것). */
+function topHit(hits: Hit[]): Hit | null {
+  let best: Hit | null = null;
+  for (const h of hits) if (!best || h.order > best.order || (h.order === best.order && h.y > best.y)) best = h;
   return best;
 }
 
@@ -311,18 +344,15 @@ const srgb255 = (c: THREE.Color) => {
   return [s.r, s.g, s.b].map((v) => Math.round(v * 255));
 };
 const luminance = (c: THREE.Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
-const DIRT = new THREE.Color(0xdcbd8e); // set이 화면 색을 선형으로 바꾼다
-const DIRT_255 = [0xdc, 0xbd, 0x8e];
-const near = (a: number[], b: number[], tol: number) => a.every((v, i) => Math.abs(v - b[i]) <= tol);
 
-/** 길 안의 점들: 경계에서 0.3칸 넘게 안쪽인 칸 가운데(가운데 색)와, 경계 점마다 0.04칸 안쪽 점(띠 색). */
+/** 길 안의 점들: 경계에서 0.5칸 넘게 안쪽인 칸 가운데(가운데)와, 경계 점마다 0.04칸 안쪽 점(가장자리). */
 function samplePoints(shapes: PathShape[]) {
   const index = shapeIndex(shapes);
   const inner: { x: number; z: number }[] = [];
   for (const t of tilesOf(LAYOUT.paths as unknown as Rect[])) {
     const [c, r] = t.split(",").map(Number);
     const p = { x: c + 0.5, z: r + 0.5 };
-    if (index.inside(p) && index.distance(p) > 0.3) inner.push(p);
+    if (index.inside(p) && index.distance(p) > 0.5) inner.push(p);
   }
   const edge: { x: number; z: number }[] = [];
   const rings = shapes.flatMap((s) => [s.outer, ...s.holes]);
@@ -343,12 +373,39 @@ function samplePoints(shapes: PathShape[]) {
   return { inner, edge };
 }
 
+/** 경계를 가로지르는 줄들: 경계 점마다 안쪽 법선을 따라 안(+)·밖(−)으로 PROFILE_STEPS칸 떨어진 점들. 점마다 경계까지 거리가 맞는 줄만 쓴다. */
+const PROFILE_STEPS = [0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1, 0.07, 0.04, 0.02, -0.02, -0.04, -0.07, -0.1, -0.15, -0.2, -0.25, -0.3, -0.4, -0.5];
+
+function profiles(shapes: PathShape[]): { x: number; z: number }[][] {
+  const index = shapeIndex(shapes);
+  const out: { x: number; z: number }[][] = [];
+  for (const ring of shapes.flatMap((s) => [s.outer, ...s.holes])) {
+    for (let i = 0; i < ring.length; i += 7) {
+      const a = ring[i];
+      const b = ring[(i + 1) % ring.length];
+      const len = Math.hypot(b.x - a.x, b.z - a.z);
+      if (len < 1e-6) continue;
+      const mid = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+      let n = { x: -(b.z - a.z) / len, z: (b.x - a.x) / len };
+      if (!index.inside({ x: mid.x + n.x * 0.04, z: mid.z + n.z * 0.04 })) n = { x: -n.x, z: -n.z };
+      const line = PROFILE_STEPS.map((d) => ({ x: mid.x + n.x * d, z: mid.z + n.z * d }));
+      const ok = line.every((p, k) => {
+        const d = PROFILE_STEPS[k];
+        return index.inside(p) === d > 0 && Math.abs(index.distance(p) - Math.abs(d)) < 0.02;
+      });
+      if (ok) out.push(line);
+    }
+  }
+  return out;
+}
+
 jest.setTimeout(180000);
 
 beforeEach(() => {
   mockFrames.length = 0;
   mockScene.background = null;
-  mockGltf.value = { scene: sceneFromGlb(nowVillageGlb()) };
+  resetFakeLoader();
+  loaderState.village = { scene: sceneFromGlb(nowVillageGlb()) };
 });
 
 // ---------- 바뀔 동작 ----------
@@ -362,23 +419,45 @@ describe("[spec] 099 바뀔 동작: 둥근 길 그리기(명세 1~3)", () => {
     expect(shown.map((o) => o.name)).toEqual([]);
   });
 
-  it("P2 둥근 길 판(명세 1·2): 땅 위 판이 있고, 판의 재질은 색 그림 없는 불투명 Lambert 재질이다", async () => {
+  it("P2 둥근 길 판(명세 1·2, 101 명세 2): 땅 위 판이 있고, 판의 재질은 Lambert 재질이며 모두 같은 흙 무늬 그림(map, 마을 모델의 그림이 아님)을 가로·세로 반복(RepeatWrapping)으로 입혀 판 전체에서 두 번 넘게 되풀이된다", async () => {
     const drawn = await draw();
     const found = plates(drawn);
     expect(found.length).toBeGreaterThan(0);
+    const modelTextures = sourceTextures(drawn.source);
+    const maps = new Set<THREE.Texture | null>();
+    let uMin = Infinity;
+    let uMax = -Infinity;
+    let vMin = Infinity;
+    let vMax = -Infinity;
     for (const m of found) {
       const materials = Array.isArray(m.material) ? m.material : [m.material];
       for (const mat of materials) {
+        const map = (mat as THREE.MeshLambertMaterial).map ?? null;
+        maps.add(map);
         expect({
           lambert: mat instanceof THREE.MeshLambertMaterial,
-          map: (mat as THREE.MeshLambertMaterial).map ?? null,
-          opaque: !mat.transparent && mat.opacity === 1
-        }).toEqual({ lambert: true, map: null, opaque: true });
+          map: map instanceof THREE.Texture,
+          fromModel: map ? modelTextures.has(map) : false,
+          repeat: map ? map.wrapS === THREE.RepeatWrapping && map.wrapT === THREE.RepeatWrapping : false
+        }).toEqual({ lambert: true, map: true, fromModel: false, repeat: true });
+      }
+      const uv = m.geometry.getAttribute("uv");
+      expect(uv ? uv.count : 0).toBe(m.geometry.getAttribute("position").count);
+      const map = (m.material as THREE.MeshLambertMaterial).map!;
+      for (let i = 0; i < uv.count; i += 1) {
+        const u = uv.getX(i) * map.repeat.x;
+        const v = uv.getY(i) * map.repeat.y;
+        uMin = Math.min(uMin, u);
+        uMax = Math.max(uMax, u);
+        vMin = Math.min(vMin, v);
+        vMax = Math.max(vMax, v);
       }
     }
+    expect(maps.size).toBe(1);
+    expect({ uSpan: uMax - uMin > 2, vSpan: vMax - vMin > 2 }).toEqual({ uSpan: true, vSpan: true });
   });
 
-  it("P3 판의 모양(명세 1): 판이 덮는 곳이 배치 파일 paths로 계산한 둥근 경계(roundedPathShapes)의 안과 같다(경계에서 0.05칸 안의 점은 빼고, 0.2칸 간격으로 본다)", async () => {
+  it("P3 판의 모양(명세 1): 흙이 보이는 곳이 배치 파일 paths로 계산한 둥근 경계(roundedPathShapes)의 안과 같다(경계 안쪽 0.5칸 넘게는 불투명도 1, 바깥 0.5칸 넘게는 0. 0.2칸 간격으로 본다)", async () => {
     const drawn = await draw();
     const find = bucketed(trianglesOf(plates(drawn)));
     const index = shapeIndex(loadShapes());
@@ -387,11 +466,11 @@ describe("[spec] 099 바뀔 동작: 둥근 길 그리기(명세 1~3)", () => {
     for (let x = 10.1; x < 61; x += 0.2) {
       for (let z = 10.1; z < 52; z += 0.2) {
         const p = { x, z };
-        if (index.distance(p) < 0.05) continue;
+        if (index.distance(p) <= 0.5) continue;
         const want = index.inside(p);
-        const got = plateAt(find, x, z) !== null;
-        if (want && !got) missing.push(`${x.toFixed(1)},${z.toFixed(1)}`);
-        if (!want && got) extra.push(`${x.toFixed(1)},${z.toFixed(1)}`);
+        const opacity = opacityOf(hitsAt(find, x, z));
+        if (want && opacity < 0.999) missing.push(`${x.toFixed(1)},${z.toFixed(1)} ${opacity.toFixed(3)}`);
+        if (!want && opacity > 0.001) extra.push(`${x.toFixed(1)},${z.toFixed(1)} ${opacity.toFixed(3)}`);
       }
     }
     expect({ missing: missing.slice(0, 20), missingCount: missing.length, extra: extra.slice(0, 20), extraCount: extra.length }).toEqual({
@@ -402,46 +481,64 @@ describe("[spec] 099 바뀔 동작: 둥근 길 그리기(명세 1~3)", () => {
     });
   });
 
-  it("P4 길 색(명세 2): 경계에서 0.3칸 넘게 안쪽은 지금 길과 같은 흙색 #dcbd8e이고, 경계에서 0.05칸 안쪽까지의 띠는 그보다 조금 짙다", async () => {
+  it("P4 부드러운 가장자리(101 명세 2): 경계를 가로지르면 흙의 불투명도가 안쪽 1에서 바깥 0으로 서서히 바래고(경계가 바래는 곳 안에 있다), 바래는 곳은 안쪽보다 짙지 않다(짙은 띠 없음)", async () => {
     const drawn = await draw();
     const find = bucketed(trianglesOf(plates(drawn)));
+    const lines = profiles(loadShapes());
+    expect(lines.length).toBeGreaterThan(50);
+    const wrong: string[] = [];
+    for (const line of lines) {
+      const hits = line.map((p) => hitsAt(find, p.x, p.z));
+      const opacity = hits.map((h) => opacityOf(h));
+      const at = `${line[0].x.toFixed(2)},${line[0].z.toFixed(2)}`;
+      const ref = topHit(hits[0]);
+      if (!ref || opacity[0] < 0.999) {
+        wrong.push(`${at} 안쪽 0.5칸 불투명도 ${opacity[0].toFixed(3)}`);
+        continue;
+      }
+      if (opacity[opacity.length - 1] > 0.001) wrong.push(`${at} 바깥 0.5칸 불투명도 ${opacity[opacity.length - 1].toFixed(3)}`);
+      for (let k = 1; k < opacity.length; k += 1) {
+        if (opacity[k] > opacity[k - 1] + 0.01) wrong.push(`${at} 바깥으로 가며 짙어짐 ${PROFILE_STEPS[k]} ${opacity[k - 1].toFixed(3)}→${opacity[k].toFixed(3)}`);
+      }
+      if (!opacity.some((o) => o > 0.02 && o < 0.98)) wrong.push(`${at} 바래는 값 없음 ${opacity.map((o) => o.toFixed(2)).join(" ")}`);
+      const justIn = opacity[PROFILE_STEPS.indexOf(0.04)];
+      const justOut = opacity[PROFILE_STEPS.indexOf(-0.04)];
+      if (!(justIn < 0.98 || justOut > 0.02)) wrong.push(`${at} 경계가 딱 끊김 안 ${justIn.toFixed(3)} 밖 ${justOut.toFixed(3)}`);
+      const refLum = luminance(ref.color);
+      hits.forEach((list, k) => {
+        // 위에서부터 차례로 보고, 위 판들에 가려 거의 보이지 않는 판(위 판들을 지난 빛이 0.01 이하)은 보지 않는다
+        let through = 1;
+        for (const h of [...list].sort((p, q) => q.order - p.order || q.y - p.y)) {
+          const seen = through > 0.01;
+          through *= 1 - Math.min(1, Math.max(0, h.alpha));
+          if (!seen || h.alpha <= 0.02) continue;
+          const darker = luminance(h.color) < refLum * 0.99 || h.color.r < ref.color.r - 0.004 || h.color.g < ref.color.g - 0.004 || h.color.b < ref.color.b - 0.004;
+          if (darker) wrong.push(`${at} ${PROFILE_STEPS[k]}칸 짙음 ${srgb255(h.color).join("/")} < ${srgb255(ref.color).join("/")}`);
+        }
+      });
+    }
+    expect(wrong.slice(0, 15)).toEqual([]);
+  });
+
+  it("P5 길 색은 계절과 관계없이 같다(명세 2): 봄·여름·가을·겨울에 같은 자리의 판 색 배율·흙 불투명도·그림이 같다", async () => {
+    const drawn = await draw("summer");
     const { inner, edge } = samplePoints(loadShapes());
     expect(inner.length).toBeGreaterThan(50);
     expect(edge.length).toBeGreaterThan(50);
-    const wrongInner = inner
-      .map((p) => ({ p, hit: plateAt(find, p.x, p.z) }))
-      .filter(({ hit }) => !hit || !near(srgb255(hit.color), DIRT_255, 2))
-      .map(({ p, hit }) => `${p.x.toFixed(2)},${p.z.toFixed(2)} ${hit ? srgb255(hit.color).join("/") : "판 없음"}`);
-    expect(wrongInner.slice(0, 10)).toEqual([]);
-    const dirtLum = luminance(DIRT);
-    const wrongEdge = edge
-      .map((p) => ({ p, hit: plateAt(find, p.x, p.z) }))
-      .filter(({ hit }) => {
-        if (!hit) return true;
-        const lum = luminance(hit.color);
-        const notBrighter = hit.color.r <= DIRT.r + 1e-3 && hit.color.g <= DIRT.g + 1e-3 && hit.color.b <= DIRT.b + 1e-3;
-        return !(lum < dirtLum * 0.99 && lum >= dirtLum * 0.5 && notBrighter);
-      })
-      .map(({ p, hit }) => `${p.x.toFixed(2)},${p.z.toFixed(2)} ${hit ? srgb255(hit.color).join("/") : "판 없음"}`);
-    expect(wrongEdge.slice(0, 10)).toEqual([]);
-  });
-
-  it("P5 길 색은 계절과 관계없이 같다(명세 2): 봄·여름·가을·겨울에 같은 자리의 판 색이 같다", async () => {
-    const drawn = await draw("summer");
-    const { inner, edge } = samplePoints(loadShapes());
     const points = [...inner.slice(0, 40), ...edge.slice(0, 40)];
-    const colorsNow = () => {
+    const looksNow = () => {
       const find = bucketed(trianglesOf(plates(drawn)));
       return points.map((p) => {
-        const hit = plateAt(find, p.x, p.z);
-        return hit ? srgb255(hit.color).join("/") : "판 없음";
+        const hits = hitsAt(find, p.x, p.z);
+        const top = topHit(hits);
+        return top ? `${srgb255(top.color).join("/")} ${opacityOf(hits).toFixed(3)} ${top.map}` : "판 없음";
       });
     };
-    const summer = colorsNow();
+    const summer = looksNow();
     expect(summer.filter((c) => c === "판 없음")).toEqual([]);
     for (const season of ["autumn", "winter", "spring"] as Season[]) {
       await setSeason(drawn, season);
-      expect({ season, colors: colorsNow() }).toEqual({ season, colors: summer });
+      expect({ season, looks: looksNow() }).toEqual({ season, looks: summer });
     }
   });
 });

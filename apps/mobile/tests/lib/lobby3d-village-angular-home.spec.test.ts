@@ -18,6 +18,21 @@
 // N6은 작업 101(마을 땅 무늬) 11 결정(사용자 2026-11-17 "N6을 고침 (추천)")으로 qa가 고쳤다. 작업 101이 새 모델(village-flowers.glb)을 넣으며
 // 모델마다 출처를 적는 규칙대로 CREDITS.md에 그 줄을 더하므로, "다른 줄은 기준 커밋과 같다" 대신 "기준 커밋의 다른 줄은 차례 그대로 모두 있고,
 // 더해진 줄은 기준 커밋에 없던 모델 파일(.glb/.gltf)의 표 줄뿐이다"로 본다. lobby-village.glb 줄에 대한 단언은 그대로다.
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"와 바뀌는 동작 3-1로 qa가 고쳤다(106 qa 보고 02-qa-tests.md).
+// 106은 라룹이 집을 나무 프레임 집 모델(C:\WriteLoop-asset\마을-건물\라룹이-집\단계\09-나무-프레임\laroopi-house-angular-app3.glb)로 바꾸고
+// 땅 가로를 4칸으로 줄여(문 x 35.5·땅 앞 z 12 그대로, 깊이는 모델 비율로 약 3.3칸) 집 전체를 2/3로 줄이며, 카페·도서관·길·나무·가구점도 바꾼다.
+// 그 모델에서 잰 값은 tests/__fixtures__/village-shops-106.ts 머리말에 있다(크기 상자 비율은 이 파일의 옛 모델과 같다: 가로:높이 1.31512, 가로:깊이 1.20000).
+// - N1: 삼각형 10000·옛 색 그림 → 10852·나무 프레임 집의 색 그림(sha256 HOME_MODEL.colorMapSha256). N2(비율)는 그대로다.
+// - N3: 벽 가로 6·깊이 약 4.99·높이 약 4.9 → 벽 가로 4(±0.01)·깊이 3.3242(3.30~3.35)·높이 3.2712(3.24~3.30). 가리기 높이 5 이하는 그대로다.
+// - N4: 땅 [32.5, 7.0, 38.5, 12] → 가로 4칸·땅 앞 z 12·깊이 약 3.3칸(3.0~3.6)이고, 벽 뒷면이 땅 뒤 z0 언저리(±0.1)다.
+// - N5: 머리말의 집 모델 경로 → 나무 프레임 집 경로(qa 가정: 100이 정한 "머리말에 넣을 집 모델 경로를 적는다"를 그대로 따른다. 106 명세에는 머리말 말이 없다).
+// - S2: 집 땅 말고 → 106이 바꾸는 건물·길·나무 말고(집의 땅 밖 값과 가구점의 id·이름·땅·층수는 그대로 본다).
+// - S3: 막힌 칸 전체 → 106이 바꾸는 곳 밖의 막힌 칸(106 기준 커밋 c728f00에서 잰 개수·sha256).
+// - N6(106 03-main-decision.md, 사용자 2026-11-18 "고치고 N6도 고침 (추천)"): 106이 CREDITS.md의 lobby-village.glb 줄을 실제대로 고친다
+//   (Kenney는 소품·길·울타리·풍차, 건물 셋은 WriteLoop이 Tripo로 만든 모델). 그래서 "라룹이 집을 각진 벽돌집으로 적고 Kenney 부분·나머지 칸이 기준 커밋과 같다" 대신
+//   "마을 모델 줄이 하나이고 Kenney와 CC0, 건물 셋(라룹이 집·가구점·옷집)이 적혀 있다"로 본다. 다른 줄은 기준 커밋 그대로 차례대로 있고 더해진 줄은 새 모델 파일의
+//   출처 줄뿐이라는 단언(101 11 결정)은 그대로다.
+// - S4(스크립트 코드가 기준 커밋과 같다)는 뺐다: 106이 가게 모델을 놓으려고 스크립트를 고친다. 집을 땅에 맞춰 놓는 방법은 N3·S1(벽 가로 = 땅 가로, 벽 가운데·앞면)이 본다.
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -38,6 +53,7 @@ import {
   worldPoints,
   type Glb
 } from "../__fixtures__/village-glb-098";
+import { HOME_DEPTH, HOME_DEPTH_TOLERANCE, HOME_FRONT_Z, HOME_MODEL, HOME_WIDTH, solidOutsideChanged } from "../__fixtures__/village-shops-106";
 
 /** 작업 100의 기준 커밋(명세 첫 줄). */
 const BASE = "fcd7e6d";
@@ -46,20 +62,18 @@ const nowText = (path: string) => readFileSync(join(REPO, path), "utf8").replace
 const sha256 = (data: Buffer | string) => createHash("sha256").update(data).digest("hex");
 
 const SCRIPT_PATH = "scripts/lobby3d/build-village.py";
-/** 명세 1의 넣을 모델 경로(스크립트 머리말에 적을 경로). */
-const NEW_MODEL_PATH = "C:\\WriteLoop-asset\\마을-건물\\라룹이-집\\단계\\07-앱용-불빛\\laroopi-house-angular-app.glb";
-/** 지금 머리말에 적힌 옛 경로(2026-11-17 폴더 정리로 없어졌다). */
-const OLD_MODEL_PATH_TAIL = "창문-불빛\\laroopi-house-app-b.glb";
-/** 넣을 모델의 색 그림(JPEG 1024) 바이트의 sha256. */
-const NEW_COLOR_MAP_SHA256 = "6deb7265d547cc158e73fa8859282bf9200e88bbc7bc0cda2c27704bb5a96c4d";
+/** 명세 1의 넣을 모델 경로(스크립트 머리말에 적을 경로). 106 명세 3-1의 나무 프레임 집 경로로 고쳤다. */
+const NEW_MODEL_PATH = "C:\\WriteLoop-asset\\마을-건물\\라룹이-집\\단계\\09-나무-프레임\\laroopi-house-angular-app3.glb";
+/** 옛 경로(106 전에 머리말에 적혀 있던 100의 각진 벽돌집). */
+const OLD_MODEL_PATH_TAIL = "07-앱용-불빛\\laroopi-house-angular-app.glb";
+/** 넣을 모델의 색 그림(JPEG 1024) 바이트의 sha256(106: 나무 프레임 집). */
+const NEW_COLOR_MAP_SHA256 = HOME_MODEL.colorMapSha256;
 /** 넣을 모델의 크기 상자 비율. */
 const NEW_MODEL_RATIO = { widthToHeight: 0.9810789823532104 / 0.7459999918937683, widthToDepth: 0.9810789823532104 / 0.81756591796875 };
-/** 명세 2의 새 집 땅. */
-const NEW_HOME_RECT = [32.5, 7.0, 38.5, 12];
 const DOOR_X = 35.5;
 const FRONT_Z = 12;
-/** 막힌 칸(개수와 정렬한 "열,행" 목록을 줄바꿈으로 이은 것의 sha256). 099 qa 테스트 K4가 기준 커밋 1144c47에서 잰 값이고, fcd7e6d까지 배치 파일은 그대로다. */
-const SOLID = { count: 689, sha256: "f2c256b91d2a666df265b1c7f71e8103e4bbd33cde4a122094ea94d46682166b" };
+/** 막힌 칸 가운데 106이 바꾸는 곳 밖의 칸(개수와 정렬한 "열,행" 목록을 줄바꿈으로 이은 것의 sha256). 106 기준 커밋 c728f00에서 잰 값. */
+const SOLID = { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" };
 
 function homeBuilding() {
   const found = VILLAGE_BUILDINGS.find((b) => b.id === "home");
@@ -109,10 +123,10 @@ function villageCreditLine(text: string): string {
 }
 
 describe("[spec] 100 바뀔 동작: 각진 집 모델, 땅, 스크립트 머리말, 출처", () => {
-  it("N1 집 모델(명세 1): 마을 모델의 bld-home은 넣을 각진 집이다. 삼각형 10000개이고, 쓰는 색 그림 한 장의 바이트가 넣을 모델의 색 그림과 같다", () => {
+  it("N1 집 모델(명세 1, 106 명세 3-1): 마을 모델의 bld-home은 넣을 나무 프레임 집이다. 삼각형 10852개이고, 쓰는 색 그림 한 장의 바이트가 넣을 모델의 색 그림과 같다", () => {
     const glb = nowVillageGlb();
     const nodes = homeMeshNodes(glb);
-    expect(nodes.reduce((sum, i) => sum + triangleCount(glb, i), 0)).toBe(10000);
+    expect(nodes.reduce((sum, i) => sum + triangleCount(glb, i), 0)).toBe(HOME_MODEL.triangles);
     const images = new Set<number>();
     for (const i of nodes) {
       for (const p of glb.json.meshes[glb.json.nodes[i].mesh!].primitives) {
@@ -136,23 +150,25 @@ describe("[spec] 100 바뀔 동작: 각진 집 모델, 땅, 스크립트 머리�
     expect({ widthToDepth, same: near(widthToDepth, NEW_MODEL_RATIO.widthToDepth) }).toEqual({ widthToDepth, same: true });
   });
 
-  it("N3 크기(명세 2): 벽 가로는 6칸(땅 가로, ±0.01), 벽 깊이는 약 4.99칸(4.97~5.01), 높이는 약 4.9칸(4.85~4.95)이고 가리기 계산 높이 5칸을 넘지 않는다", () => {
+  it("N3 크기(106 명세 3-1): 벽 가로는 4칸(땅 가로, ±0.01), 벽 깊이는 약 3.32칸(3.30~3.35), 높이는 약 3.27칸(3.24~3.30)이고 가리기 계산 높이 5칸을 넘지 않는다", () => {
     const { box, wall } = homeShape();
     const wallWidth = wall.maxX - wall.minX;
     const wallDepth = wall.maxZ - wall.minZ;
     const height = box.maxY - box.minY;
-    expect({ wallWidth, ok: Math.abs(wallWidth - 6) <= 0.01 }).toEqual({ wallWidth, ok: true });
-    expect({ wallDepth, ok: wallDepth >= 4.97 && wallDepth <= 5.01 }).toEqual({ wallDepth, ok: true });
-    expect({ height, ok: height >= 4.85 && height <= 4.95 }).toEqual({ height, ok: true });
+    expect({ wallWidth, ok: Math.abs(wallWidth - HOME_WIDTH) <= 0.01 }).toEqual({ wallWidth, ok: true });
+    expect({ wallDepth, ok: wallDepth >= 3.3 && wallDepth <= 3.35 }).toEqual({ wallDepth, ok: true });
+    expect({ height, ok: height >= 3.24 && height <= 3.3 }).toEqual({ height, ok: true });
     expect(homeBuilding().height).toBe(5);
     expect(height).toBeLessThanOrEqual(homeBuilding().height);
   });
 
-  it("N4 땅(명세 2): 배치 파일과 앱 데이터의 라룹이 집 땅이 [32.5, 7.0, 38.5, 12]이고, 벽 뒷면이 새 땅 뒤 z 7.0 언저리(6.98~7.05)다", () => {
-    expect(layoutHome().rect).toEqual(NEW_HOME_RECT);
-    expect([...homeBuilding().rect]).toEqual(NEW_HOME_RECT);
+  it("N4 땅(106 명세 3-1): 배치 파일과 앱 데이터의 라룹이 집 땅이 같고 가로 4칸·땅 앞 z 12·깊이 약 3.3칸(3.0~3.6)이며, 벽 뒷면이 새 땅 뒤 z0 언저리(±0.1)다", () => {
+    const [x0, z0, x1, z1] = homeBuilding().rect;
+    expect([...layoutHome().rect]).toEqual([x0, z0, x1, z1]);
+    expect({ width: x1 - x0, front: z1 }).toEqual({ width: HOME_WIDTH, front: HOME_FRONT_Z });
+    expect({ depth: z1 - z0, ok: Math.abs(z1 - z0 - HOME_DEPTH) <= HOME_DEPTH_TOLERANCE }).toEqual({ depth: z1 - z0, ok: true });
     const { wall } = homeShape();
-    expect({ back: wall.minZ, ok: wall.minZ >= 6.98 && wall.minZ <= 7.05 }).toEqual({ back: wall.minZ, ok: true });
+    expect({ back: wall.minZ, z0, ok: Math.abs(wall.minZ - z0) <= 0.1 }).toEqual({ back: wall.minZ, z0, ok: true });
   });
 
   it("N5 스크립트(명세 1): build-village.py 머리말의 집 모델 경로가 새 파일이고, 옛 경로는 없다", () => {
@@ -161,22 +177,12 @@ describe("[spec] 100 바뀔 동작: 각진 집 모델, 땅, 스크립트 머리�
     expect(header).not.toContain(OLD_MODEL_PATH_TAIL);
   });
 
-  it("N6 출처 기록(명세 3): CREDITS.md의 lobby-village.glb 줄이 라룹이 집을 각진 벽돌집으로 적고(라룹이 집·Tripo 출처 그대로), 그 줄의 Kenney 부분과 라이선스 칸은 기준 커밋과 같고, 다른 줄은 기준 커밋 그대로 차례대로 있으며 더해진 줄은 새 모델 파일의 출처 줄뿐이다", () => {
+  it("N6 출처 기록(106 03 결정): CREDITS.md의 lobby-village.glb 줄이 하나이고 Kenney와 CC0, 건물 셋(라룹이 집·가구점·옷집)이 적혀 있으며, 다른 줄은 기준 커밋 그대로 차례대로 있고 더해진 줄은 새 모델 파일의 출처 줄뿐이다", () => {
     const now = nowText(CREDITS_PATH);
     const base = baseText(CREDITS_PATH);
     const line = villageCreditLine(now);
-    const cells = line.split("|");
-    const baseCells = villageCreditLine(base).split("|");
-    expect(cells).toHaveLength(baseCells.length);
-    expect(cells[2]).toMatch(/각진[^|.]*벽돌집/);
-    expect(cells[2]).toMatch(/라룹이 집/);
-    expect(cells[2]).toContain("Tripo");
-    // 라룹이 집 설명 앞(Kenney 부품·스크립트·밤 불빛 판)은 그대로다
-    const kenneyPart = "밤 불빛 판은 새로 만들었다.";
-    const baseKenney = baseCells[2].slice(0, baseCells[2].indexOf(kenneyPart) + kenneyPart.length);
-    expect(baseKenney.length).toBeGreaterThan(kenneyPart.length);
-    expect(cells[2].startsWith(baseKenney)).toBe(true);
-    expect([cells[0], cells[1], cells[3], cells[4]]).toEqual([baseCells[0], baseCells[1], baseCells[3], baseCells[4]]);
+    const missing = ["Kenney", "CC0", "라룹이 집", "가구점", "옷집"].filter((word) => !line.includes(word));
+    expect({ line, missing }).toEqual({ line, missing: [] });
     const others = (text: string) => text.split("\n").filter((l) => !l.includes("`lobby-village.glb`"));
     // 기준 커밋의 다른 줄은 차례 그대로 모두 있고, 그 사이에 더해진 줄은 기준 커밋에 없던 모델 파일의 표 줄(| `이름.glb` | 출처 | 라이선스 |)뿐이다
     const baseLines = others(base);
@@ -206,25 +212,26 @@ describe("[spec] 100 그대로 둘 동작: 집 자리, 배치 파일, 막힌 칸
     expect({ door: home.door, front: home.rect[3], floors: home.floors, model: home.model }).toEqual({ door: DOOR_X, front: FRONT_Z, floors: 1, model: "laroopi-house" });
   });
 
-  it("S2 배치 파일에서 라룹이 집 땅(rect) 말고는 기준 커밋과 같다(집의 id·이름·층수·모델·문, 다른 건물, 분수·가로등·나무·길·풍차·마을 크기 등)", () => {
+  it("S2 배치 파일에서 106이 바꾸는 건물·길·나무와 집 땅(rect) 말고는 기준 커밋과 같다(집의 id·이름·층수·모델·문, 가구점의 id·이름·땅·층수, 분수·가로등·풍차·마을 크기 등)", () => {
     type Layout = typeof LAYOUT & { _comment?: string };
-    const strip = (layout: Layout) => ({
-      ...layout,
-      buildings: layout.buildings.map((b) => (b.id === "home" ? { ...b, rect: "home-rect" } : b))
-    });
+    const strip = (layout: Layout) => {
+      const { buildings, paths: _p, trees: _t, ...rest } = layout;
+      const home = buildings.find((b) => b.id === "home");
+      const shop = buildings.find((b) => b.id === "furnitureShop");
+      return {
+        rest,
+        home: home ? { ...home, rect: "home-rect" } : null,
+        shop: shop ? { id: shop.id, label: shop.label, rect: shop.rect, floors: shop.floors } : null
+      };
+    };
     const base = JSON.parse(baseText(LAYOUT_PATH)) as Layout;
-    expect(strip(LAYOUT as Layout)).toEqual(strip(base));
+    const now = strip(LAYOUT as Layout);
+    const before = strip(base);
+    expect({ ...now, rest: { ...now.rest, _comment: undefined } }).toEqual({ ...before, rest: { ...before.rest, _comment: undefined } });
   });
 
-  it("S3 막힌 칸은 바뀌지 않는다(명세 2: 땅 z 7.0과 7.4 모두 z 7 줄부터 막는다): 개수 689와 목록의 sha256이 기준 커밋 값과 같다", () => {
-    const solid = [...VILLAGE_SOLID_TILES].sort();
-    expect({ count: solid.length, sha256: sha256(solid.join("\n")) }).toEqual(SOLID);
-  });
-
-  it("S4 스크립트(명세 1 \"지금처럼 집 모델을 인자로 받아 땅에 맞춰 놓는다\"): build-village.py에서 머리말(맨 앞 # 줄들) 뒤의 코드는 기준 커밋과 같다(줄 끝 말고)", () => {
-    const now = splitScript(nowText(SCRIPT_PATH)).code;
-    const base = splitScript(baseText(SCRIPT_PATH)).code;
-    expect(base).toContain("def place_model(b, path):");
-    expect(sha256(now)).toBe(sha256(base));
+  it("S3 막힌 칸 가운데 106이 바꾸는 곳(옛 라룹이 집·카페·도서관·옷집 땅, 옮긴 나무) 밖은 바뀌지 않는다: 개수 587과 목록의 sha256이 기준 커밋 값과 같다", () => {
+    expect(VILLAGE_SOLID_TILES.size).toBeGreaterThan(0);
+    expect(solidOutsideChanged()).toEqual(SOLID);
   });
 });

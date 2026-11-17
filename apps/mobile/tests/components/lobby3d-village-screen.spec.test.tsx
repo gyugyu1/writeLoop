@@ -6,6 +6,8 @@
 // 시험판 '구역' 버튼의 글과 accessibilityState.selected, engine.ts의 applyArea·MARKS·SOLID_TILES·ROOM, village.ts의 데이터)을 알려고만 읽었다.
 // 3D 그리기는 Jest에서 돌지 않으므로 가짜로 바꾸고, 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르게 한다(기존 화면 시험과 같다).
 // 시계는 가짜 시계(2026-06-21 12:30)이고, 프레임은 0.05초씩 시계와 함께 넣는다.
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(카페·도서관 장소·말풍선을 보는 테스트는 빼거나 옷집으로 바꾼다)로 qa가 고쳤다(106 qa 보고 02-qa-tests.md).
+// 마을 이름표: 넷(라룹이 집·가구점·카페·도서관) → 셋(라룹이 집·가구점·옷집). D2는 마을에서 카페·도서관 이름표가 없는 것도 본다. 그 밖의 단언은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import DevLobby3dRoute from "@/app/dev/lobby-3d";
@@ -58,7 +60,9 @@ const NOW = new Date(2026, 5, 21, 12, 30);
 const devGlobal = globalThis as unknown as { __DEV__: boolean };
 const originalDev = devGlobal.__DEV__;
 
-const VILLAGE_LABELS = ["라룹이 집", "가구점", "카페", "도서관"];
+const VILLAGE_LABELS = ["라룹이 집", "가구점", "옷집"];
+/** 106이 빼는 장소의 이름표. */
+const REMOVED_VILLAGE_LABELS = ["카페", "도서관"];
 const ROOM_ONLY_LABELS = ["오늘의 질문", "생각 창가", "일기 책상", "밖으로"];
 
 // ---------- 도우미 ----------
@@ -177,7 +181,7 @@ describe("[spec] 개발 화면에서 마을 열기(D1~D8)", () => {
     expect(areaButton("마을").props.accessibilityState?.selected ?? false).toBe(false);
   });
 
-  it("D2: '마을'을 누르면 '마을'이 선택됨이고, 마을 이름표 넷이 보이며 방 이름표는 없다", async () => {
+  it("D2: '마을'을 누르면 '마을'이 선택됨이고, 마을 이름표 셋이 보이며 방 이름표와 106이 뺀 카페·도서관 이름표는 없다", async () => {
     await renderDev();
     await openPanel();
     const recordsInRoom = textCount("학습 기록");
@@ -187,6 +191,7 @@ describe("[spec] 개발 화면에서 마을 열기(D1~D8)", () => {
     expect(areaButton("방").props.accessibilityState?.selected ?? false).toBe(false);
     for (const label of VILLAGE_LABELS) expect({ label, count: textCount(label) }).toEqual({ label, count: 1 });
     for (const label of ROOM_ONLY_LABELS) expect({ label, count: textCount(label) }).toEqual({ label, count: 0 });
+    for (const label of REMOVED_VILLAGE_LABELS) expect({ label, count: textCount(label) }).toEqual({ label, count: 0 });
     // "학습 기록"은 아래 메뉴에도 있어, 방 이름표 몫 하나만 빠진다
     expect(textCount("학습 기록")).toBe(recordsInRoom - 1);
   });

@@ -11,6 +11,9 @@
 // 마을 모델 상태(mockVillage.mode)가 "ready"면 구역이 마을로 바뀔 때마다 onVillageReady를, "failed"면 onVillageFailed를 부른다. "pending"이면 부르지 않는다
 // (테스트가 나중에 부른다).
 // 프레임은 0.05초씩, 가짜 시계·타이머와 함께 넣는다. 구역이 바뀌는 때를 재야 하는 곳은 프레임마다 따로 act로 감싸 화면이 그 사이에 다시 그려지게 한다.
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(카페·도서관 장소·말풍선을 보는 테스트는 빼거나 옷집으로 바꾼다)로 qa가 고쳤다(106 qa 보고 02-qa-tests.md).
+// 닫힌 건물 표: 카페·도서관을 빼고 옷집("옷집은 곧 열려요", 106 명세 4)을 더했다. 옷집 id는 명세에 없어 이름 "옷집"으로 찾는다. 마을 이름표: 넷 → 셋(라룹이 집·가구점·옷집).
+// C1~C4의 단언은 그대로다(장소를 찾지 못하면 그 테스트가 실패한다).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { AccessibilityInfo, Animated, StyleSheet } from "react-native";
@@ -19,6 +22,7 @@ import type { Lobby3dCanvasProps } from "@/components/lobby3d/lobby3d-canvas";
 import Lobby3dScreen, { type Lobby3dScreenProps } from "@/components/lobby3d/lobby3d-screen";
 import { MARKS, applyArea, isFree, type FloorPoint, type PointerHit } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_PLACES, VILLAGE_SOLID_TILES, VILLAGE_START, type VillageBuildingId } from "@/lib/lobby3d/village";
+import { clothingId } from "../__fixtures__/village-shops-106";
 
 const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
 const mockVillage: { mode: "ready" | "pending" | "failed" } = { mode: "ready" };
@@ -62,14 +66,19 @@ const NOW = new Date(2026, 5, 21, 12, 30);
 const DOOR_PROMPT = "밖으로 나가 볼까?";
 const OLD_DOOR_MESSAGE = "마을은 다음 업데이트에서 열려요";
 const HOME_PROMPT = "집으로 들어갈까?";
-const CLOSED: Record<Exclude<VillageBuildingId, "home">, { label: string; prompt: string }> = {
+const CLOSED: Record<string, { label: string; prompt: string }> = {
   furnitureShop: { label: "가구점", prompt: "가구점은 곧 열려요" },
-  cafe: { label: "카페", prompt: "카페는 곧 열려요" },
-  library: { label: "도서관", prompt: "도서관은 곧 열려요" }
+  [clothingId()]: { label: "옷집", prompt: "옷집은 곧 열려요" }
 };
+/** 마을 장소(없으면 그 테스트가 실패한다). */
+function placeOf(id: string) {
+  const place = VILLAGE_PLACES[id as VillageBuildingId];
+  expect({ id, found: place !== undefined }).toEqual({ id, found: true });
+  return place;
+}
 const LOADING = "마을로 나가는 중…";
 const FAILED = "마을을 불러오지 못했어요. 잠시 뒤 다시 나가 주세요";
-const VILLAGE_LABELS = ["라룹이 집", "가구점", "카페", "도서관"];
+const VILLAGE_LABELS = ["라룹이 집", "가구점", "옷집"];
 const ROOM_ONLY_LABELS = ["오늘의 질문", "생각 창가", "일기 책상", "밖으로"];
 /** 방 입구 발판 안쪽 서는 자리. */
 const ROOM_ENTRY: FloorPoint = { x: 4.0, z: 10.5 };
@@ -482,7 +491,7 @@ describe("[spec] 닫힌 건물(C1~C4)", () => {
   it.each(Object.entries(CLOSED))("C1~C3 화면: %s 문 앞에 도착하면 그 말풍선 글이 보이고, 그 말풍선에 버튼이 없다", async (id, { prompt }) => {
     await renderDev();
     await goOut();
-    await walkTo(VILLAGE_PLACES[id as VillageBuildingId].approach[0], id as VillageBuildingId);
+    await walkTo(placeOf(id).approach[0], id as VillageBuildingId);
     expect(screen.getByText(prompt)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "들어가기" })).toBeNull();
     expect(screen.queryByRole("button", { name: "나가기" })).toBeNull();
@@ -495,7 +504,7 @@ describe("[spec] 닫힌 건물(C1~C4)", () => {
   it.each(Object.entries(CLOSED))("C1~C3 상태: %s 문 앞에 도착하면 말풍선 글이 정확히 그 안내이고 버튼 값은 null이다", async (id, { prompt }) => {
     await renderDev();
     await goOut();
-    await walkTo(VILLAGE_PLACES[id as VillageBuildingId].approach[0], id as VillageBuildingId);
+    await walkTo(placeOf(id).approach[0], id as VillageBuildingId);
     const snap = sim().snapshot(Date.now());
     expect(snap.bubbleText).toBe(prompt);
     expect(snap.bubbleButton).toBeNull();
@@ -504,7 +513,7 @@ describe("[spec] 닫힌 건물(C1~C4)", () => {
   it.each(Object.entries(CLOSED))("C4: %s 문 앞에 도착한 뒤 2초가 지나도 마을 그대로이고 라룹이는 그 서는 자리에 그대로다", async (id) => {
     await renderDev();
     await goOut();
-    const spot = VILLAGE_PLACES[id as VillageBuildingId].approach[0];
+    const spot = placeOf(id).approach[0];
     await walkTo(spot, id as VillageBuildingId);
     const before = pos();
     await steps(2);

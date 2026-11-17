@@ -10,6 +10,12 @@
 //   GLTFLoader처럼 프리미티브가 둘 이상인 메시 노드는 그 이름의 묶음 아래 메시 여럿, 하나면 그 이름의 메시 하나로 만든다).
 // - 가짜 useFrame은 마지막으로 받은 프레임 함수를 적어 두고, 테스트가 delta 0.1초로 부른다.
 // - "집의 메시" = 장면 뿌리의 bld-home 묶음 아래 메시. "다른 건물" = bld-furnitureShop·bld-cafe·bld-library 아래 메시.
+//
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(카페·도서관 건물, 마을 모델 묶음 이름)와 바뀌는 동작 5(가게 유리는 반투명, 누르기 대상이 아님)로
+// qa가 고쳤다(106 qa 보고 02-qa-tests.md):
+// - "다른 건물": bld-furnitureShop·bld-cafe·bld-library → bld-furnitureShop·bld-<옷집 id>(옷집 id는 명세에 없어 이름 "옷집"으로 찾는다).
+// - R2·R4에서 다른 건물의 메시 가운데 모델의 유리 재질(이름이 glass로 시작)을 쓰는 메시는 뺀다(유리는 106 명세 5로 반투명하게 그린다. 유리는 106 qa 테스트
+//   lobby3d-village-shops-glass.spec.test.tsx가 본다). 집과 다른 건물의 나머지 메시에 대한 단언은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -19,6 +25,7 @@ import type { DaylightState } from "@/components/lobby3d/lobby3d-daylight";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import { VILLAGE_BUILDINGS, VILLAGE_START, occludingBuildings } from "@/lib/lobby3d/village";
 import { accessorValues, nowVillageGlb, sceneRoots, type Glb } from "../__fixtures__/village-glb-098";
+import { GLASS_MATERIAL, clothingId } from "../__fixtures__/village-shops-106";
 
 type FramePart = (state: unknown, delta: number) => void;
 
@@ -150,7 +157,20 @@ function meshesUnder(root: THREE.Object3D, name: string): THREE.Mesh[] {
 }
 
 const materialsOf = (meshes: THREE.Mesh[]) => meshes.flatMap((m) => (Array.isArray(m.material) ? m.material : [m.material]));
-const OTHER_BUILDINGS = ["bld-furnitureShop", "bld-cafe", "bld-library"];
+const OTHER_BUILDINGS = ["bld-furnitureShop", `bld-${clothingId()}`];
+
+/** 모델의 유리 재질(이름이 glass로 시작)을 쓰는 원본 메시의 도형(그린 장면은 원본을 복제해 도형을 함께 쓴다). */
+function glassGeometries(): Set<THREE.BufferGeometry> {
+  const out = new Set<THREE.BufferGeometry>();
+  (mockGltf.value as { scene: THREE.Object3D }).scene.traverse((o) => {
+    if (o instanceof THREE.Mesh && GLASS_MATERIAL.test((o.material as THREE.Material).name)) out.add(o.geometry);
+  });
+  return out;
+}
+const notGlass = (meshes: THREE.Mesh[]) => {
+  const glass = glassGeometries();
+  return meshes.filter((m) => !glass.has(m.geometry));
+};
 
 beforeEach(() => {
   mockFrame.current = null;
@@ -180,7 +200,7 @@ describe("[spec] 098 그대로 둘 동작: 마을 모델 그리기와 라룹이 
     });
     const want = { lambert: true, colorMapFromModel: true, color: 0xffffff, side: THREE.FrontSide };
     for (const m of materialsOf(home)) expect(look(m)).toEqual(want);
-    for (const name of OTHER_BUILDINGS) for (const m of materialsOf(meshesUnder(root, name))) expect({ name, ...look(m) }).toEqual({ name, ...want });
+    for (const name of OTHER_BUILDINGS) for (const m of materialsOf(notGlass(meshesUnder(root, name)))) expect({ name, ...look(m) }).toEqual({ name, ...want });
   });
 
   it("R3 집을 누르면: 집의 메시가 모두 누르기 판정 대상(pickTargets)에 들어 있다", async () => {
@@ -201,7 +221,7 @@ describe("[spec] 098 그대로 둘 동작: 마을 모델 그리기와 라룹이 
     const homeMaterials = materialsOf(meshesUnder(view.root, "bld-home"));
     expect(homeMaterials.length).toBeGreaterThan(0);
     for (const m of homeMaterials) expect({ opacity: m.opacity, transparent: m.transparent }).toEqual({ opacity: 0.35, transparent: true });
-    for (const name of OTHER_BUILDINGS) for (const m of materialsOf(meshesUnder(view.root, name))) expect({ name, opacity: m.opacity, transparent: m.transparent }).toEqual({ name, opacity: 1, transparent: false });
+    for (const name of OTHER_BUILDINGS) for (const m of materialsOf(notGlass(meshesUnder(view.root, name)))) expect({ name, opacity: m.opacity, transparent: m.transparent }).toEqual({ name, opacity: 1, transparent: false });
     view.sim.x = VILLAGE_START.x;
     view.sim.z = VILLAGE_START.z;
     await frames(10);

@@ -11,6 +11,10 @@
 // 103은 바깥 모서리 반지름을 약 1.0칸, 안쪽 모서리를 약 0.7칸으로 키운다(099는 0.8·0.5). 범위를 정하는 방법(반지름 "약" ±0.1칸과 굽이 ±0.1칸)은 그대로다.
 // 굽이가 있어 이 범위로는 옛 반지름과 새 반지름을 가르지 못한다. 새 반지름은 103 테스트 lobby3d-village-path-corners.spec.test.ts(E1)가 굽이 없이 본다.
 //
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(카페·도서관으로 가던 길을 보는 테스트)로 qa가 S10의 길 칸 수와 모서리 수를 고쳤다(106 qa 보고 02-qa-tests.md).
+// 106은 카페·도서관으로 가던 흙길을 빼고 광장 동쪽 길을 옷집 문 앞까지 [42, 22, 50, 24]로 줄인다. 그 길 칸(tests/__fixtures__/village-shops-106.ts의 EXPECTED_PATH_RECTS)은
+// 148칸, 바깥 모서리 12, 안쪽 모서리 12다(지금 248칸, 18, 16). 단언하는 규칙(길 칸 안팎, 분수, 모서리 깎기·채우기)은 그대로다.
+//
 // 명세의 값과 이 테스트가 받는 범위:
 // - 바깥 모서리(볼록, 길 끝 포함) 반지름 약 1.0칸(103): 반지름 r로 깎으면 모서리 점에서 길 쪽 대각선으로 r(√2−1)만큼 가야 길 안이 된다(1.0이면 0.414).
 //   "약"(0.9~1.1칸 → 0.373~0.456)과 굽이(±0.1)를 생각해 0.27~0.56칸에서 길 안이 되면 받는다(099의 0.8칸 때는 0.22~0.45칸).
@@ -255,7 +259,7 @@ describe("[spec] 099 바뀔 동작: 둥근 길 경계 함수(명세 1)", () => {
   it("S10 배치 파일의 길: 길 칸 가운데는 모두 길 안이고, 길이 아닌 칸 가운데는 길 밖이며, 분수 자리는 길이 아니다. 바깥 모서리는 깎이고 안쪽 모서리는 채워졌다", () => {
     const shapes = load()(LAYOUT_PATHS);
     const tiles = tilesOf(LAYOUT_PATHS);
-    expect(tiles.size).toBe(248);
+    expect(tiles.size).toBe(148);
     expect(uncoveredTileCenters(LAYOUT_PATHS, shapes)).toEqual([]);
     const wrong: string[] = [];
     for (let c = 0; c < LAYOUT.width; c += 1) {
@@ -266,7 +270,7 @@ describe("[spec] 099 바뀔 동작: 둥근 길 경계 함수(명세 1)", () => {
     expect(wrong).toEqual([]);
     expect(inShapes(shapes, { x: LAYOUT.fountain.x, z: LAYOUT.fountain.z })).toBe(false);
     const { convex, concave } = cornersOf(tiles);
-    expect({ convex: convex.length, concave: concave.length }).toEqual({ convex: 18, concave: 16 });
+    expect({ convex: convex.length, concave: concave.length }).toEqual({ convex: 12, concave: 12 });
     // 바깥 모서리: 모서리에서 길 쪽 대각선 0.07칸(각 축 0.05칸, 칸 안) 점이 깎여 길 밖이다
     const sharp = convex.filter((c) => inShapes(shapes, alongDiagonal(c, 0.07))).map((c) => `${c.x},${c.z}`);
     expect(sharp).toEqual([]);

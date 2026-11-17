@@ -18,6 +18,14 @@
 // 바뀔 동작(구현 전 실패): C1~C3, C5~C10. 그대로 둘 동작(구현 전·뒤 통과): K1~K6.
 // K6(명세 3 자리)은 명세의 "바뀌는 동작" 목록에 있지만 문 가운데 x 35.5·앞면 z 12를 "그대로 둔다"는 항목이라, 지금 2층 집도 통과하는 그대로 둘 동작으로 나눴다.
 // 작업 100(마을 각진 집) 04 결정으로 C3에서 위 옛 모델의 크기 상자와 견주던 비율 단언을 뺐다(C3 앞 주석).
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"와 바뀌는 동작 3-1(라룹이 집을 나무 프레임 집 모델로 바꾸고 2/3 크기로 줄임)로 qa가 고쳤다
+// (106 qa 보고 02-qa-tests.md). 106은 카페·도서관을 빼고 옷집을 넣고 가구점을 모델로 바꾸며 길·나무 한 그루를 바꾼다.
+// - C1: 집 모델 삼각형 10000 → 106에 넣는 나무 프레임 집(laroopi-house-angular-app3.glb)의 10852(tests/__fixtures__/village-shops-106.ts 머리말).
+// - C3: 가로 약 6.5칸·높이 약 5칸 → 2/3 크기(그 모델을 벽 가로 4칸에 맞추면 크기 상자 가로 4.302, 높이 3.271): 가로 4.2~4.4, 높이 3.2~3.35.
+// - C7: 집 바닥이 닿아 막힌 칸 x 32~38, z 7~11 → 줄인 집의 가운데 x 33~37, z 9~11(땅 가로 4칸, 깊이 약 3.3칸). 옛 땅 밖 줄(x 31·39 열, z 6 줄)은 그대로다.
+// - K2: 라룹이 집 말고 → 106이 바꾸는 건물·길·나무 말고(가구점의 id·이름·땅·층수는 그대로 본다).
+// - K3: 옛 라룹이 집 땅 밖 → 그 밖에서 106이 바꾸는 곳(카페·도서관·옷집 땅, 옮긴 나무)도 뺀 막힌 칸(106 기준 커밋 c728f00에서 잰 개수·sha256).
+// - K4·K5: 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths)을 빼고 견준다. 집 밖 창 불빛 판이 그대로인지는 뺐다(106이 그 창이 있던 조립 건물을 모델로 바꾸거나 뺀다).
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -43,11 +51,12 @@ import {
   worldPoints,
   type Glb
 } from "../__fixtures__/village-glb-098";
+import { HOME_MODEL, changedBy106, solidOutsideChanged } from "../__fixtures__/village-shops-106";
 
 /** 지금(기준 커밋) 라룹이 집 땅. */
 const OLD_HOME_RECT = [31, 6, 40, 12] as const;
-/** 넣을 모델의 삼각형 수(명세 1 "삼각형 1만"). */
-const MODEL_TRIANGLES = 10000;
+/** 넣을 모델의 삼각형 수(명세 1 "삼각형 1만"). 106 명세 3-1로 나무 프레임 집의 10852로 고쳤다. */
+const MODEL_TRIANGLES = HOME_MODEL.triangles;
 const DOOR_X = 35.5;
 const FRONT_Z = 12;
 
@@ -100,7 +109,7 @@ afterEach(() => {
 });
 
 describe("[spec] 098 바뀔 동작: 라룹이 집 모델·크기·땅·가리기·불빛·출처", () => {
-  it("C1 집 모델(명세 1): 마을 모델에 묶음 bld-home이 하나 있고, 그 아래 메시의 삼각형이 넣을 모델과 같은 10000개다", () => {
+  it("C1 집 모델(명세 1, 106 명세 3-1): 마을 모델에 묶음 bld-home이 하나 있고, 그 아래 메시의 삼각형이 넣을 모델과 같은 10852개다", () => {
     const glb = nowVillageGlb();
     expect(sceneRoots(glb).filter((i) => glb.json.nodes[i].name === "bld-home")).toHaveLength(1);
     const triangles = homeMeshNodes(glb).reduce((sum, i) => sum + triangleCount(glb, i), 0);
@@ -127,12 +136,12 @@ describe("[spec] 098 바뀔 동작: 라룹이 집 모델·크기·땅·가리기
 
   // 작업 100 04 결정(사용자 2026-11-17 "비율 확인만 빼기"): 옛 둥근 집의 크기 상자(모델 단위)와 견주던 "모델 비율 그대로 고르게 키웠다" 단언을 뺐다.
   // 집 모델을 각진 집으로 바꾸면 비율이 달라져서다. 넣은 모델 기준의 고르게 키움은 작업 100 qa 테스트 N2(lobby3d-village-angular-home.spec.test.ts)가 본다.
-  it("C3 크기(명세 2): 마을 모델 안 집은 가로 약 6.5칸(6.2~6.8), 높이 약 5칸(4.8~5.4)이다", () => {
+  it("C3 크기(106 명세 3-1: 2/3 크기): 마을 모델 안 집은 가로 약 4.3칸(4.2~4.4), 높이 약 3.27칸(3.2~3.35)이다", () => {
     const box = boxOf(homePoints(nowVillageGlb()));
     const width = box.maxX - box.minX;
     const height = box.maxY - box.minY;
-    expect({ width, inRange: width >= 6.2 && width <= 6.8 }).toEqual({ width, inRange: true });
-    expect({ height, inRange: height >= 4.8 && height <= 5.4 }).toEqual({ height, inRange: true });
+    expect({ width, inRange: width >= 4.2 && width <= 4.4 }).toEqual({ width, inRange: true });
+    expect({ height, inRange: height >= 3.2 && height <= 3.35 }).toEqual({ height, inRange: true });
   });
 
   it("C5 땅(명세 4): 배치 파일과 앱 데이터의 라룹이 집 층수가 1이다", () => {
@@ -159,7 +168,7 @@ describe("[spec] 098 바뀔 동작: 라룹이 집 모델·크기·땅·가리기
   // 가로 약 6.5칸을 문 가운데 35.5에 두면 x 32.25~38.75(6.8이면 32.1~38.9), 깊이(비율로 약 5칸)를 앞면 12에서 재면 뒤가 z 7 언저리(7.05 넘음)다.
   // 그래서 옛 땅의 왼쪽 열(x 31), 오른쪽 열(x 39), 뒷줄(z 6)은 집 밖이라 풀밭이 되고 걸어갈 수 있다(그 칸에 나무·소품은 없다).
   // 집 바닥(x 약 32.5~38.5, z 약 7.3~12)이 닿는 칸 x 32~38, z 7~11은 막힌 채다.
-  it("C7 땅(명세 4): 줄어 남는 옛 땅(x 31 열, x 39 열, z 6 줄)은 걸어갈 수 있고, 집 바닥이 닿는 칸(x 32~38, z 7~11)은 막혀 있다", () => {
+  it("C7 땅(명세 4, 106 명세 3-1): 줄어 남는 옛 땅(x 31 열, x 39 열, z 6 줄)은 걸어갈 수 있고, 줄인 집의 가운데 칸(x 33~37, z 9~11)은 막혀 있다", () => {
     const freed: string[] = [];
     for (let z = 6; z < 12; z += 1) freed.push(`31,${z}`, `39,${z}`);
     for (let x = 32; x < 39; x += 1) freed.push(`${x},6`);
@@ -169,7 +178,7 @@ describe("[spec] 098 바뀔 동작: 라룹이 집 모델·크기·땅·가리기
     });
     expect(notFree).toEqual([]);
     const open: string[] = [];
-    for (let x = 32; x < 39; x += 1) for (let z = 7; z < 12; z += 1) if (isFree(x + 0.5, z + 0.5)) open.push(`${x},${z}`);
+    for (let x = 33; x < 38; x += 1) for (let z = 9; z < 12; z += 1) if (isFree(x + 0.5, z + 0.5)) open.push(`${x},${z}`);
     expect(open).toEqual([]);
   });
 
@@ -195,8 +204,8 @@ describe("[spec] 098 바뀔 동작: 라룹이 집 모델·크기·땅·가리기
   });
 });
 
-/** 지금(기준 커밋) 막힌 칸 중 옛 라룹이 집 땅 밖의 칸: 개수와 정렬한 "열,행" 목록(줄바꿈으로 이음)의 sha256. 기준 커밋 95fc92f에서 잰 값. */
-const SOLID_OUTSIDE_HOME = { count: 654, sha256: "2ff411c1bd80d6ad2a9199e35600150da1689227232955e013a206150f62178c" };
+/** 막힌 칸 중 옛 라룹이 집 땅 밖이면서 106이 바꾸는 곳(카페·도서관·옷집 땅, 옮긴 나무) 밖의 칸: 개수와 정렬한 "열,행" 목록(줄바꿈으로 이음)의 sha256. 106 기준 커밋 c728f00에서 잰 값. */
+const SOLID_OUTSIDE_HOME = { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" };
 
 describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품, 막힌 칸, 마을 모델 묶음", () => {
   it("K6 자리(명세 3, 자리는 그대로): 집의 문 가운데(모델에서 크기 상자 가운데와 같다)가 x 35.5(±0.15)이고, 앞면이 z 12다(벽 앞면이 12면 처마 끝은 약 12.19라 11.95~12.25로 받는다)", () => {
@@ -219,33 +228,32 @@ describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품
     expect({ door: layoutHome().door, front: homeBuilding().rect[3] }).toEqual({ door: DOOR_X, front: FRONT_Z });
   });
 
-  it("K2 배치 파일에서 라룹이 집 말고는 기준 커밋과 같다(다른 건물 셋, 분수, 가로등, 노점, 벤치, 나무, 바위, 길, 풍차, 마을 크기). 집의 id·이름·문 자리도 같다", () => {
+  it("K2 배치 파일에서 건물·길·나무(106이 바꾼다) 말고는 기준 커밋과 같다(분수, 가로등, 노점, 벤치, 바위, 풍차, 마을 크기). 집의 id·이름·문 자리와 가구점의 id·이름·땅·층수도 같다", () => {
     const base = JSON.parse(baseFile(LAYOUT_PATH).toString("utf8")) as typeof LAYOUT;
     const strip = (layout: typeof LAYOUT) => {
-      const { buildings, _comment: _ignored, ...rest } = layout as typeof LAYOUT & { _comment?: string };
-      return { rest, others: buildings.filter((b) => b.id !== "home") };
+      const { buildings: _b, paths: _p, trees: _t, _comment: _ignored, ...rest } = layout as typeof LAYOUT & { _comment?: string };
+      return rest;
     };
     expect(strip(LAYOUT)).toEqual(strip(base));
     const baseHome = base.buildings.find((b) => b.id === "home")!;
     const home = layoutHome();
     expect({ id: home.id, label: home.label, door: home.door }).toEqual({ id: baseHome.id, label: baseHome.label, door: baseHome.door });
-    expect(LAYOUT.buildings.map((b) => b.id)).toEqual(base.buildings.map((b) => b.id));
+    const shop = (layout: typeof LAYOUT) => {
+      const b = layout.buildings.find((x) => x.id === "furnitureShop");
+      return b ? { id: b.id, label: b.label, rect: b.rect, floors: b.floors } : null;
+    };
+    expect(shop(LAYOUT)).toEqual(shop(base));
   });
 
-  it("K3 옛 라룹이 집 땅 밖의 막힌 칸이 기준 커밋과 같다(개수와 목록의 sha256)", () => {
-    const outside = [...VILLAGE_SOLID_TILES]
-      .filter((k) => {
-        const [c, r] = k.split(",").map(Number);
-        return !(c >= OLD_HOME_RECT[0] && c < OLD_HOME_RECT[2] && r >= OLD_HOME_RECT[1] && r < OLD_HOME_RECT[3]);
-      })
-      .sort();
-    expect({ count: outside.length, sha256: createHash("sha256").update(outside.join("\n")).digest("hex") }).toEqual(SOLID_OUTSIDE_HOME);
+  it("K3 옛 라룹이 집 땅 밖(106이 바꾸는 곳도 밖)의 막힌 칸이 기준 커밋과 같다(개수와 목록의 sha256)", () => {
+    expect(VILLAGE_SOLID_TILES.size).toBeGreaterThan(0);
+    expect(solidOutsideChanged([OLD_HOME_RECT])).toEqual(SOLID_OUTSIDE_HOME);
   });
 
-  it("K4 마을 모델 파일 이름 그대로이고, 장면 뿌리의 묶음 이름이 기준 커밋과 같다(bld-home 포함)", () => {
+  it("K4 마을 모델 파일 이름 그대로이고, 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths) 밖 장면 뿌리의 묶음 이름이 기준 커밋과 같으며, bld-home이 있다", () => {
     const names = (glb: Glb) => sceneRoots(glb).map((i) => glb.json.nodes[i].name ?? "").sort();
     const now = names(nowVillageGlb());
-    expect(now).toEqual(names(baseVillageGlb()));
+    expect(now.filter((n) => !changedBy106(n))).toEqual(names(baseVillageGlb()).filter((n) => !changedBy106(n)));
     expect(now).toContain("bld-home");
   });
 
@@ -253,14 +261,14 @@ describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품
   // 점 수는 보지 않는다: 구석 어둠(꼭짓점 색)을 새 집과 함께 다시 구우면 집 둘레 점의 색이 바뀌어, 내보내기가 점을 나누는 수가 달라질 수 있다(모양은 같다).
   // 재질 번호도 집 재질이 더해져 밀릴 수 있어 보지 않는다.
   // 창 불빛 판(glow-windows)은 집 둘레 밖의 점 자리(소수 넷째 자리)를 견준다.
-  it("K5 집 말고 다른 묶음(건물 셋, 소품, 길, 생울타리, 울타리, 풍차, 나무 틀, 가로등 불빛)의 메시가 기준 커밋과 같고, 집 밖 창 불빛 판도 그대로다", () => {
+  it("K5 106이 바꾸는 묶음 말고 다른 묶음(소품, 생울타리, 울타리, 풍차, 나무 틀, 가로등 불빛)의 메시가 기준 커밋과 같다", () => {
     const now = nowVillageGlb();
     const base = baseVillageGlb();
     const describeMeshes = (glb: Glb) => {
       const out: Record<string, unknown> = {};
       for (const root of sceneRoots(glb)) {
         const rootName = glb.json.nodes[root].name ?? "";
-        if (rootName === "bld-home" || (rootName.startsWith("glow") && !rootName.startsWith("glow-lamp"))) continue;
+        if (changedBy106(rootName)) continue;
         for (const i of meshNodesUnder(glb, root)) {
           const node = glb.json.nodes[i];
           const prims = glb.json.meshes[node.mesh!].primitives.map((p) => {
@@ -274,15 +282,9 @@ describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품
       }
       return out;
     };
-    expect(describeMeshes(now)).toEqual(describeMeshes(base));
-    const glowsOutside = (glb: Glb) =>
-      windowGlowPoints(glb)
-        .filter((p) => !inHomeArea(p))
-        .map((p) => p.map((n) => (Math.round(n * 1e4) / 1e4).toFixed(4)).join(","))
-        .sort();
-    const baseGlows = glowsOutside(base);
-    expect(baseGlows.length).toBeGreaterThan(0);
-    expect(glowsOutside(now)).toEqual(baseGlows);
+    const baseMeshes = describeMeshes(base);
+    expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
+    expect(describeMeshes(now)).toEqual(baseMeshes);
   });
 });
 

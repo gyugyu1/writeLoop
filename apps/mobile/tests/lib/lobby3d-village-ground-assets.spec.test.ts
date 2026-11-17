@@ -6,10 +6,15 @@
 // 3: 꽃·풀 장식은 3D 모델)에서만 가져온다. 견주는 기준은 명세 첫 줄의 기준 커밋 25e9cc7이다.
 // 바뀔 동작(구현 전 실패): A1·A2. 그대로 둘 동작(구현 전·뒤 통과): A3·K9.
 // "약 1MB 안"은 qa가 1,100,000바이트 이하로 정했다(04-qa-tests.md "가정"). 그림 크기는 PNG·JPEG 머리에서 읽는다(그 밖의 형식이면 실패로 알린다).
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(마을 모델 파일 크기가 두 가게 모델 약 0.6MB씩 늘어난다, 마을 모델 묶음)로 qa가 고쳤다
+// (106 qa 보고 02-qa-tests.md). 106은 마을 모델(lobby-village.glb)을 다시 구워 건물을 모델로 바꾼다.
+// - A3: 자산 폴더 크기 증가에서 마을 모델 파일(lobby-village.glb)은 뺀다(그 파일은 106이 키운다). 1,100,000바이트 한도는 그대로다.
+// - K9: 마을 모델 파일이 바이트까지 같다 → 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths) 밖 묶음의 메시가 기준 커밋과 같다(098 K5와 같은 방법).
 import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";
-import { imageSize } from "../__fixtures__/village-glb-098";
+import { imageSize, parseGlb } from "../__fixtures__/village-glb-098";
+import { VILLAGE_GLB_PATH_106, changedBy106, describeGroups } from "../__fixtures__/village-shops-106";
 
 const MOBILE = join(__dirname, "..", "..");
 const REPO = join(MOBILE, "..", "..");
@@ -66,18 +71,21 @@ describe("[spec] 101 바뀔 동작: 그림·모델 자산(01의 4, 03 결정 3·
 });
 
 describe("[spec] 101 그대로 둘 동작: 앱 크기와 마을 모델 파일", () => {
-  it("A3 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 1,100,000바이트 이하다(그림과 모델을 합쳐 약 1MB 안)", () => {
-    const sum = (m: Map<string, number>) => [...m.values()].reduce((a, b) => a + b, 0);
+  it("A3 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 1,100,000바이트 이하다(그림과 모델을 합쳐 약 1MB 안. 106이 키우는 마을 모델 파일은 뺀다)", () => {
+    const sum = (m: Map<string, number>) => [...m.entries()].filter(([path]) => path !== VILLAGE_GLB_PATH_106).reduce((a, [, b]) => a + b, 0);
     const base = baseAssets();
     expect(base.size).toBeGreaterThan(0);
     const growth = sum(nowAssets()) - sum(base);
     expect({ growth, within: growth <= LIMIT_BYTES }).toEqual({ growth, within: true });
   });
 
-  it("K9 마을 모델 파일(lobby-village.glb)이 기준 커밋과 바이트까지 같다(01 그대로: 마을 모델 파일)", () => {
+  it("K9 마을 모델 파일(lobby-village.glb)에서 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths) 밖 묶음의 메시가 기준 커밋과 같다(01 그대로: 마을 모델 파일)", () => {
     const path = `${ASSETS}/models/lobby-village.glb`;
-    const base = execFileSync("git", ["show", `${BASE}:${path}`], { cwd: REPO, maxBuffer: 64 * 1024 * 1024 });
-    const now = readFileSync(join(REPO, path));
-    expect({ path: relative(REPO, join(REPO, path)).replace(/\\/g, "/"), same: Buffer.compare(base, now) === 0 }).toEqual({ path, same: true });
+    const base = parseGlb(execFileSync("git", ["show", `${BASE}:${path}`], { cwd: REPO, maxBuffer: 64 * 1024 * 1024 }));
+    const now = parseGlb(readFileSync(join(REPO, path)));
+    const keep = (name: string) => !changedBy106(name);
+    const baseMeshes = describeGroups(base, keep);
+    expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
+    expect({ path: relative(REPO, join(REPO, path)).replace(/\\/g, "/"), meshes: describeGroups(now, keep) }).toEqual({ path, meshes: baseMeshes });
   });
 });

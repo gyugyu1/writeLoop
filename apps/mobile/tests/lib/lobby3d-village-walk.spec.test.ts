@@ -8,20 +8,26 @@
 // 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침")로 B5·B6의 말풍선 기대값만 ②의 새 동작으로 고쳤다:
 // 라룹이 집은 "집으로 들어갈까?"와 버튼 "들어가기", 닫힌 건물은 "<이름>은 곧 열려요"와 버튼 없음(버튼 값 null, 옛 B6과 같은 단언). 도착 자리·arrived 단언은 그대로다.
 // 걷기는 3D 모델과 관계없이 데이터대로 되므로, 이 파일 전체가 F4("모델을 불러오지 못해도 걷기는 된다")의 걷기 부분이기도 하다.
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(카페·도서관을 보는 테스트는 빼거나 옷집으로 바꾼다)로 qa가 고쳤다(106 qa 보고 02-qa-tests.md).
+// - 말풍선 표: 카페·도서관을 빼고 옷집("옷집은 곧 열려요", 버튼 없음. 106 명세 4)을 더했다. 옷집 id는 명세에 없어 이름 "옷집"으로 찾는다.
+// - B2의 "분수 바로 앞" 자리를 찾는 끝: 도서관 뒷면 → 마을 앞끝(도서관이 없어진다). 찾는 방법·단언은 그대로다.
+// - B5·B6: (집 → 카페) → (집 → 옷집), (도서관 → 집) → (옷집 → 집), (집 → 도서관)은 뺐다. (집 → 가구점)과 단언은 그대로다.
 import { LobbySim, applyArea, isClearLine, isFree, type FloorPoint, type PointerHit } from "@/lib/lobby3d/engine";
-import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
+import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START, type VillageBuildingId } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
+import { clothingId } from "../__fixtures__/village-shops-106";
 
-/** 088 ② 장소 말풍선(02-qa-scenarios N1·C1~C3). 버튼 없음은 null. */
+const CLOTHING = clothingId();
+
+/** 088 ② 장소 말풍선(02-qa-scenarios N1·C1~C3), 106 명세 4(옷집). 버튼 없음은 null. */
 const PLACE_BUBBLE: Record<PlaceKey, { text: string; button: string | null }> = {
   home: { text: "집으로 들어갈까?", button: "들어가기" },
   furnitureShop: { text: "가구점은 곧 열려요", button: null },
-  cafe: { text: "카페는 곧 열려요", button: null },
-  library: { text: "도서관은 곧 열려요", button: null }
+  [CLOTHING]: { text: "옷집은 곧 열려요", button: null }
 };
 
 const fountain: FloorPoint = { x: LAYOUT.fountain.x, z: LAYOUT.fountain.z };
-type PlaceKey = "home" | "furnitureShop" | "cafe" | "library";
+type PlaceKey = string;
 
 let now = 1_000_000;
 
@@ -33,8 +39,14 @@ function floorHit(point: FloorPoint | null): PointerHit {
   return { point, mark: null, onCharacter: false };
 }
 
+function placeOf(id: PlaceKey) {
+  const place = VILLAGE_PLACES[id as VillageBuildingId];
+  expect({ id, found: place !== undefined }).toEqual({ id, found: true });
+  return place;
+}
+
 function placeHit(id: PlaceKey): PointerHit {
-  return { point: VILLAGE_PLACES[id].approach[0], mark: id, onCharacter: false };
+  return { point: placeOf(id).approach[0], mark: id as VillageBuildingId, onCharacter: false };
 }
 
 function tap(sim: LobbySim, hit: PointerHit) {
@@ -70,10 +82,9 @@ function nearestFreeTile(target: FloorPoint): FloorPoint {
   return best!;
 }
 
-/** 분수 바로 앞(분수와 도서관 사이)의 걸어갈 수 있는 자리. */
+/** 분수 바로 앞(분수 앞쪽에서 처음 나오는)의 걸어갈 수 있는 자리. */
 function frontOfFountain(): FloorPoint {
-  const libraryBack = VILLAGE_BUILDINGS.find((b) => b.id === "library")!.rect[1];
-  for (let z = fountain.z + LAYOUT.fountain.radius; z < libraryBack; z += 0.1) if (isFree(fountain.x, z)) return { x: fountain.x, z };
+  for (let z = fountain.z + LAYOUT.fountain.radius; z < VILLAGE.depth; z += 0.1) if (isFree(fountain.x, z)) return { x: fountain.x, z };
   throw new Error("분수 앞 자리를 찾지 못함");
 }
 
@@ -146,15 +157,14 @@ describe("[spec] 마을에서 움직이기(B1~B9)", () => {
   });
 
   it.each([
-    ["home", "cafe"],
+    ["home", CLOTHING],
     ["home", "furnitureShop"],
-    ["home", "library"],
-    ["library", "home"]
+    [CLOTHING, "home"]
   ] as [PlaceKey, PlaceKey][])("B5·B6(088 ② 03 결정 1): %s 앞에서 장소 %s 이름표를 누르면 그 서는 자리에 멈춰 도착하고, 그 장소의 말풍선 글·버튼이 나온다", (from, to) => {
-    const sim = newSim(VILLAGE_PLACES[from].approach[0]);
+    const sim = newSim(placeOf(from).approach[0]);
     expect(tap(sim, placeHit(to))).toBe("walk");
     run(sim, 30);
-    const goal = VILLAGE_PLACES[to].approach[0];
+    const goal = placeOf(to).approach[0];
     expect(dist({ x: sim.x, z: sim.z }, goal)).toBeLessThanOrEqual(0.06);
     const snap = sim.snapshot(now);
     expect(snap.arrived).toBe(to);

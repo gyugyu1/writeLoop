@@ -26,6 +26,10 @@
 //   인스턴스 색도 회색이다. 겨울에는 조각이 그려지지 않는다". S5·S6: 풀 자국 대신 가을 조각으로 본다(단언은 그대로).
 // - 계절을 바꾸면 조각 메시를 새로 만들어도 되지만, 그린 장면의 뿌리(<primitive object>)와 장식 메시는 그대로여야 한다(S2가 같은 메시의 보임을 본다).
 //   그래서 S3·S4는 계절을 바꿀 때마다 조각 메시를 다시 찾는다. S1·S2(장식)는 단언·입력이 그대로다.
+//
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"와 바뀌는 동작 3(옷집 땅 안의 나무 [45.7, 19.2] 한 그루를 근처 빈 풀밭으로 옮긴다. 나무 수 그대로,
+// 그대로여야 할 동작: 옮기는 한 그루 말고 나무)으로 qa가 K8을 고쳤다(106 qa 보고 02-qa-tests.md): 옮기는 나무의 옛 자리와 새 자리에 찍힌 그루를 빼고
+// 나머지 그루의 찍은 수·자리·계절 색을 견준다. 그 값은 106 기준 커밋 c728f00에서 이 테스트로 잰 값이다(25e9cc7 뒤로 나무는 바뀌지 않았다).
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -38,6 +42,7 @@ import { VILLAGE_START } from "@/lib/lobby3d/village";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { decorModule, type VillageDecorSpot } from "../__fixtures__/village-decor-101";
 import { SCATTER_SEASONS, scatterModule, type VillageScatterPiece } from "../__fixtures__/village-ground-103";
+import { MOVED_TREE, newTrees } from "../__fixtures__/village-shops-106";
 import {
   allObjects,
   drawnVisible,
@@ -348,18 +353,29 @@ describe("[spec] 101 바뀔 동작: 꽃·풀 장식(3D 모델)과 풀 자국 그
 describe("[spec] 101 그대로 둘 동작: 나무", () => {
   // 나무 = 마을 모델의 나무 틀 도형으로 찍은 인스턴스 메시. 메시마다 찍은 수, 찍은 자리(세계 변환, 소수 넷째 자리), 계절마다 그루별 색(16진)을 적어
   // 그 글의 sha256을 기준 커밋 25e9cc7에서 이 테스트로 잰 값과 견준다.
-  it("K8 나무 자리와 계절에 따른 잎 색이 기준 커밋과 같다(01 그대로: 나무, 계절에 따른 나무 색)", async () => {
+  it("K8 나무 자리와 계절에 따른 잎 색이 기준 커밋과 같다(01 그대로: 나무, 계절에 따른 나무 색. 106: 옮기는 한 그루는 옛 자리·새 자리 모두 뺀다)", async () => {
     const drawn = await draw("summer");
     const templates = sourceGeometries(drawn.source).byGroup.get("tree-templates")!;
     const trees = allObjects(drawn.roots).filter((o): o is THREE.InstancedMesh => o instanceof THREE.InstancedMesh && templates.has(o.geometry));
     expect(trees.length).toBeGreaterThan(0);
-    const lines: string[] = trees.map((m) => `${m.count} ${instanceWorldMatrices(m).map((w) => w.elements.map((v) => (Object.is(v, -0) ? 0 : v).toFixed(4)).join(",")).join(";")}`);
+    // 106이 옮기는 나무(옛 자리와 새 자리)에 찍힌 그루는 뺀다
+    const moved = [MOVED_TREE, ...newTrees()];
+    const keptIndices = (m: THREE.InstancedMesh) =>
+      instanceWorldMatrices(m)
+        .map((w, i) => ({ w, i }))
+        .filter(({ w }) => !moved.some(([x, z]) => Math.abs(w.elements[12] - x) < 0.01 && Math.abs(w.elements[14] - z) < 0.01));
+    const lines: string[] = trees.map((m) => {
+      const kept = keptIndices(m);
+      return `${kept.length} ${kept.map(({ w }) => w.elements.map((v) => (Object.is(v, -0) ? 0 : v).toFixed(4)).join(",")).join(";")}`;
+    });
+    const keptByMesh = new Map(trees.map((m) => [m, new Set(keptIndices(m).map(({ i }) => i))]));
     for (const season of ["summer", "autumn", "winter", "spring"] as Season[]) {
       if (season !== "summer") await setSeason(drawn, season);
       for (const m of trees) {
         const colors: string[] = [];
         const c = new THREE.Color();
         for (let i = 0; i < m.count; i += 1) {
+          if (!keptByMesh.get(m)!.has(i)) continue;
           if (m.instanceColor) {
             m.getColorAt(i, c);
             colors.push(c.getHexString());
@@ -375,4 +391,4 @@ describe("[spec] 101 그대로 둘 동작: 나무", () => {
 
 /** 기준 커밋 25e9cc7에서 K8로 잰 값. */
 const K8_TREES = 10;
-const K8_DIGEST = "93cd31438187c856ec03b635addd6ad78af5dd807c7b46dc129466e779eedf37";
+const K8_DIGEST = "efb5c68c2a1e5c3d08e89396912afdaf5951777a56052e599d3cee48163241ea";

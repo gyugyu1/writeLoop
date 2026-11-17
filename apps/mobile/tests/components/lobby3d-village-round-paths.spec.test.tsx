@@ -34,6 +34,9 @@
 //   0.02~0.98 사이 값이 있고, 둥근 경계 바로 안(0.04칸)이 0.98보다 작거나 바로 밖(0.04칸)이 0.02보다 크다(경계가 바래는 곳 안에 있다).
 //   바래는 곳에서 보이는 판(위 판들에 가려지지 않은 판)의 색 배율은 그 자리에서 0.5칸 안쪽의 맨 위 판 색 배율보다 짙지 않다
 //   (밝기 0.99배 이상, 어느 채널도 0.004 넘게 어둡지 않음). 0.5칸은 qa가 정한 값이다.
+//
+// 작업 106(마을 가게 넣기) 바뀌는 동작 5(가게 유리는 누르기 대상이 아니다)로 qa가 K2를 고쳤다(106 qa 보고 02-qa-tests.md): 누르기 판정 대상으로 받는 건물 메시에서
+// 모델의 유리 재질(이름이 glass로 시작)을 쓰는 메시는 뺀다. 나머지 단언(건물·소품 메시뿐이고 그 밖의 물체는 그 아래에도 없다)은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -45,6 +48,7 @@ import { daylightAt, type Season } from "@/lib/lobby3d/daylight";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_START } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
+import { GLASS_MATERIAL } from "../__fixtures__/village-shops-106";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { shapeIndex, tilesOf, type PathShape, type Rect, type RoundedPathShapes } from "../__fixtures__/village-paths-099";
 import { loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb } from "../__fixtures__/village-scene-101";
@@ -576,11 +580,18 @@ describe("[spec] 099 그대로 둘 동작: 길 말고는 마을 그리기가 같
     expect(objects.filter((o) => o instanceof THREE.Mesh && !(o instanceof THREE.InstancedMesh) && templates.has(o.geometry))).toEqual([]);
   });
 
-  it("K2 누르기(그대로): 누르기 판정 대상은 건물(bld-*)과 소품(props)의 메시뿐이고, 그 밖의 물체(길 포함)는 그 아래에도 없다", async () => {
+  it("K2 누르기(그대로, 106: 유리 빼고): 누르기 판정 대상은 건물(bld-*, 유리 재질 메시 빼고)과 소품(props)의 메시뿐이고, 그 밖의 물체(길 포함)는 그 아래에도 없다", async () => {
     const drawn = await draw();
     const { byGroup } = sourceGeometries(drawn.source);
+    const glass = new Set<THREE.BufferGeometry>();
+    drawn.source.traverse((o) => {
+      if (o instanceof THREE.Mesh && GLASS_MATERIAL.test((o.material as THREE.Material).name)) glass.add(o.geometry);
+    });
     const allowed = new Set<THREE.BufferGeometry>();
-    for (const [name, geometries] of byGroup) if (name.startsWith("bld-") || name === "props") geometries.forEach((g) => allowed.add(g));
+    for (const [name, geometries] of byGroup) {
+      if (!(name.startsWith("bld-") || name === "props")) continue;
+      for (const g of geometries) if (!glass.has(g)) allowed.add(g);
+    }
     const objects = allObjects(drawn.roots);
     const expected = objects.filter((o) => o instanceof THREE.Mesh && allowed.has(o.geometry));
     expect(drawn.pick.current.length).toBe(expected.length);

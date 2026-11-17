@@ -8,6 +8,8 @@
 // 3D 그리기 가짜는 처음 그려진 뒤 '방이 보였다'(onRoomShown)를 한 번 부르고, 구역이 마을로 바뀔 때마다 마을 모델이 들어왔다(onVillageReady)고 알린다.
 // Jest에는 네이티브 애니메이션 쪽이 없어 useNativeDriver: true인 움직임이 첫 프레임에 끝나므로, 테스트에서만 움직임을 자바스크립트 쪽에서 돌린다(시간은 그대로).
 // 프레임은 0.05초씩, 가짜 시계·타이머와 함께 넣는다.
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(카페·도서관 장소·말풍선을 보는 테스트는 빼거나 옷집으로 바꾼다)로 qa가 고쳤다(106 qa 보고 02-qa-tests.md).
+// 마을 이름표 목록: 넷(라룹이 집·가구점·카페·도서관) → 셋(라룹이 집·가구점·옷집). 방에서 마을 이름표가 없다는 단언은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -147,7 +149,7 @@ jest.mock("@/lib/writing-drafts", () => ({ getLocalWritingDraft: jest.fn() }));
 const DOOR_PROMPT = "밖으로 나가 볼까?";
 const OLD_DOOR_MESSAGE = "마을은 다음 업데이트에서 열려요";
 const HOME_PROMPT = "집으로 들어갈까?";
-const VILLAGE_LABELS = ["라룹이 집", "가구점", "카페", "도서관"];
+const VILLAGE_LABELS = ["라룹이 집", "가구점", "옷집"];
 const ROOM_ONLY_LABELS = ["오늘의 질문", "생각 창가", "일기 책상", "밖으로"];
 const ROOM_ENTRY: FloorPoint = { x: 4.0, z: 10.5 };
 const MENUS = ["질문에 답하기", "영어일기", "지금 생각나는대로", "학습 기록"];

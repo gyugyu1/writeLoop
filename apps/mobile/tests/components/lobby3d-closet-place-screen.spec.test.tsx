@@ -9,6 +9,8 @@
 // sim·onFrame·onPointer·onRoomShown·onVillageReady, 엔진의 roomPlaceIds·markInfo(옷장 장소 id를 이름표 "옷장"으로 찾는 데만).
 // 3D 그리기(lobby3d-canvas)는 Jest에서 돌지 않으므로 가짜로 바꾸고, 받은 속성으로 장소·바닥을 누르고 프레임을 진행한다(062 책장 화면 테스트와 같은 방법).
 // "보이는지"는 Testing Library 기본 질의 기준(접근성에서 숨긴 말풍선은 보이지 않음)으로 본다.
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(카페·도서관 장소·말풍선을 보는 테스트는 빼거나 옷집으로 바꾼다)로 qa가 고쳤다(106 qa 보고 02-qa-tests.md).
+// P12: 마을 장소 이름표 넷 → 셋(라룹이 집·가구점·옷집. 옷집 id는 명세에 없어 이름 "옷집"으로 찾는다). 단언은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -18,6 +20,7 @@ import type { Lobby3dCanvasProps } from "@/components/lobby3d/lobby3d-canvas";
 import Lobby3dScreen, { type Lobby3dScreenProps } from "@/components/lobby3d/lobby3d-screen";
 import { MARKS, applyArea, applyLobbyLayout, markInfo, roomPlaceIds, setClosetSignedIn, type PlaceId } from "@/lib/lobby3d/engine";
 import { DEFAULT_LOBBY_LAYOUT, makeLayout, type FurnitureItem, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
+import { clothingId } from "../__fixtures__/village-shops-106";
 
 const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
 
@@ -59,7 +62,7 @@ const CLOSET_BUTTON = "들어가기";
 const GUEST_PROMPT = "로그인하면 라룹이 옷을\n갈아입힐 수 있어";
 const OLD_LABELS = ["오늘의 질문", "생각 창가", "일기 책상", "밖으로", "학습 기록"];
 const MENU_ORDER = ["질문에 답하기", "영어일기", "지금 생각나는대로", "학습 기록"];
-const VILLAGE_LABEL_COUNT = 4;
+const VILLAGE_LABEL_COUNT = 3;
 const NOW = new Date("2026-11-13T03:00:00.000Z");
 const SLOW_TEST_MS = 20_000;
 
@@ -295,7 +298,7 @@ describe("[spec] 089-③ P: 방에 놓인 옷장에 이름표 '옷장'이 붙고
   );
 
   it(
-    "P12: '밖으로' → '나가기'로 마을에 가면 이름표 '옷장'이 없고 마을 장소 이름표 넷만 있다",
+    "P12: '밖으로' → '나가기'로 마을에 가면 이름표 '옷장'이 없고 마을 장소 이름표 셋만 있다",
     async () => {
       await enter({ layout: L0(), onEnterCloset: jest.fn() });
       await walkToMark("door");
@@ -303,8 +306,9 @@ describe("[spec] 089-③ P: 방에 놓인 옷장에 이름표 '옷장'이 붙고
       await frames(1.5);
       expect(canvas().area).toBe("village");
       expect(labelTexts(CLOSET_LABEL)).toHaveLength(0);
-      const villageLabels = ["home", "furnitureShop", "cafe", "library"].map((id) => markInfo(id as PlaceId).label);
-      expect(villageLabels.map((name) => labelTexts(name).length >= 1)).toEqual(Array(VILLAGE_LABEL_COUNT).fill(true));
+      const villageLabels = ["home", "furnitureShop", clothingId()].map((id) => markInfo(id as PlaceId)?.label);
+      expect(villageLabels).toEqual(["라룹이 집", "가구점", "옷집"]);
+      expect(villageLabels.map((name) => labelTexts(name!).length >= 1)).toEqual(Array(VILLAGE_LABEL_COUNT).fill(true));
     },
     SLOW_TEST_MS
   );

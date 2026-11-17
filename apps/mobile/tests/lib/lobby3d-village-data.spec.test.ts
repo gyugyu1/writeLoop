@@ -8,15 +8,23 @@
 // 19 결정(사용자, 마을 70×60칸으로 넓힘·새 배치)으로 옛 크기를 적은 곳(A1의 크기, A3·A9·A10의 마을 칸 범위, A5의 "뒤쪽 절반" 경계 12 → 깊이의 절반)을
 // 새 크기로 고쳤다. 단언하는 규칙은 그대로다. 18 결정 1(풍차)로 W1을 더했다.
 // O2의 "분수 옆"은 결정 03-2("도서관 뒤로 약 5칸이 가려진다")에 맞춰 분수 뒤쪽(라룹이 집 쪽) 옆자리로 골랐다(보고 06-qa-tests.md).
+// 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(카페·도서관을 보는 테스트는 빼거나 옷집으로 바꾼다)로 qa가 고쳤다(106 qa 보고 02-qa-tests.md).
+// 카페·도서관을 빼고 옷집(광장 동쪽 땅)을 넣어 장소가 셋이 된다. 옷집 id는 명세에 없어 이름 "옷집"으로 찾는다.
+// - A2·A3·A4·A8·A10: 장소·건물 넷 → 셋(라룹이 집·가구점·옷집). 단언하는 규칙은 그대로다.
+// - A5: "카페는 광장 오른쪽, 도서관은 광장 앞쪽" → "옷집은 광장 오른쪽(동쪽)". A11: 도서관 문 앞 → 옷집 문 앞(분수 바로 앞에서 건물을 뚫지 않는 길, 시작 자리를 찾는 끝은 도서관 뒷면 → 마을 앞끝).
+// - O1: 도서관 바로 뒤 → 옷집 바로 뒤(옷집 폭 안에서 걸어갈 수 있는 자리). O4: 도서관은 광장 앞쪽 → 옷집은 광장 동쪽.
 import { applyArea, findPath, isClearLine, isFree, type FloorPoint } from "@/lib/lobby3d/engine";
-import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START, occludingBuildings } from "@/lib/lobby3d/village";
+import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
+import { clothingId } from "../__fixtures__/village-shops-106";
 
-const PLACE_IDS = ["home", "furnitureShop", "cafe", "library"] as const;
-type PlaceKey = (typeof PLACE_IDS)[number];
+const CLOTHING = clothingId();
+const PLACE_IDS: readonly string[] = ["home", "furnitureShop", CLOTHING];
+type PlaceKey = string;
 
 function spot(id: PlaceKey): FloorPoint {
-  const place = VILLAGE_PLACES[id];
+  const place = VILLAGE_PLACES[id as VillageBuildingId];
+  expect({ id, found: place !== undefined }).toEqual({ id, found: true });
   expect(place.approach.length).toBeGreaterThan(0);
   return place.approach[0];
 }
@@ -49,13 +57,13 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
     expect({ width: VILLAGE.width, depth: VILLAGE.depth }).toEqual({ width: 70, depth: 60 });
   });
 
-  it("A2: 장소는 정확히 넷이고 이름표는 라룹이 집·가구점·카페·도서관", () => {
+  it("A2: 장소는 정확히 셋이고 이름표는 라룹이 집·가구점·옷집(106)", () => {
     const labels = Object.values(VILLAGE_PLACES).map((p) => p.label);
-    expect(labels).toHaveLength(4);
-    expect([...labels].sort()).toEqual(["가구점", "도서관", "라룹이 집", "카페"].sort());
+    expect(labels).toHaveLength(3);
+    expect([...labels].sort()).toEqual(["가구점", "라룹이 집", "옷집"].sort());
   });
 
-  it("A3: 장소 넷의 서는 자리는 모두 걸어갈 수 있고 마을 칸 안이다", () => {
+  it("A3: 장소 셋의 서는 자리는 모두 걸어갈 수 있고 마을 칸 안이다", () => {
     for (const id of PLACE_IDS) {
       const p = spot(id);
       expect({ id, free: isFree(p.x, p.z), inside: p.x >= 0 && p.x <= VILLAGE.width && p.z >= 0 && p.z <= VILLAGE.depth }).toEqual({ id, free: true, inside: true });
@@ -67,22 +75,20 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
       const p = spot(id);
       const behindBlocked = [0.5, 1, 1.5].some((d) => !isFree(p.x, p.z - d));
       expect({ id, behindBlocked }).toEqual({ id, behindBlocked: true });
-      expect(VILLAGE_PLACES[id].faceTo.z).toBeLessThan(p.z);
+      expect(VILLAGE_PLACES[id as VillageBuildingId].faceTo.z).toBeLessThan(p.z);
     }
   });
 
-  it("A5: 라룹이 집은 뒤쪽 가운데, 가구점은 광장 왼쪽, 카페는 광장 오른쪽, 도서관은 광장 앞쪽", () => {
+  it("A5: 라룹이 집은 뒤쪽 가운데, 가구점은 광장 왼쪽, 옷집은 광장 오른쪽(106)", () => {
     const home = spot("home");
     const shop = spot("furnitureShop");
-    const cafe = spot("cafe");
-    const library = spot("library");
+    const clothing = spot(CLOTHING);
     expect(home.z).toBeLessThan(fountain.z);
     expect(home.z).toBeLessThan(VILLAGE.depth / 2);
     expect(shop.x).toBeLessThan(fountain.x);
-    expect(fountain.x).toBeLessThan(cafe.x);
+    expect(fountain.x).toBeLessThan(clothing.x);
     expect(home.x).toBeGreaterThan(shop.x);
-    expect(home.x).toBeLessThan(cafe.x);
-    expect(library.z).toBeGreaterThan(fountain.z);
+    expect(home.x).toBeLessThan(clothing.x);
   });
 
   it("A6: 광장 가운데 분수 자리는 걸어갈 수 없다", () => {
@@ -105,8 +111,8 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
     expect(LAYOUT.lanterns).toHaveLength(4);
   });
 
-  it("A8: 건물 넷의 가운데 자리는 걸어갈 수 없다", () => {
-    expect(VILLAGE_BUILDINGS).toHaveLength(4);
+  it("A8: 건물 셋의 가운데 자리는 걸어갈 수 없다(106)", () => {
+    expect(VILLAGE_BUILDINGS).toHaveLength(3);
     for (const b of VILLAGE_BUILDINGS) {
       const [x0, z0, x1, z1] = b.rect;
       expect({ id: b.id, free: isFree((x0 + x1) / 2, (z0 + z1) / 2) }).toEqual({ id: b.id, free: false });
@@ -128,7 +134,7 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
   // 길이 있다는 것은 칸끼리 이어져 있다는 것이고(길 찾기는 칸 단위로 찾는다), 이어짐은 주고받는 관계라
   // "모든 칸이 라룹이 집 서는 자리와 이어져 있다" + "라룹이 집 서는 자리에서 나머지 세 서는 자리까지 길이 있다"면 모든 칸에서 넷까지 길이 있다.
   // 칸마다 이미 이어진 것으로 확인된 자리들까지의 길을 찾아(라룹이 집에서 가까운 칸부터) 확인한다.
-  it("A10: 걸어갈 수 있는 모든 칸에서 장소 넷의 서는 자리까지 길이 있고, 길의 끝은 그 서는 자리다", () => {
+  it("A10: 걸어갈 수 있는 모든 칸에서 장소 셋의 서는 자리까지 길이 있고, 길의 끝은 그 서는 자리다", () => {
     const home = spot("home");
     const tiles = freeTileCenters().sort((a, b) => Math.hypot(a.x - home.x, a.z - home.z) - Math.hypot(b.x - home.x, b.z - home.z));
     expect(tiles.length).toBeGreaterThan(0);
@@ -149,24 +155,23 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
     }
   });
 
-  it("A11: 분수 바로 앞(분수와 도서관 사이)에서 도서관 앞쪽 문 앞까지 건물을 뚫지 않는 길이 있다(결정 03-1)", () => {
-    const libraryBack = building("library").rect[1];
+  it("A11: 분수 바로 앞에서 옷집 앞쪽 문 앞까지 건물을 뚫지 않는 길이 있다(결정 03-1, 106)", () => {
     let start: FloorPoint | null = null;
-    for (let z = fountain.z + LAYOUT.fountain.radius; z < libraryBack; z += 0.1) {
+    for (let z = fountain.z + LAYOUT.fountain.radius; z < VILLAGE.depth; z += 0.1) {
       if (isFree(fountain.x, z)) {
         start = { x: fountain.x, z };
         break;
       }
     }
     expect(start).not.toBeNull();
-    const path = findPath(start!, [spot("library")]);
+    const path = findPath(start!, [spot(CLOTHING)]);
     expect(path).not.toBeNull();
     let cur = start!;
     for (const p of path!) {
       expect({ from: cur, to: p, clear: isClearLine(cur, p) }).toEqual({ from: cur, to: p, clear: true });
       cur = p;
     }
-    expect(cur).toEqual(spot("library"));
+    expect(cur).toEqual(spot(CLOTHING));
   });
 
   it("A12: 처음 나타나는 자리는 라룹이 집 서는 자리이고 카메라 쪽(방향 0)을 본다", () => {
@@ -176,18 +181,20 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
 });
 
 describe("[spec] 라룹이를 가리는 건물(O1, O2, O4, 결정 03-2)", () => {
-  it("O1: 도서관 바로 뒤(도서관 뒤쪽 벽에서 1칸 안)에 서면 도서관만 가리는 건물이다", () => {
-    const lib = building("library");
-    const back = lib.rect[1];
+  it("O1: 옷집 바로 뒤(옷집 뒤쪽 벽에서 1칸 안, 옷집 폭 안)에 서면 옷집만 가리는 건물이다(106)", () => {
+    const shop = building(CLOTHING);
+    const [x0, back, x1] = shop.rect;
     let behind: FloorPoint | null = null;
-    for (let z = back - 0.05; z > back - 1; z -= 0.05) {
-      if (isFree(lib.doorX, z)) {
-        behind = { x: lib.doorX, z };
-        break;
+    for (let x = x0 + 0.5; x < x1 && !behind; x += 1) {
+      for (let z = back - 0.05; z > back - 1; z -= 0.05) {
+        if (isFree(x, z)) {
+          behind = { x, z };
+          break;
+        }
       }
     }
     expect(behind).not.toBeNull();
-    expect(occludingBuildings(behind!)).toEqual(["library"]);
+    expect(occludingBuildings(behind!)).toEqual([CLOTHING]);
   });
 
   it("O2: 분수 옆(건물과 떨어진 자리)과 라룹이 집 서는 자리에서는 가리는 건물이 없다", () => {
@@ -203,8 +210,8 @@ describe("[spec] 라룹이를 가리는 건물(O1, O2, O4, 결정 03-2)", () => 
     expect(occludingBuildings(spot("home"))).toEqual([]);
   });
 
-  it("O4: 도서관은 광장 앞쪽 그대로다(서는 자리 z > 분수 z)", () => {
-    expect(spot("library").z).toBeGreaterThan(fountain.z);
+  it("O4: 옷집은 광장 동쪽이다(서는 자리 x > 분수 x, 106)", () => {
+    expect(spot(CLOTHING).x).toBeGreaterThan(fountain.x);
   });
 });
 

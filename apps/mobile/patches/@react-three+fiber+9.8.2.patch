@@ -1,0 +1,39 @@
+diff --git a/node_modules/@react-three/fiber/dist/events-0dab3c53.cjs.dev.js b/node_modules/@react-three/fiber/dist/events-0dab3c53.cjs.dev.js
+index 705fbd5..1fecc59 100644
+--- a/node_modules/@react-three/fiber/dist/events-0dab3c53.cjs.dev.js
++++ b/node_modules/@react-three/fiber/dist/events-0dab3c53.cjs.dev.js
+@@ -17040,7 +17040,7 @@ function scheduleMicrotask(callback) {
+   }
+ }
+ const reconciler = /* @__PURE__ */createReconciler({
+-  isPrimaryRenderer: false,
++  isPrimaryRenderer: true,
+   warnsIfNotActing: false,
+   supportsMutation: true,
+   supportsPersistence: false,
+diff --git a/node_modules/@react-three/fiber/dist/events-98e95d43.cjs.prod.js b/node_modules/@react-three/fiber/dist/events-98e95d43.cjs.prod.js
+index c265e9e..4113926 100644
+--- a/node_modules/@react-three/fiber/dist/events-98e95d43.cjs.prod.js
++++ b/node_modules/@react-three/fiber/dist/events-98e95d43.cjs.prod.js
+@@ -8261,7 +8261,7 @@ function scheduleMicrotask(callback) {
+   }
+ }
+ const reconciler = /* @__PURE__ */createReconciler({
+-  isPrimaryRenderer: false,
++  isPrimaryRenderer: true,
+   warnsIfNotActing: false,
+   supportsMutation: true,
+   supportsPersistence: false,
+diff --git a/node_modules/@react-three/fiber/dist/events-e51d7528.esm.js b/node_modules/@react-three/fiber/dist/events-e51d7528.esm.js
+index 6c801a2..92a6dc7 100644
+--- a/node_modules/@react-three/fiber/dist/events-e51d7528.esm.js
++++ b/node_modules/@react-three/fiber/dist/events-e51d7528.esm.js
+@@ -17015,7 +17015,7 @@ function scheduleMicrotask(callback) {
+   }
+ }
+ const reconciler = /* @__PURE__ */createReconciler({
+-  isPrimaryRenderer: false,
++  isPrimaryRenderer: true,
+   warnsIfNotActing: false,
+   supportsMutation: true,
+   supportsPersistence: false,

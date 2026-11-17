@@ -7,6 +7,7 @@ import type { Season } from "@/lib/lobby3d/daylight";
 import { VILLAGE, VILLAGE_PATH_RECTS, VILLAGE_TREES, VILLAGE_WINDMILL, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import { villageDecorSpots, villageSeasonScatter, type VillageDecorKind } from "@/lib/lobby3d/village-decor";
 import { villageGroundPlaceMap } from "@/lib/lobby3d/village-ground-splat";
+import { villageFlowersAsset, villageGroundTextureAssets } from "./village-ground-assets";
 import { buildPathOutlines, insetLoop, type PathPoint } from "@/lib/lobby3d/village-paths";
 import type { DaylightState } from "./lobby3d-daylight";
 import { SEASON_COLORS } from "./lobby3d-outdoor";
@@ -265,35 +266,6 @@ export function VillageNature({ daylight }: VillageNatureProps) {
   );
 }
 
-// 땅 그림과 장식 모델(앱 번들 자산). 쓰는 때에 불러온다: 모듈을 읽을 때 불러오지 않아, 이 자산을 모르는 화면·테스트에서도 마을 그리기 모듈을 읽을 수 있다.
-type GroundAsset = "season-scatter" | "dirt" | "dirt-b" | "grass-short" | "grass-lush" | "clover" | "moss" | "bare" | "flowers";
-function groundAsset(name: GroundAsset): unknown {
-  /* eslint-disable @typescript-eslint/no-require-imports */
-  switch (name) {
-    case "season-scatter":
-      return require("../../../assets/textures/village/season-scatter.png");
-    case "dirt-b":
-      return require("../../../assets/textures/village/dirt-b.jpg");
-    case "dirt":
-      return require("../../../assets/textures/village/dirt.jpg");
-    case "grass-short":
-      return require("../../../assets/textures/village/ground-grass-short.jpg");
-    case "grass-lush":
-      return require("../../../assets/textures/village/ground-grass-lush.jpg");
-    case "clover":
-      return require("../../../assets/textures/village/ground-clover.jpg");
-    case "moss":
-      return require("../../../assets/textures/village/ground-moss.jpg");
-    case "bare":
-      return require("../../../assets/textures/village/ground-bare.jpg");
-    default:
-      return require("../../../assets/models/village-flowers.glb");
-  }
-  /* eslint-enable @typescript-eslint/no-require-imports */
-}
-/** 풀밭 바탕에 섞는 무늬 그림(순서: 짧은 풀, 무성한 풀, 클로버, 이끼, 맨땅). */
-const GROUND_LAYER_ASSETS: GroundAsset[] = ["grass-short", "grass-lush", "clover", "moss", "bare"];
-
 /** 장식 종류 → 모델 안 메시 이름. */
 const DECOR_MESH: Record<VillageDecorKind, string> = {
   flowerWhite: "flower-white",
@@ -495,14 +467,12 @@ interface VillageGroundProps {
  */
 function VillageGround({ daylight, pathMaterials, groundMaterial }: VillageGroundProps) {
   // 불러온 그림 목록은 불러오기가 같은 배열을 돌려주므로 그대로 의존값으로 쓴다(나눠 담은 새 배열은 그릴 때마다 달라진다)
-  const textures = useLoader(
-    THREE.TextureLoader,
-    [groundAsset("season-scatter"), groundAsset("dirt"), groundAsset("dirt-b"), ...GROUND_LAYER_ASSETS.map(groundAsset)] as string[]
-  ) as THREE.Texture[];
+  // 앱이 시작될 때 미리 읽기 시작한 것(lobby3d-preload)을 함께 쓴다
+  const textures = useLoader(THREE.TextureLoader, villageGroundTextureAssets()) as THREE.Texture[];
   const scatterTexture = textures[0];
   const dirtTexture = textures[1];
   const dirtBTexture = textures[2];
-  const flowers = useLoader(GLTFLoader, groundAsset("flowers") as string) as GLTF;
+  const flowers = useLoader(GLTFLoader, villageFlowersAsset()) as GLTF;
   const built = useMemo(() => {
     const root = new THREE.Group();
     root.name = "village-ground";

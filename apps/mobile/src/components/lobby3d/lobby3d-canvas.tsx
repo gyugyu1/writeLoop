@@ -31,6 +31,7 @@ import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle 
 import { DaylightRig, createDaylightState, type DaylightState } from "./lobby3d-daylight";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
 import { BakedRoom, BakedRoomErrorBoundary } from "./lobby3d-room";
+import { freezeMatrices } from "./static-matrices";
 import type * as VillageModule from "./lobby3d-village";
 
 // 3D 로비 그리기. 동작 규칙은 LobbySim(화면이 가진다)에 있고, 여기서는 매 프레임 그 상태를 그림으로 옮긴다.
@@ -891,6 +892,22 @@ function Scene({
   const daylightState = useMemo(() => createDaylightState(daylight), []); // eslint-disable-line react-hooks/exhaustive-deps
   const roomTint = useMemo(() => new THREE.Color(0xffffff), []);
   const { camera, size, scene } = useThree();
+  // 위치 행렬: 장면 루트와 3D 묶음(방·그림자를 담은 것)은 움직이지 않으니 한 번 계산해 두고 다시 계산하지 않는다.
+  // 장면이 자동 갱신이면 아래 모든 물체가 프레임마다 다시 곱해진다. 그림자는 라룹이를 따라 움직이고, 방은 아래에서 따로 다룬다
+  useEffect(() => {
+    scene.matrixAutoUpdate = false;
+    scene.updateMatrix();
+    scene.matrixWorldNeedsUpdate = true;
+    const thaw = freezeMatrices(world.root, [world.shadow, world.room]);
+    return () => {
+      thaw();
+      scene.matrixAutoUpdate = true;
+    };
+  }, [scene, world]);
+  // 방에만 보이는 묶음(world.room, 아래 <group>)은 마을에 있는 동안 얼리고, 방으로 돌아오면 그 프레임부터 다시 갱신한다
+  const roomOnly = useMemo(() => new THREE.Group(), []);
+  const roomFrozen = useRef<{ hidden: boolean; thaw: (() => void)[] }>({ hidden: false, thaw: [] });
+  useEffect(() => () => roomFrozen.current.thaw.forEach((thaw) => thaw()), []);
   const target = useRef(new THREE.Vector3(sim.x, 0, sim.z));
   const character = useRef<CharacterHandle | null>(null);
   const fps = useRef({ frames: 0, since: 0, value: 0, lastSent: 0 });
@@ -1158,6 +1175,13 @@ function Scene({
   useFrame((_, delta) => {
     paintShownFloor(world);
     world.room.visible = areaRef.current === "room";
+    const roomHidden = areaRef.current !== "room";
+    if (roomFrozen.current.hidden !== roomHidden) {
+      const frozen = roomFrozen.current;
+      frozen.thaw.forEach((thaw) => thaw());
+      frozen.thaw = roomHidden ? [world.room, roomOnly].map((o) => freezeMatrices(o)) : [];
+      frozen.hidden = roomHidden;
+    }
     const nowMs = Date.now();
     const dt = Math.min(0.05, delta);
     onFrame(dt, nowMs);
@@ -1258,7 +1282,7 @@ function Scene({
       <primitive object={editGrid} />
       {/* 방에만 있는 것: 마을에서는 숨긴다(하루의 때 색감은 마을도 읽으므로 DaylightRig는 늘 돈다) */}
       {/* eslint-disable-next-line react/no-unknown-property */}
-      <group visible={area === "room"}>
+      <primitive object={roomOnly} visible={area === "room"}>
       <DaylightRig
         key={`daylight-${layoutKey}`}
         state={daylightState}
@@ -1292,7 +1316,7 @@ function Scene({
           </Suspense>
         </BakedRoomErrorBoundary>
       ) : null}
-      </group>
+      </primitive>
       {area === "village" ? (
         <VillageLayer sim={sim} daylight={daylightState} pickTargets={villagePick} onReady={onVillageReady} onFailed={onVillageFailed} />
       ) : null}

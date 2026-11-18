@@ -12,6 +12,7 @@ import { buildPathOutlines, insetLoop, type PathPoint } from "@/lib/lobby3d/vill
 import type { DaylightState } from "./lobby3d-daylight";
 import { SEASON_COLORS } from "./lobby3d-outdoor";
 import { InstanceCulling } from "./instance-culling";
+import { freezeMatrices } from "./static-matrices";
 
 // 바깥 마을 그리기. 풀밭·하늘·길(코드로 짓고 풀밭은 계절·하루의 때를 따른다. 길은 칸 모양의 경계를 둥글게 다듬어 짓는다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·풍차·나무 틀)을 그린다.
 // 풀밭 바탕은 여러 무늬(짧은 풀·무성한 풀·클로버·이끼·맨땅)를 잡음과 자리 지도로 섞어 그리고(셰이더), 그 위에 계절 흩뿌림(가을 낙엽·봄 꽃잎·여름 잎)을 흩고, 3D 꽃·풀 장식(village-flowers.glb)을 무리 지어 심으며, 길에 흙 무늬를 입힌다(VillageGround. 그림·모델을 못 불러오면 빼고 그린다).
@@ -233,6 +234,12 @@ export function VillageNature({ daylight }: VillageNatureProps) {
   }, []);
   const { scene } = useThree();
   const sky = useMemo(() => new THREE.Color(), []);
+
+  // 풀밭·나무·길과 마을 빛은 움직이지 않는다: 위치 행렬을 한 번 계산해 두고 다시 계산하지 않는다
+  useEffect(() => {
+    const thaws = [nature.group, hemi, sun, sun.target].map((o) => freezeMatrices(o));
+    return () => thaws.forEach((thaw) => thaw());
+  }, [nature, hemi, sun]);
 
   useEffect(() => {
     const before = scene.background;
@@ -609,6 +616,9 @@ function VillageGround({ daylight, pathMaterials, groundMaterial }: VillageGroun
 
   useEffect(() => () => built.owned.forEach((o) => o.dispose()), [built]);
 
+  // 땅 꾸밈은 움직이지 않는다(인스턴스 행렬은 따로): 위치 행렬을 한 번 계산해 두고 다시 계산하지 않는다
+  useEffect(() => freezeMatrices(built.root), [built]);
+
   // 꽃·풀 장식: 시야 밖이라 숨긴 메시도 첫 프레임에 셰이더를 미리 준비한다(처음 시야에 들 때 끊기지 않게). 마을 모델의 건물 재질과 같은 방식
   const warmed = useRef<unknown>(null);
   useFrame((state) => {
@@ -848,6 +858,9 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       console.warn("[lobby3d] 건물 반투명 재질을 미리 컴파일하지 못했습니다", error);
     }
   };
+
+  // 마을 모델은 풍차 날개 말고 움직이지 않는다: 위치 행렬을 한 번 계산해 두고 다시 계산하지 않는다
+  useEffect(() => freezeMatrices(built.root, built.rotor ? [built.rotor] : []), [built]);
 
   useEffect(() => {
     pickTargets.current = built.pick;

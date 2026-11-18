@@ -33,6 +33,11 @@
 //   "마을 모델 줄이 하나이고 Kenney와 CC0, 건물 셋(라룹이 집·가구점·옷집)이 적혀 있다"로 본다. 다른 줄은 기준 커밋 그대로 차례대로 있고 더해진 줄은 새 모델 파일의
 //   출처 줄뿐이라는 단언(101 11 결정)은 그대로다.
 // - S4(스크립트 코드가 기준 커밋과 같다)는 뺐다: 106이 가게 모델을 놓으려고 스크립트를 고친다. 집을 땅에 맞춰 놓는 방법은 N3·S1(벽 가로 = 땅 가로, 벽 가운데·앞면)이 본다.
+// 작업 107(라룹이 집 크기) 명세의 "그 때문에 고칠 기존 테스트"(100 테스트 가운데 106에서 2/3 크기로 고친 집 크기)와 바뀌는 동작 1
+// (땅 가로 4칸 → 5칸, 깊이 약 4.2칸(z0 약 7.8), 집 전체 1.25배)로 qa가 N3·N4를 고쳤다(107 qa 보고 02-qa-tests.md). 값은 tests/__fixtures__/village-home-size-107.ts.
+// - N3: 벽 가로 4(±0.01)·깊이 3.3242(3.30~3.35)·높이 3.2712(3.24~3.30) → 1.25배: 벽 가로 5(±0.01)·깊이 4.1553(4.13~4.18)·높이 4.0890(4.06~4.12).
+//   가리기 높이 5 이하는 그대로다.
+// - N4: 가로 4칸·깊이 약 3.3칸(3.0~3.6) → 가로 5칸·깊이 약 4.2칸(4.1~4.3). 땅 앞 z 12, 벽 뒷면이 땅 뒤 z0 언저리(±0.1)는 그대로다.
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -53,7 +58,8 @@ import {
   worldPoints,
   type Glb
 } from "../__fixtures__/village-glb-098";
-import { HOME_DEPTH, HOME_DEPTH_TOLERANCE, HOME_FRONT_Z, HOME_MODEL, HOME_WIDTH, solidOutsideChanged } from "../__fixtures__/village-shops-106";
+import { HOME_FRONT_Z, HOME_MODEL, solidOutsideChanged } from "../__fixtures__/village-shops-106";
+import { HOME_DEPTH_107, HOME_NEAR_107, HOME_WIDTH_107 } from "../__fixtures__/village-home-size-107";
 
 /** 작업 100의 기준 커밋(명세 첫 줄). */
 const BASE = "fcd7e6d";
@@ -150,23 +156,23 @@ describe("[spec] 100 바뀔 동작: 각진 집 모델, 땅, 스크립트 머리�
     expect({ widthToDepth, same: near(widthToDepth, NEW_MODEL_RATIO.widthToDepth) }).toEqual({ widthToDepth, same: true });
   });
 
-  it("N3 크기(106 명세 3-1): 벽 가로는 4칸(땅 가로, ±0.01), 벽 깊이는 약 3.32칸(3.30~3.35), 높이는 약 3.27칸(3.24~3.30)이고 가리기 계산 높이 5칸을 넘지 않는다", () => {
+  it("N3 크기(107 명세 1): 벽 가로는 5칸(땅 가로, ±0.01), 벽 깊이는 약 4.16칸(4.13~4.18), 높이는 약 4.09칸(4.06~4.12)이고 가리기 계산 높이 5칸을 넘지 않는다", () => {
     const { box, wall } = homeShape();
     const wallWidth = wall.maxX - wall.minX;
     const wallDepth = wall.maxZ - wall.minZ;
     const height = box.maxY - box.minY;
-    expect({ wallWidth, ok: Math.abs(wallWidth - HOME_WIDTH) <= 0.01 }).toEqual({ wallWidth, ok: true });
-    expect({ wallDepth, ok: wallDepth >= 3.3 && wallDepth <= 3.35 }).toEqual({ wallDepth, ok: true });
-    expect({ height, ok: height >= 3.24 && height <= 3.3 }).toEqual({ height, ok: true });
+    expect({ wallWidth, ok: Math.abs(wallWidth - HOME_WIDTH_107) <= 0.01 }).toEqual({ wallWidth, ok: true });
+    expect({ wallDepth, ok: wallDepth >= 4.13 && wallDepth <= 4.18 }).toEqual({ wallDepth, ok: true });
+    expect({ height, ok: height >= 4.06 && height <= 4.12 }).toEqual({ height, ok: true });
     expect(homeBuilding().height).toBe(5);
     expect(height).toBeLessThanOrEqual(homeBuilding().height);
   });
 
-  it("N4 땅(106 명세 3-1): 배치 파일과 앱 데이터의 라룹이 집 땅이 같고 가로 4칸·땅 앞 z 12·깊이 약 3.3칸(3.0~3.6)이며, 벽 뒷면이 새 땅 뒤 z0 언저리(±0.1)다", () => {
+  it("N4 땅(107 명세 1): 배치 파일과 앱 데이터의 라룹이 집 땅이 같고 가로 5칸·땅 앞 z 12·깊이 약 4.2칸(4.1~4.3)이며, 벽 뒷면이 새 땅 뒤 z0 언저리(±0.1)다", () => {
     const [x0, z0, x1, z1] = homeBuilding().rect;
     expect([...layoutHome().rect]).toEqual([x0, z0, x1, z1]);
-    expect({ width: x1 - x0, front: z1 }).toEqual({ width: HOME_WIDTH, front: HOME_FRONT_Z });
-    expect({ depth: z1 - z0, ok: Math.abs(z1 - z0 - HOME_DEPTH) <= HOME_DEPTH_TOLERANCE }).toEqual({ depth: z1 - z0, ok: true });
+    expect({ width: x1 - x0, front: z1 }).toEqual({ width: HOME_WIDTH_107, front: HOME_FRONT_Z });
+    expect({ depth: z1 - z0, ok: Math.abs(z1 - z0 - HOME_DEPTH_107) <= HOME_NEAR_107 }).toEqual({ depth: z1 - z0, ok: true });
     const { wall } = homeShape();
     expect({ back: wall.minZ, z0, ok: Math.abs(wall.minZ - z0) <= 0.1 }).toEqual({ back: wall.minZ, z0, ok: true });
   });

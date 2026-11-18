@@ -26,6 +26,10 @@
 // - K2: 라룹이 집 말고 → 106이 바꾸는 건물·길·나무 말고(가구점의 id·이름·땅·층수는 그대로 본다).
 // - K3: 옛 라룹이 집 땅 밖 → 그 밖에서 106이 바꾸는 곳(카페·도서관·옷집 땅, 옮긴 나무)도 뺀 막힌 칸(106 기준 커밋 c728f00에서 잰 개수·sha256).
 // - K4·K5: 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths)을 빼고 견준다. 집 밖 창 불빛 판이 그대로인지는 뺐다(106이 그 창이 있던 조립 건물을 모델로 바꾸거나 뺀다).
+// 작업 107(라룹이 집 크기) 명세의 "그 때문에 고칠 기존 테스트"(098 테스트 가운데 106에서 2/3 크기로 고친 집 크기)와 바뀌는 동작 1
+// (땅 가로 4칸 → 5칸, 집 전체 1.25배)로 qa가 C3을 고쳤다(107 qa 보고 02-qa-tests.md):
+// - C3: 가로 약 4.3칸(4.2~4.4)·높이 약 3.27칸(3.2~3.35) → 1.25배: 크기 상자 가로 5.3775·높이 4.0890이라 가로 5.28~5.48, 높이 4.0~4.18.
+// C7(막힌 칸 범위 x 33~37, z 9~11과 옛 땅 밖 줄)은 새 땅 [33, 약 7.8, 38, 12]에서도 맞아 고치지 않았다(새 집 칸 전체는 107 qa 테스트 H2가 본다).
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -136,12 +140,12 @@ describe("[spec] 098 바뀔 동작: 라룹이 집 모델·크기·땅·가리기
 
   // 작업 100 04 결정(사용자 2026-11-17 "비율 확인만 빼기"): 옛 둥근 집의 크기 상자(모델 단위)와 견주던 "모델 비율 그대로 고르게 키웠다" 단언을 뺐다.
   // 집 모델을 각진 집으로 바꾸면 비율이 달라져서다. 넣은 모델 기준의 고르게 키움은 작업 100 qa 테스트 N2(lobby3d-village-angular-home.spec.test.ts)가 본다.
-  it("C3 크기(106 명세 3-1: 2/3 크기): 마을 모델 안 집은 가로 약 4.3칸(4.2~4.4), 높이 약 3.27칸(3.2~3.35)이다", () => {
+  it("C3 크기(107 명세 1: 1.25배): 마을 모델 안 집은 가로 약 5.38칸(5.28~5.48), 높이 약 4.09칸(4.0~4.18)이다", () => {
     const box = boxOf(homePoints(nowVillageGlb()));
     const width = box.maxX - box.minX;
     const height = box.maxY - box.minY;
-    expect({ width, inRange: width >= 4.2 && width <= 4.4 }).toEqual({ width, inRange: true });
-    expect({ height, inRange: height >= 3.2 && height <= 3.35 }).toEqual({ height, inRange: true });
+    expect({ width, inRange: width >= 5.28 && width <= 5.48 }).toEqual({ width, inRange: true });
+    expect({ height, inRange: height >= 4.0 && height <= 4.18 }).toEqual({ height, inRange: true });
   });
 
   it("C5 땅(명세 4): 배치 파일과 앱 데이터의 라룹이 집 층수가 1이다", () => {

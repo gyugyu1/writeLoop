@@ -10,6 +10,11 @@
 // "근처 빈 풀밭"(옮기는 나무)은 옛 자리에서 8칸 안이고, 건물 땅·길 칸에 걸리지 않으며, 다른 막힌 칸과 겹치지 않는 것(K2)으로 본다.
 //
 // 바뀔 동작(구현 전 실패): V1~V11. 그대로 둘 동작(구현 전·뒤 통과): K1~K4.
+// 작업 107(라룹이 집 크기) 명세의 "그 때문에 고칠 기존 테스트"(106 테스트 가운데 집 땅을 가로 4칸·깊이 3.3으로 보는 것)와 바뀌는 동작 1
+// (땅 가로 4칸 → 5칸, 땅 [33, z0, 38, 12], 깊이 약 4.2칸(z0 약 7.8), 문 x 35.5·땅 앞 z 12 그대로)로 qa가 V10을 고쳤다(107 qa 보고 02-qa-tests.md):
+// - 가로 4 → 5, 깊이 약 3.3(3.0~3.6) → 약 4.2(4.1~4.3). 값은 tests/__fixtures__/village-home-size-107.ts.
+// - 걸어갈 수 있는 옛 땅: x 32 열·x 38 열의 z 7~11과 z 7 줄의 x 33~37 → x 32 열·x 38 열의 z 7~11(z 7 줄은 새 집이 막는다).
+// - 막힌 집 가운데: x 33~37, z 9~11 → 새 집 칸 전체 x 33~37, z 7~11.
 import { LobbySim, VILLAGE_MARK_IDS, applyArea, findPath, hasPlaceBubble, isFree, markInfo, type FloorPoint, type PlaceId } from "@/lib/lobby3d/engine";
 import { VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_PLACES, VILLAGE_SOLID_TILES, VILLAGE_START, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
@@ -21,11 +26,8 @@ import {
   EXPECTED_PATH_RECTS,
   FURNITURE_DOOR_X,
   FURNITURE_RECT,
-  HOME_DEPTH,
-  HOME_DEPTH_TOLERANCE,
   HOME_DOOR_X,
   HOME_FRONT_Z,
-  HOME_WIDTH,
   MOVED_TREE,
   OLD_CAFE_RECT,
   OLD_LIBRARY_RECT,
@@ -40,6 +42,7 @@ import {
   treeTiles,
   type Rect
 } from "../__fixtures__/village-shops-106";
+import { HOME_DEPTH_107, HOME_NEAR_107, HOME_WIDTH_107 } from "../__fixtures__/village-home-size-107";
 
 /** 막힌 칸 가운데 이번 작업이 바꾸는 곳(옛 라룹이 집·카페·도서관·옷집 땅, 옮긴 나무) 밖의 칸. 기준 커밋 c728f00에서 이 테스트의 계산으로 잰 값. */
 const SOLID_OUTSIDE_CHANGED = { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" };
@@ -168,19 +171,18 @@ describe("[spec] 106 바뀔 동작: 건물·장소(명세 1·2·3)", () => {
     expect(sorted(treeTiles(x, z)).filter((t) => taken.has(t))).toEqual([]);
   });
 
-  it("V10 라룹이 집 땅(명세 3-1): 가로 4칸, 땅 앞 z 12, 깊이 약 3.3칸(3.0~3.6), 문 x 35.5. 줄어 남는 옛 땅(x 32 열·x 38 열의 z 7~11, z 7 줄의 x 33~37)은 걸어갈 수 있고, 집 가운데(x 33~37, z 9~11)는 막혀 있다", () => {
+  it("V10 라룹이 집 땅(명세 3-1, 107 명세 1): 가로 5칸, 땅 앞 z 12, 깊이 약 4.2칸(4.1~4.3), 문 x 35.5. 줄어 남는 옛 땅(x 32 열·x 38 열의 z 7~11)은 걸어갈 수 있고, 집 칸(x 33~37, z 7~11)은 막혀 있다", () => {
     const home = VILLAGE_BUILDINGS.find((b) => b.id === "home")!;
     const [x0, z0, x1, z1] = home.rect;
     const layoutHome = LAYOUT.buildings.find((b) => b.id === "home")!;
     expect([...layoutHome.rect]).toEqual([x0, z0, x1, z1]);
-    expect({ width: x1 - x0, front: z1, doorX: home.doorX }).toEqual({ width: HOME_WIDTH, front: HOME_FRONT_Z, doorX: HOME_DOOR_X });
-    expect({ depth: z1 - z0, near: Math.abs(z1 - z0 - HOME_DEPTH) <= HOME_DEPTH_TOLERANCE }).toEqual({ depth: z1 - z0, near: true });
+    expect({ width: x1 - x0, front: z1, doorX: home.doorX }).toEqual({ width: HOME_WIDTH_107, front: HOME_FRONT_Z, doorX: HOME_DOOR_X });
+    expect({ depth: z1 - z0, near: Math.abs(z1 - z0 - HOME_DEPTH_107) <= HOME_NEAR_107 }).toEqual({ depth: z1 - z0, near: true });
     const freed: string[] = [];
     for (let z = 7; z < 12; z += 1) freed.push(`32,${z}`, `38,${z}`);
-    for (let x = 33; x < 38; x += 1) freed.push(`${x},7`);
     expect(freed.filter((t) => VILLAGE_SOLID_TILES.has(t) || !isFree(tileCenter(t).x, tileCenter(t).z))).toEqual([]);
     const open: string[] = [];
-    for (let x = 33; x < 38; x += 1) for (let z = 9; z < 12; z += 1) if (isFree(x + 0.5, z + 0.5)) open.push(`${x},${z}`);
+    for (let x = 33; x < 38; x += 1) for (let z = 7; z < 12; z += 1) if (isFree(x + 0.5, z + 0.5)) open.push(`${x},${z}`);
     expect(open).toEqual([]);
   });
 

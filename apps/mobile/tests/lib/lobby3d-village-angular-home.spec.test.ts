@@ -15,6 +15,9 @@
 //   벽 가로 6, 벽 깊이 4.986, 높이 4.907이다(명세 2 "벽 깊이 약 4.99칸", "높이는 약 4.9칸"). 벽 앞면을 z 12에 두면 벽 뒷면은 z 7.014다.
 //
 // 바뀔 동작(구현 전 실패): N1~N6. 그대로 둘 동작(구현 전·뒤 통과): S1~S4.
+// N6은 작업 113(새 나무 모델 넣기) 15-main-decision.md 결정 1(사용자 2026-11-18 "3MB 받아들이고 qa가 고침")으로 qa가 다시 고쳤다: 113 명세 13대로
+// CREDITS.md에 새 나무 줄(파일 칸 `trees/WriteLoop_Tree_A_LOD1.glb` 외 다섯)을 더하므로, 파일 칸에 새 나무 GLB 이름이 든 표 줄도 더해진 새 모델 줄로 허용한다.
+// 나머지 단언(마을 모델 줄, 기준 커밋 줄이 차례대로 남음, 그 밖에 더해진 줄은 새 모델 파일 한 줄)은 그대로다.
 // N6은 작업 101(마을 땅 무늬) 11 결정(사용자 2026-11-17 "N6을 고침 (추천)")으로 qa가 고쳤다. 작업 101이 새 모델(village-flowers.glb)을 넣으며
 // 모델마다 출처를 적는 규칙대로 CREDITS.md에 그 줄을 더하므로, "다른 줄은 기준 커밋과 같다" 대신 "기준 커밋의 다른 줄은 차례 그대로 모두 있고,
 // 더해진 줄은 기준 커밋에 없던 모델 파일(.glb/.gltf)의 표 줄뿐이다"로 본다. lobby-village.glb 줄에 대한 단언은 그대로다.
@@ -200,7 +203,10 @@ describe("[spec] 100 바뀔 동작: 각진 집 모델, 땅, 스크립트 머리�
       else added.push(l);
     }
     expect({ missingFromBase: baseLines.slice(at) }).toEqual({ missingFromBase: [] });
+    // 113: 파일 칸이 새 나무 GLB 이름(`…WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb`)으로 시작하는 표 줄도 새 모델 줄로 본다
+    const isTreeRow = (l: string) => /^\| `[^`]*WriteLoop_Tree_[ABC]_LOD[12]\.glb`[^|]*\|[^|]*\S[^|]*\|[^|]*\S[^|]*\|$/.test(l);
     const notNewModelRow = added.filter((l) => {
+      if (isTreeRow(l)) return false;
       const m = /^\| `([^`]+\.(?:glb|gltf))` \|[^|]*\S[^|]*\|[^|]*\S[^|]*\|$/.exec(l);
       return !m || baseFiles.has(m[1]);
     });

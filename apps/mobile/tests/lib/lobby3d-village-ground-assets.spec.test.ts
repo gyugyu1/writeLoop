@@ -9,6 +9,8 @@
 // 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(마을 모델 파일 크기가 두 가게 모델 약 0.6MB씩 늘어난다, 마을 모델 묶음)로 qa가 고쳤다
 // (106 qa 보고 02-qa-tests.md). 106은 마을 모델(lobby-village.glb)을 다시 구워 건물을 모델로 바꾼다.
 // - A3: 자산 폴더 크기 증가에서 마을 모델 파일(lobby-village.glb)은 뺀다(그 파일은 106이 키운다). 1,100,000바이트 한도는 그대로다.
+// 작업 113(새 나무 모델 넣기) 15-main-decision.md 결정 1(사용자 2026-11-18 "3MB 받아들이고 qa가 고침"): 113이 새 나무 GLB 여섯(assets/models/trees/, 약 3MB)을
+// 넣어 앱이 그만큼 커지는 것을 사용자가 받아들였다. 그래서 크기 증가에서 나무 폴더(apps/mobile/assets/models/trees/)의 파일도 뺀다. 1,100,000바이트 한도는 그대로다.
 // - K9: 마을 모델 파일이 바이트까지 같다 → 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths) 밖 묶음의 메시가 기준 커밋과 같다(098 K5와 같은 방법).
 import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
@@ -71,8 +73,9 @@ describe("[spec] 101 바뀔 동작: 그림·모델 자산(01의 4, 03 결정 3·
 });
 
 describe("[spec] 101 그대로 둘 동작: 앱 크기와 마을 모델 파일", () => {
-  it("A3 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 1,100,000바이트 이하다(그림과 모델을 합쳐 약 1MB 안. 106이 키우는 마을 모델 파일은 뺀다)", () => {
-    const sum = (m: Map<string, number>) => [...m.entries()].filter(([path]) => path !== VILLAGE_GLB_PATH_106).reduce((a, [, b]) => a + b, 0);
+  it("A3 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 1,100,000바이트 이하다(그림과 모델을 합쳐 약 1MB 안. 106이 키우는 마을 모델 파일과 113이 넣는 나무 폴더는 뺀다)", () => {
+    const sum = (m: Map<string, number>) =>
+      [...m.entries()].filter(([path]) => path !== VILLAGE_GLB_PATH_106 && !path.startsWith(`${ASSETS}/models/trees/`)).reduce((a, [, b]) => a + b, 0);
     const base = baseAssets();
     expect(base.size).toBeGreaterThan(0);
     const growth = sum(nowAssets()) - sum(base);

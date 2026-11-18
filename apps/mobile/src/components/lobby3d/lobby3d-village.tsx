@@ -16,6 +16,7 @@ import { InstanceCulling } from "./instance-culling";
 import { freezeMatrices } from "./static-matrices";
 import { buildTreeKit, dropsLeavesInWinter, treeModelAssets } from "./tree-models";
 import { buildVillageFountain, startFountainFlow, villageFountainAsset } from "./village-fountain";
+import { buildVillageStreetlamps, villageStreetlampAsset } from "./village-streetlamp";
 
 // 바깥 마을 그리기. 풀밭·하늘·길(코드로 짓고 풀밭은 계절·하루의 때를 따른다. 길은 칸 모양의 경계를 둥글게 다듬어 짓는다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·나무 틀)을 그린다.
 // 풀밭 바탕은 여러 무늬(짧은 풀·무성한 풀·클로버·이끼·맨땅)를 잡음과 자리 지도로 섞어 그리고(셰이더), 그 위에 계절 흩뿌림(가을 낙엽·봄 꽃잎·여름 잎)을 흩고, 3D 꽃·풀 장식(village-flowers.glb)을 무리 지어 심으며, 길에 흙 무늬를 입힌다(VillageGround. 그림·모델을 못 불러오면 빼고 그린다).
@@ -660,11 +661,15 @@ interface VillageModelProps {
 }
 
 
-/** 건물·소품 모델과 광장 분수. 라룹이를 가리는 건물은 반투명하게 하고, 밤에는 불빛 판을 켠다. 분수 물은 고리 클립으로 흐른다. */
+/** 건물·소품 모델과 광장 분수·가로등. 라룹이를 가리는 건물은 반투명하게 하고, 밤에는 창 불빛 판과 가로등 유리창을 켠다. 분수 물은 고리 클립으로 흐른다. */
 export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) {
   const gltf = useLoader(GLTFLoader, VILLAGE_ASSET as string) as GLTF;
   const fountainGltf = useLoader(GLTFLoader, villageFountainAsset()) as GLTF;
   const fountain = useMemo(() => buildVillageFountain(fountainGltf), [fountainGltf]);
+  const lampGltf = useLoader(GLTFLoader, villageStreetlampAsset()) as GLTF;
+  // 가로등 넷: 인스턴스 메시 하나(모양·그림·재질 하나를 함께 쓴다). 마을을 나가면 가로등용 재질을 버린다
+  const lamps = useMemo(() => buildVillageStreetlamps(lampGltf), [lampGltf]);
+  useEffect(() => () => lamps?.dispose(), [lamps]);
   // 물 흐름 믹서: 분수 하나에 하나. 마을을 나가면(이 부분이 빠지면) 멈추고 정리해, 다시 들어와도 하나만 돈다
   const fountainFlow = useRef<ReturnType<typeof startFountainFlow> | null>(null);
   useEffect(() => {
@@ -823,14 +828,15 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
   useEffect(() => freezeMatrices(built.root), [built]);
   // 분수도 자리가 움직이지 않는다(물은 모프 영향값만 바뀌어 위치 행렬과 상관없다)
   useEffect(() => freezeMatrices(fountain.root), [fountain]);
+  useEffect(() => (lamps ? freezeMatrices(lamps.mesh) : undefined), [lamps]);
 
   useEffect(() => {
-    // 분수는 예전 마을 모델의 분수(소품 묶음)처럼 누르면 그 자리를 누른 곳으로 본다
-    pickTargets.current = [...built.pick, ...fountain.meshes];
+    // 분수·가로등은 예전 마을 모델의 분수·가로등(소품 묶음)처럼 누르면 그 자리를 누른 곳으로 본다
+    pickTargets.current = [...built.pick, ...fountain.meshes, ...(lamps ? [lamps.mesh] : [])];
     return () => {
       pickTargets.current = [];
     };
-  }, [built, fountain, pickTargets]);
+  }, [built, fountain, lamps, pickTargets]);
   useEffect(() => () => built.owned.forEach((m) => m.dispose()), [built]);
 
   useFrame((state, delta) => {
@@ -854,6 +860,8 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     }
     // 밤 불빛: 천장 조명과 같은 때(새벽·어스름·밤) 켜진다. 켜고 끌 때는 천장 조명처럼 부드럽게
     built.glowMat.opacity = 0.9 * daylight.ceiling;
+    // 가로등 유리창: 낮에는 빛나지 않아 유리 색 그대로, 해가 지면 발광 그림의 호박색이 서서히 드러난다
+    lamps?.setGlow(daylight.ceiling);
     // 유리: 하루의 때를 따르고, 그 건물이 라룹이를 가려 옅어지면 같은 비율로 옅어진다
     const glassOpacity = GLASS_DAY_OPACITY + (GLASS_NIGHT_OPACITY - GLASS_DAY_OPACITY) * daylight.ceiling;
     for (const { material, building } of built.glasses) {
@@ -870,6 +878,8 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       <primitive object={built.root} />
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={fountain.root} />
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      {lamps ? <primitive object={lamps.mesh} /> : null}
     </>
   );
 }
@@ -1023,6 +1033,7 @@ export class VillageModelErrorBoundary extends Component<{ children: ReactNode; 
     // 읽기 캐시에 남은 오류를 지운다(다음에 '나가기'를 누르면 다시 읽는다)
     useLoader.clear(GLTFLoader, VILLAGE_ASSET as string);
     useLoader.clear(GLTFLoader, villageFountainAsset());
+    useLoader.clear(GLTFLoader, villageStreetlampAsset());
     this.props.onFailed?.();
   }
 

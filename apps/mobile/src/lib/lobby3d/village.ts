@@ -50,6 +50,9 @@ export const VILLAGE_BOUNDARY: { readonly x: number; readonly z: number; readonl
 /** 광장 분수(가운데 x·z, 걷기를 막는 반지름). 그리기(village-fountain)가 분수 모델을 이 자리에 이 반지름 크기로 놓는다. */
 export const VILLAGE_FOUNTAIN: { readonly x: number; readonly z: number; readonly radius: number } = LAYOUT.fountain;
 
+/** 광장 가로등 자리(가운데 x·z). 그리기(village-streetlamp)가 이 자리에 가로등 모델을 놓고, 걷기 막기도 이 자리를 쓴다. */
+export const VILLAGE_LANTERNS: readonly (readonly [number, number])[] = LAYOUT.lanterns as unknown as [number, number][];
+
 /** 길 사각형([x0, z0, x1, z1], x1·z1은 들지 않음). 그리기(lobby3d-village)가 이 칸들로 둥근 길을 짓는다(village-paths). */
 export const VILLAGE_PATH_RECTS: readonly (readonly [number, number, number, number])[] = LAYOUT.paths as unknown as [number, number, number, number][];
 

@@ -11,8 +11,8 @@
 # 배치는 앱과 같은 apps/mobile/src/lib/lobby3d/village-layout.json을 읽는다(앱은 같은 파일로 막힌 칸·장소를 계산한다).
 # 묶음 이름(앱이 찾는다):
 #   bld-<건물 id>  건물 하나(벽·문·창·지붕). 라룹이를 가리면 앱이 반투명하게 한다
-#   glow-<무엇>    밤에 켜지는 불빛 판(창, 가로등). 앱이 새벽·어스름·밤에만 보인다
-#   props          가로등·노점·벤치·바위(분수는 앱이 따로 읽는 WriteLoop 분수 모델 village-fountain.glb다. 배치 파일 fountain 자리에 놓는다)
+#   glow-<무엇>    밤에 켜지는 불빛 판(창). 앱이 새벽·어스름·밤에만 보인다
+#   props          노점·벤치·바위(분수·가로등은 앱이 따로 읽는 WriteLoop 모델 village-fountain.glb·village-streetlamp.glb다. 배치 파일 fountain·lanterns 자리에 놓는다)
 #   paths          돌길
 #   tpl-<나무>-leaf / tpl-<나무>-trunk  나무 틀(원점, 크기 1). 앱이 마을 나무·둘레 숲 자리에 여러 그루로 찍고, 잎은 계절 색으로 칠한다
 # 마을 경계는 배치 파일의 원(boundary)이고, 원 밖은 앱이 심는 숲이다(생울타리·울타리·풍차는 두지 않는다)
@@ -312,12 +312,6 @@ for b in LAYOUT["buildings"]:
 
 # ---------- 소품 ----------
 props = group("props")
-LANTERN_SCALE = 1.6
-for i, (x, z) in enumerate(LAYOUT["lanterns"]):
-    place("lantern", props, x, z, 0, scale=LANTERN_SCALE)
-    # 등 불빛: 등갓 안의 작은 판 두 장(앞·옆)
-    lamp = group(f"glow-lamp-{i}")
-    glow_quad(lamp, f"glow-lamp-{i}-a", x, 1.32 * LANTERN_SCALE, z + 0.001, 0.12 * LANTERN_SCALE, 0.16 * LANTERN_SCALE, "front")
 for s in LAYOUT["stalls"]:
     place("stall-red" if s["color"] == "red" else "stall-green", props, s["x"], s["z"], -90, scale=2.0)
 # 벤치: WriteLoop 벤치 모델(앉는 쪽이 모델 +Z = 앱 앞, 등받이가 뒤). rot 0이면 가로(x)로 길고 화면 쪽을 본다.

@@ -8,6 +8,7 @@ import { bundledFurnitureModels } from "@/lib/lobby3d/furniture-files";
 import { villageFlowersAsset, villageGroundTextureAssets } from "./village-ground-assets";
 import { treeModelAssets } from "./tree-models";
 import { villageFountainAsset } from "./village-fountain";
+import { villageStreetlampAsset } from "./village-streetlamp";
 
 // 로비의 3D 모델(방 껍데기, 라이트루프, 앱에 든 처음 방 가구 일곱)을 앱이 시작되면 미리 읽어 둔다. 읽어 푸는 데 몇 초가 걸린다.
 // 이 파일들은 계정·배치와 상관없이 같다(서버에서 받는 가구는 로비가 필요할 때 읽는다). 방을 짓고 그리는 것은 로비가 배치를 정한 뒤에 한다.
@@ -44,6 +45,8 @@ export function preloadLobbyModels(): void {
   useLoader.preload(GLTFLoader, VILLAGE_MODEL_ASSET);
   // 광장 분수 모델(마을 모델과 따로 읽는다. lobby3d-village가 같은 파일을 읽는다)
   useLoader.preload(GLTFLoader, villageFountainAsset());
+  // 광장 가로등 모델(마을 모델과 따로 읽는다. lobby3d-village가 같은 파일을 읽는다)
+  useLoader.preload(GLTFLoader, villageStreetlampAsset());
   // 마을 땅 꾸밈의 그림 여덟 장과 꽃 모델도 읽어 둔다. 마을에 나가는 순간 읽기 시작하면 3D 화면이 읽기를 기다렸다가 크게 다시 그리고,
   // 땅 무늬·흩뿌림·꽃이 몇 초 늦게 뜬다(땅 꾸밈이 같은 목록을 읽는다)
   useLoader.preload(THREE.TextureLoader, villageGroundTextureAssets());

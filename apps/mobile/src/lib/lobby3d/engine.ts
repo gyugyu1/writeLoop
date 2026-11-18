@@ -279,7 +279,11 @@ const tileKey = (c: number, r: number) => `${c},${r}`;
 
 export function isBlocked(x: number, z: number, solid: ReadonlySet<string> = activeSolid(), room: AreaSize = activeSize()): boolean {
   if (x < 0.25 || x > room.width - 0.25 || z < 0.45 || z > room.depth) return true;
-  return solid.has(tileKey(Math.floor(x), Math.floor(z)));
+  const c = Math.floor(x);
+  const r = Math.floor(z);
+  // 방 안 칸은 막힌 칸 배열(캐시)로 본다(칸마다 글자 키를 만들지 않게). 방 끝(z = 깊이)처럼 배열 밖이면 목록에서 찾는다
+  if (c < room.width && r < room.depth) return blockedGrid(solid, room.width, room.depth)[r * room.width + c] === 1;
+  return solid.has(tileKey(c, r));
 }
 
 /** 라이트루프가 그 자리에 설 수 있는지(몸 둘레까지 본다). */
@@ -306,14 +310,37 @@ export function isClearLine(a: FloorPoint, b: FloorPoint, solid: ReadonlySet<str
  * 칸 단위(대각선 포함)로 찾은 뒤, 막힘 없이 곧게 갈 수 있는 점은 건너뛰어 자연스럽게 편다.
  * 갈 수 없으면 null.
  */
-export function findPath(
+/** 방의 막힌 칸(solidTiles)을 새로 채울 때마다 늘린다(아래 막힌 칸 그림의 캐시를 버리려고). */
+let solidTilesVersion = 0;
+const blockedGrids = new WeakMap<ReadonlySet<string>, { width: number; depth: number; size: number; version: number; blocked: Uint8Array }>();
+
+/**
+ * 막힌 칸 목록을 칸 번호(r × 너비 + c)마다 1인 배열로 바꾼다. 길 찾기는 한 번 누를 때 여러 번 불리므로(설 자리 고르기)
+ * 같은 목록·같은 크기면 만든 배열을 다시 쓴다. 방의 막힌 칸은 같은 Set을 고쳐 쓰므로 고칠 때 늘리는 번호로 가린다.
+ */
+function blockedGrid(solid: ReadonlySet<string>, width: number, depth: number): Uint8Array {
+  const version = solid === solidTiles ? solidTilesVersion : 0;
+  const cached = blockedGrids.get(solid);
+  if (cached && cached.width === width && cached.depth === depth && cached.size === solid.size && cached.version === version) return cached.blocked;
+  const blocked = new Uint8Array(width * depth);
+  for (const key of solid) {
+    const comma = key.indexOf(",");
+    const c = Number(key.slice(0, comma));
+    const r = Number(key.slice(comma + 1));
+    if (Number.isInteger(c) && Number.isInteger(r) && c >= 0 && r >= 0 && c < width && r < depth) blocked[r * width + c] = 1;
+  }
+  blockedGrids.set(solid, { width, depth, size: solid.size, version, blocked });
+  return blocked;
+}
+
+/** 글자 키로 찾는 예전 방식(시작 칸이 방 밖일 때만 쓴다). goals는 설 수 있는 곳만 준다. */
+function findPathByKeys(
   from: FloorPoint,
   goals: FloorPoint[],
   solid: ReadonlySet<string> = activeSolid(),
   room: AreaSize = activeSize()
 ): FloorPoint[] | null {
-  const reachable = goals.filter((g) => isFree(g.x, g.z, solid, room));
-  if (reachable.length === 0) return null;
+  const reachable = goals;
   const sc = Math.floor(from.x);
   const sr = Math.floor(from.z);
   const start = tileKey(sc, sr);
@@ -366,18 +393,99 @@ export function findPath(
   return points;
 }
 
+export function findPath(
+  from: FloorPoint,
+  goals: FloorPoint[],
+  solid: ReadonlySet<string> = activeSolid(),
+  room: AreaSize = activeSize()
+): FloorPoint[] | null {
+  const reachable = goals.filter((g) => isFree(g.x, g.z, solid, room));
+  if (reachable.length === 0) return null;
+  // 칸 번호(r × 너비 + c)와 숫자 배열로 찾는다. 칸마다 글자 키를 만들고 큐 앞을 당기면(shift) 마을처럼 넓은 곳에서
+  // 휴대폰(Hermes)으로 수십 ms가 걸려 걷기 시작할 때 프레임이 끊겼다. 찾는 순서와 결과는 그대로다(너비 우선, 같은 방향 순서)
+  const width = room.width;
+  const depth = room.depth;
+  const inRoom = (c: number, r: number) => c >= 0 && r >= 0 && c < width && r < depth;
+  const blocked = blockedGrid(solid, width, depth);
+  // 방 밖 칸은 막힌 칸 목록에 있을 때만 막힌 것으로 본다(대각선 모서리 검사에서 쓴다)
+  const isSolid = (c: number, r: number) => (inRoom(c, r) ? blocked[r * width + c] === 1 : solid.has(tileKey(c, r)));
+  const sc = Math.floor(from.x);
+  const sr = Math.floor(from.z);
+  const startIndex = inRoom(sc, sr) ? sr * width + sc : -1;
+  const goalByTile = new Map<number, FloorPoint>();
+  reachable.forEach((g) => {
+    const c = Math.floor(g.x);
+    const r = Math.floor(g.z);
+    if (!inRoom(c, r)) return;
+    const k = r * width + c;
+    if (!goalByTile.has(k)) goalByTile.set(k, g);
+  });
+  // 시작 칸이 방 밖이면(보통은 없다) 예전 방식으로 찾는다(결과를 그대로 두려고)
+  if (startIndex < 0) return findPathByKeys(from, reachable, solid, room);
+  // prev: 그 칸에 처음 온 칸 번호 + 1(0은 아직 오지 않음). 시작 칸은 자기 자신 + 1
+  const prev = new Int32Array(width * depth);
+  prev[startIndex] = startIndex + 1;
+  let end = goalByTile.has(startIndex) ? startIndex : -1;
+  const queue = new Int32Array(width * depth);
+  let head = 0;
+  let tail = 0;
+  queue[tail++] = startIndex;
+  const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  while (end < 0 && head < tail) {
+    const at = queue[head++];
+    const c = at % width;
+    const r = (at - c) / width;
+    for (const [dc, dr] of dirs) {
+      const nc = c + dc;
+      const nr = r + dr;
+      if (!inRoom(nc, nr)) continue;
+      const k = nr * width + nc;
+      if (blocked[k] === 1 || prev[k] !== 0) continue;
+      if (dc !== 0 && dr !== 0 && (isSolid(c + dc, r) || isSolid(c, r + dr))) continue;
+      prev[k] = at + 1;
+      if (goalByTile.has(k)) {
+        end = k;
+        break;
+      }
+      queue[tail++] = k;
+    }
+  }
+  if (end < 0) return null;
+  const goal = goalByTile.get(end)!;
+  const tiles: FloorPoint[] = [];
+  for (let walk = end; walk !== startIndex; walk = prev[walk] - 1) {
+    const c = walk % width;
+    tiles.unshift({ x: c + 0.5, z: (walk - c) / width + 0.5 });
+  }
+  tiles.push({ x: goal.x, z: goal.z });
+  const points: FloorPoint[] = [];
+  let cur: FloorPoint = from;
+  let i = 0;
+  while (i < tiles.length) {
+    let j = tiles.length - 1;
+    while (j > i && !isClearLine(cur, tiles[j], solid, room)) j -= 1;
+    points.push(tiles[j]);
+    cur = tiles[j];
+    i = j + 1;
+  }
+  return points;
+}
+
 /**
  * from에서 가장 가까운, 설 수 있고 입구까지 걸어갈 수 있는 칸 가운데. 입구까지 갈 수 있는 칸이 없으면 설 수 있는 가장 가까운 칸, 그것도 없으면 null.
  */
 export function nearestOpenSpot(from: FloorPoint): FloorPoint | null {
-  const spots = openSpotsByDistance(from);
   // 입구: 방은 밖으로 나가는 발판 안쪽, 마을은 라룹이 집 문 앞
   const entry = area === "village" ? VILLAGE_MARKS.home.approach : MARKS.door.approach;
-  return spots.find((spot) => findPath(spot, entry) !== null) ?? spots[0] ?? null;
+  return firstOpenSpot(from, (spot) => findPath(spot, entry) !== null) ?? nearestFreeSpot(from);
 }
 
-/** 지금 구역에서 설 수 있는 칸 가운데들을 from에서 가까운 순으로. */
-function openSpotsByDistance(from: FloorPoint): FloorPoint[] {
+/**
+ * 지금 구역에서 설 수 있는 칸 가운데를 from에서 가까운 순으로 보며, accept가 처음 받아들이는 칸(없으면 null).
+ * 순서는 거리순이고 같은 거리면 칸 순서(열, 행)다. 마을은 칸이 수천 개라 모두 줄 세우면 휴대폰에서 느려서,
+ * 가까운 칸부터 하나씩 고르다가 많이 퇴짜 맞으면 그때 나머지를 줄 세운다.
+ */
+function firstOpenSpot(from: FloorPoint, accept: (spot: FloorPoint) => boolean): FloorPoint | null {
   const size = activeSize();
   const spots: FloorPoint[] = [];
   for (let c = 0; c < size.width; c += 1) {
@@ -385,13 +493,31 @@ function openSpotsByDistance(from: FloorPoint): FloorPoint[] {
       if (isFree(c + 0.5, r + 0.5)) spots.push({ x: c + 0.5, z: r + 0.5 });
     }
   }
-  spots.sort((a, b) => Math.hypot(a.x - from.x, a.z - from.z) - Math.hypot(b.x - from.x, b.z - from.z));
-  return spots;
+  const distance = spots.map((spot) => Math.hypot(spot.x - from.x, spot.z - from.z));
+  const used = new Uint8Array(spots.length);
+  for (let tries = 0; tries < 24; tries += 1) {
+    let best = -1;
+    for (let i = 0; i < spots.length; i += 1) {
+      if (used[i] === 0 && (best < 0 || distance[i] < distance[best])) best = i;
+    }
+    if (best < 0) return null;
+    if (accept(spots[best])) return spots[best];
+    used[best] = 1;
+  }
+  const order = spots.map((_, i) => i).filter((i) => used[i] === 0);
+  order.sort((a, b) => distance[a] - distance[b]);
+  for (const i of order) if (accept(spots[i])) return spots[i];
+  return null;
+}
+
+/** 지금 구역에서 from에 가장 가까운 설 수 있는 칸 가운데(없으면 null). */
+function nearestFreeSpot(from: FloorPoint): FloorPoint | null {
+  return firstOpenSpot(from, () => true);
 }
 
 /** 마을에서 걸어갈 수 없는 곳을 눌렀을 때 갈 곳: point에서 가장 가까운, from에서 걸어갈 수 있는 칸 가운데. 없으면 null. */
 export function nearestReachableSpot(from: FloorPoint, point: FloorPoint): FloorPoint | null {
-  return openSpotsByDistance(point).find((spot) => findPath(from, [spot]) !== null) ?? null;
+  return firstOpenSpot(point, (spot) => findPath(from, [spot]) !== null);
 }
 
 /** from에서 to를 바라보는 방향(라디안). 0 = 화면 앞(+z)을 봄. */
@@ -685,6 +811,7 @@ export function applyLobbyLayout(layout: LobbyLayout): void {
   roomPlaces = geometry.closets.length > 0 ? [...ROOM_MARK_IDS, ...geometry.closets.map((spot) => spot.id)] : ROOM_MARK_IDS;
   solidTiles.clear();
   for (const key of geometry.solidTiles) solidTiles.add(key);
+  solidTilesVersion += 1;
   Object.assign(CHAIR, geometry.chair);
 }
 

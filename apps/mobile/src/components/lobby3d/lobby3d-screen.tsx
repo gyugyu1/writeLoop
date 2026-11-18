@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { AccessibilityInfo, ActivityIndicator, Animated, BackHandler, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Lobby3dCanvas, {
@@ -142,7 +142,6 @@ interface ViewState {
   bubbleText: string;
   bubbleButton: string | null;
   place: PlaceId | null;
-  actionType: ActionType | null;
   idleBubble: boolean;
 }
 
@@ -163,7 +162,6 @@ function sameView(a: ViewState, b: ViewState) {
     a.bubbleText === b.bubbleText &&
     a.bubbleButton === b.bubbleButton &&
     a.place === b.place &&
-    a.actionType === b.actionType &&
     a.idleBubble === b.idleBubble
   );
 }
@@ -317,9 +315,12 @@ export default function Lobby3dScreen({
     []
   );
 
-  const [view, setView] = useState<ViewState>({ bubbleText: "", bubbleButton: null, place: null, actionType: null, idleBubble: false });
+  const [view, setView] = useState<ViewState>({ bubbleText: "", bubbleButton: null, place: null, idleBubble: false });
   // 초당 프레임 표시. 값이 바뀔 때만 다시 그린다(이름표·말풍선 자리는 아래 Animated 값으로 옮긴다).
-  const [fps, setFps] = useState<number | null>(null);
+  // 초당 프레임 수는 작은 표시(FpsText)만 다시 그린다(로비 화면 전체를 1초마다 다시 그리면 그때마다 프레임이 끊겼다)
+  const fpsListener = useRef<((fps: number) => void) | null>(null);
+  // 지금 동작(개발용 표시)도 같은 까닭으로 표시만 바꾼다(화면 상태에 두면 걷기·몸짓이 바뀔 때마다 화면 전체를 다시 그렸다)
+  const actionListener = useRef<((type: ActionType | null) => void) | null>(null);
   const [viewWidth, setViewWidth] = useState(VIEW_WIDTH_DEFAULT);
   const [toon, setToon] = useState<ToonSettings>(HOME_TOON);
   const [speed, setSpeed] = useState(sim.settings.speed);
@@ -344,10 +345,10 @@ export default function Lobby3dScreen({
       bubbleText: snap.bubbleText,
       bubbleButton: snap.bubbleButton,
       place: snap.place,
-      actionType: snap.action?.type ?? null,
       idleBubble: snap.idleBubble
     };
     setView((prev) => (sameView(prev, next) ? prev : next));
+    actionListener.current?.(snap.action?.type ?? null);
   }, [sim]);
 
   // 편집 모드('꾸미기'). editorRef가 편집 중인 배치와 고른 가구를 갖고, editView는 그릴 때 쓰는 그 모습이다(바뀔 때만 다시 그린다).
@@ -901,7 +902,7 @@ export default function Lobby3dScreen({
   const litMenu = view.place ? MENU_FOR_MARK[view.place] ?? null : null;
   const handleProjection = useCallback(
     (next: LobbyProjection) => {
-      setFps((prev) => (prev === next.fps ? prev : next.fps));
+      fpsListener.current?.(next.fps);
       onProjection?.(next);
     },
     [onProjection]
@@ -919,7 +920,7 @@ export default function Lobby3dScreen({
   return (
     <View style={styles.root}>
       {roomReady ? (
-      <Lobby3dCanvas
+      <LobbyCanvas
         sim={sim}
         viewWidth={editing ? editViewWidth ?? viewWidth : viewWidth}
         toon={shownToon}
@@ -1208,8 +1209,7 @@ export default function Lobby3dScreen({
 
       {showFps ? (
         <View pointerEvents="none" style={[styles.fps, { top: insets.top + 60 }]}>
-          <Text style={styles.fpsText}>FPS {fps ?? "-"}</Text>
-          <Text style={styles.fpsText}>동작: {view.actionType ? ACTION_LABELS[view.actionType] : "없음"}</Text>
+          <FpsText fpsListener={fpsListener} actionListener={actionListener} sim={sim} />
         </View>
       ) : null}
 
@@ -1444,6 +1444,43 @@ export default function Lobby3dScreen({
 
 /** 말풍선 폭. 방 전체가 보이는 먼 카메라에서 장소를 덜 가리게 줄였다(2026-11-07). */
 const BUBBLE_WIDTH = 196;
+
+/**
+ * 초당 프레임 수와 지금 동작(개발용 표시). 3D 화면이 1초마다 알리는 초당 프레임 수와, 화면이 sim을 읽을 때 알리는 동작을 받아
+ * 이 글만 다시 그린다(로비 화면 전체를 다시 그리면 그때마다 프레임이 끊겼다).
+ */
+function FpsText({
+  fpsListener,
+  actionListener,
+  sim
+}: {
+  fpsListener: MutableRefObject<((fps: number) => void) | null>;
+  actionListener: MutableRefObject<((type: ActionType | null) => void) | null>;
+  sim: LobbySim;
+}) {
+  const [fps, setFps] = useState<number | null>(null);
+  const [action, setAction] = useState<ActionType | null>(() => sim.snapshot(Date.now()).action?.type ?? null);
+  useEffect(() => {
+    fpsListener.current = (next) => setFps((prev) => (prev === next ? prev : next));
+    actionListener.current = (next) => setAction((prev) => (prev === next ? prev : next));
+    return () => {
+      fpsListener.current = null;
+      actionListener.current = null;
+    };
+  }, [fpsListener, actionListener]);
+  return (
+    <>
+      <Text style={styles.fpsText}>FPS {fps ?? "-"}</Text>
+      <Text style={styles.fpsText}>동작: {action ? ACTION_LABELS[action] : "없음"}</Text>
+    </>
+  );
+}
+
+/**
+ * 3D 화면. 로비 화면이 말풍선·안내 같은 화면 글 때문에 다시 그려질 때, 받는 값이 같으면 3D 장면 전체를 다시 그리지 않는다
+ * (3D 장면을 다시 그리는 데 개발 빌드에서 40~55ms가 걸려, 그때마다 프레임이 끊겼다).
+ */
+const LobbyCanvas = memo(Lobby3dCanvas);
 
 const styles = StyleSheet.create({
   travelShade: {

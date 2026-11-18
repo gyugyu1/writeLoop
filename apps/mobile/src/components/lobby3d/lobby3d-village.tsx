@@ -11,6 +11,7 @@ import { villageFlowersAsset, villageGroundTextureAssets } from "./village-groun
 import { buildPathOutlines, insetLoop, type PathPoint } from "@/lib/lobby3d/village-paths";
 import type { DaylightState } from "./lobby3d-daylight";
 import { SEASON_COLORS } from "./lobby3d-outdoor";
+import { InstanceCulling } from "./instance-culling";
 
 // 바깥 마을 그리기. 풀밭·하늘·길(코드로 짓고 풀밭은 계절·하루의 때를 따른다. 길은 칸 모양의 경계를 둥글게 다듬어 짓는다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·풍차·나무 틀)을 그린다.
 // 풀밭 바탕은 여러 무늬(짧은 풀·무성한 풀·클로버·이끼·맨땅)를 잡음과 자리 지도로 섞어 그리고(셰이더), 그 위에 계절 흩뿌림(가을 낙엽·봄 꽃잎·여름 잎)을 흩고, 3D 꽃·풀 장식(village-flowers.glb)을 무리 지어 심으며, 길에 흙 무늬를 입힌다(VillageGround. 그림·모델을 못 불러오면 빼고 그린다).
@@ -563,7 +564,9 @@ function VillageGround({ daylight, pathMaterials, groundMaterial }: VillageGroun
       groundBareAmount: { value: 1 }
     };
     const pathUniforms = pathDirtUniforms(dirtTexture, dirtBTexture, layerTextures[4], noise);
-    return { root, scatterMeshes, decorMeshes, owned, splatUniforms, pathUniforms, season: { shown: null as Season | null } };
+    // 꽃·풀 장식은 카메라 시야에 드는 포기만 그린다(흩뿌림은 조각이 납작해 그대로 둔다)
+    const decorCulling = new InstanceCulling(decorMeshes);
+    return { root, scatterMeshes, decorMeshes, decorCulling, owned, splatUniforms, pathUniforms, season: { shown: null as Season | null } };
   }, [scatterTexture, dirtTexture, dirtBTexture, textures, flowers]);
 
   useEffect(() => {
@@ -606,7 +609,8 @@ function VillageGround({ daylight, pathMaterials, groundMaterial }: VillageGroun
 
   useEffect(() => () => built.owned.forEach((o) => o.dispose()), [built]);
 
-  useFrame(() => {
+  useFrame((state) => {
+    built.decorCulling.update((state as { camera?: THREE.Camera } | undefined)?.camera);
     const season = daylight.target.season;
     if (built.season.shown === season) return;
     built.season.shown = season;
@@ -769,6 +773,7 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
     owned.push(leafMat);
     const leaves: { mesh: THREE.InstancedMesh; spots: TreeSpot[] }[] = [];
+    const treeMeshes: THREE.InstancedMesh[] = [];
     const spots = treeSpots();
     const matrix = new THREE.Matrix4();
     const turn = new THREE.Quaternion();
@@ -797,10 +802,13 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
         if (part === "leaf") mine.forEach((_, i) => mesh.setColorAt(i, new THREE.Color(0xffffff)));
         mesh.raycast = () => {};
         root.add(mesh);
+        treeMeshes.push(mesh);
         if (part === "leaf") leaves.push({ mesh, spots: mine });
       }
     }
-    return { root, buildings, glows, glowMat, glasses, hedgeMats, owned, pick, leaves, rotor: rotor as THREE.Mesh | null, season: { shown: null as Season | null } };
+    // 나무는 카메라 시야에 드는 그루만 그린다(둘레 숲은 화면에 몇 그루만 보인다). 잎 색도 이것을 거쳐 바꾼다
+    const treeCulling = new InstanceCulling(treeMeshes);
+    return { root, buildings, glows, glowMat, glasses, hedgeMats, owned, pick, leaves, treeCulling, rotor: rotor as THREE.Mesh | null, season: { shown: null as Season | null } };
   }, [gltf]);
 
   // 반투명 재질은 마을을 처음 그릴 때 미리 컴파일한다(처음 옅어질 때 컴파일로 끊기지 않게). 장면의 빛으로 컴파일해야 같은 셰이더가 된다.
@@ -866,10 +874,10 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       for (const m of built.hedgeMats) m.color.set(colors.bushes[0]);
       const color = new THREE.Color();
       for (const { mesh, spots } of built.leaves) {
-        spots.forEach((spot, i) => mesh.setColorAt(i, color.set(isPine(spot.kind) ? colors.pine : colors.leaves[spot.leaf % colors.leaves.length])));
-        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+        spots.forEach((spot, i) => built.treeCulling.setColorAt(mesh, i, color.set(isPine(spot.kind) ? colors.pine : colors.leaves[spot.leaf % colors.leaves.length])));
       }
     }
+    built.treeCulling.update(state?.camera);
     // 풍차 날개: 동작 줄이기면 멈춘다
     if (built.rotor && !sim.reduceMotion) built.rotor.rotation.z -= (delta * Math.PI * 2) / ROTOR_TURN_SECONDS;
   });

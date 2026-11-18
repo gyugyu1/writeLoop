@@ -22,16 +22,15 @@ import * as villageModule from "@/lib/lobby3d/village";
 import { VILLAGE, VILLAGE_PLACES, VILLAGE_SOLID_TILES, VILLAGE_TREES } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { REPO, parseGlb, type Glb } from "../__fixtures__/village-glb-098";
-import { describeGroups, gitShow } from "../__fixtures__/village-shops-106";
+import { describeGroups, gitShow, rectTiles } from "../__fixtures__/village-shops-106";
+import { NEW_TREES_117, trunkRect117 } from "../__fixtures__/village-trees-117";
 import {
   BASE_115,
   CIRCLE_115,
   REMOVED_GROUPS_115,
   ROCKS_KEPT_115,
-  SOLID_ALL_115,
   SOLID_KEEP_115,
   TREES_KEPT_115,
-  TREES_REMOVED_115,
   VILLAGE_BOUNDS_115,
   VILLAGE_GLB_PATH_115,
   VILLAGE_SIZE_115,
@@ -39,7 +38,6 @@ import {
   centerDistance115,
   digest115,
   edgeTile115,
-  keptTree115,
   propsTrianglesAround115,
   removedFootprint115,
   removedRocks115,
@@ -113,16 +111,18 @@ describe("[spec] 115 ① 바뀔 동작: 경계 원, 막힌 칸, 빠지는 나무
     expect(blocked).toEqual([]);
   });
 
-  it("B4 막힌 칸 전체(명세 2): 원 밖 칸 + 원 안에서 그대로 둘 막힌 칸이고, 개수와 정렬한 목록의 sha256이 명세대로 셈한 값(2309개)과 같다", () => {
-    expect(digest115([...VILLAGE_SOLID_TILES].sort())).toEqual(SOLID_ALL_115);
+  it("B4 막힌 칸 전체(명세 2): 원 밖 칸 + 원 안에서 그대로 둘 막힌 칸이다. 117: 마을 안 나무 28자리(새 자리)가 막는 칸을 더한 것과 개수·정렬한 목록이 같다", () => {
+    // 115 전 기대값 SOLID_ALL_115 = { count: 2309, sha256: "975d2f05…" }(마을 안 나무가 옛 28자리일 때). 117: 바뀌는 나무 칸(옛·새 자리)은 solidKeep115가 빼므로 새 자리 칸을 따로 더한다
+    const expected = [...new Set([...allTiles().filter(tileOutside115), ...solidKeep115(), ...rectTiles(NEW_TREES_117.map(trunkRect117))])].sort();
+    expect(digest115([...VILLAGE_SOLID_TILES].sort())).toEqual(digest115(expected));
   });
 
-  it("B5 마을 나무(명세 3): 원 가운데까지 거리가 24.5(반지름 − 1.5)보다 먼 나무를 빼서, 기준 커밋 70그루 가운데 42그루가 빠지고 28그루가 그 자리 그대로 남는다. VILLAGE_TREES도 같다", () => {
-    const base = baseLayout115().trees;
-    const kept = base.filter(keptTree115);
-    expect({ base: base.length, removed: base.length - kept.length, kept: kept.length }).toEqual({ base: 70, removed: TREES_REMOVED_115, kept: TREES_KEPT_115 });
-    expect(sortPairs(LAYOUT.trees)).toEqual(sortPairs(kept));
-    expect(sortPairs(VILLAGE_TREES)).toEqual(sortPairs(kept));
+  it("B5 마을 나무(명세 3, 117 명세 1): 마을 안 나무는 28자리이고 원 가운데까지 24.5(반지름 − 1.5) 안에 있으며, 자리는 117 명세 표의 28자리다. VILLAGE_TREES도 같다", () => {
+    // 115 전 기대: 기준 커밋 70그루 가운데 42그루가 빠지고 28그루가 그 자리 그대로 남는다(117은 그 28자리를 표의 28자리로 바꾼다)
+    const expected = NEW_TREES_117.map(([x, z]) => [x, z]);
+    expect(sortPairs(LAYOUT.trees)).toEqual(sortPairs(expected));
+    expect(sortPairs(VILLAGE_TREES)).toEqual(sortPairs(expected));
+    expect(LAYOUT.trees).toHaveLength(TREES_KEPT_115);
     const far = LAYOUT.trees.filter(([x, z]) => centerDistance115(x, z) > CIRCLE_115.radius - 1.5);
     expect(far).toEqual([]);
   });
@@ -207,7 +207,7 @@ describe("[spec] 115 ① 그대로 둘 동작: 배치 파일의 다른 값, 원 
     expect({ width: LAYOUT.width, depth: LAYOUT.depth }).toEqual({ width: 70, depth: 60 });
   });
 
-  it("K2 원 안의 막힌 칸(건물·분수·가로등·노점·벤치·남는 나무·바위) 가운데 115가 바꾸지 않는 곳(가장자리 줄·빠지는 나무·바위 칸 밖)이 기준 커밋과 같다: 개수 237과 목록의 sha256", () => {
+  it("K2 원 안의 막힌 칸(건물·분수·가로등·노점·벤치·남는 나무·바위) 가운데 115가 바꾸지 않는 곳(가장자리 줄·빠지는 나무·바위 칸 밖)이 기준 커밋과 같다: 개수와 목록의 sha256(117: 마을 안 나무 옛·새 자리 칸도 빼서 150개)", () => {
     expect(digest115(solidKeep115())).toEqual(SOLID_KEEP_115);
   });
 
@@ -228,7 +228,8 @@ describe("[spec] 115 ① 그대로 둘 동작: 배치 파일의 다른 값, 원 
         const at = p.approach[0];
         expect({ id: p.id, inside: centerDistance115(at.x, at.z) <= CIRCLE_115.radius, free: isFree(at.x, at.z) }).toEqual({ id: p.id, inside: true, free: true });
       }
-      const kept = [...baseLayout115().trees.filter(keptTree115), ...ROCKS_KEPT_115];
+      // 117: 원 안에 남는 나무는 117 명세 표의 28자리
+      const kept = [...NEW_TREES_117.map(([x, z]) => [x, z] as const), ...ROCKS_KEPT_115];
       expect(kept.length).toBe(TREES_KEPT_115 + 1);
       for (const [x, z] of kept) expect({ x, z, free: isFree(x, z) }).toEqual({ x, z, free: false });
     } finally {

@@ -8,6 +8,7 @@ import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { VILLAGE_SOLID_TILES } from "@/lib/lobby3d/village";
 import { accessorValues, meshNodesUnder, rootIndex, sceneRoots, worldMatrices, type Glb, type Gltf } from "./village-glb-098";
 import { changedSolidRegion, gitShow, rectTiles, sha256, type Rect } from "./village-shops-106";
+import { treeChangeFootprint117 } from "./village-trees-117";
 
 /** 작업 115의 기준 커밋(명세 첫 줄). */
 export const BASE_115 = "de49aef";
@@ -56,7 +57,7 @@ export const removedTrees115 = (): (readonly [number, number])[] => baseLayout11
 export const removedRocks115 = (): (readonly [number, number])[] => baseLayout115().rocks.filter((t) => !keptRock115(t)).map(([x, z]) => [x, z] as const);
 
 /** 배치 파일 윗단계 열쇠 가운데 115 전부터 있던 것(풍차 빼고). 115가 더하는 경계 원 열쇠(이름은 명세에 없다)는 견주지 않는다(새 테스트가 따로 본다). */
-const KEPT_KEYS_115 = ["_comment", "width", "depth", "buildings", "fountain", "lanterns", "stalls", "benches", "trees", "rocks", "paths"] as const;
+const KEPT_KEYS_115 = ["_comment", "width", "depth", "buildings", "fountain", "lanterns", "stalls", "benches", "rocks", "paths"] as const;
 
 /**
  * 배치 파일에서 115가 바꾸는 것을 뺀 모양: 풍차(windmill)와 경계 원 열쇠를 빼고, 마을 나무·바위는 남는 것(명세 3)만 둔다.
@@ -66,7 +67,7 @@ export function withoutBoundary115<T extends { trees: number[][]; rocks: number[
   const source = layout as unknown as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   for (const key of KEPT_KEYS_115) if (key in source) out[key] = source[key];
-  out.trees = layout.trees.filter((t) => keptTree115(t));
+  // 117: 마을 안 나무(trees)와 그 종류(treeKinds)는 117이 바꾸므로 견주지 않는다(117 테스트가 따로 본다)
   out.rocks = layout.rocks.filter((t) => keptRock115(t));
   return out as unknown as T;
 }
@@ -97,7 +98,8 @@ export const edgeTile115 = (tile: string): boolean => {
  * 115가 막힌 칸을 바꾸지 않는 곳: 칸 가운데가 원 안이고, 사각형 가장자리 줄이 아니며, 빠지는 나무·바위가 막던 칸이 아닌 칸.
  * 그대로 둘 막힌 칸(건물·분수·가로등·노점·벤치·남는 나무·바위)은 이 안에서 견준다.
  */
-export const inKeepRegion115 = (tile: string): boolean => !tileOutside115(tile) && !edgeTile115(tile) && !removedFootprint115().has(tile);
+// 117: 마을 안 나무 28자리가 바뀌므로(옛 28자리·새 28자리) 그 나무가 막는 칸도 "바뀔 수 있는 곳"으로 보고 뺀다.
+export const inKeepRegion115 = (tile: string): boolean => !tileOutside115(tile) && !edgeTile115(tile) && !removedFootprint115().has(tile) && !treeChangeFootprint117().has(tile);
 
 export const digest115 = (tiles: readonly string[]): { count: number; sha256: string } => ({ count: tiles.length, sha256: sha256(tiles.join("\n")) });
 
@@ -220,19 +222,13 @@ export const inOldMillClear115 = (x: number, z: number): boolean => Math.abs(x -
 // ---------- 기준 커밋에서 잰 값(그대로 둘 막힌 칸)과 명세대로 셈한 값(새 막힌 칸) ----------
 
 /** solidKeep115(): 막힌 칸 643개 가운데 115가 바꾸지 않는 곳(원 안, 가장자리 줄 아님, 빠지는 나무·바위 칸 아님). 기준 커밋 de49aef에서 잰 값. */
-export const SOLID_KEEP_115 = { count: 237, sha256: "cce9e8ec223015ae73a40b92d12c74c2a27fc9d71e3099fbedc86a9b5c14e141" };
+export const SOLID_KEEP_115 = { count: 150, sha256: "f0726292107e74915c8bf7ea3bb3b0758ba83dd173734a9b812769dbf12f7dd7" };
 /**
  * 106 테스트 solidOutsideChanged()(옛 라룹이 집·카페·도서관·옷집 땅, 옮긴 나무 밖)에서 114가 뺀 벤치 칸(BENCH_TILE_RECTS)과 115가 바꾸는 곳도 뺀 칸.
  * 기준 커밋 de49aef에서 잰 값(114 값 575개 목록에서 115가 바꾸는 곳 밖만 남긴 것). 098의 옛 집 땅 [31, 6, 40, 12]을 더 빼도 같다.
  */
-export const SOLID_OUTSIDE_CHANGED_115 = { count: 169, sha256: "73d22f25ed385d8a86cb58438f74eddf3e419f89fc19409c3b364d37ea0a3233" };
+export const SOLID_OUTSIDE_CHANGED_115 = { count: 83, sha256: "65acb01af6d0cc3d024830bb722eece88a5d6d2db3f8d5d91e718f72a4d93361" };
 /** 107 테스트 K2(새 집 칸 x 33~37, z 7~11 밖)에서 114 벤치 칸과 115가 바꾸는 곳도 뺀 칸. 기준 커밋 de49aef에서 잰 값(114 값 612개에서 줄인 것). */
-export const SOLID_OUTSIDE_HOME_107_115 = { count: 206, sha256: "7db622637506e8faeafb9f9cb674659f32a6965543dddbabb032ea17dca42e18" };
+export const SOLID_OUTSIDE_HOME_107_115 = { count: 119, sha256: "31790c9fb1000ef6b165097740eb8a7b866445141861b120849ab3d0d246e4bb" };
 /** 114 테스트 K3(벤치가 바꿀 수 있는 곳 밖)에서 115가 바꾸는 곳도 뺀 칸. 기준 커밋 de49aef에서 잰 값(114 값 637개에서 줄인 것). */
-export const SOLID_OUTSIDE_BENCH_115 = { count: 231, sha256: "88101bb06d70d8beee940500cd4d1836718663c60bd2e9482074e190a11fb16a" };
-/**
- * 명세 2대로 셈한 새 막힌 칸 전체(마을 칸 x 0~69, z 0~59): 칸 가운데가 원 밖인 칸 2072개 + 원 안에서 그대로 둘 막힌 칸(SOLID_KEEP_115) 237개.
- * 원 안의 가장자리 줄·빠지는 나무·바위 칸을 막는 다른 것(건물·분수·가로등·노점·벤치·남는 나무·바위)은 없다.
- * qa가 기준 커밋 de49aef의 막힌 칸 셈에 명세의 바뀜(원 밖 막기, 가장자리 줄 없앰, 나무·바위 빼기)만 넣어 잰 값이다.
- */
-export const SOLID_ALL_115 = { count: 2309, sha256: "975d2f05facc8aba3ee490d00f470a26e64b7336da1bfa0e50dbcfa2f3b13eb5" };
+export const SOLID_OUTSIDE_BENCH_115 = { count: 144, sha256: "dd9423499bf5e56ea78cc67b4c7d8cf5ec6e72c796097e4dd4e5a86962dc17ff" };

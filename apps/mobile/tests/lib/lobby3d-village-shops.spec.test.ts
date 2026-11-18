@@ -47,15 +47,14 @@ import {
   baseLayout106,
   buildingByLabel,
   clothingId,
-  goneTrees,
-  newTrees,
   rectTiles,
   treeTiles,
   type Rect
 } from "../__fixtures__/village-shops-106";
 import { HOME_DEPTH_107, HOME_NEAR_107, HOME_WIDTH_107 } from "../__fixtures__/village-home-size-107";
 import { BENCH_TILE_RECTS, withoutBenchRot } from "../__fixtures__/village-bench-114";
-import { SOLID_OUTSIDE_CHANGED_115, TREES_KEPT_115, keptTree115, solidOutsideChanged115, tileOutside115, withoutBoundary115 } from "../__fixtures__/village-boundary-115";
+import { KEPT_TREES_117 } from "../__fixtures__/village-trees-117";
+import { SOLID_OUTSIDE_CHANGED_115, TREES_KEPT_115, solidOutsideChanged115, tileOutside115, withoutBoundary115 } from "../__fixtures__/village-boundary-115";
 
 /** 막힌 칸 가운데 이번 작업이 바꾸는 곳(옛 라룹이 집·카페·도서관·옷집 땅, 옮긴 나무) 밖의 칸. 기준 커밋 c728f00에서 이 테스트의 계산으로 잰 값. */
 // { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" }. 114에서 벤치가 바꿀 수 있는 곳도 빼서 SOLID_OUTSIDE_CHANGED_114(village-bench-114.ts)로 견준다.
@@ -172,20 +171,13 @@ describe("[spec] 106 바뀔 동작: 건물·장소(명세 1·2·3)", () => {
     expect({ arrived: snap.arrived, text: snap.bubbleText, button: snap.bubbleButton }).toEqual({ arrived: id, text: "옷집은 곧 열려요", button: null });
   });
 
-  it("V9 나무(명세 3): 옷집 땅 안의 나무 [45.7, 19.2]는 근처 빈 풀밭으로 옮긴다. 나무 수 70 그대로(115: 원 가운데까지 24.5 안의 28그루), 옛 자리는 없고 새 자리 하나가 있으며, 새 자리는 옛 자리에서 8칸 안이고 건물 땅·길 칸에 걸리지 않는다", () => {
-    // 115: 나무 수는 원 가운데까지 24.5 안의 그루로 센다(70그루 가운데 115가 빼는 42그루 밖의 28그루). 빠진 자리도 115가 빼는 나무는 뺀다
-    expect(LAYOUT.trees.filter(keptTree115)).toHaveLength(TREES_KEPT_115);
+  it("V9 나무(명세 3): 옷집 땅 안의 나무 [45.7, 19.2]는 없다. 나무는 28그루(117 전: 106이 옮긴 새 자리 하나가 옛 자리에서 8칸 안에 있었다)이고 어느 나무도 건물 땅·길 칸에 걸리지 않는다", () => {
+    // 117: 마을 안 나무가 표의 28자리로 바뀐다. 106이 옮긴 새 자리(옛 자리에서 8칸 안의 한 곳)는 117이 다른 자리로 바꾸므로 더 보지 않고,
+    // 옛 자리 [45.7, 19.2]에 나무가 없고 나무가 28그루이며 어느 나무도 건물 땅·길 칸에 걸리지 않는 것만 본다(115 전 기대: 70그루, 115: 24.5 안의 28그루)
+    expect(LAYOUT.trees).toHaveLength(TREES_KEPT_115);
     expect(LAYOUT.trees.some(([x, z]) => x === MOVED_TREE[0] && z === MOVED_TREE[1])).toBe(false);
-    expect(goneTrees().filter(keptTree115)).toEqual([MOVED_TREE]);
-    const added = newTrees();
-    expect(added).toHaveLength(1);
-    const [x, z] = added[0];
-    expect({ distance: Math.hypot(x - MOVED_TREE[0], z - MOVED_TREE[1]), near: Math.hypot(x - MOVED_TREE[0], z - MOVED_TREE[1]) <= 8 }).toEqual({
-      distance: Math.hypot(x - MOVED_TREE[0], z - MOVED_TREE[1]),
-      near: true
-    });
     const taken = rectTiles([...VILLAGE_BUILDINGS.map((b) => b.rect as Rect), ...EXPECTED_PATH_RECTS]);
-    expect(sorted(treeTiles(x, z)).filter((t) => taken.has(t))).toEqual([]);
+    expect(LAYOUT.trees.filter(([x, z]) => sorted(treeTiles(x, z)).some((t) => taken.has(t)))).toEqual([]);
   });
 
   it("V10 라룹이 집 땅(명세 3-1, 107 명세 1): 가로 5칸, 땅 앞 z 12, 깊이 약 4.2칸(4.1~4.3), 문 x 35.5. 줄어 남는 옛 땅(x 32 열·x 38 열의 z 7~11)은 걸어갈 수 있고, 집 칸(x 33~37, z 7~11)은 막혀 있다", () => {
@@ -237,11 +229,11 @@ describe("[spec] 106 그대로 둘 동작: 배치 파일·막힌 칸·나무·�
     expect(solidOutsideChanged115([...BENCH_TILE_RECTS])).toEqual(SOLID_OUTSIDE_CHANGED_115);
   });
 
-  it("K3 옮기는 한 그루 말고 나무 자리는 기준 커밋 그대로다(빠진 자리가 있으면 [45.7, 19.2]뿐이고, 더해진 자리는 많아야 하나)", () => {
-    // 115: 115가 빼는 나무(원 가운데까지 24.5 넘게 먼 것)는 빠진 자리에서 뺀다
-    const gone = goneTrees().filter(keptTree115);
-    expect(gone.filter(([x, z]) => !(x === MOVED_TREE[0] && z === MOVED_TREE[1]))).toEqual([]);
-    expect(newTrees().length).toBeLessThanOrEqual(1);
+  it("K3 나무 자리: 117 명세가 그대로 두는 11자리는 기준 커밋 그대로 있고, 옛 [45.7, 19.2]에는 나무가 없다(117 전: 옮기는 한 그루 말고 나무 자리는 기준 커밋 그대로)", () => {
+    // 117: 마을 안 나무는 117이 표의 28자리로 바꾸므로(11자리 그대로, 17자리 빠지고 17자리 새로) 106이 옮긴 나무 하나만 보지 않는다.
+    // 기준 커밋의 28자리 가운데 117 명세가 "그대로 둔다"고 한 11자리는 그대로 있고, 옮긴 나무의 옛 자리에는 나무가 없다
+    expect(KEPT_TREES_117.filter(([x, z]) => !LAYOUT.trees.some(([a, b]) => a === x && b === z))).toEqual([]);
+    expect(LAYOUT.trees.some(([x, z]) => x === MOVED_TREE[0] && z === MOVED_TREE[1])).toBe(false);
   });
 
   it("K4 가리기(지금 동작): 가구점 바로 뒤(x 11, z 24.5)에 서면 가구점만 가리는 건물이고, 라룹이 집 서는 자리에서는 가리는 건물이 없다", () => {

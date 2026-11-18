@@ -48,7 +48,7 @@ import { VILLAGE_START } from "@/lib/lobby3d/village";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { decorModule, type VillageDecorSpot } from "../__fixtures__/village-decor-101";
 import { SCATTER_SEASONS, scatterModule, type VillageScatterPiece } from "../__fixtures__/village-ground-103";
-import { MOVED_TREE, newTrees } from "../__fixtures__/village-shops-106";
+import { NEW_TREES_117 } from "../__fixtures__/village-trees-117";
 import {
   allObjects,
   drawnVisible,
@@ -232,7 +232,6 @@ function drawnFlatInstances(drawn: Drawn): THREE.InstancedMesh[] {
 
 const matrixKey = (mesh: THREE.InstancedMesh) => instanceWorldMatrices(mesh).map((m) => m.elements.map((v) => v.toFixed(5)).join(",")).join(";");
 
-const nodeCrypto = (process as unknown as { getBuiltinModule: (id: string) => typeof import("crypto") }).getBuiltinModule("crypto");
 
 jest.setTimeout(180000);
 
@@ -373,26 +372,25 @@ describe("[spec] 101 그대로 둘 동작: 나무(113에서 고침)", () => {
   // 작업 115 ②(숲과 땅 꾸밈) 명세의 "고칠 기존 테스트"(둘레 숲의 자리·그루 수)로 qa가 K8을 다시 고쳤다(115 ② qa 보고 03-숲과-땅-꾸밈/02-qa-tests.md).
   // 115 ②는 둘레 숲(LOD2 그루)을 원 둘레 바깥에 새로 심어 그루 수·자리가 모두 바뀌고, 마을 안 나무(LOD1 그루 28)는 그대로다.
   // 그래서 둘레 숲 그루(LOD2)는 빼고 마을 안 그루(LOD1)만 견준다. 그 값은 115 ② 기준 커밋 be29bd1에서 같은 방법으로 잰 값이다.
-  it("K8 나무 자리가 기준 커밋과 같다(01 그대로: 나무. 106: 옮기는 한 그루는 옛 자리·새 자리 모두 뺀다. 113: 새 나무 모델의 잎·줄기 그루 자리로 보고 계절 잎 색은 보지 않는다. 115: 원 밖 나무를 빼고 풍차 둘레를 채운 새 자리. 115 ②: 둘레 숲을 새로 심어 마을 안 그루만 본다)", async () => {
+  it("K8 마을 안 나무 자리가 117 명세 표의 28자리다(117 전 기대: 기준 커밋과 같다. 01 그대로: 나무. 106: 옮기는 한 그루는 옛 자리·새 자리 모두 뺀다. 113: 새 나무 모델의 잎·줄기 그루 자리로 보고 계절 잎 색은 보지 않는다. 115: 원 밖 나무를 빼고 풍차 둘레를 채운 새 자리. 115 ②: 둘레 숲을 새로 심어 마을 안 그루만 본다)", async () => {
     const drawn = await draw("summer");
     expect({ treeFilesInApp: allTreeFilesPresent() }).toEqual({ treeFilesInApp: true });
     const trees = allObjects(drawn.roots).filter((o): o is THREE.InstancedMesh => o instanceof THREE.InstancedMesh && treePartOf(o.geometry) !== null);
     expect(trees.length).toBeGreaterThan(0);
-    // 106이 옮기는 나무(옛 자리와 새 자리)에 찍힌 그루는 뺀다
-    const moved = [MOVED_TREE, ...newTrees()];
+    // 117: 마을 안 나무는 117 명세 표의 28자리로 바뀌므로 106이 옮긴 나무를 따로 빼지 않고 28자리 모두를 견준다
+    const expectedSpots = NEW_TREES_117.map(([x, z]) => `${x.toFixed(3)},${(0).toFixed(3)},${z.toFixed(3)}`).sort();
     const rows = (["foliage", "wood"] as const).map((part) => {
       const spots = trees
         // 115 ②: 마을 안 그루(LOD1)만 본다
         .filter((m) => treePartOf(m.geometry)!.part === part && treePartOf(m.geometry)!.lod === 1)
         .flatMap((m) => instanceWorldMatrices(m))
-        .filter((w) => !moved.some(([x, z]) => Math.abs(w.elements[12] - x) < 0.01 && Math.abs(w.elements[14] - z) < 0.01))
         .map((w) => `${w.elements[12].toFixed(3)},${w.elements[13].toFixed(3)},${w.elements[14].toFixed(3)}`)
         .sort();
-      return { part, count: spots.length, digest: nodeCrypto.createHash("sha256").update(spots.join("\n")).digest("hex") };
+      return { part, count: spots.length, spots };
     });
     expect(rows).toEqual([
-      { part: "foliage", count: K8_TREES, digest: K8_DIGEST },
-      { part: "wood", count: K8_TREES, digest: K8_DIGEST }
+      { part: "foliage", count: K8_TREES, spots: expectedSpots },
+      { part: "wood", count: K8_TREES, spots: expectedSpots }
     ]);
   });
 });
@@ -400,5 +398,5 @@ describe("[spec] 101 그대로 둘 동작: 나무(113에서 고침)", () => {
 /** 113 기준 커밋 3b11555에서 잰 값(옮기는 한 그루를 뺀 그루 수와 자리 글의 sha256). 115 전 값: 369, "b05d9abc8108350c10a722ce8f36038e0f337c93a0bf2484e0fb487e3f56841c". */
 // 115 ① 값: 마을 안 28 + 둘레 숲 287 − 옮긴 한 그루 = 314, "6330fbb501a07ebc437d965b861bb6b09748f197aebeb68159852243ab5d39a3".
 // 115 ②: 마을 안 그루(LOD1)에서 옮긴 한 그루를 뺀 수와 sha256(K8 위 설명. 기준 커밋 be29bd1에서 잰 값)
-const K8_TREES = 27;
-const K8_DIGEST = "23ecd0179f885c81d1fd4c8ab71ed08eaf89a5fe1e24964aeb19aecdcd0739d4";
+// 117: 마을 안 28자리가 표의 자리로 바뀌고 옮긴 한 그루를 따로 빼지 않아 28그루다(117 전: 27그루, K8_DIGEST "23ecd017…")
+const K8_TREES = 28;

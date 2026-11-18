@@ -27,7 +27,8 @@ import { VILLAGE_START } from "@/lib/lobby3d/village";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { allObjects, drawnVisible, loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb } from "../__fixtures__/village-scene-101";
 import { allTreeFilesPresent, resetTreeLoader, treePartOf } from "../__fixtures__/village-trees-113";
-import { OLD_MILL_CLEAR_115, OLD_WINDMILL_115, REMOVED_GROUPS_115, TREES_KEPT_115, baseLayout115, inOldMillClear115, keptTree115 } from "../__fixtures__/village-boundary-115";
+import { OLD_MILL_CLEAR_115, OLD_WINDMILL_115, REMOVED_GROUPS_115, TREES_KEPT_115, inOldMillClear115 } from "../__fixtures__/village-boundary-115";
+import { NEW_TREES_117 } from "../__fixtures__/village-trees-117";
 
 type FramePart = (state: unknown, delta: number) => void;
 
@@ -166,17 +167,15 @@ describe("[spec] 115 ① 바뀔 동작: 마을 나무·둘레 숲·풍차 묶음
     expect({ forestNearOldMill: near.length > 0 }).toEqual({ forestNearOldMill: true });
   });
 
-  it("G2 마을 나무(명세 3): 마을 안 그루(LOD1)는 원 가운데까지 24.5 안에 남는 28그루이고, 자리가 기준 커밋 배치의 그 28자리와 같다", async () => {
+  it("G2 마을 나무(명세 3): 마을 안 그루(LOD1)는 원 가운데까지 24.5 안의 28그루이고, 자리가 117 명세 표의 28자리와 같다(117 전: 기준 커밋 배치의 그 28자리)", async () => {
     const drawn = await draw();
     const key = (x: number, z: number) => `${x.toFixed(3)},${z.toFixed(3)}`;
     const interior = foliageSpots(drawn.roots)
       .filter((s) => s.lod === 1)
       .map((s) => key(s.x, s.z))
       .sort();
-    const kept = baseLayout115()
-      .trees.filter(keptTree115)
-      .map(([x, z]) => key(x, z))
-      .sort();
+    // 117: 마을 안 28자리는 117 명세 표의 자리
+    const kept = NEW_TREES_117.map(([x, z]) => key(x, z)).sort();
     expect(kept).toHaveLength(TREES_KEPT_115);
     expect(interior).toEqual(kept);
   });

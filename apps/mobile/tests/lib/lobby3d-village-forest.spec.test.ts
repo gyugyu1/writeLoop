@@ -22,7 +22,7 @@
 //   모두 명세 5가 든 옛 경계 설명이다).
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_TREES } from "@/lib/lobby3d/village";
+import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_SOLID_TILES, VILLAGE_TREES } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import {
   BASE_115_2,
@@ -33,7 +33,6 @@ import {
   REPO_115_2,
   SCATTER_INSIDE_115_2,
   centerDistance115b,
-  decorDigest115b,
   gitShow115b,
   insideCircle115b,
   placeMapKeepDigest115b,
@@ -100,10 +99,14 @@ describe("[spec] 115 ② 흩뿌림·장식(명세 2)", () => {
     }
   });
 
-  it("[그대로] E4 꽃·풀 장식은 원 안에만 있고 자리가 지금 그대로다: 장식이 모두 원 안이고, 장식 모음(종류·자리·방향·배율)의 개수 127과 sha256이 기준 커밋 be29bd1과 같다", () => {
+  it("[그대로] E4 꽃·풀 장식은 원 안에만 있다: 장식이 모두 원 안이다(117: 막힌 칸을 피하는 규칙·종류·배율 범위는 그대로이고 자리 모음은 나무 자리를 따라 바뀐다. 117 전: 개수 127과 sha256이 기준 커밋 be29bd1과 같다)", () => {
     const spots = decorModule().villageDecorSpots();
     expect({ outside: spots.filter((p) => !insideCircle115b(p.x, p.z)).length, first: outsideList(spots) }).toEqual({ outside: 0, first: [] });
-    expect(decorDigest115b(spots)).toEqual(DECOR_115_2);
+    // 117: 장식은 막힌 칸(나무 포함)을 피해 자리를 뽑으므로 나무 자리가 바뀌면 장식 모음도 바뀐다(115 전 기대: 개수 127과 sha256 69594c4c…). 개수 범위와 규칙만 본다
+    expect({ countInRange: spots.length >= 100 && spots.length <= 150, count127: DECOR_115_2.count }).toEqual({ countInRange: true, count127: 127 });
+    const KINDS = ["flowerWhite", "flowerYellow", "flowerPink", "flowerRed", "clover", "grassTuft"];
+    const bad = spots.filter((p) => !KINDS.includes(p.kind) || p.scale < 0.75 - 1e-6 || p.scale > 1.1 + 1e-6 || VILLAGE_SOLID_TILES.has(`${Math.floor(p.x)},${Math.floor(p.z)}`));
+    expect(bad).toEqual([]);
   });
 });
 
@@ -126,10 +129,12 @@ describe("[spec] 115 ② 풀밭 무늬 이끼(명세 3)", () => {
     });
   });
 
-  it("[그대로] E6 맨땅 규칙과 마을 나무 둘레 이끼는 그대로다: 지도 범위·픽셀 수가 같고, 맨땅 몫(R) 전체와 원 가운데에서 20칸 안의 이끼 몫(G)이 기준 커밋 be29bd1과 같다", () => {
+  it("[그대로] E6 맨땅 규칙은 그대로다: 지도 범위·픽셀 수가 같고, 맨땅 몫(R) 전체가 기준 커밋 be29bd1과 같다(117: 마을 나무 둘레 이끼 몫(G)은 나무 자리를 따라 바뀐다)", () => {
     const map = splatModule().villageGroundPlaceMap();
     expect({ x0: map.x0, z0: map.z0, x1: map.x1, z1: map.z1, width: map.width, height: map.height }).toEqual(PLACE_MAP_EXTENT_115_2);
-    expect(placeMapKeepDigest115b(map)).toEqual(PLACE_MAP_KEEP_115_2);
+    // 117: 이끼 몫(G)은 마을 나무 둘레에 짙으므로 나무 자리가 바뀌면 지도도 바뀐다(115 전 기대: mossCount 5024와 moss sha256 69e10085…). 맨땅 몫(R) 전체는 그대로 견준다
+    const digest = placeMapKeepDigest115b(map);
+    expect({ bare: digest.bare, mossCount: digest.mossCount }).toEqual({ bare: PLACE_MAP_KEEP_115_2.bare, mossCount: PLACE_MAP_KEEP_115_2.mossCount });
   });
 });
 

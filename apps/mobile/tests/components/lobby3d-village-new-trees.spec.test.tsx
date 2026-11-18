@@ -61,6 +61,7 @@ import type { DaylightState } from "@/components/lobby3d/lobby3d-daylight";
 import { daylightAt, type Season } from "@/lib/lobby3d/daylight";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import { VILLAGE_BOUNDARY, VILLAGE_START, VILLAGE_TREES } from "@/lib/lobby3d/village";
+import { NEW_TREES_117 } from "../__fixtures__/village-trees-117";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { allObjects, loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb, sourceGeometries } from "../__fixtures__/village-scene-101";
 import {
@@ -431,16 +432,15 @@ function treeTable(trees: Tree[]): Map<string, string> {
 // 115 ②: 둘레 숲을 원 둘레에 새로 심으므로(115 ② 명세 바뀌는 동작 1) 둘레 숲의 그루 수·자리는 견주지 않고, 마을 안 28그루의 자리만 견준다.
 // 마을 안 자리 sha256은 115 ② 기준 커밋 be29bd1에서 같은 방법(카메라 없이 처음 그린 마을 안 그루 자리 "x,y,z")으로 잰 값이다.
 const INTERIOR_TREES = 28;
-const INTERIOR_POSITIONS_DIGEST = "d0b329e8a7915d0418592dd1168839dbfedca32520504c9a4206cc742bd2ffaa";
 /** N2 마을 안 종류별 그루 수 범위(116 명세 2: 28그루 가운데 A 70%(19.6)·Pine 30%(8.4)에서 qa가 3그루 안으로 잡은 허용치). */
-const INSIDE_COUNT = { A: { lo: 17, hi: 22 }, Pine: { lo: 6, hi: 11 } };
+// 117 명세 1: 마을 안은 자리마다 종류가 정해져 A 20그루·Pine 8그루다(117 전: A 17~22·Pine 6~11)
+const INSIDE_COUNT = { A: { lo: 20, hi: 20 }, Pine: { lo: 8, hi: 8 } };
 /** N2 둘레 숲의 종류별 몫(116 명세 2: Pine 65%·A 35%에서 qa가 7%p 안으로 잡은 허용치). */
-const FOREST_SHARE = { Pine: { lo: 0.58, hi: 0.72 }, A: { lo: 0.28, hi: 0.42 } };
+// 117 명세 2: 둘레 숲은 기본이 Pine이고 A는 무리로 섞여 숲 전체에서 약 20%다. "약"의 허용치는 qa가 6%p 안(A 14~26%)으로 잡았다(117 전: Pine 58~72%·A 28~42%)
+const FOREST_SHARE = { Pine: { lo: 0.74, hi: 0.86 }, A: { lo: 0.14, hi: 0.26 } };
 /** 몫 범위를 그루 수 범위로(아래는 올림, 위는 내림. 몫을 적을 때 생기는 소수 끝은 1e-9 안에서 봐준다). */
 const countRange = (total: number, share: { lo: number; hi: number }) => ({ lo: Math.ceil(total * share.lo - 1e-9), hi: Math.floor(total * share.hi + 1e-9) });
 
-const nodeCrypto = (process as unknown as { getBuiltinModule: (id: string) => typeof import("crypto") }).getBuiltinModule("crypto");
-const sha256 = (s: string) => nodeCrypto.createHash("sha256").update(s).digest("hex");
 
 /** 시드로 정해지는 수열(Math.random 대신 넣는다). */
 function sequence(seed: number): () => number {
@@ -502,7 +502,7 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     }
   });
 
-  it("[바뀔] N2 종류(116 명세 2): 마을 안(28그루)은 A 70%·Pine 30%(A 17~22그루, Pine 6~11그루), 둘레 숲은 Pine 65%·A 35%(Pine 58~72%, A 28~42%)이고 종류는 A·Pine 둘뿐이다. 다시 그려도(Math.random이 다른 값을 주어도) 그루마다 종류·단계·배율·방향·밝기가 같다", async () => {
+  it("[바뀔] N2 종류(117 명세 1·2): 마을 안(28그루)은 자리마다 종류가 정해져 A 20그루·Pine 8그루이고, 둘레 숲은 Pine 약 80%·A 약 20%(Pine 74~86%, A 14~26%. 116: 70/30·65/35)이고 종류는 A·Pine 둘뿐이다. 다시 그려도(Math.random이 다른 값을 주어도) 그루마다 종류·단계·배율·방향·밝기가 같다", async () => {
     let seq = sequence(7);
     jest.spyOn(Math, "random").mockImplementation(() => seq());
     const first = await draw("summer");
@@ -532,6 +532,9 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
       forestTotal: true,
       forestShare: true
     });
+    // 117 명세 1: 마을 안 그루의 종류는 표의 자리마다 정해진 대로다
+    const expectedKinds = new Map(NEW_TREES_117.map(([x, z, kind]) => [spotKey(x, z), kind]));
+    expect(inside.map((r) => `${spotKey(r.x, r.z)} ${r.kind}`).sort()).toEqual([...expectedKinds].map(([k, kind]) => `${k} ${kind}`).sort());
     const table1 = treeTable(trees);
     await act(async () => first.unmount());
     mockFrames.length = 0;
@@ -867,10 +870,12 @@ describe("[spec] 113 그대로 둘 동작: 나무 자리와 그루 수, 누르�
         const [x, , z] = s.split(",").map(Number);
         return isInterior(x, z);
       });
-      expect({ part, interior: interior.length, interiorDigest: sha256([...interior].sort().join("\n")) }).toEqual({
+      // 117: 마을 안 자리는 117 명세 표의 28자리(밑 높이 0). 117 전 INTERIOR_POSITIONS_DIGEST d0b329e8…
+      const expectedInterior = NEW_TREES_117.map(([x, z]) => `${x.toFixed(3)},${(0).toFixed(3)},${z.toFixed(3)}`).sort();
+      expect({ part, interior: interior.length, interiorSpots: [...interior].sort() }).toEqual({
         part,
         interior: INTERIOR_TREES,
-        interiorDigest: INTERIOR_POSITIONS_DIGEST
+        interiorSpots: expectedInterior
       });
     }
   });

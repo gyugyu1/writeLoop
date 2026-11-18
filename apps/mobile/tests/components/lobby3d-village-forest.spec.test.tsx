@@ -125,6 +125,9 @@ async function forestSpots(): Promise<Spot[]> {
 
 const fmt = (p: Spot) => `${p.x.toFixed(2)},${p.z.toFixed(2)} (가운데에서 ${centerDistance115b(p.x, p.z).toFixed(2)})`;
 
+/** 117 명세 2: 가장자리 띠는 3.3칸 격자(흔들기 ±0.5)라 부채꼴의 가장 가까운 그루는 가장자리(반지름 + 2) + 3.3 + 0.5 이하다(117 전: 반지름 + 2 + 2칸). */
+const BAND_EDGE_MAX_117 = EDGE_MAX_115_2 + 3.8;
+
 describe("[spec] 115 ② 둘레 숲(명세 1)", () => {
   it(`[그대로·명세 1] F1 숲 그루는 걸을 수 있는 땅(원 안)에 서지 않는다: 숲 그루마다 밑동이 원 가운데 (${CIRCLE_115_2.x}, ${CIRCLE_115_2.z})에서 ${CIRCLE_115_2.radius} 넘게 떨어져 있다`, async () => {
     const forest = await forestSpots();
@@ -132,7 +135,7 @@ describe("[spec] 115 ② 둘레 숲(명세 1)", () => {
     expect({ count: inside.length, first: inside.slice(0, 10).map(fmt) }).toEqual({ count: 0, first: [] });
   });
 
-  it(`[바뀔] F2 숲의 안쪽 가장자리는 원을 따라간다(반지름 + 0 ~ + 2칸, 그루 간격 약 ${SPACING_115_2}칸): 원 가운데에서 본 15도 부채꼴 24개마다 가장 가까운 숲 그루가 가운데에서 ${CIRCLE_115_2.radius} 넘고 ${EDGE_MAX_115_2 + SPACING_115_2} 이하다`, async () => {
+  it(`[바뀔] F2 숲의 안쪽 가장자리는 원을 따라간다(반지름 + 0 ~ + 2칸, 그루 간격 약 ${SPACING_115_2}칸): 원 가운데에서 본 15도 부채꼴 24개마다 가장 가까운 숲 그루가 가운데에서 ${CIRCLE_115_2.radius} 넘고 ${BAND_EDGE_MAX_117} 이하다(117: 띠가 3.3칸 격자라 가장 가까운 그루가 가장자리보다 조금 더 바깥일 수 있다. 117 전: ${EDGE_MAX_115_2 + SPACING_115_2})`, async () => {
     const forest = await forestSpots();
     const sectors = 24;
     const rows = Array.from({ length: sectors }, (_, k) => {
@@ -144,18 +147,18 @@ describe("[spec] 115 ② 둘레 숲(명세 1)", () => {
       const nearest = mine.length ? Math.min(...mine.map((p) => centerDistance115b(p.x, p.z))) : Infinity;
       return { sector: `${k * 15}~${(k + 1) * 15}도`, nearest: Number(nearest.toFixed(2)) };
     });
-    const wrong = rows.filter((r) => !(r.nearest > CIRCLE_115_2.radius && r.nearest <= EDGE_MAX_115_2 + SPACING_115_2));
+    const wrong = rows.filter((r) => !(r.nearest > CIRCLE_115_2.radius && r.nearest <= BAND_EDGE_MAX_117));
     expect(wrong).toEqual([]);
   });
 
-  it(`[바뀔] F3 그루 사이는 약 ${SPACING_115_2}칸이다: 카메라가 보여 줄 수 있는 땅 가운데 원 가운데에서 29칸 넘는 곳의 넓이 ÷ 그곳에 선 숲 그루 수의 제곱근이 1.6~2.4칸이다`, async () => {
+  it(`[바뀔] F3 그루 사이는 약 ${SPACING_115_2}칸이다: 카메라가 보여 줄 수 있는 땅 가운데 원 가운데에서 29칸 넘는 곳의 넓이 ÷ 그곳에 선 숲 그루 수의 제곱근이 1.8~2.8칸이다(117: 가장자리 띠가 3.3칸 격자라 2칸보다 넓다. 117 전: 1.6~2.4칸)`, async () => {
     const forest = await forestSpots();
     const cells = visibleGround115b().filter((p) => centerDistance115b(p.x, p.z) > 29);
     const cellKeys = new Set(cells.map((p) => `${Math.floor(p.x / VIEW_CELL_115_2)},${Math.floor(p.z / VIEW_CELL_115_2)}`));
     const area = cells.length * VIEW_CELL_115_2 * VIEW_CELL_115_2;
     const trees = forest.filter((p) => centerDistance115b(p.x, p.z) > 29 && cellKeys.has(`${Math.floor(p.x / VIEW_CELL_115_2)},${Math.floor(p.z / VIEW_CELL_115_2)}`)).length;
     const spacing = trees > 0 ? Math.sqrt(area / trees) : Infinity;
-    expect({ area: area > 500, trees, spacing: Number(spacing.toFixed(3)), about2: spacing >= 1.6 && spacing <= 2.4 }).toEqual({
+    expect({ area: area > 500, trees, spacing: Number(spacing.toFixed(3)), about2: spacing >= 1.8 && spacing <= 2.8 }).toEqual({
       area: true,
       trees,
       spacing: Number(spacing.toFixed(3)),

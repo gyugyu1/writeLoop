@@ -1388,7 +1388,7 @@ function VillageLayer({
       <village.VillageModelErrorBoundary onFailed={onFailed}>
         <Suspense fallback={null}>
           <village.VillageModel sim={sim} daylight={daylight} pickTargets={pickTargets} />
-          <Settled onSettled={onReady ?? noop} />
+          <VillageWarmUp onReady={onReady ?? noop} />
         </Suspense>
       </village.VillageModelErrorBoundary>
     </>
@@ -1396,6 +1396,34 @@ function VillageLayer({
 }
 
 const noop = () => undefined;
+
+/**
+ * 마을 모델을 다 읽고(같은 Suspense) 장면에 들어오면, 화면이 검게 가려진 동안 마을의 셰이더를 미리 만들고 그림을 모두 그래픽 메모리에 올린 뒤
+ * (화면 밖 가게·유리·분수까지. 처음 그릴 때 하면 그 프레임들이 끊긴다), 프레임이 고르게 그려지면(방과 같은 기준) 알린다.
+ * 준비를 시작하고 ROOM_SHOW_LIMIT_S가 지나면 고르지 않아도 알린다. 미리 준비에 실패해도 알린다(그때는 처음 그릴 때 준비된다).
+ */
+function VillageWarmUp({ onReady }: { onReady: () => void }) {
+  const state = useRef({ warmed: false, told: false, since: 0, smooth: 0 });
+  useFrame((frame, delta) => {
+    const s = state.current;
+    if (s.told) return;
+    if (!s.warmed) {
+      s.warmed = true;
+      try {
+        warmUpScenes(frame.gl, frame.camera, [frame.scene]);
+      } catch (error) {
+        console.warn("[lobby3d] 마을 셰이더·그림을 미리 준비하지 못했습니다", error);
+      }
+      return;
+    }
+    s.since += delta;
+    s.smooth = delta <= ROOM_SMOOTH_FRAME_S ? s.smooth + 1 : 0;
+    if (s.smooth < ROOM_SMOOTH_FRAMES && s.since < ROOM_SHOW_LIMIT_S) return;
+    s.told = true;
+    onReady();
+  });
+  return null;
+}
 
 /** 같은 Suspense 안의 부분과 함께 장면에 들어오면(모델을 다 읽으면) 알린다. */
 function Settled({ onSettled }: { onSettled: () => void }) {

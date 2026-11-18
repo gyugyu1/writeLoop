@@ -247,6 +247,8 @@ function stopAll() {
   release(current);
   current = null;
   state.linked = false;
+  // 정리했으면 '백그라운드에서 막 돌아옴'도 지운다(다음 시작은 어차피 겹치지 않는다)
+  state.resumed = false;
 }
 
 function pauseAll() {

@@ -28,6 +28,19 @@ export class InstanceCulling {
     this.entries.find((e) => e.mesh === mesh)?.setColorAt(index, color);
   }
 
+  /**
+   * 셰이더를 미리 컴파일할 때 쓸 대역(메시마다 같은 도형·재질의 인스턴스 하나짜리, 색이 있으면 색도). 숨긴 메시는 three.js가
+   * 셰이더도 준비하지 않아, 그 재질이 처음 시야에 들 때 컴파일로 끊길 수 있다. 다 쓰면 dispose하지 않고 버린다(도형·재질은 원본 것).
+   */
+  warmUpStandIns(): THREE.Object3D[] {
+    return this.entries.map(({ mesh }) => {
+      const standIn = new THREE.InstancedMesh(mesh.geometry, mesh.material, 1);
+      standIn.setMatrixAt(0, new THREE.Matrix4());
+      if (mesh.instanceColor) standIn.setColorAt(0, new THREE.Color(0xffffff));
+      return standIn;
+    });
+  }
+
   /** 묶음 전체를 숨기거나 다시 보이게 한다(보이게 하면 고른 수가 있는 메시만 보인다). 바로 반영한다. */
   setHidden(hidden: boolean): void {
     this.hidden = hidden;

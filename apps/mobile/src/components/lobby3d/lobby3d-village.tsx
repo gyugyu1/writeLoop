@@ -609,8 +609,24 @@ function VillageGround({ daylight, pathMaterials, groundMaterial }: VillageGroun
 
   useEffect(() => () => built.owned.forEach((o) => o.dispose()), [built]);
 
+  // 꽃·풀 장식: 시야 밖이라 숨긴 메시도 첫 프레임에 셰이더를 미리 준비한다(처음 시야에 들 때 끊기지 않게). 마을 모델의 건물 재질과 같은 방식
+  const warmed = useRef<unknown>(null);
   useFrame((state) => {
-    built.decorCulling.update((state as { camera?: THREE.Camera } | undefined)?.camera);
+    const frame = state as { gl?: THREE.WebGLRenderer; camera?: THREE.Camera; scene?: THREE.Scene } | undefined;
+    if (warmed.current !== built) {
+      warmed.current = built;
+      const { gl, camera, scene } = frame ?? {};
+      if (gl && camera && scene && typeof gl.compile === "function") {
+        const warm = new THREE.Scene();
+        for (const standIn of built.decorCulling.warmUpStandIns()) warm.add(standIn);
+        try {
+          gl.compile(warm, camera, scene);
+        } catch (error) {
+          console.warn("[lobby3d] 꽃·풀 장식 재질을 미리 컴파일하지 못했습니다", error);
+        }
+      }
+    }
+    built.decorCulling.update(frame?.camera);
     const season = daylight.target.season;
     if (built.season.shown === season) return;
     built.season.shown = season;
@@ -824,6 +840,8 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     for (const entry of built.buildings.values()) {
       for (const part of entry.parts) warm.add(new THREE.Mesh(part.mesh.geometry, part.fade));
     }
+    // 나무: 시야 밖이라 숨긴 메시도 셰이더를 함께 준비한다(처음 시야에 들 때 끊기지 않게)
+    for (const standIn of built.treeCulling.warmUpStandIns()) warm.add(standIn);
     try {
       gl.compile(warm, camera, scene);
     } catch (error) {

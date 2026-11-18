@@ -736,6 +736,9 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       if (name.startsWith("bld-")) {
         // 묶음 이름 bld-<id>(합친 메시는 bld-<id>-mesh)
         const id = /^bld-([A-Za-z]+)/.exec(name)![1] as VillageBuildingId;
+        // 라룹이를 가리면 점무늬(디더링)로 옅어진다: 처음부터 켜 두어 불투명도만 바꾼다(켜고 끄면 셰이더를 다시 컴파일해 화면이 끊긴다).
+        // 불투명도 1이면 점이 빠지지 않아 불투명과 같고, 불투명으로 그려 다른 반투명(유리)과 그리는 순서가 섞이지 않는다
+        material.alphaHash = true;
         const entry = buildings.get(id) ?? { materials: [], opacity: 1 };
         entry.materials.push(material);
         buildings.set(id, entry);
@@ -807,14 +810,7 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       const next = entry.opacity < goal ? Math.min(goal, entry.opacity + step) : Math.max(goal, entry.opacity - step);
       if (next === entry.opacity) continue;
       entry.opacity = next;
-      for (const m of entry.materials) {
-        m.opacity = next;
-        const transparent = next < 0.999;
-        if (m.transparent !== transparent) {
-          m.transparent = transparent;
-          m.needsUpdate = true;
-        }
-      }
+      for (const m of entry.materials) m.opacity = next;
     }
     // 밤 불빛: 천장 조명과 같은 때(새벽·어스름·밤) 켜진다. 켜고 끌 때는 천장 조명처럼 부드럽게
     built.glowMat.opacity = 0.9 * daylight.ceiling;

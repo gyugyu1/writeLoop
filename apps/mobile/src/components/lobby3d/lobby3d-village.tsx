@@ -15,6 +15,7 @@ import { SEASON_COLORS } from "./lobby3d-outdoor";
 import { InstanceCulling } from "./instance-culling";
 import { freezeMatrices } from "./static-matrices";
 import { buildTreeKit, dropsLeavesInWinter, treeModelAssets } from "./tree-models";
+import { buildVillageFountain, startFountainFlow, villageFountainAsset } from "./village-fountain";
 
 // 바깥 마을 그리기. 풀밭·하늘·길(코드로 짓고 풀밭은 계절·하루의 때를 따른다. 길은 칸 모양의 경계를 둥글게 다듬어 짓는다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·나무 틀)을 그린다.
 // 풀밭 바탕은 여러 무늬(짧은 풀·무성한 풀·클로버·이끼·맨땅)를 잡음과 자리 지도로 섞어 그리고(셰이더), 그 위에 계절 흩뿌림(가을 낙엽·봄 꽃잎·여름 잎)을 흩고, 3D 꽃·풀 장식(village-flowers.glb)을 무리 지어 심으며, 길에 흙 무늬를 입힌다(VillageGround. 그림·모델을 못 불러오면 빼고 그린다).
@@ -659,9 +660,21 @@ interface VillageModelProps {
 }
 
 
-/** 건물·소품 모델. 라룹이를 가리는 건물은 반투명하게 하고, 밤에는 불빛 판을 켠다. */
+/** 건물·소품 모델과 광장 분수. 라룹이를 가리는 건물은 반투명하게 하고, 밤에는 불빛 판을 켠다. 분수 물은 고리 클립으로 흐른다. */
 export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) {
   const gltf = useLoader(GLTFLoader, VILLAGE_ASSET as string) as GLTF;
+  const fountainGltf = useLoader(GLTFLoader, villageFountainAsset()) as GLTF;
+  const fountain = useMemo(() => buildVillageFountain(fountainGltf), [fountainGltf]);
+  // 물 흐름 믹서: 분수 하나에 하나. 마을을 나가면(이 부분이 빠지면) 멈추고 정리해, 다시 들어와도 하나만 돈다
+  const fountainFlow = useRef<ReturnType<typeof startFountainFlow> | null>(null);
+  useEffect(() => {
+    const flow = startFountainFlow(fountain);
+    fountainFlow.current = flow;
+    return () => {
+      flow.stop();
+      if (fountainFlow.current === flow) fountainFlow.current = null;
+    };
+  }, [fountain]);
   const built = useMemo(() => {
     // useLoader가 준 장면은 앱 전체에서 함께 쓰므로 복제해서 재질을 바꾼다
     const root = gltf.scene.clone(true);
@@ -808,17 +821,21 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
 
   // 마을 모델은 움직이지 않는다: 위치 행렬을 한 번 계산해 두고 다시 계산하지 않는다
   useEffect(() => freezeMatrices(built.root), [built]);
+  // 분수도 자리가 움직이지 않는다(물은 모프 영향값만 바뀌어 위치 행렬과 상관없다)
+  useEffect(() => freezeMatrices(fountain.root), [fountain]);
 
   useEffect(() => {
-    pickTargets.current = built.pick;
+    // 분수는 예전 마을 모델의 분수(소품 묶음)처럼 누르면 그 자리를 누른 곳으로 본다
+    pickTargets.current = [...built.pick, ...fountain.meshes];
     return () => {
       pickTargets.current = [];
-      built.owned.forEach((m) => m.dispose());
     };
-  }, [built, pickTargets]);
+  }, [built, fountain, pickTargets]);
+  useEffect(() => () => built.owned.forEach((m) => m.dispose()), [built]);
 
   useFrame((state, delta) => {
     warmUp(state);
+    fountainFlow.current?.update(delta);
     // 가리는 건물: 0.25초에 걸쳐 0.35까지 옅어지고, 벗어나면 같은 빠르기로 돌아온다
     const hiding = new Set(occludingBuildings({ x: sim.x, z: sim.z }));
     const step = Math.min(1, delta / FADE_SECONDS) * (1 - FADED_OPACITY);
@@ -847,8 +864,14 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     for (const g of built.glows) g.visible = daylight.ceiling > 0.01;
   });
 
-  // eslint-disable-next-line react/no-unknown-property
-  return <primitive object={built.root} />;
+  return (
+    <>
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <primitive object={built.root} />
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <primitive object={fountain.root} />
+    </>
+  );
 }
 
 /**
@@ -999,6 +1022,7 @@ export class VillageModelErrorBoundary extends Component<{ children: ReactNode; 
     console.warn("[lobby3d] 마을 모델을 불러오지 못했습니다", error);
     // 읽기 캐시에 남은 오류를 지운다(다음에 '나가기'를 누르면 다시 읽는다)
     useLoader.clear(GLTFLoader, VILLAGE_ASSET as string);
+    useLoader.clear(GLTFLoader, villageFountainAsset());
     this.props.onFailed?.();
   }
 

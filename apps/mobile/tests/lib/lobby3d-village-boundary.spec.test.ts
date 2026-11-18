@@ -47,6 +47,7 @@ import {
   withoutBoundary115,
   withoutBoundaryGlb115
 } from "../__fixtures__/village-boundary-115";
+import { withoutFountainGlb118 } from "../__fixtures__/village-fountain-118";
 
 type Circle = { x: number; z: number; radius: number };
 
@@ -216,9 +217,10 @@ describe("[spec] 115 ① 그대로 둘 동작: 배치 파일의 다른 값, 원 
     const base = parseGlb(gitShow(BASE_115, VILLAGE_GLB_PATH_115));
     expect(rootNamesKept115(now)).toEqual(rootNamesKept115(base));
     const all = () => true;
-    const baseMeshes = describeGroups(withoutBoundaryGlb115(base), all);
+    // 118: 마을 모델에서 옛 Kenney 분수가 빠진다(명세 바뀌는 동작 1). 양쪽에서 옛 분수 삼각형(소품 묶음, 가운데에서 1.7칸 안)을 뺀 뒤 견준다
+    const baseMeshes = describeGroups(withoutFountainGlb118(withoutBoundaryGlb115(base)), all);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeGroups(withoutBoundaryGlb115(now), all)).toEqual(baseMeshes);
+    expect(describeGroups(withoutFountainGlb118(withoutBoundaryGlb115(now)), all)).toEqual(baseMeshes);
   });
 
   it("K4 장소 셋의 서는 자리는 원 안이고 걸어갈 수 있으며, 원 안에 남는 나무·바위 자리는 걸어갈 수 없다", () => {

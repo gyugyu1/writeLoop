@@ -43,6 +43,11 @@ import { GLASS_MATERIAL, clothingId } from "../__fixtures__/village-shops-106";
 type FramePart = (state: unknown, delta: number) => void;
 
 const mockFrame: { current: FramePart | null } = { current: null };
+// 118: 분수도 프레임 함수를 더한다(분수 믹서). 받은 프레임 함수를 모두 적어 두고 한 번에 부른다(마을 모델 프레임 함수의 동작은 그대로다)
+const mockFrameEntries: { current: FramePart }[] = [];
+const mockFrameAll: FramePart = (state, delta) => {
+  for (const entry of [...mockFrameEntries]) entry.current(state, delta);
+};
 const mockLoads: { loader: unknown; url: string }[] = [];
 const mockGltf: { value: unknown } = { value: null };
 
@@ -61,6 +66,8 @@ jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
   GLTFLoader: class MockGLTFLoader {}
 }));
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
+// 118: 새 분수 모델 파일(village-fountain.glb)도 마을·미리 읽기가 읽으므로 파일 이름 글자로 가짜로 바꾼다(파일이 아직 없어도 되는 가상 모듈이다. 단언은 그대로다)
+jest.mock("../../assets/models/village-fountain.glb", () => "village-fountain.glb", { virtual: true });
 jest.mock("@react-three/fiber/native", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   const loader = { clear: () => {} };
@@ -68,11 +75,25 @@ jest.mock("@react-three/fiber/native", () => {
     Canvas: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
     useThree: () => ({ camera: null, scene: null, size: { width: 400, height: 800 } }),
     useFrame: (callback: FramePart) => {
-      mockFrame.current = callback;
+      const entry = React.useRef(callback);
+      entry.current = callback;
+      React.useEffect(() => {
+        mockFrameEntries.push(entry);
+        return () => {
+          const at = mockFrameEntries.indexOf(entry);
+          if (at >= 0) mockFrameEntries.splice(at, 1);
+        };
+      }, []);
+      mockFrame.current = mockFrameAll;
     },
     useLoader: Object.assign((loaderClass: unknown, url: unknown) => {
       mockLoads.push({ loader: loaderClass, url: String(url) });
-      return mockGltf.value;
+      /* eslint-disable @typescript-eslint/no-require-imports */
+      const fountain = require("../__fixtures__/village-fountain-118") as typeof import("../__fixtures__/village-fountain-118");
+      const model = require("../__fixtures__/village-fountain-model-118") as typeof import("../__fixtures__/village-fountain-model-118");
+      /* eslint-enable @typescript-eslint/no-require-imports */
+      // 118: 분수 모델 파일에는 그 파일을 GLTFLoader처럼 푼 모양을 준다(마을 모델 장면이 아니다)
+      return fountain.isFountainUrl(url) ? model.sharedFountainGltf() : mockGltf.value;
     }, loader)
   };
 });
@@ -146,7 +167,10 @@ async function draw(at: { x: number; z: number }, ceiling = 0): Promise<Drawn> {
   const simState = { x: at.x, z: at.z, reduceMotion: true };
   const light = { ceiling, target: { season: "summer" } };
   const view = await render(<VillageModel sim={simState as unknown as LobbySim} daylight={light as unknown as DaylightState} pickTargets={pick} />);
-  const primitives = view.container.queryAll((instance: TestInstance) => instance.type === "primitive");
+  const primitives = view.container.queryAll((instance: TestInstance) => instance.type === "primitive").filter(
+    // 118: 분수를 따로 그리는 구현이면 분수 모델의 그림 조각도 있다. 마을 모델의 뿌리(건물 bld-home이 든 것)만 본다
+    (p) => !!(p.props as { object: THREE.Object3D }).object.getObjectByName("bld-home")
+  );
   expect(primitives).toHaveLength(1);
   const root = (primitives[0].props as { object: THREE.Object3D }).object;
   return { root, pick, sim: simState, light };
@@ -187,17 +211,20 @@ const notGlass = (meshes: THREE.Mesh[]) => {
 
 beforeEach(() => {
   mockFrame.current = null;
+  mockFrameEntries.length = 0;
   mockLoads.length = 0;
   glbTextures.clear();
   mockGltf.value = { scene: sceneFromGlb(nowVillageGlb()) };
 });
 
 describe("[spec] 098 그대로 둘 동작: 마을 모델 그리기와 라룹이 집(bld-home)", () => {
-  it("R1 마을 모델 파일 이름과 앱이 불러오는 방식 그대로: GLTFLoader로 lobby-village.glb 하나를 읽는다", async () => {
+  it("R1 마을 모델 파일 이름과 앱이 불러오는 방식 그대로: GLTFLoader로 lobby-village.glb 하나를 읽는다(118: 새 분수 모델 village-fountain.glb는 따로 읽는다)", async () => {
     await draw(VILLAGE_START);
     const { GLTFLoader } = jest.requireMock<{ GLTFLoader: unknown }>("three/examples/jsm/loaders/GLTFLoader.js");
     expect(mockLoads.length).toBeGreaterThan(0);
-    expect(mockLoads.every((l) => l.loader === GLTFLoader && l.url === "lobby-village.glb")).toBe(true);
+    // 118: 마을 모델 말고 분수 모델 파일(village-fountain.glb)도 따로 읽는다. 마을 모델 파일은 여전히 하나이고 따로 읽는다
+    expect(mockLoads.every((l) => l.loader === GLTFLoader && (l.url === "lobby-village.glb" || l.url === "village-fountain.glb"))).toBe(true);
+    expect(mockLoads.filter((l) => l.url === "lobby-village.glb").length).toBeGreaterThan(0);
   });
 
   it("R2 그리기(명세 7): 집의 메시는 다른 건물처럼 모델의 색 그림을 그대로 쓰는 Lambert 재질이고, 모델 바탕색 곱은 쓰지 않으며(재질 색 흰색), 외곽선 메시를 더하지 않는다", async () => {

@@ -66,6 +66,7 @@ import { allObjects, drawnVisible, instanceHeight, instanceWorldMatrices, loader
 import { GLASS_MATERIAL } from "../__fixtures__/village-shops-106";
 import { mockImagesAsPaths, splatLoader } from "../__fixtures__/village-splat-102";
 import { TREE_KINDS, TREE_LODS, TREE_PARTS, resetTreeLoader, treePartOf } from "../__fixtures__/village-trees-113";
+import { isFountainMesh118 } from "../__fixtures__/village-fountain-118";
 
 type FramePart = (state: unknown, delta: number) => void;
 
@@ -311,7 +312,8 @@ describe("[spec] 112 ③ 바뀔 동작: 마을 모델은 묶음 안에서 같은
     expect(strange).toEqual([]);
     const classes = (label: string) => (groups.get(label) ?? []).map(drawnClass).sort();
     expect({ props: classes("props") }).toEqual({
-      props: [classOf(colormap, true), classOf(null, true), classOf(benchMap, true)].sort()
+      // 118: 그림 없음·정점색(물) 메시는 옛 Kenney 분수의 물이었다. 옛 분수가 마을 모델에서 빠져 소품은 그림 둘(colormap, 새 벤치)이다
+      props: [classOf(colormap, true), classOf(benchMap, true)].sort()
     });
   });
 
@@ -346,7 +348,9 @@ describe("[spec] 112 ③ 바뀔 동작: 마을 모델은 묶음 안에서 같은
     }
     // 소품은 누르기 대상(합친 메시가 받는다), 유리·불빛 판·옛 길은 아니다
     const allowed = [...(g.get("props") ?? []), ...(g.get("bld-home") ?? [])];
-    expect(samePick(drawn.pick.current, allowed)).toEqual({ notAllowed: [], notPicked: [] });
+    // 118: 새 분수 메시(석재·물)도 누르기 대상이다. 마을 모델의 묶음이 아니므로 허용 목록에 더한다(없어도 된다: 분수 메시가 목록에 있는지는 118 qa 테스트가 본다)
+    const fountainPick118 = drawn.pick.current.filter(isFountainMesh118);
+    expect(samePick(drawn.pick.current, [...allowed, ...fountainPick118])).toEqual({ notAllowed: [], notPicked: [] });
   });
 });
 
@@ -394,16 +398,18 @@ describe("[spec] 112 ③ 그대로 둘 동작: 진짜 마을 모델의 모양·�
     const { groups, strange } = byLabel(modelMeshes(drawn), bank);
     expect(strange).toEqual([]);
     const allowed = [...groups.entries()].filter(([label]) => isPickLabel(label)).flatMap(([, meshes]) => meshes);
-    expect(samePick(drawn.pick.current, allowed)).toEqual({ notAllowed: [], notPicked: [] });
+    // 118: 새 분수 메시(석재·물)도 누르기 대상이다. 마을 모델의 묶음이 아니므로 허용 목록에 더하고, 삼각형 견주기에서는 뺀다(분수 메시가 목록에 있는지는 118 qa 테스트가 본다)
+    const fountainPick118 = drawn.pick.current.filter(isFountainMesh118);
+    expect(samePick(drawn.pick.current, [...allowed, ...fountainPick118])).toEqual({ notAllowed: [], notPicked: [] });
     const strangers: string[] = [];
     for (const target of drawn.pick.current) {
       target.traverse((o) => {
-        if (o !== target && o instanceof THREE.Mesh && !allowed.includes(o)) strangers.push(o.name || o.type);
+        if (o !== target && o instanceof THREE.Mesh && !allowed.includes(o) && !fountainPick118.includes(o)) strangers.push(o.name || o.type);
       });
     }
     expect(strangers).toEqual([]);
     const want = expected.filter((t) => isPickLabel(t.label));
-    const got = compareTriangles(want, (drawn.pick.current as THREE.Mesh[]).flatMap((m) => trianglesOf(m, "", "")), "shape");
+    const got = compareTriangles(want, (drawn.pick.current.filter((m) => !fountainPick118.includes(m)) as THREE.Mesh[]).flatMap((m) => trianglesOf(m, "", "")), "shape");
     expect({ missing: got.missing, extra: got.extra, examples: got.examples }).toEqual({ missing: 0, extra: 0, examples: [] });
     // 광선: 위 앞쪽에서 비스듬히 내려다보며(마을 카메라처럼) 앞을 향한 삼각형의 무게중심을 겨눈다
     const dir = new THREE.Vector3(0, -0.8, -0.6).normalize();

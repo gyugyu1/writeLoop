@@ -24,6 +24,7 @@ import { imageSize, parseGlb } from "../__fixtures__/village-glb-098";
 import { VILLAGE_GLB_PATH_106, changedBy106, describeGroups } from "../__fixtures__/village-shops-106";
 import { withoutBenchPrimitives } from "../__fixtures__/village-bench-114";
 import { withoutBoundaryGlb115 } from "../__fixtures__/village-boundary-115";
+import { withoutFountainGlb118 } from "../__fixtures__/village-fountain-118";
 
 const MOBILE = join(__dirname, "..", "..");
 const REPO = join(MOBILE, "..", "..");
@@ -95,8 +96,9 @@ describe("[spec] 101 그대로 둘 동작: 앱 크기와 마을 모델 파일", 
     const now = parseGlb(readFileSync(join(REPO, path)));
     const keep = (name: string) => !changedBy106(name);
     // 114: 소품 묶음의 벤치 조각만 빼고 견준다. 115: 빠지는 묶음과 소품의 빠지는 바위 삼각형도 뺀다
-    const baseMeshes = describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(base)), keep);
+    // 118: 마을 모델에서 옛 Kenney 분수가 빠진다(명세 바뀌는 동작 1). 양쪽에서 옛 분수 삼각형(소품 묶음, 가운데에서 1.7칸 안)을 뺀 뒤 견준다
+    const baseMeshes = describeGroups(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(base))), keep);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect({ path: relative(REPO, join(REPO, path)).replace(/\\/g, "/"), meshes: describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(now)), keep) }).toEqual({ path, meshes: baseMeshes });
+    expect({ path: relative(REPO, join(REPO, path)).replace(/\\/g, "/"), meshes: describeGroups(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(now))), keep) }).toEqual({ path, meshes: baseMeshes });
   });
 });

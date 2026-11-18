@@ -50,6 +50,7 @@ import {
   uniquePoints,
   unmatchedPoints
 } from "../__fixtures__/village-home-size-107";
+import { withoutFountainGlb118 } from "../__fixtures__/village-fountain-118";
 
 /** 막힌 칸 가운데 새 집 땅이 막는 칸(x 33~37, z 7~11) 밖의 칸: 개수와 정렬한 "열,행" 목록(줄바꿈으로 이음)의 sha256. 기준 커밋 c4b7693에서 이 테스트의 계산으로 잰 값. */
 // { count: 624, sha256: "dbe5207c552fb6ccd93b85f2c40dbfb155f3852f6e1eaa72f5b16f1ea34fb4ea" }. 114에서 벤치가 바꿀 수 있는 곳도 빼서 SOLID_OUTSIDE_HOME_107_114(village-bench-114.ts)로 견준다.
@@ -168,8 +169,9 @@ describe("[spec] 107 그대로 둘 동작: 배치 파일, 막힌 칸, 장소, �
     expect(rootNamesKept115(now)).toEqual(rootNamesKept115(base));
     const keep = (name: string) => name !== "bld-home";
     // 114: 소품 묶음의 벤치 조각만 빼고 견준다. 115: 빠지는 묶음과 소품의 빠지는 바위 삼각형도 뺀다
-    const baseMeshes = describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(base)), keep);
+    // 118: 마을 모델에서 옛 Kenney 분수가 빠진다(명세 바뀌는 동작 1). 양쪽에서 옛 분수 삼각형(소품 묶음, 가운데에서 1.7칸 안)을 뺀 뒤 견준다
+    const baseMeshes = describeGroups(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(base))), keep);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(now)), keep)).toEqual(baseMeshes);
+    expect(describeGroups(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(now))), keep)).toEqual(baseMeshes);
   });
 });

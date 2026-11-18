@@ -49,6 +49,8 @@ const MODEL_FILES = [
   "lobby-room.glb",
   "lobby-village.glb",
   "village-flowers.glb",
+  // 118: 새 분수 모델(마을 분수대)도 앱이 시작될 때 미리 읽는다(명세 2)
+  "village-fountain.glb",
   "wear-goggles.glb",
   "writeloop.glb",
   ...TREE_FILES.map(treeAssetRel)
@@ -139,6 +141,8 @@ jest.mock("@/assets/models/furniture/wardrobe.glb", () => "furniture/wardrobe.gl
 jest.mock("@/assets/models/furniture/rug.glb", () => "furniture/rug.glb");
 jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
+// 118: 새 분수 모델 파일(village-fountain.glb)도 마을·미리 읽기가 읽으므로 파일 이름 글자로 가짜로 바꾼다(파일이 아직 없어도 되는 가상 모듈이다. 단언은 그대로다)
+jest.mock("../../assets/models/village-fountain.glb", () => "village-fountain.glb", { virtual: true });
 jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 jest.mock("@/assets/models/village-flowers.glb", () => "village-flowers.glb");
 // 작업 113: 새 나무 파일(위 MODEL_FILES 머리말)

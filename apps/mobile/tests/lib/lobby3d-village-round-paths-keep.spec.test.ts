@@ -34,6 +34,7 @@ import { meshNodesUnder, parseGlb, sceneRoots, worldMatrices, worldPoints, type 
 import { REMOVED_PATH_RECTS, changedBy106, rectTiles, type Rect } from "../__fixtures__/village-shops-106";
 import { REMOVED_GROUPS_115, SOLID_OUTSIDE_CHANGED_115, solidOutsideChanged115, withoutBoundaryGlb115 } from "../__fixtures__/village-boundary-115";
 import { BENCH_TILE_RECTS, withoutBenchPrimitives } from "../__fixtures__/village-bench-114";
+import { withoutFountainGlb118 } from "../__fixtures__/village-fountain-118";
 
 const REPO = join(__dirname, "..", "..", "..", "..");
 /** 작업 099의 기준 커밋(명세 첫 줄). */
@@ -96,8 +97,9 @@ describe("[spec] 099 그대로 둘 동작: 마을 데이터와 파일", () => {
     };
     // 114: 소품 묶음의 벤치 조각만 빼고 견준다
     // 115: 빠지는 묶음과 소품의 빠지는 바위 삼각형도 뺀다
-    const baseMeshes = describeMeshes(withoutBenchPrimitives(withoutBoundaryGlb115(base)));
+    // 118: 마을 모델에서 옛 Kenney 분수가 빠진다(명세 바뀌는 동작 1). 양쪽에서 옛 분수 삼각형(소품 묶음, 가운데에서 1.7칸 안)을 뺀 뒤 견준다
+    const baseMeshes = describeMeshes(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(base))));
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeMeshes(withoutBenchPrimitives(withoutBoundaryGlb115(now)))).toEqual(baseMeshes);
+    expect(describeMeshes(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(now))))).toEqual(baseMeshes);
   });
 });

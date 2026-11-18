@@ -63,6 +63,7 @@ import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { shapeIndex, tilesOf, type PathShape, type Rect, type RoundedPathShapes } from "../__fixtures__/village-paths-099";
 import { TriBank, compareTriangles, labelOfMesh, sourceTriangles, trianglesOf as meshTriangles } from "../__fixtures__/village-merge-112";
 import { loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb } from "../__fixtures__/village-scene-101";
+import { isFountainMesh118 } from "../__fixtures__/village-fountain-118";
 
 type FramePart = (state: unknown, delta: number) => void;
 
@@ -84,6 +85,8 @@ jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
   GLTFLoader: class MockGLTFLoader {}
 }));
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
+// 118: 새 분수 모델 파일(village-fountain.glb)도 마을·미리 읽기가 읽으므로 파일 이름 글자로 가짜로 바꾼다(파일이 아직 없어도 되는 가상 모듈이다. 단언은 그대로다)
+jest.mock("../../assets/models/village-fountain.glb", () => "village-fountain.glb", { virtual: true });
 jest.mock("@react-three/fiber/native", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   const fake = (loader: unknown, input: unknown) =>
@@ -611,18 +614,20 @@ describe("[spec] 099 그대로 둘 동작: 길 말고는 마을 그리기가 같
       return labels.get(o)!;
     };
     const expected = objects.filter((o) => o instanceof THREE.Mesh && drawnVisible(o, drawn.roots) && isAllowed(labelFor(o)));
-    expect(drawn.pick.current.length).toBe(expected.length);
-    expect(new Set(drawn.pick.current)).toEqual(new Set(expected));
+    // 118: 새 분수 메시(석재·물)도 누르기 대상이다. 마을 모델의 묶음이 아니므로 기대 목록에 더하고, 삼각형 견주기에서는 뺀다(분수 메시가 목록에 있는지는 118 qa 테스트가 본다)
+    const fountainPick118 = drawn.pick.current.filter(isFountainMesh118);
+    expect(drawn.pick.current.length).toBe(expected.length + fountainPick118.length);
+    expect(new Set(drawn.pick.current)).toEqual(new Set([...expected, ...fountainPick118]));
     const strangers: string[] = [];
     for (const target of drawn.pick.current) {
       target.traverse((o) => {
-        if (o !== target && o instanceof THREE.Mesh && !isAllowed(labelFor(o))) strangers.push(o.name || o.type);
+        if (o !== target && o instanceof THREE.Mesh && !isAllowed(labelFor(o)) && !fountainPick118.includes(o)) strangers.push(o.name || o.type);
       });
     }
     expect(strangers).toEqual([]);
     const got = compareTriangles(
       sourceTris.filter((t) => isAllowed(t.label)),
-      (drawn.pick.current as THREE.Mesh[]).flatMap((m) => meshTriangles(m, "", "")),
+      (drawn.pick.current.filter((m) => !fountainPick118.includes(m)) as THREE.Mesh[]).flatMap((m) => meshTriangles(m, "", "")),
       "shape"
     );
     expect({ missing: got.missing, extra: got.extra, examples: got.examples }).toEqual({ missing: 0, extra: 0, examples: [] });

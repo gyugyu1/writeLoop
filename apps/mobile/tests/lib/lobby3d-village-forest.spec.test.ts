@@ -150,12 +150,13 @@ function villageCredit(text: string): { line: string; kenneyParts: string; rest:
 }
 
 describe("[spec] 115 ② 자산 출처(명세 4)", () => {
-  it("[바뀔] E7 CREDITS.md의 마을 모델 줄: Kenney 부품 목록에 생울타리·나무 울타리·풍차가 없고, 분수·가로등·노점·바위·길은 그대로 있다", () => {
+  // 118(명세 6, 고칠 기존 테스트): 마을 모델 줄의 Kenney 부품에서 분수를 뺀다(분수는 WriteLoop 제작 모델 village-fountain.glb로 따로 적는다). 나머지 기대는 그대로다
+  it("[바뀔] E7 CREDITS.md의 마을 모델 줄: Kenney 부품 목록에 생울타리·나무 울타리·풍차·분수가 없고, 가로등·노점·바위·길은 그대로 있다", () => {
     const { kenneyParts } = villageCredit(readFileSync(join(REPO_115_2, CREDITS_PATH_115_2), "utf8"));
     expect({
       kenneyParts,
-      removed: ["생울타리", "울타리", "풍차"].filter((w) => kenneyParts.includes(w)),
-      missing: ["분수", "가로등", "노점", "바위", "길"].filter((w) => !kenneyParts.includes(w))
+      removed: ["생울타리", "울타리", "풍차", "분수"].filter((w) => kenneyParts.includes(w)),
+      missing: ["가로등", "노점", "바위", "길"].filter((w) => !kenneyParts.includes(w))
     }).toEqual({ kenneyParts, removed: [], missing: [] });
   });
 
@@ -163,7 +164,8 @@ describe("[spec] 115 ② 자산 출처(명세 4)", () => {
     const now = readFileSync(join(REPO_115_2, CREDITS_PATH_115_2), "utf8");
     const base = gitShow115b(BASE_115_2, CREDITS_PATH_115_2);
     expect(villageCredit(now).rest).toBe(villageCredit(base).rest);
-    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.includes("WriteLoop_Tree")); // 116 06 결정 2: 나무 줄(A·Pine으로 바뀜)은 양쪽에서 뺀다
+    // 118(명세 6): 새 분수 모델 줄(village-fountain.glb)도 양쪽에서 뺀다(분수 줄은 118 qa 테스트가 본다)
+    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.includes("WriteLoop_Tree") && !l.includes("`village-fountain.glb`")); // 116 06 결정 2: 나무 줄(A·Pine으로 바뀜)은 양쪽에서 뺀다
     expect(others(now)).toEqual(others(base));
   });
 });

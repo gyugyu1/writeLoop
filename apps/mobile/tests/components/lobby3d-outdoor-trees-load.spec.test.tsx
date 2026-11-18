@@ -117,6 +117,8 @@ jest.mock("@/assets/models/furniture/wardrobe.glb", () => "furniture/wardrobe.gl
 jest.mock("@/assets/models/furniture/rug.glb", () => "furniture/rug.glb");
 jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
+// 118: 새 분수 모델 파일(village-fountain.glb)도 마을·미리 읽기가 읽으므로 파일 이름 글자로 가짜로 바꾼다(파일이 아직 없어도 되는 가상 모듈이다. 단언은 그대로다)
+jest.mock("../../assets/models/village-fountain.glb", () => "village-fountain.glb", { virtual: true });
 jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 jest.mock("@/assets/models/village-flowers.glb", () => "village-flowers.glb");
 // 새 나무 파일(아직 저장소에 없어 가상 가짜. 상대 경로여야 파일이 없을 때도 가짜를 둘 수 있다)

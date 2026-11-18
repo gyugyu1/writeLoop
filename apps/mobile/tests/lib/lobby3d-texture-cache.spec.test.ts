@@ -64,6 +64,8 @@ jest.mock("@/assets/models/furniture/wardrobe.glb", () => 9015);
 jest.mock("@/assets/models/furniture/rug.glb", () => 9016);
 jest.mock("@/assets/models/furniture/lamp.glb", () => 9017);
 jest.mock("@/assets/models/lobby-village.glb", () => 9004);
+// 118: 새 분수 모델 파일(village-fountain.glb)도 마을·미리 읽기가 읽으므로 파일 이름 글자로 가짜로 바꾼다(파일이 아직 없어도 되는 가상 모듈이다. 단언은 그대로다)
+jest.mock("../../assets/models/village-fountain.glb", () => 9007, { virtual: true });
 jest.mock("@/assets/models/wear-goggles.glb", () => 9005);
 jest.mock("@/assets/models/village-flowers.glb", () => 9006);
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => ({ createOutdoor: () => ({}) }));

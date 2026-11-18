@@ -22,6 +22,13 @@
 // - 옅어진 집: { opacity 0.35, transparent true } → { opacity 0.35, transparent false, alphaHash true }.
 // - 다른 건물과 돌아온 집: { opacity 1, transparent false } → { opacity 1, transparent false, alphaHash true }.
 //   가리는 자리, 프레임 수, 불투명도 값은 그대로다.
+//
+// 작업 109(건물 옅게 재질 교체, 기능 변경) 명세의 "그 때문에 고칠 기존 테스트"와 바뀌는 동작 1·2(건물은 평소 디더링 없는 불투명 재질로 그리고, 가리면
+// 미리 만든 반투명 재질(transparent)로 바꿔 끼워 불투명도를 0.35까지 낮추며, 벗어나면 불투명 재질로 되돌린다)로 qa가 R4를 고쳤다(109 qa 보고):
+// - 재질을 바꿔 끼우므로 옅어진 뒤 꺼낸 재질을 돌아온 뒤에도 들고 보지 않고, 돌아온 뒤 메시가 가진 재질을 다시 꺼내 본다.
+// - 옅어진 집: { opacity 0.35, transparent false, alphaHash true } → { opacity 0.35, transparent true, alphaHash false }.
+// - 다른 건물과 돌아온 집: { opacity 1, transparent false, alphaHash true } → { opacity 1, transparent false, alphaHash false }.
+//   가리는 자리, 프레임 수, 불투명도 값은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -216,7 +223,7 @@ describe("[spec] 098 그대로 둘 동작: 마을 모델 그리기와 라룹이 
     expect(home.every((m) => pick.current.includes(m))).toBe(true);
   });
 
-  it("R4 라룹이를 가리면 집이 점무늬(디더링, alphaHash)로 옅어진다(불투명도 0.35까지 옅어지고, 벗어나면 돌아온다. transparent는 켜지 않는다). 다른 건물은 불투명도 1 그대로다(108에서 고침)", async () => {
+  it("R4 라룹이를 가리면 집이 반투명 재질로 옅어진다(transparent, 불투명도 0.35까지 옅어지고, 벗어나면 불투명 재질로 돌아온다. 디더링(alphaHash)은 쓰지 않는다). 다른 건물은 불투명도 1 그대로다(109에서 고침)", async () => {
     const home = VILLAGE_BUILDINGS.find((b) => b.id === "home")!;
     // 집 바로 뒤(뒷면에서 0.5칸): 데이터로 가리는 건물이 집인 자리
     const behind = { x: home.doorX, z: home.rect[1] - 0.5 };
@@ -226,12 +233,14 @@ describe("[spec] 098 그대로 둘 동작: 마을 모델 그리기와 라룹이 
     await frames(10);
     const homeMaterials = materialsOf(meshesUnder(view.root, "bld-home"));
     expect(homeMaterials.length).toBeGreaterThan(0);
-    for (const m of homeMaterials) expect({ opacity: m.opacity, transparent: m.transparent, alphaHash: m.alphaHash }).toEqual({ opacity: 0.35, transparent: false, alphaHash: true });
-    for (const name of OTHER_BUILDINGS) for (const m of materialsOf(notGlass(meshesUnder(view.root, name)))) expect({ name, opacity: m.opacity, transparent: m.transparent, alphaHash: m.alphaHash }).toEqual({ name, opacity: 1, transparent: false, alphaHash: true });
+    for (const m of homeMaterials) expect({ opacity: m.opacity, transparent: m.transparent, alphaHash: m.alphaHash }).toEqual({ opacity: 0.35, transparent: true, alphaHash: false });
+    for (const name of OTHER_BUILDINGS) for (const m of materialsOf(notGlass(meshesUnder(view.root, name)))) expect({ name, opacity: m.opacity, transparent: m.transparent, alphaHash: m.alphaHash }).toEqual({ name, opacity: 1, transparent: false, alphaHash: false });
     view.sim.x = VILLAGE_START.x;
     view.sim.z = VILLAGE_START.z;
     await frames(10);
-    for (const m of homeMaterials) expect({ opacity: m.opacity, transparent: m.transparent, alphaHash: m.alphaHash }).toEqual({ opacity: 1, transparent: false, alphaHash: true });
+    const homeBack = materialsOf(meshesUnder(view.root, "bld-home"));
+    expect(homeBack.length).toBe(homeMaterials.length);
+    for (const m of homeBack) expect({ opacity: m.opacity, transparent: m.transparent, alphaHash: m.alphaHash }).toEqual({ opacity: 1, transparent: false, alphaHash: false });
   });
 
   it("R5 밤 불빛(명세 6, 가로등 불빛 그대로): 가로등 불빛 넷(glow-lamp-0~3)은 밤(천장 조명 1)에 보이고 낮(0)에는 보이지 않는다", async () => {

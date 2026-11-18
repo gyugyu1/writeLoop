@@ -20,6 +20,20 @@
 //
 // 바뀔 동작(구현 전 실패): D1, D2, D3. 그대로 둘 동작(구현 전·뒤 통과): D4, D5, D6.
 // 명세의 "그 때문에 고칠 기존 테스트"는 lobby3d-village-home-model.spec.test.tsx R4와 lobby3d-village-shops-glass.spec.test.tsx G3을 고쳤다(바뀔 동작).
+//
+// 작업 109(건물 옅게 재질 교체, 기능 변경) 명세의 "그 때문에 고칠 기존 테스트"와 바뀌는 동작 1·2(건물은 평소 디더링 없는 불투명 재질로 그리고, 가리면
+// 미리 만든 반투명 재질(transparent)로 바꿔 끼워 불투명도를 1→0.35로 낮추며, 벗어나면 1까지 올린 뒤 불투명 재질로 되돌린다. 두 재질의 transparent는 바꾸지 않는다)로
+// qa가 D1~D3을 고쳤다(109 qa 보고). 재질을 바꿔 끼우므로 처음 꺼낸 재질을 들고 있지 않고 그 프레임에 메시가 가진 재질을 본다.
+// - D1: 건물 재질 { alphaHash true, transparent false, 불투명도 1 } → { alphaHash false, transparent false, 불투명도 1 }.
+// - D2: "프레임마다 모든 건물 재질의 transparent(false)·alphaHash(true)·version이 첫 프레임 그대로이고 불투명도만 바뀐다" →
+//   "프레임마다 건물 메시의 재질은 첫 프레임의 불투명 재질(transparent false·alphaHash false·version 그대로)이거나 그 메시의 반투명 재질
+//   (transparent true·alphaHash false·version 처음 본 때 그대로) 둘 중 하나이고, 두 재질 모두 그 값이 프레임마다 그대로다. 메시가 가진 재질의 불투명도가
+//   0.35까지 내려갔다가 끝에는 불투명 재질(불투명도 1)로 돌아온다". 다니는 자리와 프레임 수는 그대로다.
+// - D3: "불투명도 1이면 디더링 점이 빠지지 않는다" → "집이 옅어지면 집 건물 메시는 첫 프레임 재질이 아닌 반투명 재질(transparent true, 불투명도 0.35,
+//   alphaHash false, 같은 재질 종류·그림·꼭짓점 색)을 갖고, 다른 건물은 첫 프레임 재질 그대로이며, 돌아오면 첫 프레임 재질(transparent false, 불투명도 1)이다".
+// - D4(그대로 둘 동작, 109 결정 03 "qa가 D4를 고침"): 그린 직후 꺼낸 재질 객체를 들고 그 불투명도를 보던 것을, 프레임마다 메시가 그때 가진 재질의
+//   불투명도를 보게 고쳤다. 기대 빠르기 값(0.74 → 0.48 → 0.35 → 0.35, 0.61 → 0.87 → 1 → 1, 다른 건물 1), 자리, 프레임 수는 그대로다.
+// D5·D6은 고치지 않았다(명세의 "고칠 기존 테스트"에 없다).
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -210,7 +224,6 @@ function buildingGroups(root: THREE.Object3D): Map<string, { glass: THREE.Mesh[]
   return out;
 }
 
-const buildingMaterials = (root: THREE.Object3D) => [...buildingGroups(root).values()].flatMap((g) => materialsOf(g.building));
 const glassMaterials = (root: THREE.Object3D, name: string) => materialsOf(buildingGroups(root).get(name)!.glass);
 
 /** bld-* 묶음 밖의 메시(소품·생울타리·울타리·풍차·나무·불빛 판·옛 길 조각). */
@@ -240,41 +253,49 @@ beforeEach(() => {
 });
 
 describe("[spec] 108 바뀔 동작: 건물은 디더링(alphaHash)으로 옅어진다(명세 1·2)", () => {
-  it("D1 처음부터(명세 1): 라룹이를 가리지 않는 자리에서 그리면 집·가구점·옷집의 건물 재질은 모두 alphaHash가 켜진 불투명 재질(transparent false)이고 불투명도는 1이다", async () => {
+  it("D1 처음부터(109 명세 1, 109에서 고침): 라룹이를 가리지 않는 자리에서 그리면 집·가구점·옷집의 건물 재질은 모두 디더링(alphaHash) 없는 불투명 재질(transparent false)이고 불투명도는 1이다", async () => {
     expect(occludingBuildings(VILLAGE_START)).toEqual([]);
     const view = await draw(VILLAGE_START);
     await frames(1);
     for (const [name, { building }] of buildingGroups(view.root)) {
       for (const m of materialsOf(building)) {
-        expect({ name, alphaHash: m.alphaHash, transparent: m.transparent, opacity: m.opacity }).toEqual({ name, alphaHash: true, transparent: false, opacity: 1 });
+        expect({ name, alphaHash: m.alphaHash, transparent: m.transparent, opacity: m.opacity }).toEqual({ name, alphaHash: false, transparent: false, opacity: 1 });
       }
     }
   });
 
-  it("D2 셰이더가 바뀌지 않는다(명세 1): 집·가구점·옷집 뒤를 차례로 오가며 옅어졌다 돌아오는 동안 프레임마다 모든 건물 재질의 transparent(false)·alphaHash(true)·version이 첫 프레임 그대로이고, 불투명도만 0.35까지 내려갔다 1로 돌아온다", async () => {
+  it("D2 두 재질의 transparent·셰이더 값은 바뀌지 않는다(109 명세 2, 109에서 고침): 집·가구점·옷집 뒤를 차례로 오가는 동안 프레임마다 건물 메시의 재질은 첫 프레임의 불투명 재질(transparent false·alphaHash false·version 첫 프레임 그대로)이거나 그 메시의 반투명 재질(transparent true·alphaHash false·version 처음 본 때 그대로) 둘 중 하나이고, 두 재질 모두 그 값이 프레임마다 그대로다. 메시가 가진 재질의 불투명도는 0.35까지 내려갔다가 끝에는 불투명 재질(불투명도 1)로 돌아온다", async () => {
     expect(occludingBuildings(behindHome())).toEqual(["home"]);
     expect(occludingBuildings(BEHIND_FURNITURE)).toEqual(["furnitureShop"]);
     expect(occludingBuildings(BEHIND_CLOTHING)).toEqual([clothingId()]);
     const view = await draw(VILLAGE_START);
     await frames(1);
-    const all = buildingMaterials(view.root);
-    expect(all.length).toBeGreaterThan(0);
-    const groupOf = new Map<THREE.Material, string>();
-    for (const [name, { building }] of buildingGroups(view.root)) for (const m of materialsOf(building)) groupOf.set(m, name);
-    const firstVersion = new Map(all.map((m) => [m, m.version]));
-    const broken: { frame: number; material: string; transparent: boolean; alphaHash: boolean; versionChanged: boolean }[] = [];
+    const entries = [...buildingGroups(view.root)].flatMap(([name, { building }]) => building.map((mesh) => ({ name, mesh, opaque: mesh.material as THREE.Material })));
+    expect(entries.length).toBeGreaterThan(0);
+    expect(entries.every((e) => !Array.isArray(e.mesh.material))).toBe(true);
+    const opaqueVersion = new Map(entries.map((e) => [e.opaque, e.opaque.version]));
+    const twinOf = new Map<THREE.Mesh, { material: THREE.Material; version: number }>();
+    const broken: { frame: number; name: string; mesh: string; problem: string }[] = [];
+    const lowest = new Map(entries.map((e) => [e.mesh, 1]));
     let frame = 1;
-    const check = () => {
-      frame += 1;
-      for (const m of all) {
-        const versionChanged = m.version !== firstVersion.get(m);
-        if (m.transparent !== false || m.alphaHash !== true || versionChanged) broken.push({ frame, material: groupOf.get(m) ?? m.uuid, transparent: m.transparent, alphaHash: m.alphaHash, versionChanged });
-      }
-    };
-    const lowest = new Map(all.map((m) => [m, m.opacity]));
     const track = () => {
-      check();
-      for (const m of all) lowest.set(m, Math.min(lowest.get(m)!, m.opacity));
+      frame += 1;
+      for (const e of entries) {
+        const now = e.mesh.material as THREE.Material;
+        if (now !== e.opaque) {
+          const twin = twinOf.get(e.mesh);
+          if (!twin) twinOf.set(e.mesh, { material: now, version: now.version });
+          else if (twin.material !== now) broken.push({ frame, name: e.name, mesh: e.mesh.name, problem: "세 번째 재질" });
+        }
+        lowest.set(e.mesh, Math.min(lowest.get(e.mesh)!, now.opacity));
+        const o = e.opaque;
+        if (o.transparent !== false || o.alphaHash !== false || o.version !== opaqueVersion.get(o)) broken.push({ frame, name: e.name, mesh: e.mesh.name, problem: `불투명 재질 transparent ${o.transparent} alphaHash ${o.alphaHash} version ${opaqueVersion.get(o)}→${o.version}` });
+        const twin = twinOf.get(e.mesh);
+        if (twin) {
+          const t = twin.material;
+          if (t.transparent !== true || t.alphaHash !== false || t.version !== twin.version) broken.push({ frame, name: e.name, mesh: e.mesh.name, problem: `반투명 재질 transparent ${t.transparent} alphaHash ${t.alphaHash} version ${twin.version}→${t.version}` });
+        }
+      }
     };
     for (const at of [behindHome(), VILLAGE_START, BEHIND_FURNITURE, BEHIND_CLOTHING, VILLAGE_START]) {
       moveTo(view, at);
@@ -282,56 +303,77 @@ describe("[spec] 108 바뀔 동작: 건물은 디더링(alphaHash)으로 옅어�
     }
     expect(broken.slice(0, 5)).toEqual([]);
     expect(broken.length).toBe(0);
-    // 셋 다 한 번씩 0.35까지 옅어졌고, 끝에는 모두 1로 돌아왔다
-    for (const [name, { building }] of buildingGroups(view.root)) {
-      if (!BUILDING_GROUPS().includes(name)) continue;
-      for (const m of materialsOf(building)) expect({ name, lowest: round(lowest.get(m)!), now: m.opacity }).toEqual({ name, lowest: 0.35, now: 1 });
+    // 셋 다 한 번씩 반투명 재질로 바뀌어 0.35까지 옅어졌고, 끝에는 모두 불투명 재질(불투명도 1)로 돌아왔다
+    for (const e of entries) {
+      if (!BUILDING_GROUPS().includes(e.name)) continue;
+      expect({ name: e.name, mesh: e.mesh.name, swappedOnce: twinOf.has(e.mesh), lowest: round(lowest.get(e.mesh)!), backToOpaque: e.mesh.material === e.opaque, now: (e.mesh.material as THREE.Material).opacity }).toEqual({
+        name: e.name,
+        mesh: e.mesh.name,
+        swappedOnce: true,
+        lowest: 0.35,
+        backToOpaque: true,
+        now: 1
+      });
     }
   });
 
-  it("D3 불투명도 1이면 점이 빠지지 않는다(명세 2): 가리지 않을 때 건물 재질마다 alphaHash가 켜져 있고, 바탕 알파(불투명도 × 꼭짓점 색 알파 × 색 그림 알파)가 모든 점에서 1이며 alphaMap이 없다", async () => {
+  it("D3 옅어지면 반투명 재질로 바꿔 끼우고 돌아오면 불투명 재질로 되돌린다(109 명세 2, 109에서 고침): 집 뒤에 10프레임 서면 집 건물 메시는 첫 프레임 재질이 아닌 반투명 재질(transparent true, 불투명도 0.35, alphaHash false)을 갖고 그 재질은 첫 프레임 재질과 같은 종류·그림(map)·꼭짓점 색(vertexColors)이다. 다른 건물은 첫 프레임 재질(불투명도 1) 그대로다. 벗어나 10프레임 뒤 집 메시는 첫 프레임 재질(transparent false, 불투명도 1)로 돌아와 있다", async () => {
     const view = await draw(VILLAGE_START);
     await frames(1);
-    for (const [name, { building }] of buildingGroups(view.root)) {
-      for (const mesh of building) {
-        for (const m of materialsOf([mesh])) {
-          const lambertish = m as THREE.MeshLambertMaterial;
-          const color = mesh.geometry.getAttribute("color");
-          let vertexAlpha = 1;
-          if (lambertish.vertexColors && color && color.itemSize === 4) for (let i = 0; i < color.count; i += 1) vertexAlpha = Math.min(vertexAlpha, color.getW(i));
-          const map = lambertish.map;
-          const mapAlpha = !map ? 1 : map.userData?.mimeType === "image/jpeg" ? 1 : NaN;
-          expect({ name, mesh: mesh.name, alphaHash: m.alphaHash, lowestAlpha: m.opacity * vertexAlpha * mapAlpha, alphaMap: lambertish.alphaMap ?? null }).toEqual({
-            name,
-            mesh: mesh.name,
-            alphaHash: true,
-            lowestAlpha: 1,
-            alphaMap: null
-          });
-        }
+    const groups = buildingGroups(view.root);
+    const first = new Map([...groups.values()].flatMap((g) => g.building.map((mesh) => [mesh, mesh.material as THREE.MeshLambertMaterial] as const)));
+    moveTo(view, behindHome());
+    await frames(10);
+    for (const mesh of groups.get("bld-home")!.building) {
+      const now = mesh.material as THREE.MeshLambertMaterial;
+      const was = first.get(mesh)!;
+      expect({ mesh: mesh.name, swapped: now !== was, transparent: now.transparent, opacity: round(now.opacity), alphaHash: now.alphaHash, type: now.type, sameMap: now.map === was.map, vertexColors: now.vertexColors }).toEqual({
+        mesh: mesh.name,
+        swapped: true,
+        transparent: true,
+        opacity: 0.35,
+        alphaHash: false,
+        type: was.type,
+        sameMap: true,
+        vertexColors: was.vertexColors
+      });
+    }
+    for (const name of BUILDING_GROUPS().filter((n) => n !== "bld-home")) {
+      for (const mesh of groups.get(name)!.building) {
+        const now = mesh.material as THREE.Material;
+        expect({ name, mesh: mesh.name, same: now === first.get(mesh), transparent: now.transparent, opacity: now.opacity }).toEqual({ name, mesh: mesh.name, same: true, transparent: false, opacity: 1 });
       }
+    }
+    moveTo(view, VILLAGE_START);
+    await frames(10);
+    for (const mesh of groups.get("bld-home")!.building) {
+      const now = mesh.material as THREE.Material;
+      expect({ mesh: mesh.name, same: now === first.get(mesh), transparent: now.transparent, opacity: now.opacity }).toEqual({ mesh: mesh.name, same: true, transparent: false, opacity: 1 });
     }
   });
 });
 
 describe("[spec] 108 그대로 둘 동작: 옅어지는 조건·빠르기, 가게 유리, 그 밖의 마을 그리기", () => {
-  it("D4 빠르기(0.25초에 걸쳐 0.35까지, 같은 빠르기로 돌아옴): 집 뒤에 서면 0.1초 프레임마다 집 건물 재질의 불투명도가 0.74 → 0.48 → 0.35 → 0.35, 벗어나면 0.61 → 0.87 → 1 → 1이고, 그동안 다른 건물은 1이다", async () => {
+  it("D4 빠르기(0.25초에 걸쳐 0.35까지, 같은 빠르기로 돌아옴. 109에서 고침: 프레임마다 메시가 지금 가진 재질을 본다): 집 뒤에 서면 0.1초 프레임마다 집 건물 메시가 가진 재질의 불투명도가 0.74 → 0.48 → 0.35 → 0.35, 벗어나면 0.61 → 0.87 → 1 → 1이고, 그동안 다른 건물은 1이다", async () => {
     const view = await draw(behindHome());
     const groups = buildingGroups(view.root);
-    const homeMats = materialsOf(groups.get("bld-home")!.building);
-    const others = BUILDING_GROUPS()
+    const homeMeshes = groups.get("bld-home")!.building;
+    const otherMeshes = BUILDING_GROUPS()
       .filter((n) => n !== "bld-home")
-      .flatMap((n) => materialsOf(groups.get(n)!.building));
+      .flatMap((n) => groups.get(n)!.building);
     const seen: number[][] = [];
     const otherSeen: number[] = [];
+    // 재질을 바꿔 끼우므로(109) 프레임마다 그때 메시가 가진 재질을 꺼낸다
     const record = () => {
-      seen.push(homeMats.map((m) => round(m.opacity)));
-      otherSeen.push(...others.map((m) => m.opacity));
+      seen.push(materialsOf(homeMeshes).map((m) => round(m.opacity)));
+      otherSeen.push(...materialsOf(otherMeshes).map((m) => m.opacity));
     };
     await frames(4, record);
     moveTo(view, VILLAGE_START);
     await frames(4, record);
-    expect(seen).toEqual([0.74, 0.48, 0.35, 0.35, 0.61, 0.87, 1, 1].map((v) => homeMats.map(() => v)));
+    const homeCount = materialsOf(homeMeshes).length;
+    expect(homeCount).toBeGreaterThan(0);
+    expect(seen).toEqual([0.74, 0.48, 0.35, 0.35, 0.61, 0.87, 1, 1].map((v) => Array.from({ length: homeCount }, () => v)));
     expect(otherSeen.every((v) => v === 1)).toBe(true);
   });
 

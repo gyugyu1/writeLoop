@@ -29,6 +29,13 @@
 // - 가게 건물 메시 재질의 상태에 alphaHash를 더하고, 옅어진 건물 { opacity 0.35, transparent true } → { opacity 0.35, transparent false, alphaHash true },
 //   옅어지지 않은 건물 { opacity 1, transparent false } → { opacity 1, transparent false, alphaHash true }.
 //   가리는 자리, 프레임 수, 불투명도 값, 유리가 반투명 그대로인지 보는 단언은 그대로다.
+//
+// 작업 109(건물 옅게 재질 교체, 기능 변경) 명세의 "그 때문에 고칠 기존 테스트"와 바뀌는 동작 1·2(건물은 평소 디더링 없는 불투명 재질로 그리고, 가리면
+// 미리 만든 반투명 재질(transparent)로 바꿔 끼워 불투명도를 0.35까지 낮추며, 벗어나면 불투명 재질로 되돌린다)로 qa가 G3을 고쳤다(109 qa 보고):
+// - 재질을 바꿔 끼우므로 처음 꺼낸 재질을 들고 보지 않고, 단계마다 가게 건물 메시가 그때 가진 재질을 다시 꺼내 본다.
+// - 옅어진 건물 { opacity 0.35, transparent false, alphaHash true } → { opacity 0.35, transparent true, alphaHash false },
+//   옅어지지 않은 건물 { opacity 1, transparent false, alphaHash true } → { opacity 1, transparent false, alphaHash false }.
+//   가리는 자리, 프레임 수, 불투명도 값, 유리가 반투명 그대로인지 보는 단언은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -260,7 +267,7 @@ describe("[spec] 106 바뀔 동작: 두 가게의 통유리와 건물(명세 5·
     }
   });
 
-  it("G3 가리기(명세 6, 108에서 고침): 옷집 바로 뒤에 서면 옷집 건물 메시가 점무늬(alphaHash)로 0.35까지 옅어지고(가구점은 불투명도 1 그대로, transparent는 둘 다 켜지 않는다), 가구점 바로 뒤에 서면 가구점이 옅어지며, 벗어나면 둘 다 돌아온다. 그 뒤에도 유리는 반투명이다(명세 5)", async () => {
+  it("G3 가리기(명세 6, 109에서 고침): 옷집 바로 뒤에 서면 옷집 건물 메시가 반투명 재질(transparent)로 0.35까지 옅어지고(가구점은 불투명 재질로 불투명도 1 그대로, 디더링(alphaHash)은 둘 다 쓰지 않는다), 가구점 바로 뒤에 서면 가구점이 옅어지며, 벗어나면 둘 다 불투명 재질로 돌아온다. 그 뒤에도 유리는 반투명이다(명세 5)", async () => {
     const id = clothingId();
     const behindClothing = { x: 47, z: 15.5 };
     const behindFurniture = { x: 11, z: 24.5 };
@@ -268,20 +275,21 @@ describe("[spec] 106 바뀔 동작: 두 가게의 통유리와 건물(명세 5·
     expect(occludingBuildings(behindFurniture)).toEqual(["furnitureShop"]);
     const view = await draw(behindClothing);
     await frames(10);
-    const clothing = materialsOf(shopMeshes(view.root, `bld-${id}`).building);
-    const furniture = materialsOf(shopMeshes(view.root, "bld-furnitureShop").building);
+    // 재질을 바꿔 끼우므로 단계마다 그때 메시가 가진 재질을 다시 꺼낸다(109)
+    const clothing = () => materialsOf(shopMeshes(view.root, `bld-${id}`).building);
+    const furniture = () => materialsOf(shopMeshes(view.root, "bld-furnitureShop").building);
     const state = (ms: THREE.Material[]) => ms.map((m) => ({ opacity: m.opacity, transparent: m.transparent, alphaHash: m.alphaHash }));
-    expect(state(clothing)).toEqual(clothing.map(() => ({ opacity: 0.35, transparent: false, alphaHash: true })));
-    expect(state(furniture)).toEqual(furniture.map(() => ({ opacity: 1, transparent: false, alphaHash: true })));
+    expect(state(clothing())).toEqual(clothing().map(() => ({ opacity: 0.35, transparent: true, alphaHash: false })));
+    expect(state(furniture())).toEqual(furniture().map(() => ({ opacity: 1, transparent: false, alphaHash: false })));
     view.sim.x = behindFurniture.x;
     view.sim.z = behindFurniture.z;
     await frames(10);
-    expect(state(furniture)).toEqual(furniture.map(() => ({ opacity: 0.35, transparent: false, alphaHash: true })));
-    expect(state(clothing)).toEqual(clothing.map(() => ({ opacity: 1, transparent: false, alphaHash: true })));
+    expect(state(furniture())).toEqual(furniture().map(() => ({ opacity: 0.35, transparent: true, alphaHash: false })));
+    expect(state(clothing())).toEqual(clothing().map(() => ({ opacity: 1, transparent: false, alphaHash: false })));
     view.sim.x = VILLAGE_START.x;
     view.sim.z = VILLAGE_START.z;
     await frames(10);
-    expect(state([...clothing, ...furniture])).toEqual([...clothing, ...furniture].map(() => ({ opacity: 1, transparent: false, alphaHash: true })));
+    expect(state([...clothing(), ...furniture()])).toEqual([...clothing(), ...furniture()].map(() => ({ opacity: 1, transparent: false, alphaHash: false })));
     // 옅어졌다 돌아온 뒤에도 유리는 반투명 그대로다(명세 5)
     for (const name of SHOPS()) {
       for (const m of materialsOf(shopMeshes(view.root, name).glass)) {

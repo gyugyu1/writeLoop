@@ -1,5 +1,5 @@
 import { useFrame, useLoader } from "@react-three/fiber/native";
-import { Component, useEffect, useMemo, useState, type MutableRefObject, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useState, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { useItemCatalog } from "@/lib/item-catalog-store";
@@ -10,6 +10,7 @@ import { buildPlacements, currentFurnitureLayout, placedItemType, placementKey, 
 import { viewWindow, wallPiecePose, type LobbyLayout } from "@/lib/lobby3d/lobby-layout";
 import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
+import { treeModelAssets } from "./tree-models";
 
 // 라룹이 방의 가구. 가구마다 모델 파일(glb) 하나이고, 그 안의 이름(카탈로그의 모델 이름) 붙은 묶음을 복제해 놓는다.
 // 처음 방 가구 일곱은 앱에 든 파일이라 바로 그리고, 그 밖의 가구는 서버 아이템 목록의 파일을 받아 그린다(furniture-files).
@@ -98,7 +99,9 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
   }, [starters]);
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판.
   // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 그릴 때마다 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
-  const outdoor = useMemo(() => createOutdoor(0, 0), []);
+  // 창밖 나무 모델(A·B·C의 LOD2). 다 읽으면 창밖 장면을 나무와 함께 다시 짓는다(못 읽으면 나무 없이 둔다)
+  const [outdoorTrees, setOutdoorTrees] = useState<GLTF[] | null>(null);
+  const outdoor = useMemo(() => createOutdoor(0, 0, outdoorTrees ?? undefined), [outdoorTrees]);
   // 창이 높이 걸려도 창 너머 풀밭과 덤불이 창 아래쪽에 보이게, 바깥 풀밭을 창 가운데보다 OUTDOOR_DROP 아래에 둔다
   const groundY = useMemo(() => (currentFurnitureLayout().find((p) => p.view)?.y ?? OUTDOOR_DROP) - OUTDOOR_DROP, []);
   const target = useMemo(() => new THREE.WebGLRenderTarget(VIEW_TEXTURE.width, VIEW_TEXTURE.height), []);
@@ -353,8 +356,45 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
   }, [fallback, group]);
 
   // react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다.
-  // eslint-disable-next-line react/no-unknown-property
-  return <primitive object={group} />;
+  return (
+    <>
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <primitive object={group} />
+      {/* 창밖 나무: 나무 모델을 다 읽으면 창밖 장면에 심는다. 못 읽으면 나무만 빠진다(가구는 기다리지 않는다) */}
+      <OutdoorTreesErrorBoundary>
+        <Suspense fallback={null}>
+          <OutdoorTrees onLoaded={setOutdoorTrees} />
+        </Suspense>
+      </OutdoorTreesErrorBoundary>
+    </>
+  );
+}
+
+/** 마을과 같은 나무 모델을 읽어(미리 읽기와 같은 목록) 창밖에 쓸 LOD2(A·B·C)를 넘긴다. */
+function OutdoorTrees({ onLoaded }: { onLoaded: (trees: GLTF[]) => void }) {
+  const gltfs = useLoader(GLTFLoader, treeModelAssets()) as GLTF[];
+  useEffect(() => {
+    // 목록 순서: 종류마다 LOD1, LOD2
+    onLoaded(gltfs.filter((_, i) => i % 2 === 1));
+  }, [gltfs, onLoaded]);
+  return null;
+}
+
+/** 나무 모델을 불러오지 못하면 창밖 나무만 빠진다. 오류는 개발 콘솔에 남긴다. */
+class OutdoorTreesErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.warn("[lobby3d] 창밖 나무 모델을 불러오지 못했습니다", error);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
 }
 
 /** 가구 묶음을 불러오지 못하면 코드로 만든 대체 가구가 그대로 보이게 한다. 오류는 개발 콘솔에 남긴다. */

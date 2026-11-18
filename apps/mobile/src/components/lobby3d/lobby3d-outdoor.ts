@@ -1,12 +1,14 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Ambience, DayPhase, Season } from "@/lib/lobby3d/daylight";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { TREE_SPECIES, buildTreeKit, type TreeKit, type TreeSpecies } from "./tree-models";
 
 // 라룹이 방 창문 너머의 바깥(실제 풍경이 아니다). 방과 따로 둔 장면이라 방 화면에는 그려지지 않고,
 // lobby3d-furniture가 창문 자리에서 들여다본 모습을 그림판에 그려 창 안쪽에 붙인다.
 // 좌표는 방과 같은 앱 좌표(칸)다. 뒷벽 바깥면(z = -0.4) 뒤, z가 음수인 쪽에 놓는다.
 // 하늘·구름·먼 언덕·나무·울타리·덤불·꽃·나비·별. 멀수록 하늘빛으로 옅어지고, 나무가 바람에 흔들리고 구름이 흘러간다.
-// 하늘색·햇빛·별은 하루의 때를, 잎·풀·눈은 계절을 따른다(setDaylight).
+// 하늘색·햇빛·별은 하루의 때를, 잎·풀·눈은 계절을 따른다(setDaylight). 나무는 마을과 같은 나무 모델(LOD2)이고, 모델이 없으면 나무만 빠진다.
 
 /** 바깥 장면. update는 그릴 때마다 부른다(t: 지난 시간 초, dt: 앞서 그린 때와의 차이 초). */
 export interface Outdoor {
@@ -52,6 +54,9 @@ export const SEASON_COLORS: Record<Season, { leaves: number[]; pine: number; gro
   }
 };
 
+/** 창밖 나무 잎이 흔들리는 폭(라디안, 줄기 밑을 축으로). */
+const TREE_SWAY = 0.025;
+
 /** 같은 씨앗이면 늘 같은 자리에 나무를 심는다. */
 function seeded(seed: number) {
   let s = seed;
@@ -61,8 +66,11 @@ function seeded(seed: number) {
   };
 }
 
-/** centerX는 창 가운데 x, groundY는 바깥 풀밭 높이다(창턱이 풀밭에서 1.2쯤 위에 오게 앱이 정한다). */
-export function createOutdoor(centerX: number, groundY: number): Outdoor {
+/**
+ * centerX는 창 가운데 x, groundY는 바깥 풀밭 높이다(창턱이 풀밭에서 1.2쯤 위에 오게 앱이 정한다).
+ * trees는 나무 모델 A·B·C의 LOD2(그 순서)다. 없으면(아직 못 읽었거나 읽지 못함) 나무 없이 짓는다.
+ */
+export function createOutdoor(centerX: number, groundY: number, trees?: GLTF[]): Outdoor {
   const scene = new THREE.Scene();
   scene.position.y = groundY;
   scene.fog = new THREE.Fog(SKY_HORIZON, 9, 55);
@@ -164,10 +172,8 @@ export function createOutdoor(centerX: number, groundY: number): Outdoor {
   scene.add(sun, sun.target);
 
   // 풀밭
-  // 계절마다 다시 칠하는 재질(잎·소나무·풀밭·언덕·덤불)
+  // 계절마다 다시 칠하는 재질(풀밭·언덕·덤불)
   const seasonal = (count: number) => Array.from({ length: count }, () => new THREE.MeshLambertMaterial({ color: 0xffffff }));
-  const leafMats = seasonal(4);
-  const pineMat = new THREE.MeshLambertMaterial({ color: 0x3f8f55 });
   const groundMat = new THREE.MeshLambertMaterial({ color: 0x8cc76a });
   const hillMats = seasonal(4);
   const bushMats = seasonal(3);
@@ -195,83 +201,28 @@ export function createOutdoor(centerX: number, groundY: number): Outdoor {
   const sway: { object: THREE.Object3D; phase: number; amount: number }[] = [];
   const clouds: THREE.Object3D[] = [];
 
-  // 겨울에만 보이는 것(앙상한 가지, 소나무에 얹힌 눈)과 겨울에 숨기는 것(둥근 나무 잎, 꽃)
-  const winterOnly: THREE.Object3D[] = [];
+  // 겨울에 숨기는 것(꽃)
   const notWinter: THREE.Object3D[] = [];
-  const branchMat = mat(0x7a5a42);
-  const snowMat = mat(0xf4f7fa);
+  // 나무 자리: 예전 둥근 나무·소나무와 같은 자리·같은 난수 순서로 정해 두고(아래 언덕·덤불·꽃 자리가 그대로이게), 모델을 다 읽으면 심는다.
+  // 종류·밝기는 따로 둔 난수로 고른다. 크기는 예전 둥근 나무 높이(약 3.7×s)와 비슷하게 s×1.4배다
+  const treeRnd = seeded(23);
+  const treeSpots: { x: number; z: number; scale: number; turn: number; phase: number; species: TreeSpecies; shade: number }[] = [];
+  const TREE_SCALE = 1.4;
   const tree = (x: number, z: number, s: number) => {
-    const g = new THREE.Group();
-    const trunk = new THREE.Mesh(geo(new THREE.CylinderGeometry(0.13 * s, 0.2 * s, 1.6 * s, 8)), mat(0x8d5f3f));
-    trunk.position.y = 0.8 * s;
-    g.add(trunk);
-    const crown = new THREE.Mesh(
-      balls(
-        (
-          [
-            [0, 0.9, 0, 1.0],
-            [-0.6, 0.45, 0.2, 0.72],
-            [0.62, 0.5, -0.1, 0.75],
-            [0.1, 1.55, 0.1, 0.68],
-            [0, 0.5, 0.55, 0.6]
-          ] as const
-        ).map(([x, y, z, r]) => [x * s, y * s, z * s, r * s, r * s, r * s] as const)
-      ),
-      leafMats[Math.floor(rnd() * leafMats.length)]
-    );
-    crown.position.y = 1.5 * s;
-    g.add(crown);
-    notWinter.push(crown);
-    // 겨울: 잎 대신 줄기 끝에서 뻗은 가지 넷
-    const twigs = [0, 1, 2, 3].map((k) => {
-      const len = (0.9 + (k % 2) * 0.3) * s;
-      return new THREE.CylinderGeometry(0.03 * s, 0.06 * s, len, 5)
-        .translate(0, len / 2, 0)
-        .rotateZ(0.6)
-        .rotateY((k / 4) * Math.PI * 2)
-        .translate(0, 1.5 * s, 0);
-    });
-    const branches = new THREE.Mesh(geo(mergeGeometries(twigs)), branchMat);
-    for (const t of twigs) t.dispose();
-    branches.visible = false;
-    g.add(branches);
-    winterOnly.push(branches);
-    g.position.set(x, 0, z);
-    g.rotation.y = rnd() * Math.PI * 2;
-    scene.add(g);
-    sway.push({ object: crown, phase: rnd() * Math.PI * 2, amount: 0.035 });
+    const species = TREE_SPECIES[Math.floor(rnd() * TREE_SPECIES.length)];
+    const turn = rnd() * Math.PI * 2;
+    treeSpots.push({ x, z, scale: s * TREE_SCALE, turn, phase: rnd() * Math.PI * 2, species, shade: 0.9 + treeRnd() * 0.15 });
   };
   const pine = (x: number, z: number, s: number) => {
-    const g = new THREE.Group();
-    const trunk = new THREE.Mesh(geo(new THREE.CylinderGeometry(0.1 * s, 0.14 * s, 0.8 * s, 8)), mat(0x8d5f3f));
-    trunk.position.y = 0.4 * s;
-    g.add(trunk);
-    const cones = (
-      [
-        [1.1, 1.0, 1.4],
-        [1.9, 0.78, 1.2],
-        [2.6, 0.52, 1.0]
-      ] as const
-    ).map(([y, r, h]) => new THREE.ConeGeometry(r * s, h * s, 10).translate(0, y * s, 0));
-    const crown = new THREE.Mesh(geo(mergeGeometries(cones)), pineMat);
-    for (const c of cones) c.dispose();
-    g.add(crown);
-    // 겨울: 층마다 위쪽에 얹힌 눈
-    const caps = (
-      [
-        [1.35, 0.62, 0.6],
-        [2.1, 0.5, 0.55],
-        [2.8, 0.34, 0.5]
-      ] as const
-    ).map(([y, r, h]) => new THREE.ConeGeometry(r * s, h * s, 10).translate(0, y * s, 0));
-    const snow = new THREE.Mesh(geo(mergeGeometries(caps)), snowMat);
-    for (const c of caps) c.dispose();
-    snow.visible = false;
-    crown.add(snow);
-    winterOnly.push(snow);
-    g.position.set(x, 0, z);
-    scene.add(g);
-    sway.push({ object: crown, phase: rnd() * Math.PI * 2, amount: 0.02 });
+    treeSpots.push({
+      x,
+      z,
+      scale: s * TREE_SCALE,
+      turn: treeRnd() * Math.PI * 2,
+      phase: rnd() * Math.PI * 2,
+      species: TREE_SPECIES[Math.floor(treeRnd() * TREE_SPECIES.length)],
+      shade: 0.9 + treeRnd() * 0.15
+    });
   };
 
   // 나무: 가까운 줄, 먼 줄. 창 정면 가운데는 조금 비워 멀리까지 보이게 한다.
@@ -383,15 +334,68 @@ export function createOutdoor(centerX: number, groundY: number): Outdoor {
     if (seasonShown === season) return;
     seasonShown = season;
     const c = SEASON_COLORS[season];
-    leafMats.forEach((m, i) => m.color.setHex(c.leaves[i]));
-    pineMat.color.setHex(c.pine);
     groundMat.color.setHex(c.ground);
     hillMats.forEach((m, i) => m.color.setHex(c.hills[i]));
     bushMats.forEach((m, i) => m.color.setHex(c.bushes[i]));
     const winter = season === "winter";
-    for (const o of winterOnly) o.visible = winter;
     for (const o of notWinter) o.visible = !winter;
+    paintTrees();
   };
+  // 심은 나무: 종류마다 잎·줄기 인스턴스 메시. 잎은 계절 그림 칸을 그리고 겨울에는 숨긴다(줄기는 눈 칸)
+  let planted: { kit: TreeKit; foliage: { mesh: THREE.InstancedMesh; spots: typeof treeSpots }[]; all: THREE.InstancedMesh[] } | null = null;
+  const paintTrees = () => {
+    if (!planted || !seasonShown) return;
+    planted.kit.setSeason(seasonShown);
+    for (const { mesh } of planted.foliage) mesh.visible = seasonShown !== "winter";
+  };
+  const treeMatrix = new THREE.Matrix4();
+  const treeTurn = new THREE.Quaternion();
+  const treeSway = new THREE.Quaternion();
+  const swayEuler = new THREE.Euler();
+  const treeUp = new THREE.Vector3(0, 1, 0);
+  const treeAt = new THREE.Vector3();
+  const treeSize = new THREE.Vector3();
+  /** 그루의 행렬: 자리·방향·크기에, 잎이면 줄기 밑을 축으로 한 작은 흔들림(z·x 돌림)을 더한다. */
+  const placeTree = (mesh: THREE.InstancedMesh, i: number, spot: (typeof treeSpots)[number], swayZ: number, swayX: number) => {
+    treeTurn.setFromAxisAngle(treeUp, spot.turn);
+    treeSway.setFromEuler(swayEuler.set(swayX, 0, swayZ));
+    treeTurn.premultiply(treeSway);
+    treeMatrix.compose(treeAt.set(spot.x, 0, spot.z), treeTurn, treeSize.setScalar(spot.scale));
+    mesh.setMatrixAt(i, treeMatrix);
+  };
+  const removeTrees = () => {
+    if (!planted) return;
+    for (const m of planted.all) {
+      scene.remove(m);
+      m.dispose();
+    }
+    planted.kit.dispose();
+    planted = null;
+  };
+  // 나무 심기: 종류마다 잎·줄기 인스턴스 메시(모양·그림은 불러온 모델 것을 함께 쓰고, 재질만 따로 만든다)
+  if (trees) {
+    const kit = buildTreeKit(trees, [2]);
+    const foliage: { mesh: THREE.InstancedMesh; spots: typeof treeSpots }[] = [];
+    const all: THREE.InstancedMesh[] = [];
+    const shade = new THREE.Color();
+    for (const species of TREE_SPECIES) {
+      const mine = treeSpots.filter((spot) => spot.species === species);
+      if (mine.length === 0) continue;
+      const part = kit.part(species, 2);
+      for (const which of ["foliage", "wood"] as const) {
+        const mesh = new THREE.InstancedMesh(part[which].geometry, part[which].material, mine.length);
+        mesh.name = `outdoor-tree-${species}-${which}`;
+        mine.forEach((spot, i) => {
+          placeTree(mesh, i, spot, 0, 0);
+          if (which === "foliage") mesh.setColorAt(i, shade.setScalar(spot.shade));
+        });
+        scene.add(mesh);
+        all.push(mesh);
+        if (which === "foliage") foliage.push({ mesh, spots: mine });
+      }
+    }
+    planted = { kit, foliage, all };
+  }
   paintSeason("summer");
   const cloudDay = new THREE.Color(0xc8d8e6);
   const cloudNight = new THREE.Color(0x1c2440);
@@ -412,7 +416,15 @@ export function createOutdoor(centerX: number, groundY: number): Outdoor {
       const butterfliesOut = season !== "winter" && phase === "day";
       for (const b of butterflies) b.g.visible = butterfliesOut;
     },
+
     update(t, dt) {
+      // 나무 잎은 그루마다 다른 위상으로 줄기 밑을 축으로 살짝 흔들린다
+      if (planted) {
+        for (const { mesh, spots } of planted.foliage) {
+          spots.forEach((spot, i) => placeTree(mesh, i, spot, Math.sin(t * 1.1 + spot.phase) * TREE_SWAY, Math.sin(t * 0.8 + spot.phase * 1.7) * TREE_SWAY * 0.6));
+          mesh.instanceMatrix.needsUpdate = true;
+        }
+      }
       for (const s of sway) {
         s.object.rotation.z = Math.sin(t * 1.1 + s.phase) * s.amount;
         s.object.rotation.x = Math.sin(t * 0.8 + s.phase * 1.7) * s.amount * 0.6;
@@ -429,9 +441,10 @@ export function createOutdoor(centerX: number, groundY: number): Outdoor {
       }
     },
     dispose() {
+      removeTrees();
       for (const g of new Set(geometries)) g.dispose();
       for (const m of materials.values()) m.dispose();
-      for (const m of [...leafMats, ...hillMats, ...bushMats, pineMat, groundMat, starMaterial]) m.dispose();
+      for (const m of [...hillMats, ...bushMats, groundMat, starMaterial]) m.dispose();
       skyMaterial.dispose();
       cloudMaterial.dispose();
       for (const b of butterflies) b.wings[0].wingMaterial.dispose();

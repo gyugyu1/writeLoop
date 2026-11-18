@@ -492,7 +492,7 @@ function VillageGround({ daylight, pathMaterials, groundMaterial }: VillageGroun
     const m4 = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const up = new THREE.Vector3(0, 1, 0);
-    // 계절 흩뿌림: 계절마다, 그림 모음(4×4)의 칸마다 판 하나를 그 칸을 쓰는 조각 자리에 찍는다(그림 색 그대로, 재질 색은 흰색)
+    // 계절 흩뿌림: 계절마다 판 하나를 조각 자리마다 인스턴스로 찍고, 인스턴스마다 그 조각의 칸으로 uv를 옮긴다(그림 색 그대로, 재질 색은 흰색)
     scatterTexture.colorSpace = THREE.SRGBColorSpace;
     const scatterMat = new THREE.MeshLambertMaterial({ map: scatterTexture, alphaTest: 0.4 });
     owned.push(scatterMat);

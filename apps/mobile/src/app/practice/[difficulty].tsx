@@ -15,8 +15,11 @@ import { getDifficultyLabel } from "@/lib/difficulty";
 import { getOrCreateGuestId } from "@/lib/guest-id";
 import { getQuestionLabel, isDailyDifficulty } from "@/lib/practice";
 import type { DailyDifficulty, DailyPromptRecommendation } from "@/lib/types";
+import { useVillageBgmWritingScreen } from "@/lib/audio/use-village-bgm-writing";
 
 export default function PracticeQuestionScreen() {
+  // 마을에서 열었으면 마을 배경음악을 낮춰 이어 간다
+  useVillageBgmWritingScreen();
   const params = useLocalSearchParams<{ difficulty?: string }>();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
   const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "I";

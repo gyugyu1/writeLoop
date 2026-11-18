@@ -36,6 +36,7 @@
     "expo": "~55.0.17",
     "expo-apple-authentication": "~55.0.13",
     "expo-asset": "~55.0.20",
+    "expo-audio": "~55.0.18",
     "expo-constants": "~55.0.15",
     "expo-crypto": "~55.0.14",
     "expo-device": "~55.0.15",

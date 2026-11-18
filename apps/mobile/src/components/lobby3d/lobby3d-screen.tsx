@@ -46,6 +46,7 @@ import { furnitureIcon } from "@/lib/lobby3d/furniture-icons";
 import { sameLobbyLayout, storedItems, withFixedPlacements, type LobbyLayout, type StoredItem } from "@/lib/lobby3d/lobby-layout";
 import { useLobbyClock, type ClockOverride } from "@/lib/lobby3d/use-lobby-clock";
 import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/lib/lobby3d/view-storage";
+import { setVillageBgmArea } from "@/lib/audio/village-bgm";
 
 // 3D 로비(라이트루프의 방). 3D 그리기(Lobby3dCanvas) 위에 말풍선·이름표·메뉴·설정을 겹친다.
 // 홈은 시험판 없이 쓰고(devPanel=false), 개발 진입 화면(/dev/lobby-3d)은 시험판을 켠 기본값 그대로 쓴다.
@@ -333,6 +334,11 @@ export default function Lobby3dScreen({
   const clock = useLobbyClock(clockOverride);
   const clockMinute = Math.floor(clock.getTime() / 60_000);
   const daylight = useMemo(() => daylightAt(new Date(clockMinute * 60_000)), [clockMinute]);
+  // 마을 배경음악: 구역(마을인지)과 하루의 때를 알린다(같은 값이면 곡은 그대로). 로비가 닫히면 마을이 아니다
+  useEffect(() => {
+    setVillageBgmArea(area === "village", daylight.phase);
+  }, [area, daylight.phase]);
+  useEffect(() => () => setVillageBgmArea(false, "day"), []);
   const shownHours = clockOverride?.hours ?? Math.round((clock.getHours() + clock.getMinutes() / 60) * 4) / 4;
   const shownMonth = clockOverride?.month ?? clock.getMonth() + 1;
   // 말풍선 높이(재어 본 값). 꼬리 끝이 머리 위 점에 오도록 이만큼 올린다.

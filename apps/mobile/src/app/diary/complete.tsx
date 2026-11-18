@@ -14,6 +14,7 @@ import { getDiaryEntry } from "@/lib/api";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
 import type { DiaryEntry } from "@/lib/types";
+import { useVillageBgmWritingScreen } from "@/lib/audio/use-village-bgm-writing";
 
 const completionMascotImage = require("@/assets/images/complete-excellent-cutout.png");
 
@@ -51,6 +52,8 @@ function getFeedbackSummary(entry: DiaryEntry | null) {
 }
 
 export default function DiaryCompleteScreen() {
+  // 마을에서 열었으면 마을 배경음악을 낮춰 이어 간다
+  useVillageBgmWritingScreen();
   const params = useLocalSearchParams<{ entryId?: string }>();
   const { currentUser, isHydrating } = useSession();
   const entryId = typeof params.entryId === "string" ? params.entryId : "";

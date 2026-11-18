@@ -48,6 +48,7 @@ import { useAppOverlayStatus } from "@/lib/app-overlay-status";
 import { useSession } from "@/lib/session";
 import { getStreakMascotStage } from "@/lib/streak-mascot";
 import type { DailyDifficulty, DiaryCalendarSummary, HomeShoppingAnyOrderResult, HomeShoppingOrderResult, Wardrobe } from "@/lib/types";
+import { setVillageBgmHomeFocused } from "@/lib/audio/village-bgm";
 
 export default function HomeScreen() {
   const { currentUser, isHydrating, refreshSession } = useSession();
@@ -195,6 +196,11 @@ export default function HomeScreen() {
   // 다른 화면이 홈 위에 있는 동안은 3D를 멈추고 판도 숨긴다(iOS에서 판이 새 화면을 덮지 않게).
   // 판은 닫지 않아서, 돌아오면 보던 판이 그대로 있다.
   const [isFocused, setIsFocused] = useState(true);
+  // 마을 배경음악: 홈이 초점을 잃으면(다른 화면으로 넘어가면) 알린다. 홈 안의 시트는 초점을 바꾸지 않아 음악이 이어진다
+  useEffect(() => {
+    setVillageBgmHomeFocused(isFocused);
+  }, [isFocused]);
+  useEffect(() => () => setVillageBgmHomeFocused(false), []);
   useFocusEffect(
     useCallback(() => {
       setIsFocused(true);

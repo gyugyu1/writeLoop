@@ -32,8 +32,11 @@ import {
   saveNowInEnglishEntry
 } from "@/lib/now-in-english";
 import { useSession } from "@/lib/session";
+import { useVillageBgmWritingScreen } from "@/lib/audio/use-village-bgm-writing";
 
 export default function NowInEnglishScreen() {
+  // 마을에서 열었으면 마을 배경음악을 낮춰 이어 간다
+  useVillageBgmWritingScreen();
   const params = useLocalSearchParams<{ reminder?: string }>();
   const { currentUser } = useSession();
   const shouldOpenReminderSettings = params.reminder === "open";

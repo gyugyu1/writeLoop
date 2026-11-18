@@ -26,6 +26,7 @@ import { isDailyDifficulty, resolvePracticeDifficulty } from "@/lib/practice";
 import { useSession } from "@/lib/session";
 import { deleteLocalWritingDraft } from "@/lib/writing-drafts";
 import type { DailyDifficulty, Prompt, TodayWritingStatus } from "@/lib/types";
+import { useVillageBgmWritingScreen } from "@/lib/audio/use-village-bgm-writing";
 
 const completionMascotImage = require("@/assets/images/complete-excellent-cutout.png");
 const CONFETTI_COLORS = ["#FF9F1A", "#FFD166", "#2F7CF6", "#2251A5", "#FFF4CC"] as const;
@@ -446,6 +447,8 @@ function CelebrationFireworks() {
 }
 
 export default function PracticeCompleteScreen() {
+  // 마을에서 열었으면 마을 배경음악을 낮춰 이어 간다
+  useVillageBgmWritingScreen();
   const params = useLocalSearchParams<{ difficulty?: string; promptId?: string; loopNotice?: string }>();
   // 피드백 화면에서 '루프 완료하기'로 왔을 때만 있는 룹 적립 안내
   const loopNotice = typeof params.loopNotice === "string" && params.loopNotice.trim() ? params.loopNotice : null;

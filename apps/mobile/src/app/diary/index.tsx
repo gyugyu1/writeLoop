@@ -16,6 +16,7 @@ import { getDiaryEntries } from "@/lib/api";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
 import type { DiaryEntry } from "@/lib/types";
+import { useVillageBgmWritingScreen } from "@/lib/audio/use-village-bgm-writing";
 
 type DiaryCalendarCell = {
   key: string;
@@ -150,6 +151,8 @@ function buildMonthCalendar(
 }
 
 export default function DiaryListScreen() {
+  // 마을에서 열었으면 마을 배경음악을 낮춰 이어 간다
+  useVillageBgmWritingScreen();
   const { currentUser, isHydrating } = useSession();
   const insets = useSafeAreaInsets();
   const todayKey = useMemo(() => todayDateKey(), []);

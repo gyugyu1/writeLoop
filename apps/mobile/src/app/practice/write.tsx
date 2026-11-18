@@ -85,8 +85,11 @@ import type {
   WritingDraft,
   WritingDraftType
 } from "@/lib/types";
+import { useVillageBgmWritingScreen } from "@/lib/audio/use-village-bgm-writing";
 
 export default function PracticeWriteScreen() {
+  // 마을에서 열었으면 마을 배경음악을 낮춰 이어 간다
+  useVillageBgmWritingScreen();
   const params = useLocalSearchParams<{
     difficulty?: string;
     promptId?: string;

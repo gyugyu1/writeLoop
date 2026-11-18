@@ -50,7 +50,7 @@ import {
   type PropsPrimitive
 } from "../__fixtures__/village-bench-114";
 import { SOLID_OUTSIDE_BENCH_115, inKeepRegion115, rootNamesKept115, withoutBoundary115, withoutBoundaryGlb115 } from "../__fixtures__/village-boundary-115";
-import { withoutFountainGlb118 } from "../__fixtures__/village-fountain-118";
+import { withoutFountainAndLanternsGlb120 } from "../__fixtures__/village-streetlamp-120";
 
 const nowText = (path: string) => readFileSync(join(REPO, path), "utf8").replace(/\r\n/g, "\n");
 const isBenchMaterial = (name: string) => name.startsWith(BENCH_MODEL.materialName);
@@ -221,8 +221,8 @@ describe("[spec] 114 그대로 둘 동작: 벤치 자리, 배치 파일, 다른 
     expect(rootNamesKept115(now)).toEqual(rootNamesKept115(base));
     const all = () => true;
     // 118: 마을 모델에서 옛 Kenney 분수가 빠진다(명세 바뀌는 동작 1). 양쪽에서 옛 분수 삼각형(소품 묶음, 가운데에서 1.7칸 안)을 뺀 뒤 견준다
-    const baseMeshes = describeGroups(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(base))), all);
+    const baseMeshes = describeGroups(withoutFountainAndLanternsGlb120(withoutBenchPrimitives(withoutBoundaryGlb115(base))), all);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeGroups(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(now))), all)).toEqual(baseMeshes);
+    expect(describeGroups(withoutFountainAndLanternsGlb120(withoutBenchPrimitives(withoutBoundaryGlb115(now))), all)).toEqual(baseMeshes);
   });
 });

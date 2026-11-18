@@ -69,7 +69,7 @@ import {
 import { HOME_MODEL, changedBy106 } from "../__fixtures__/village-shops-106";
 import { BENCH_TILE_RECTS, withoutBenchPrimitives, withoutBenchRot } from "../__fixtures__/village-bench-114";
 import { REMOVED_GROUPS_115, SOLID_OUTSIDE_CHANGED_115, solidOutsideChanged115, withoutBoundary115, withoutBoundaryGlb115 } from "../__fixtures__/village-boundary-115";
-import { withoutFountainGlb118 } from "../__fixtures__/village-fountain-118";
+import { withoutFountainAndLanternsGlb120 } from "../__fixtures__/village-streetlamp-120";
 
 /** 지금(기준 커밋) 라룹이 집 땅. */
 const OLD_HOME_RECT = [31, 6, 40, 12] as const;
@@ -307,9 +307,9 @@ describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품
     };
     // 114: 소품 묶음의 벤치 조각만 빼고 견준다. 115: 빠지는 묶음과 소품의 빠지는 바위 삼각형도 뺀다
     // 118: 마을 모델에서 옛 Kenney 분수가 빠진다(명세 바뀌는 동작 1). 양쪽에서 옛 분수 삼각형(소품 묶음, 가운데에서 1.7칸 안)을 뺀 뒤 견준다
-    const baseMeshes = describeMeshes(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(base))));
+    const baseMeshes = describeMeshes(withoutFountainAndLanternsGlb120(withoutBenchPrimitives(withoutBoundaryGlb115(base))));
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeMeshes(withoutFountainGlb118(withoutBenchPrimitives(withoutBoundaryGlb115(now))))).toEqual(baseMeshes);
+    expect(describeMeshes(withoutFountainAndLanternsGlb120(withoutBenchPrimitives(withoutBoundaryGlb115(now))))).toEqual(baseMeshes);
   });
 });
 

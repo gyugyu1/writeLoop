@@ -68,6 +68,8 @@ jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
 // 118: 새 분수 모델 파일(village-fountain.glb)도 마을·미리 읽기가 읽으므로 파일 이름 글자로 가짜로 바꾼다(파일이 아직 없어도 되는 가상 모듈이다. 단언은 그대로다)
 jest.mock("../../assets/models/village-fountain.glb", () => "village-fountain.glb", { virtual: true });
+// 120: 새 가로등 모델 파일(village-streetlamp.glb)도 마을·미리 읽기가 읽으므로 파일 이름 글자로 가짜로 바꾼다(파일이 아직 없어도 되는 가상 모듈이다. 단언은 그대로다)
+jest.mock("../../assets/models/village-streetlamp.glb", () => "village-streetlamp.glb", { virtual: true });
 jest.mock("@react-three/fiber/native", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   const loader = { clear: () => {} };
@@ -91,8 +93,12 @@ jest.mock("@react-three/fiber/native", () => {
       /* eslint-disable @typescript-eslint/no-require-imports */
       const fountain = require("../__fixtures__/village-fountain-118") as typeof import("../__fixtures__/village-fountain-118");
       const model = require("../__fixtures__/village-fountain-model-118") as typeof import("../__fixtures__/village-fountain-model-118");
+      const lamp = require("../__fixtures__/village-streetlamp-120") as typeof import("../__fixtures__/village-streetlamp-120");
+      const lampModel = require("../__fixtures__/village-streetlamp-model-120") as typeof import("../__fixtures__/village-streetlamp-model-120");
       /* eslint-enable @typescript-eslint/no-require-imports */
       // 118: 분수 모델 파일에는 그 파일을 GLTFLoader처럼 푼 모양을 준다(마을 모델 장면이 아니다)
+      // 120: 가로등 모델 파일에는 그 파일을 GLTFLoader처럼 푼 모양을 준다(마을 모델 장면이 아니다)
+      if (lamp.isLampUrl(url)) return lampModel.sharedLampGltf();
       return fountain.isFountainUrl(url) ? model.sharedFountainGltf() : mockGltf.value;
     }, loader)
   };
@@ -222,8 +228,9 @@ describe("[spec] 098 그대로 둘 동작: 마을 모델 그리기와 라룹이 
     await draw(VILLAGE_START);
     const { GLTFLoader } = jest.requireMock<{ GLTFLoader: unknown }>("three/examples/jsm/loaders/GLTFLoader.js");
     expect(mockLoads.length).toBeGreaterThan(0);
+    // 120: 가로등 모델 파일(village-streetlamp.glb)도 따로 읽는다.
     // 118: 마을 모델 말고 분수 모델 파일(village-fountain.glb)도 따로 읽는다. 마을 모델 파일은 여전히 하나이고 따로 읽는다
-    expect(mockLoads.every((l) => l.loader === GLTFLoader && (l.url === "lobby-village.glb" || l.url === "village-fountain.glb"))).toBe(true);
+    expect(mockLoads.every((l) => l.loader === GLTFLoader && (l.url === "lobby-village.glb" || l.url === "village-fountain.glb" || l.url === "village-streetlamp.glb"))).toBe(true);
     expect(mockLoads.filter((l) => l.url === "lobby-village.glb").length).toBeGreaterThan(0);
   });
 
@@ -270,14 +277,19 @@ describe("[spec] 098 그대로 둘 동작: 마을 모델 그리기와 라룹이 
     for (const m of homeBack) expect({ opacity: m.opacity, transparent: m.transparent, alphaHash: m.alphaHash }).toEqual({ opacity: 1, transparent: false, alphaHash: false });
   });
 
-  it("R5 밤 불빛(명세 6, 가로등 불빛 그대로): 가로등 불빛 넷(glow-lamp-0~3)은 밤(천장 조명 1)에 보이고 낮(0)에는 보이지 않는다", async () => {
+  // 120(명세 "고칠 기존 테스트", 가로등 불빛 판이 마을 모델에서 빠진다): 가로등 불빛 판(glow-lamp-0~3)은 밤(천장 조명 1)에도 낮(0)에도 그려지지 않는다.
+  // 건물 창 불빛 묶음(glow-windows)은 지금도 안에 메시가 없다(기준 커밋 703bef8 확인). 밤에 보일 불빛 판 메시는 마을 모델에 남지 않는다
+  it("R5 밤 불빛(명세 6): 가로등 불빛 판(glow-lamp-0~3)은 밤(천장 조명 1)에도 낮(0)에도 없고, 마을 모델에 밤에 켜지는 불빛 판 메시가 남지 않는다", async () => {
     const night = await draw(VILLAGE_START, 1);
     await frames(1);
-    const lamps = [0, 1, 2, 3].flatMap((i) => meshesUnder(night.root, `glow-lamp-${i}`));
-    expect(lamps.length).toBeGreaterThanOrEqual(4);
-    expect(lamps.map((m) => m.visible)).toEqual(lamps.map(() => true));
+    const glowNames = () => {
+      const names: string[] = [];
+      night.root.traverse((o) => names.push(o.name));
+      return names.filter((n) => n.startsWith("glow"));
+    };
+    expect(glowNames().filter((n) => n.startsWith("glow-lamp"))).toEqual([]);
     night.light.ceiling = 0;
     await frames(1);
-    expect(lamps.map((m) => m.visible)).toEqual(lamps.map(() => false));
+    expect(glowNames().filter((n) => n.startsWith("glow-lamp"))).toEqual([]);
   });
 });

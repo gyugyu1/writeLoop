@@ -67,6 +67,7 @@ import { GLASS_MATERIAL } from "../__fixtures__/village-shops-106";
 import { mockImagesAsPaths, splatLoader } from "../__fixtures__/village-splat-102";
 import { TREE_KINDS, TREE_LODS, TREE_PARTS, resetTreeLoader, treePartOf } from "../__fixtures__/village-trees-113";
 import { isFountainMesh118 } from "../__fixtures__/village-fountain-118";
+import { isLampMesh120 } from "../__fixtures__/village-streetlamp-120";
 
 type FramePart = (state: unknown, delta: number) => void;
 
@@ -349,7 +350,7 @@ describe("[spec] 112 ③ 바뀔 동작: 마을 모델은 묶음 안에서 같은
     // 소품은 누르기 대상(합친 메시가 받는다), 유리·불빛 판·옛 길은 아니다
     const allowed = [...(g.get("props") ?? []), ...(g.get("bld-home") ?? [])];
     // 118: 새 분수 메시(석재·물)도 누르기 대상이다. 마을 모델의 묶음이 아니므로 허용 목록에 더한다(없어도 된다: 분수 메시가 목록에 있는지는 118 qa 테스트가 본다)
-    const fountainPick118 = drawn.pick.current.filter(isFountainMesh118);
+    const fountainPick118 = drawn.pick.current.filter((o) => isFountainMesh118(o) || isLampMesh120(o)); // 120: 새 가로등 메시(인스턴스 하나)도 누르기 대상이다(가로등 메시가 목록에 있는지는 120 qa 테스트가 본다)
     expect(samePick(drawn.pick.current, [...allowed, ...fountainPick118])).toEqual({ notAllowed: [], notPicked: [] });
   });
 });
@@ -399,7 +400,7 @@ describe("[spec] 112 ③ 그대로 둘 동작: 진짜 마을 모델의 모양·�
     expect(strange).toEqual([]);
     const allowed = [...groups.entries()].filter(([label]) => isPickLabel(label)).flatMap(([, meshes]) => meshes);
     // 118: 새 분수 메시(석재·물)도 누르기 대상이다. 마을 모델의 묶음이 아니므로 허용 목록에 더하고, 삼각형 견주기에서는 뺀다(분수 메시가 목록에 있는지는 118 qa 테스트가 본다)
-    const fountainPick118 = drawn.pick.current.filter(isFountainMesh118);
+    const fountainPick118 = drawn.pick.current.filter((o) => isFountainMesh118(o) || isLampMesh120(o)); // 120: 새 가로등 메시(인스턴스 하나)도 누르기 대상이다(가로등 메시가 목록에 있는지는 120 qa 테스트가 본다)
     expect(samePick(drawn.pick.current, [...allowed, ...fountainPick118])).toEqual({ notAllowed: [], notPicked: [] });
     const strangers: string[] = [];
     for (const target of drawn.pick.current) {
@@ -470,7 +471,8 @@ describe("[spec] 112 ③ 그대로 둘 동작: 진짜 마을 모델의 모양·�
       expect({ label, meshes: meshes.length, missing: got.missing, extra: got.extra, examples: got.examples }).toEqual({ label, meshes: sourceCount.get(label), missing: 0, extra: 0, examples: [] });
     }
     const glows = [...sourceCount.keys()].filter((l) => l.startsWith("glow"));
-    expect(glows.length).toBeGreaterThan(0);
+    // 120(명세 "고칠 기존 테스트"): 가로등 불빛 판(glow-lamp-0~3)이 마을 모델에서 빠져, 마을 모델에는 그려질 불빛 판 메시가 남지 않는다(glow-windows 묶음은 비어 있다). 아래 낮·밤 견주기는 있는 불빛 판에만 적용된다
+    expect(glows.filter((l) => l.startsWith("glow-lamp"))).toEqual([]);
     expect({ dayGlow: glows.flatMap((l) => day.groups.get(l) ?? []).length, paths: (day.groups.get("paths") ?? []).length, templates: (day.groups.get("tree-templates") ?? []).length }).toEqual({ dayGlow: 0, paths: 0, templates: 0 });
     const glassMeshes = [...day.groups.entries()].filter(([l]) => l.endsWith(":glass")).flatMap(([, m]) => m);
     expect(glassMeshes.map((m) => ({ transparent: materialOf(m).transparent, picked: drawn.pick.current.includes(m) }))).toEqual(glassMeshes.map(() => ({ transparent: true, picked: false })));

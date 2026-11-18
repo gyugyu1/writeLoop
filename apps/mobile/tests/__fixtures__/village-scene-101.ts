@@ -14,6 +14,8 @@ import * as THREE from "three";
 import { accessorValues, sceneRoots, type Glb } from "./village-glb-098";
 import { isFountainUrl } from "./village-fountain-118";
 import { fountainGltfOrEmpty } from "./village-fountain-model-118";
+import { isLampUrl } from "./village-streetlamp-120";
+import { lampGltfOrEmpty } from "./village-streetlamp-model-120";
 
 export const MOBILE_DIR = join(__dirname, "..", "..");
 export const ASSETS_DIR = join(MOBILE_DIR, "assets");
@@ -87,7 +89,8 @@ export function fakeUseLoader(loader: unknown, input: unknown): unknown {
     if (isTextureLoader(loader)) return new THREE.Texture();
     const key = String(url);
     // 118: 분수 모델 파일(village-fountain.glb)에는 그 파일을 GLTFLoader처럼 푼 모양을 준다(작은 상자 가짜가 아니다)
-    if (!gltfCache.has(key)) gltfCache.set(key, isFountainUrl(url) ? fountainGltfOrEmpty() : fakeGltf());
+    // 120: 가로등 모델 파일(village-streetlamp.glb)에도 그 파일을 GLTFLoader처럼 푼 모양을 준다
+    if (!gltfCache.has(key)) gltfCache.set(key, isFountainUrl(url) ? fountainGltfOrEmpty() : isLampUrl(url) ? lampGltfOrEmpty() : fakeGltf());
     return gltfCache.get(key);
   };
   return Array.isArray(input) ? input.map(one) : one(input);

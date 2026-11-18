@@ -489,7 +489,7 @@ function mismatches(area: LobbyArea): { wrong: string[]; checked: number } {
  * 마을에서 적어도 이만큼 넘는 물체를 봐야 한다(그려지는 물체가 거의 없는데 통과하지 않게). 115 전에는 50이었다.
  * 115는 마을 모델에서 생울타리·울타리·풍차·풍차 날개 묶음(뿌리 넷과 그 아래 합친 메시 넷, 물체 8개)을 빼므로 그만큼 줄였다.
  */
-const VILLAGE_MIN_CHECKED = 50 - 8;
+const VILLAGE_MIN_CHECKED = 50 - 8 - 4; // 120: 옛 가로등 불빛 판 묶음(넷)이 빠져 본 물체가 줄었다(가장 적은 장면에서 43 → 40). 아직 그만큼 많이 봐야 한다
 
 function expectWorldMatricesAsNow(area: LobbyArea, minChecked: number) {
   const { wrong, checked } = mismatches(area);
@@ -700,7 +700,8 @@ describe("마을", () => {
     await frames(35);
     expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
     let fresh = [...shownSet()].filter((o) => !before.has(o));
-    expect(fresh.some((o) => /glow/.test(label(o)))).toBe(true);
+    // 120(명세 "고칠 기존 테스트"): 가로등 불빛 판이 마을 모델에서 빠져 밤에 새로 보이는 불빛 판 물체는 없다
+    expect(fresh.filter((o) => /glow/.test(label(o))).map(label)).toEqual([]);
     // 가을: 그 계절 흩뿌림이 보인다
     before = shownSet();
     await act(async () => {

@@ -194,6 +194,8 @@ export function rootNamesKept115(glb: Glb): string[] {
   return sceneRoots(glb)
     .map((i) => glb.json.nodes[i].name ?? "")
     .filter((n) => !REMOVED_GROUPS_115.includes(n))
+    // 120: 가로등 불빛 판(glow-lamp-*)도 마을 모델에서 빠진다(옛 Kenney 가로등과 함께)
+    .filter((n) => !/^glow-lamp(-|$)/.test(n))
     .sort();
 }
 

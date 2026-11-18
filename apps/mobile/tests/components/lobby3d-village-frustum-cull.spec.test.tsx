@@ -62,6 +62,7 @@ import { decorModule } from "../__fixtures__/village-decor-101";
 import { scatterModule } from "../__fixtures__/village-ground-103";
 import { allObjects, instanceHeight, loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb, sourceGeometries } from "../__fixtures__/village-scene-101";
 import { FOLIAGE_OFFSET, resetTreeLoader, treePartOf, uvShiftError } from "../__fixtures__/village-trees-113";
+import { isLampMesh120 } from "../__fixtures__/village-streetlamp-120";
 
 type FramePart = (state: unknown, delta: number) => void;
 
@@ -614,7 +615,7 @@ describe("[spec] 111 그대로 둘 동작: 카메라가 없을 때, 메시, 겨�
         // 흩뿌림 = 마을 모델 도형도 장식도 나무도 아닌, 그려지는 납작한 인스턴스 메시. 찍은 자리가 그 계절 조각 자리와 하나씩 맞는다(113: 나무 메시도 뺀다)
         const flat = allObjects(drawn.roots).filter(
           (o): o is THREE.InstancedMesh =>
-            o instanceof THREE.InstancedMesh && !fromModel.has(o.geometry) && !decorMeshes.has(o) && !treeMeshes.has(o) && shownChain(o, drawn.roots) && o.count > 0
+            o instanceof THREE.InstancedMesh && !fromModel.has(o.geometry) && !decorMeshes.has(o) && !treeMeshes.has(o) && !isLampMesh120(o) && shownChain(o, drawn.roots) && o.count > 0
         );
         // 행렬은 Float32로 담기므로 자리는 0.001칸 안에서 맞춘다(조각 하나에 찍힌 자리 하나)
         const points = flat.flatMap((m) => instanceWorld(m).map((w) => ({ x: w.elements[12], z: w.elements[14] })));

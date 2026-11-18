@@ -177,9 +177,9 @@ export function rootNames(glb: Glb): string[] {
   return sceneRoots(glb).map((i) => glb.json.nodes[i].name ?? "").sort();
 }
 
-/** 이번 작업이 바꾸는 묶음: 건물(bld-*), 창 불빛 판(가로등 불빛이 아닌 glow-*: 조립한 건물의 창 불빛이다), 옛 Kenney 길 조각(paths). */
+/** 이번 작업이 바꾸는 묶음: 건물(bld-*), 창 불빛 판(glow-*: 조립한 건물의 창 불빛이다), 옛 Kenney 길 조각(paths). 120: 가로등 불빛 판(glow-lamp-*)도 마을 모델에서 빠지므로 glow-* 모두 견주지 않는다. */
 export function changedBy106(rootName: string): boolean {
-  return rootName.startsWith("bld-") || (rootName.startsWith("glow") && !rootName.startsWith("glow-lamp")) || rootName === "paths";
+  return rootName.startsWith("bld-") || rootName.startsWith("glow") || rootName === "paths";
 }
 
 /**

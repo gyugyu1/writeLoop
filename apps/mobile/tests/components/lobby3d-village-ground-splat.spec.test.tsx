@@ -29,6 +29,7 @@ import { daylightAt, type Season } from "@/lib/lobby3d/daylight";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_START } from "@/lib/lobby3d/village";
 import { resetTreeLoader, treePartOf } from "../__fixtures__/village-trees-113";
+import { isLampMesh120 } from "../__fixtures__/village-streetlamp-120";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { decorModule } from "../__fixtures__/village-decor-101";
 import { scatterModule } from "../__fixtures__/village-ground-103";
@@ -333,6 +334,7 @@ describe("[spec] 102 바뀔 동작: 풀밭 바탕을 여러 무늬의 섞임으�
     for (const o of objects) {
       if (!(o instanceof THREE.InstancedMesh) || o.count === 0 || !drawnVisible(o, drawn.roots)) continue;
       if (treePartOf(o.geometry)) continue;
+      if (isLampMesh120(o)) continue; // 120: 새 가로등(인스턴스 하나, 네 자리)은 가로등 qa 테스트가 본다
       if (allAt(o, atMark)) {
         markMeshes.add(o);
         continue;

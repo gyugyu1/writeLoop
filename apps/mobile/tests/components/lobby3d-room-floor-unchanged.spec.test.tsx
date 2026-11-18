@@ -389,8 +389,10 @@ describe("[spec] 코드로 지은 방이 그려질 때의 모양과 바닥 그�
     expect(before.shell.visible).toBe(false);
     // 다시 그릴 때 구운 방을 읽지 못하게 해 오류 경계가 구운 방을 빼게 한다(같은 방을 다시 짓지는 않는다)
     roomFails();
+    // 작업 121 명세 "고칠 기존 테스트"(사용자 2026-11-19 "테스트의 다시 그리기 방법만 고침"): 같은 값으로는 3D 장면을 다시 그리지 않으므로,
+    // 3D 그리기가 받는 값 하나(paused)를 바꿔 다시 그리게 한다. 기대값은 그대로다.
     await act(async () => {
-      screen.rerender(lobby(DEFAULT_LOBBY_LAYOUT));
+      screen.rerender(<Lobby3dScreen devPanel={false} layout={DEFAULT_LOBBY_LAYOUT} onSaveLayout={async (value: LobbyLayout) => value} paused />);
     });
     await flushAsync();
     await drawFrames(2);

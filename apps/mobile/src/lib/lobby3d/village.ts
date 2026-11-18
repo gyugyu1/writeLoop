@@ -50,8 +50,14 @@ export const VILLAGE_BOUNDARY: { readonly x: number; readonly z: number; readonl
 /** 길 사각형([x0, z0, x1, z1], x1·z1은 들지 않음). 그리기(lobby3d-village)가 이 칸들로 둥근 길을 짓는다(village-paths). */
 export const VILLAGE_PATH_RECTS: readonly (readonly [number, number, number, number])[] = LAYOUT.paths as unknown as [number, number, number, number][];
 
-/** 마을 안 나무 자리(가운데 x·z). 그리기(lobby3d-village)가 이 자리에 나무를 짓는다. */
+/** 마을 안 나무의 종류: A(활엽수, 가을 단풍·겨울 맨가지), Pine(소나무, 늘 푸름). */
+export type VillageTreeSpecies = "A" | "Pine";
+
+/** 마을 안 나무 자리(가운데 x·z). 그리기(lobby3d-village)가 이 자리에 나무를 짓는다. 걷기 막기·이끼·장식도 이 자리를 읽는다. */
 export const VILLAGE_TREES: readonly (readonly [number, number])[] = LAYOUT.trees as unknown as [number, number][];
+
+/** 마을 안 나무 자리마다 정해진 종류(VILLAGE_TREES와 같은 순서). */
+export const VILLAGE_TREE_KINDS: readonly VillageTreeSpecies[] = LAYOUT.treeKinds as VillageTreeSpecies[];
 
 /** 원(가운데 cx·cz, 반지름 r)과 겹치는 칸들. */
 function circleTiles(cx: number, cz: number, r: number): string[] {

@@ -14,6 +14,9 @@
 // 구현 전에도 통과한다(구현 뒤에도 통과해야 한다). 그대로 둘 동작(구현 전·뒤 통과): K5.
 // 작업 114(마을 벤치 모델) 명세의 "고칠 기존 테스트"(마을 모델 안 벤치 모양)로 qa가 K5를 고쳤다(114 qa 보고 02-qa-tests.md):
 // 소품 묶음에서 벤치 조각(점이 모두 벤치 둘레 상자 안인 프리미티브, tests/__fixtures__/village-bench-114.ts)만 빼고 견준다. 묶음 이름과 다른 묶음은 그대로 본다.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(마을 모델 묶음, 바위)로 qa가 K5를 고쳤다(115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md):
+// 장면 뿌리 이름에서 빠지는 묶음(생울타리·울타리·풍차·풍차 날개)을 빼고, 소품 묶음에서 빠지는 바위 다섯의 삼각형을 뺀 뒤 견준다
+// (tests/__fixtures__/village-boundary-115.ts의 withoutBoundaryGlb115). 그 밖의 묶음은 그대로 본다.
 import {
   boxOf,
   imageBytes,
@@ -42,6 +45,7 @@ import {
   type Rect
 } from "../__fixtures__/village-shops-106";
 import { withoutBenchPrimitives } from "../__fixtures__/village-bench-114";
+import { REMOVED_GROUPS_115, withoutBoundaryGlb115 } from "../__fixtures__/village-boundary-115";
 
 /** 묶음 아래 메시의 프리미티브를 유리(재질 이름 glass…)와 그 밖으로 나눠 삼각형 수와 그 밖이 쓰는 색 그림(이미지 번호)을 센다. */
 function buildingParts(glb: Glb, group: string) {
@@ -129,11 +133,12 @@ describe("[spec] 106 그대로 둘 동작: 마을 모델의 건물 밖 묶음", 
   it("K5 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths) 밖 묶음(소품, 생울타리, 울타리, 풍차, 풍차 날개, 나무 틀, 가로등 불빛)의 이름과 메시가 기준 커밋과 같다", () => {
     const now = nowVillageGlb();
     const base = parseGlb(gitShow(BASE_106, VILLAGE_GLB_PATH_106));
-    const keep = (name: string) => !changedBy106(name);
+    // 115: 빠지는 묶음(생울타리·울타리·풍차·풍차 날개)은 양쪽에서 뺀다
+    const keep = (name: string) => !changedBy106(name) && !REMOVED_GROUPS_115.includes(name);
     expect(rootNames(now).filter(keep)).toEqual(rootNames(base).filter(keep));
-    // 114: 소품 묶음의 벤치 조각만 빼고 견준다
-    const baseMeshes = describeGroups(withoutBenchPrimitives(base), keep);
+    // 114: 소품 묶음의 벤치 조각만 빼고 견준다. 115: 소품의 빠지는 바위 삼각형도 뺀다
+    const baseMeshes = describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(base)), keep);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeGroups(withoutBenchPrimitives(now), keep)).toEqual(baseMeshes);
+    expect(describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(now)), keep)).toEqual(baseMeshes);
   });
 });

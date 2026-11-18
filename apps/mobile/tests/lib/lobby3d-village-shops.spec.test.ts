@@ -19,6 +19,14 @@
 // 벤치 말고 다른 것의 기대는 그대로다(도우미·값은 tests/__fixtures__/village-bench-114.ts):
 // - K1: 배치 파일을 견줄 때 벤치의 rot만 뺀다(벤치 자리는 그대로 본다).
 // - K2: 견주는 칸에서 벤치가 바꿀 수 있는 곳(지금 벤치 칸과 새 벤치 칸)도 뺀다. 기대값은 587개 목록에서 지금 벤치 칸 12개를 뺀 575개(114 기준 커밋 d256ff4에서 잰 값).
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(풍차, 마을 나무·바위 수와 자리, 사각형 가장자리 막힌 칸)로 qa가 V3·V9·K1~K3을 고쳤다
+// (115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md). 경계·풍차·빠지는 나무·바위 말고 다른 것의 기대는 그대로다(도우미·값은 tests/__fixtures__/village-boundary-115.ts):
+// - V3: 옛 카페·도서관 땅 가운데 칸 가운데가 원(가운데 (29, 26), 반지름 26) 안인 칸만 본다. 옛 카페 땅(x 56~61)은 모두 원 밖이라 115에서 숲(막힌 칸)이 된다.
+// - V9: "나무 수 70 그대로" → 원 가운데까지 반지름 − 1.5(24.5) 안의 나무가 28그루(115가 빼는 42그루 밖)이고, 빠진 자리는 115가 빼는 나무 밖에서 [45.7, 19.2]뿐이다.
+//   새 자리 하나(옛 자리에서 8칸 안, 건물 땅·길 칸에 걸리지 않음)는 그대로 본다.
+// - K1: 배치 파일을 견줄 때 양쪽에서 풍차와 경계 원 열쇠를 빼고, 바위는 원 안의 것만 둔다(withoutBoundary115. 나무는 이 테스트가 원래 보지 않는다).
+// - K2: 견주는 칸에서 115가 바꾸는 곳(원 밖, 사각형 가장자리 줄, 빠지는 나무·바위 칸)도 뺀다. 기대값은 115 기준 커밋 de49aef에서 잰 값(169개).
+// - K3: 빠진 나무 자리에서 115가 빼는 나무(원 가운데까지 24.5 넘게 먼 것)는 뺀다.
 import { LobbySim, VILLAGE_MARK_IDS, applyArea, findPath, hasPlaceBubble, isFree, markInfo, type FloorPoint, type PlaceId } from "@/lib/lobby3d/engine";
 import { VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_PLACES, VILLAGE_SOLID_TILES, VILLAGE_START, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
@@ -42,12 +50,12 @@ import {
   goneTrees,
   newTrees,
   rectTiles,
-  solidOutsideChanged,
   treeTiles,
   type Rect
 } from "../__fixtures__/village-shops-106";
 import { HOME_DEPTH_107, HOME_NEAR_107, HOME_WIDTH_107 } from "../__fixtures__/village-home-size-107";
-import { BENCH_TILE_RECTS, SOLID_OUTSIDE_CHANGED_114, withoutBenchRot } from "../__fixtures__/village-bench-114";
+import { BENCH_TILE_RECTS, withoutBenchRot } from "../__fixtures__/village-bench-114";
+import { SOLID_OUTSIDE_CHANGED_115, TREES_KEPT_115, keptTree115, solidOutsideChanged115, tileOutside115, withoutBoundary115 } from "../__fixtures__/village-boundary-115";
 
 /** 막힌 칸 가운데 이번 작업이 바꾸는 곳(옛 라룹이 집·카페·도서관·옷집 땅, 옮긴 나무) 밖의 칸. 기준 커밋 c728f00에서 이 테스트의 계산으로 잰 값. */
 // { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" }. 114에서 벤치가 바꿀 수 있는 곳도 빼서 SOLID_OUTSIDE_CHANGED_114(village-bench-114.ts)로 견준다.
@@ -91,8 +99,11 @@ describe("[spec] 106 바뀔 동작: 건물·장소(명세 1·2·3)", () => {
     expect(Object.values(VILLAGE_PLACES).map((p) => p.label).sort()).toEqual(LABELS);
   });
 
-  it("V3 카페·도서관 땅은 풀밭이 된다: 옛 카페 땅 [56,22,62,28]과 옛 도서관 땅 [22,45,31,48]의 모든 칸이 걸어갈 수 있다", () => {
-    const blocked = sorted(rectTiles([OLD_CAFE_RECT, OLD_LIBRARY_RECT])).filter((t) => {
+  it("V3 카페·도서관 땅은 풀밭이 된다: 옛 카페 땅 [56,22,62,28]과 옛 도서관 땅 [22,45,31,48]의 모든 칸이 걸어갈 수 있다(115: 칸 가운데가 원 안인 칸만 본다)", () => {
+    // 115: 칸 가운데가 원 안인 칸만 본다(원 밖은 115에서 숲이 된다)
+    const inside = sorted(rectTiles([OLD_CAFE_RECT, OLD_LIBRARY_RECT])).filter((t) => !tileOutside115(t));
+    expect(inside.length).toBeGreaterThan(0);
+    const blocked = inside.filter((t) => {
       const p = tileCenter(t);
       return VILLAGE_SOLID_TILES.has(t) || !isFree(p.x, p.z);
     });
@@ -161,10 +172,11 @@ describe("[spec] 106 바뀔 동작: 건물·장소(명세 1·2·3)", () => {
     expect({ arrived: snap.arrived, text: snap.bubbleText, button: snap.bubbleButton }).toEqual({ arrived: id, text: "옷집은 곧 열려요", button: null });
   });
 
-  it("V9 나무(명세 3): 옷집 땅 안의 나무 [45.7, 19.2]는 근처 빈 풀밭으로 옮긴다. 나무 수 70 그대로, 옛 자리는 없고 새 자리 하나가 있으며, 새 자리는 옛 자리에서 8칸 안이고 건물 땅·길 칸에 걸리지 않는다", () => {
-    expect(LAYOUT.trees).toHaveLength(70);
+  it("V9 나무(명세 3): 옷집 땅 안의 나무 [45.7, 19.2]는 근처 빈 풀밭으로 옮긴다. 나무 수 70 그대로(115: 원 가운데까지 24.5 안의 28그루), 옛 자리는 없고 새 자리 하나가 있으며, 새 자리는 옛 자리에서 8칸 안이고 건물 땅·길 칸에 걸리지 않는다", () => {
+    // 115: 나무 수는 원 가운데까지 24.5 안의 그루로 센다(70그루 가운데 115가 빼는 42그루 밖의 28그루). 빠진 자리도 115가 빼는 나무는 뺀다
+    expect(LAYOUT.trees.filter(keptTree115)).toHaveLength(TREES_KEPT_115);
     expect(LAYOUT.trees.some(([x, z]) => x === MOVED_TREE[0] && z === MOVED_TREE[1])).toBe(false);
-    expect(goneTrees()).toEqual([MOVED_TREE]);
+    expect(goneTrees().filter(keptTree115)).toEqual([MOVED_TREE]);
     const added = newTrees();
     expect(added).toHaveLength(1);
     const [x, z] = added[0];
@@ -204,8 +216,8 @@ describe("[spec] 106 그대로 둘 동작: 배치 파일·막힌 칸·나무·�
   it("K1 배치 파일에서 건물·길·나무(와 설명) 말고는 기준 커밋과 같다(마을 크기, 분수, 가로등, 노점, 벤치, 바위, 풍차). 라룹이 집의 id·이름·문·층수와 가구점의 id·이름·땅·층수도 같다", () => {
     type Layout = typeof LAYOUT & { _comment?: string };
     const strip = (layout: Layout) => {
-      // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다)
-      const { buildings: _b, paths: _p, trees: _t, _comment: _c, ...rest } = withoutBenchRot(layout);
+      // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다). 115: 풍차·경계 원 열쇠를 빼고 바위는 원 안의 것만 본다
+      const { buildings: _b, paths: _p, trees: _t, _comment: _c, ...rest } = withoutBoundary115(withoutBenchRot(layout));
       return rest;
     };
     const base = baseLayout106() as Layout;
@@ -221,11 +233,13 @@ describe("[spec] 106 그대로 둘 동작: 배치 파일·막힌 칸·나무·�
 
   it("K2 막힌 칸 가운데 바뀌는 곳(옛 라룹이 집·카페·도서관·옷집 땅, 옮긴 나무가 막는 칸) 밖은 기준 커밋과 같다(개수와 목록의 sha256)", () => {
     // 114: 벤치가 바꿀 수 있는 곳도 빼고 견준다(587개 목록에서 지금 벤치 칸 12개를 뺀 575개)
-    expect(solidOutsideChanged([...BENCH_TILE_RECTS])).toEqual(SOLID_OUTSIDE_CHANGED_114);
+    // 115: 원 밖·사각형 가장자리 줄·빠지는 나무·바위 칸도 빼고 견준다(115 전 기대값 { count: 575, sha256: "354f2cce…" })
+    expect(solidOutsideChanged115([...BENCH_TILE_RECTS])).toEqual(SOLID_OUTSIDE_CHANGED_115);
   });
 
   it("K3 옮기는 한 그루 말고 나무 자리는 기준 커밋 그대로다(빠진 자리가 있으면 [45.7, 19.2]뿐이고, 더해진 자리는 많아야 하나)", () => {
-    const gone = goneTrees();
+    // 115: 115가 빼는 나무(원 가운데까지 24.5 넘게 먼 것)는 빠진 자리에서 뺀다
+    const gone = goneTrees().filter(keptTree115);
     expect(gone.filter(([x, z]) => !(x === MOVED_TREE[0] && z === MOVED_TREE[1]))).toEqual([]);
     expect(newTrees().length).toBeLessThanOrEqual(1);
   });

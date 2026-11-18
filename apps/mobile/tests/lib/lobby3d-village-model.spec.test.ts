@@ -6,6 +6,8 @@
 // 18 결정(사용자: 풍차를 더함, 마을 나무를 Kenney 나무로 바꾸고 잎에 계절 색)으로 W2·T1을 더했다. 모델 안 이름(windmill, windmill-rotor,
 // tree-templates, tpl-<나무>-leaf/trunk)은 구현 커밋 63c0bc4의 모델과 그리기 코드에서 부르는 이름만 확인했다.
 // 기존 CREDITS 세 줄이 그대로인지는 이번 작업 전 CREDITS.md(기준 커밋 1b06dc1)의 파일 이름과 출처 글로 본다.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(마을 모델 안 풍차 묶음)로 qa가 W2를 고쳤다(115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md):
+// 115는 마을 모델에서 풍차(windmill, windmill-rotor)를 뺀다(명세 4). 그래서 W2 "풍차와 날개가 있다"를 "풍차와 날개가 없다"로 바꿨다. T1은 그대로다.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -62,11 +64,11 @@ function glbNodeNames(file: string): string[] {
   return (json.nodes ?? []).map((n) => n.name ?? "");
 }
 
-describe("[spec] 풍차와 Kenney 나무(W2, T1, 18 결정)", () => {
+describe("[spec] 풍차와 Kenney 나무(W2, T1, 18 결정. W2는 115 ①에서 고침)", () => {
   const names = () => glbNodeNames(join(MODELS, "lobby-village.glb"));
 
-  it("W2: 마을 모델에 풍차와, 따로 돌릴 수 있는 풍차 날개가 있다", () => {
-    expect(names()).toEqual(expect.arrayContaining(["windmill", "windmill-rotor"]));
+  it("W2: 마을 모델에 풍차(windmill)와 풍차 날개(windmill-rotor) 노드가 없다(115 ① 명세 4)", () => {
+    expect(names().filter((n) => n === "windmill" || n === "windmill-rotor" || n.startsWith("windmill-"))).toEqual([]);
   });
 
   it("T1: 마을 모델에 Kenney 나무 틀이 있고, 나무마다 잎(계절 색을 칠할 곳)과 줄기가 따로 있다", () => {

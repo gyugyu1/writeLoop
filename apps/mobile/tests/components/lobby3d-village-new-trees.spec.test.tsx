@@ -23,6 +23,17 @@
 //   어느 한 면 밖으로 1e-3칸 넘게 벗어나면 out, 그 사이는 보지 않는다.
 // - 명세에 수가 없어 qa가 정한 허용치(02-qa-tests.md "가정"): "고르게"(마을 안 70그루) = 종류마다 14~32그루, "대략 A 45%, C 45%, B 10%"(둘레 숲 300그루) =
 //   A·C 각각 114~156그루(38~52%), B 15~45그루(5~15%). 배율·밝기 범위는 1e-4, 그림 좌표는 1e-5 안이면 맞다고 본다.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(마을 나무 수와 자리, 숲에서 풍차 둘레 비우기, 마을 모델 안 풍차 묶음)로 qa가 N1·N2·N7·N8을 고쳤다
+// (115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md). 115는 마을 나무 70그루 가운데 원(가운데 (29, 26), 반지름 26) 가운데까지 24.5 넘게 먼 42그루를 빼고,
+// 둘레 숲에서 풍차 둘레를 비우던 규칙을 없애며, 마을 모델에서 풍차를 뺀다(명세 3·4). 둘레 숲의 다른 규칙(자리 격자·간격·종류·크기·여백)은 그대로다.
+// - 마을 안 그루 70 → 28(명세 3: 42그루가 빠진다). 둘레 숲 그루 300 → 287: 지금 숲 자리 계산(같은 씨앗 수열을 마을 나무 → 숲 차례로 쓴다)에
+//   마을 나무 28그루와 풍차 둘레 비우기 없앰만 넣어 qa가 센 값이다(계산을 따로 옮겨 센 값과 그린 장면에서 센 값이 같았다).
+// - N2: 마을 안은 정해 둔 몫을 그대로 두고 그루 수만 새 수로 셈한다(종류마다 마을 안 그루의 20%~45.7%: 70그루일 때 14~32, 28그루면 6~12).
+//   둘레 숲은 같은 계산으로 센 종류별 수(A 111, B 25, C 151)와 같은지 본다. 몫(A·C 각각 38~52%, B 5~15%)으로 셈하면 C 151(52.6%)이
+//   범위(110~149)를 넘는다. 둘레 숲 종류 규칙은 그대로이고 씨앗 수열에서 뽑는 차례만 밀린 것이라, 몫을 넓히지 않고 같은 규칙으로 센 수를 적었다
+//   (02-qa-tests.md "판단이 필요한 것").
+// - N7: 마을 모델이 그려졌는지를 "windmill-rotor가 든 뿌리" 대신 "소품 묶음(props)이 든 뿌리"로 본다.
+// - N8: 그루 수와 자리 sha256을 위 계산으로 잰 새 값으로 바꿨다(마을 안 28 + 둘레 숲 287).
 import { act, render } from "@testing-library/react-native";
 import { Suspense, type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -395,10 +406,18 @@ function treeTable(trees: Tree[]): Map<string, string> {
 }
 
 // 기준 커밋 3b11555에서 잰 값(머리말): 나무 수와, 카메라 없이 처음 그린 잎(줄기) 인스턴스 자리 "x,y,z"(소수 셋째 자리)를 정렬해 줄로 이은 글의 sha256
-const INTERIOR_TREES = 70;
-const FOREST_TREES = 300;
-const TREE_POSITIONS_DIGEST = "51fd2a5c12806120485adec49829e8633628148e8412c005f05eccc78fbe17b8";
-const FOREST_POSITIONS_DIGEST = "a3505b7e76b3dedb7a123171705daaa5964269327624d00f1c178606a515b0de";
+// 115 전 값: 마을 안 70, 둘레 숲 300, 자리 51fd2a5c…17b8, 숲 자리 a3505b7e…b0de.
+// 115: 마을 안 28(명세 3), 둘레 숲 287과 자리 sha256은 115 기준 커밋 de49aef의 나무 자리 계산에 115의 바뀜(마을 나무 28그루, 풍차 둘레 비우기 없앰)만 넣어 잰 값(머리말)
+const INTERIOR_TREES = 28;
+const FOREST_TREES = 287;
+const TREE_POSITIONS_DIGEST = "4526980ff3f991687cf0546c73a1da2b65da10f29214f080e1d6693a192918fa";
+const FOREST_POSITIONS_DIGEST = "9c239afcddaf59627a68e188a481f94052b5ee136416e1a4f76343405186a842";
+/** N2 마을 안의 몫(qa가 70그루일 때 정한 범위 14~32를 몫으로 적은 것. 115에서 그루 수가 바뀌어 몫으로 셈한다). */
+const INSIDE_SHARE = { lo: 14 / 70, hi: 32 / 70 };
+/** N2 둘레 숲의 종류별 그루 수: 115 기준 커밋 de49aef의 숲 자리·종류 계산에 115의 바뀜만 넣어 잰 값(머리말). 115 전 범위는 A·C 114~156, B 15~45. */
+const FOREST_KIND_COUNTS = { A: 111, B: 25, C: 151 };
+/** 몫 범위를 그루 수 범위로(아래는 올림, 위는 내림. 몫을 적을 때 생기는 소수 끝은 1e-9 안에서 봐준다). */
+const countRange = (total: number, share: { lo: number; hi: number }) => ({ lo: Math.ceil(total * share.lo - 1e-9), hi: Math.floor(total * share.hi + 1e-9) });
 
 const nodeCrypto = (process as unknown as { getBuiltinModule: (id: string) => typeof import("crypto") }).getBuiltinModule("crypto");
 const sha256 = (s: string) => nodeCrypto.createHash("sha256").update(s).digest("hex");
@@ -415,7 +434,7 @@ function sequence(seed: number): () => number {
 // ---------- 바뀔 동작 ----------
 
 describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명세 1~6)", () => {
-  it("[바뀔] N1 새 모델·단계(명세 1): 마을 나무는 새 나무 모델로 그리고 Kenney 나무 틀은 그리지 않는다. 마을 안 그루(VILLAGE_TREES 자리 70)는 LOD1, 둘레 숲 그루(300)는 LOD2이고, 자리마다 잎·줄기가 같은 종류·같은 변환으로 하나씩 있다. 카메라를 가까이·멀리 옮겨도 그루의 단계는 바뀌지 않는다", async () => {
+  it("[바뀔] N1 새 모델·단계(명세 1): 마을 나무는 새 나무 모델로 그리고 Kenney 나무 틀은 그리지 않는다. 마을 안 그루(VILLAGE_TREES 자리 70. 115: 28)는 LOD1, 둘레 숲 그루(300. 115: 287)는 LOD2이고, 자리마다 잎·줄기가 같은 종류·같은 변환으로 하나씩 있다. 카메라를 가까이·멀리 옮겨도 그루의 단계는 바뀌지 않는다", async () => {
     const drawn = await draw("summer");
     const trees = needTrees(drawn);
     expect(drawnTemplateMeshes(drawn)).toEqual([]);
@@ -459,7 +478,7 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     }
   });
 
-  it("[바뀔] N2 종류(명세 2): 마을 안은 A·B·C를 고르게(종류마다 14~32그루), 둘레 숲은 A·C 위주로 B는 조금(A·C 각각 114~156그루, B 15~45그루) 섞는다. 다시 그려도(Math.random이 다른 값을 주어도) 그루마다 종류·단계·배율·방향·밝기가 같다", async () => {
+  it("[바뀔] N2 종류(명세 2): 마을 안은 A·B·C를 고르게(종류마다 14~32그루. 115: 마을 안 그루의 20%~45.7%), 둘레 숲은 A·C 위주로 B는 조금(A·C 각각 114~156그루, B 15~45그루. 115: 같은 계산으로 센 A 111·B 25·C 151) 섞는다. 다시 그려도(Math.random이 다른 값을 주어도) 그루마다 종류·단계·배율·방향·밝기가 같다", async () => {
     let seq = sequence(7);
     jest.spyOn(Math, "random").mockImplementation(() => seq());
     const first = await draw("summer");
@@ -470,25 +489,21 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     const forest = leaves.filter((r) => !isInterior(r.x, r.z));
     const insideCounts = Object.fromEntries(TREE_KINDS.map((k) => [k, count(inside, k)]));
     const forestCounts = Object.fromEntries(TREE_KINDS.map((k) => [k, count(forest, k)]));
-    const between = (n: number, lo: number, hi: number) => n >= lo && n <= hi;
+    const between = (n: number, range: { lo: number; hi: number }) => n >= range.lo && n <= range.hi;
+    // 115: 마을 안은 정해 둔 몫으로 새 그루 수의 범위를 셈한다(70그루면 14~32 그대로). 둘레 숲은 같은 계산으로 센 종류별 수와 견준다
+    const insideRange = countRange(INTERIOR_TREES, INSIDE_SHARE);
     expect({
       inside: insideCounts,
       insideTotal: inside.length,
-      insideEven: TREE_KINDS.every((k) => between(insideCounts[k], 14, 32)),
+      insideEven: TREE_KINDS.every((k) => between(insideCounts[k], insideRange)),
       forest: forestCounts,
-      forestTotal: forest.length,
-      forestA: between(forestCounts.A, 114, 156),
-      forestC: between(forestCounts.C, 114, 156),
-      forestB: between(forestCounts.B, 15, 45)
+      forestTotal: forest.length
     }).toEqual({
       inside: insideCounts,
       insideTotal: INTERIOR_TREES,
       insideEven: true,
-      forest: forestCounts,
-      forestTotal: FOREST_TREES,
-      forestA: true,
-      forestC: true,
-      forestB: true
+      forest: FOREST_KIND_COUNTS,
+      forestTotal: FOREST_TREES
     });
     const table1 = treeTable(trees);
     await act(async () => first.unmount());
@@ -752,7 +767,8 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     expect({
       triedTrees: treeLoader.calls.length > 0,
       onFailed: onFailed.mock.calls.length,
-      model: drawn.roots.some((r) => r.getObjectByName("windmill-rotor") !== undefined),
+      // 115: 마을 모델 뿌리 = 소품 묶음(props)이 든 것(풍차 날개가 빠진다)
+      model: drawn.roots.some((r) => r.getObjectByName("props") !== undefined),
       buildings: buildings.length > 0,
       ground: objects.some((o) => o instanceof THREE.HemisphereLight),
       groundDecor: objects.some((o) => o.name === "village-ground"),
@@ -782,7 +798,7 @@ function anyTrees(drawn: Drawn): { mesh: THREE.InstancedMesh; part: "foliage" | 
 }
 
 describe("[spec] 113 그대로 둘 동작: 나무 자리와 그루 수, 누르기", () => {
-  it("[그대로] N8 나무 자리 계산과 그루 수(그대로여야 할 동작): 카메라 없이 그린 잎과 줄기의 그루 자리가 기준 커밋과 같다(마을 안 70그루는 VILLAGE_TREES 자리, 둘레 숲 300그루는 같은 자리)", async () => {
+  it("[그대로] N8 나무 자리 계산과 그루 수(그대로여야 할 동작): 카메라 없이 그린 잎과 줄기의 그루 자리가 기준 커밋과 같다(마을 안 70그루는 VILLAGE_TREES 자리, 둘레 숲 300그루는 같은 자리. 115: 마을 안 28그루, 둘레 숲 287그루의 새 자리)", async () => {
     const drawn = await draw("summer");
     const trees = anyTrees(drawn);
     expect(trees.length).toBeGreaterThan(0);

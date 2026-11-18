@@ -16,12 +16,18 @@
 // - K1: 배치 파일을 견줄 때 벤치의 rot만 뺀다(벤치 자리는 그대로 본다).
 // - K2: 견주는 칸에서 벤치가 바꿀 수 있는 곳(지금 벤치 칸과 새 벤치 칸)도 뺀다. 기대값은 624개 목록에서 지금 벤치 칸 12개를 뺀 것(114 기준 커밋 d256ff4에서 잰 값).
 // - K4: 소품 묶음에서 벤치 조각(점이 모두 벤치 둘레 상자 안인 프리미티브)만 빼고 견준다.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(풍차, 마을 나무·바위 수와 자리, 사각형 가장자리 막힌 칸, 마을 모델 묶음)로 qa가 K1·K2·K4를 고쳤다
+// (115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md). 경계·풍차·빠지는 나무·바위 말고 다른 것의 기대는 그대로다(도우미·값은 tests/__fixtures__/village-boundary-115.ts):
+// - K1: 배치 파일을 견줄 때 양쪽에서 풍차와 경계 원 열쇠를 빼고, 나무는 원 가운데까지 24.5 안, 바위는 원 안의 것만 둔다(withoutBoundary115).
+// - K2: 견주는 칸에서 115가 바꾸는 곳(원 밖, 사각형 가장자리 줄, 빠지는 나무·바위 칸)도 뺀다. 기대값은 115 기준 커밋 de49aef에서 잰 값(206개).
+// - K4: 장면 뿌리 이름에서 빠지는 묶음(생울타리·울타리·풍차·풍차 날개)을 빼고, 소품 묶음에서 빠지는 바위 다섯의 삼각형을 뺀 뒤 견준다(withoutBoundaryGlb115).
 import { applyArea, isFree, markInfo } from "@/lib/lobby3d/engine";
 import { VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_SOLID_TILES, VILLAGE_START, occludingBuildings } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { nowVillageGlb, triangleCount, meshNodesUnder, rootIndex, type Glb } from "../__fixtures__/village-glb-098";
-import { describeGroups, rectTiles, rootNames, sha256 } from "../__fixtures__/village-shops-106";
-import { BENCH_TILE_RECTS, SOLID_OUTSIDE_HOME_107_114, withoutBenchPrimitives, withoutBenchRot } from "../__fixtures__/village-bench-114";
+import { describeGroups, rectTiles, sha256 } from "../__fixtures__/village-shops-106";
+import { BENCH_TILE_RECTS, withoutBenchPrimitives, withoutBenchRot } from "../__fixtures__/village-bench-114";
+import { SOLID_OUTSIDE_HOME_107_115, inKeepRegion115, rootNamesKept115, withoutBoundary115, withoutBoundaryGlb115 } from "../__fixtures__/village-boundary-115";
 import {
   HOME_DEPTH_107,
   HOME_DOOR_X_107,
@@ -127,8 +133,8 @@ describe("[spec] 107 그대로 둘 동작: 배치 파일, 막힌 칸, 장소, �
   it("K1 배치 파일에서 라룹이 집 땅(rect) 말고는 기준 커밋과 같다(집의 id·이름·층수 1·모델·문 35.5, 가구점·옷집 전체, 길, 나무, 분수·가로등·노점·벤치·바위·풍차·마을 크기). 설명(_comment)은 보지 않는다", () => {
     type Layout = typeof LAYOUT & { _comment?: string };
     const strip = (layout: Layout) => {
-      // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다)
-      const { _comment: _c, buildings, ...rest } = withoutBenchRot(layout);
+      // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다). 115: 풍차·경계 원 열쇠를 빼고 나무·바위는 남는 것만 본다
+      const { _comment: _c, buildings, ...rest } = withoutBoundary115(withoutBenchRot(layout));
       return { ...rest, buildings: buildings.map((b) => (b.id === "home" ? { ...b, rect: "home-rect" } : b)) };
     };
     expect(strip(LAYOUT as Layout)).toEqual(strip(baseLayout107()));
@@ -136,10 +142,11 @@ describe("[spec] 107 그대로 둘 동작: 배치 파일, 막힌 칸, 장소, �
     expect({ id: home.id, label: home.label, floors: home.floors, model: home.model, door: home.door }).toEqual({ id: "home", label: "라룹이 집", floors: 1, model: "laroopi-house", door: 35.5 });
   });
 
-  it("K2 막힌 칸 가운데 새 집 칸(x 33~37, z 7~11) 밖은 기준 커밋과 같다(개수 624와 목록의 sha256. 114: 벤치가 바꿀 수 있는 곳도 빼서 612)", () => {
+  it("K2 막힌 칸 가운데 새 집 칸(x 33~37, z 7~11) 밖은 기준 커밋과 같다(개수 624와 목록의 sha256. 114: 벤치가 바꿀 수 있는 곳도 빼서 612. 115: 원 밖·가장자리 줄·빠지는 나무·바위 칸도 빼서 206)", () => {
     const region = rectTiles([HOME_TILES_RECT_107, ...BENCH_TILE_RECTS]);
-    const outside = sorted(VILLAGE_SOLID_TILES).filter((t) => !region.has(t));
-    expect({ count: outside.length, sha256: sha256(outside.join("\n")) }).toEqual(SOLID_OUTSIDE_HOME_107_114);
+    // 115: 115가 바꾸는 곳 밖(inKeepRegion115)만 본다(115 전 기대값 { count: 612, sha256: "2d68c371…" })
+    const outside = sorted(VILLAGE_SOLID_TILES).filter((t) => !region.has(t) && inKeepRegion115(t));
+    expect({ count: outside.length, sha256: sha256(outside.join("\n")) }).toEqual(SOLID_OUTSIDE_HOME_107_115);
   });
 
   it("K3 장소 셋(문 앞 자리·바라볼 곳·이름표)과 라룹이가 나타나는 자리, 집 말풍선('집으로 들어갈까?', '들어가기')이 그대로다", () => {
@@ -157,11 +164,12 @@ describe("[spec] 107 그대로 둘 동작: 배치 파일, 막힌 칸, 장소, �
   it("K4 마을 모델(lobby-village.glb)에서 장면 뿌리 묶음 이름이 기준 커밋과 같고, bld-home 밖 묶음(가구점·옷집, 길, 소품, 생울타리, 울타리, 풍차, 나무 틀, 불빛 판)의 메시(삼각형 수·점 자리)가 기준 커밋과 같다", () => {
     const now = nowVillageGlb();
     const base = baseVillageGlb107();
-    expect(rootNames(now)).toEqual(rootNames(base));
+    // 115: 빠지는 묶음(생울타리·울타리·풍차·풍차 날개)은 양쪽에서 뺀다
+    expect(rootNamesKept115(now)).toEqual(rootNamesKept115(base));
     const keep = (name: string) => name !== "bld-home";
-    // 114: 소품 묶음의 벤치 조각만 빼고 견준다
-    const baseMeshes = describeGroups(withoutBenchPrimitives(base), keep);
+    // 114: 소품 묶음의 벤치 조각만 빼고 견준다. 115: 빠지는 묶음과 소품의 빠지는 바위 삼각형도 뺀다
+    const baseMeshes = describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(base)), keep);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeGroups(withoutBenchPrimitives(now), keep)).toEqual(baseMeshes);
+    expect(describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(now)), keep)).toEqual(baseMeshes);
   });
 });

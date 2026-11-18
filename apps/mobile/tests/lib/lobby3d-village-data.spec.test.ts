@@ -13,6 +13,9 @@
 // - A2·A3·A4·A8·A10: 장소·건물 넷 → 셋(라룹이 집·가구점·옷집). 단언하는 규칙은 그대로다.
 // - A5: "카페는 광장 오른쪽, 도서관은 광장 앞쪽" → "옷집은 광장 오른쪽(동쪽)". A11: 도서관 문 앞 → 옷집 문 앞(분수 바로 앞에서 건물을 뚫지 않는 길, 시작 자리를 찾는 끝은 도서관 뒷면 → 마을 앞끝).
 // - O1: 도서관 바로 뒤 → 옷집 바로 뒤(옷집 폭 안에서 걸어갈 수 있는 자리). O4: 도서관은 광장 앞쪽 → 옷집은 광장 동쪽.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(풍차)로 qa가 W1을 고쳤다(115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md):
+// 115는 풍차를 배치 파일·마을 모델·앱 코드에서 뺀다(명세 3). 그래서 W1 "풍차는 마을 끝 바깥 뒤쪽에 있다"를 "배치 파일에 풍차가 없다"로 바꿨다.
+// A9(마을 칸 바로 바깥은 걸어갈 수 없다)·A10(모든 칸에서 장소까지 길이 있다) 등 나머지는 원 경계에서도 맞아 그대로 둔다.
 import { applyArea, findPath, isClearLine, isFree, type FloorPoint } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
@@ -215,12 +218,8 @@ describe("[spec] 라룹이를 가리는 건물(O1, O2, O4, 결정 03-2)", () => 
   });
 });
 
-describe("[spec] 풍차(W1, 18 결정 1)", () => {
-  it("W1: 풍차는 마을 끝 바깥 뒤쪽(z < 0)에 있고 마을 가로 범위 안이다", () => {
-    const windmill = (LAYOUT as unknown as { windmill?: { x: number; z: number } }).windmill;
-    expect(windmill).toBeDefined();
-    expect(windmill!.z).toBeLessThan(0);
-    expect(windmill!.x).toBeGreaterThanOrEqual(0);
-    expect(windmill!.x).toBeLessThanOrEqual(VILLAGE.width);
+describe("[spec] 풍차(W1, 18 결정 1. 115 ①에서 고침)", () => {
+  it("W1: 배치 파일에 풍차(windmill)가 없다(115 ① 명세 3: 풍차를 배치 파일에서 뺀다)", () => {
+    expect({ windmill: "windmill" in (LAYOUT as unknown as Record<string, unknown>) }).toEqual({ windmill: false });
   });
 });

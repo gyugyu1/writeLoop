@@ -45,6 +45,10 @@
 // 벤치 말고 다른 것의 기대는 그대로다(도우미·값은 tests/__fixtures__/village-bench-114.ts):
 // - S2: 배치 파일을 견줄 때 벤치의 rot만 뺀다(벤치 자리는 그대로 본다).
 // - S3: 견주는 칸에서 벤치가 바꿀 수 있는 곳(지금 벤치 칸과 새 벤치 칸)도 뺀다. 기대값은 587개 목록에서 지금 벤치 칸 12개를 뺀 575개(114 기준 커밋 d256ff4에서 잰 값).
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(풍차, 바위, 사각형 가장자리 막힌 칸)로 qa가 S2·S3을 고쳤다(115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md).
+// 경계·풍차·빠지는 나무·바위 말고 다른 것의 기대는 그대로다(도우미·값은 tests/__fixtures__/village-boundary-115.ts):
+// - S2: 배치 파일을 견줄 때 양쪽에서 풍차와 경계 원 열쇠를 빼고, 바위는 원 안의 것만 둔다(withoutBoundary115. 나무는 이 테스트가 원래 보지 않는다).
+// - S3: 견주는 칸에서 115가 바꾸는 곳(원 밖, 사각형 가장자리 줄, 빠지는 나무·바위 칸)도 뺀다. 기대값은 115 기준 커밋 de49aef에서 잰 값(169개).
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -65,9 +69,10 @@ import {
   worldPoints,
   type Glb
 } from "../__fixtures__/village-glb-098";
-import { HOME_FRONT_Z, HOME_MODEL, solidOutsideChanged } from "../__fixtures__/village-shops-106";
+import { HOME_FRONT_Z, HOME_MODEL } from "../__fixtures__/village-shops-106";
 import { HOME_DEPTH_107, HOME_NEAR_107, HOME_WIDTH_107 } from "../__fixtures__/village-home-size-107";
-import { BENCH_TILE_RECTS, SOLID_OUTSIDE_CHANGED_114, withoutBenchRot } from "../__fixtures__/village-bench-114";
+import { BENCH_TILE_RECTS, withoutBenchRot } from "../__fixtures__/village-bench-114";
+import { SOLID_OUTSIDE_CHANGED_115, solidOutsideChanged115, withoutBoundary115 } from "../__fixtures__/village-boundary-115";
 
 /** 작업 100의 기준 커밋(명세 첫 줄). */
 const BASE = "fcd7e6d";
@@ -232,8 +237,8 @@ describe("[spec] 100 그대로 둘 동작: 집 자리, 배치 파일, 막힌 칸
   it("S2 배치 파일에서 106이 바꾸는 건물·길·나무와 집 땅(rect) 말고는 기준 커밋과 같다(집의 id·이름·층수·모델·문, 가구점의 id·이름·땅·층수, 분수·가로등·풍차·마을 크기 등)", () => {
     type Layout = typeof LAYOUT & { _comment?: string };
     const strip = (layout: Layout) => {
-      // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다)
-      const { buildings, paths: _p, trees: _t, ...rest } = withoutBenchRot(layout);
+      // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다). 115: 풍차·경계 원 열쇠를 빼고 바위는 원 안의 것만 본다
+      const { buildings, paths: _p, trees: _t, ...rest } = withoutBoundary115(withoutBenchRot(layout));
       const home = buildings.find((b) => b.id === "home");
       const shop = buildings.find((b) => b.id === "furnitureShop");
       return {
@@ -251,6 +256,7 @@ describe("[spec] 100 그대로 둘 동작: 집 자리, 배치 파일, 막힌 칸
   it("S3 막힌 칸 가운데 106이 바꾸는 곳(옛 라룹이 집·카페·도서관·옷집 땅, 옮긴 나무) 밖은 바뀌지 않는다: 개수 587과 목록의 sha256이 기준 커밋 값과 같다", () => {
     expect(VILLAGE_SOLID_TILES.size).toBeGreaterThan(0);
     // 114: 벤치가 바꿀 수 있는 곳도 빼고 견준다(587개 목록에서 지금 벤치 칸 12개를 뺀 575개)
-    expect(solidOutsideChanged([...BENCH_TILE_RECTS])).toEqual(SOLID_OUTSIDE_CHANGED_114);
+    // 115: 원 밖·사각형 가장자리 줄·빠지는 나무·바위 칸도 빼고 견준다(115 전 기대값 { count: 575, sha256: "354f2cce…" })
+    expect(solidOutsideChanged115([...BENCH_TILE_RECTS])).toEqual(SOLID_OUTSIDE_CHANGED_115);
   });
 });

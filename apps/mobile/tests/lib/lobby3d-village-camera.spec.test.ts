@@ -7,6 +7,11 @@
 // C2는 07-main-decision.md(사용자 결정)로 고쳤다(아래 C2 위 설명).
 // 19 결정(사용자, 마을 70×60칸으로 넓힘·새 배치)으로 옛 크기 28×24를 적은 곳(칸 찾기 범위, C2의 "마을 가운데 둘레" 자리와 깊이 24,
 // C3의 마을 칸 범위·모퉁이, C4의 오른쪽 끝 자리)을 마을 데이터의 크기로 고쳤다. 옛 자리는 마을 가운데(14, 12)에서 잰 거리를 그대로 새 가운데에 옮겼다. 단언하는 규칙은 그대로다.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(카메라 범위)로 qa가 C4를 고쳤다(115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md):
+// 115는 사각형 가장자리 줄 대신 원(가운데 (29, 26), 반지름 26) 밖을 막아, 걸을 수 있는 왼쪽·오른쪽 끝이 x 1.5·68.5 근처가 아니라 원의 왼쪽·오른쪽 끝이 된다.
+// 그래서 C4의 "끝 근처 두 자리"를 x 1.5·2.5(오른쪽 w−1.5·w−2.5) 고정 대신, 걸어갈 수 있는 칸 가운데 나란한 두 칸이 가장 왼쪽(오른쪽)인 곳으로 찾는다.
+// 지금(사각형)은 그 두 자리가 옛 자리 x 1.5·2.5(68.5·67.5)와 같다. 단언(두 자리에서 카메라 보는 점 x가 같다)은 그대로다.
+// C3(화면 아래에 보이는 바닥은 마을 칸 0~70, 0~60 안)은 새 카메라 범위(x 3~55, z 0~52)가 그 안이라 그대로 둔다(새 범위는 115 qa 테스트가 본다).
 import { VIEW_WIDTH_DEFAULT, VIEW_WIDTH_MAX, VIEW_WIDTH_MIN, applyArea, cameraPose, isFree, type FloorPoint } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_PLACES } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
@@ -190,9 +195,13 @@ describe("[spec] 마을 카메라(C1~C4, C6, C7)", () => {
     let left: [FloorPoint, FloorPoint] | null = null;
     let right: [FloorPoint, FloorPoint] | null = null;
     const w = VILLAGE.width;
-    for (let z = 2.5; z < VILLAGE.depth - 2 && !(left && right); z += 1) {
-      if (!left && isFree(1.5, z) && isFree(2.5, z)) left = [{ x: 2.5, z }, { x: 1.5, z }];
-      if (!right && isFree(w - 1.5, z) && isFree(w - 2.5, z)) right = [{ x: w - 2.5, z }, { x: w - 1.5, z }];
+    // 115: 걸어갈 수 있는 나란한 두 칸 가운데 가장 왼쪽(오른쪽)인 곳(같으면 뒤쪽, 곧 z가 작은 줄이 먼저)
+    for (let z = 2.5; z < VILLAGE.depth - 2; z += 1) {
+      for (let x = 1.5; x + 1 < w; x += 1) {
+        if (!(isFree(x, z) && isFree(x + 1, z))) continue;
+        if (!left || x < left[1].x) left = [{ x: x + 1, z }, { x, z }];
+        if (!right || x > right[0].x) right = [{ x, z }, { x: x + 1, z }];
+      }
     }
     expect(left).not.toBeNull();
     expect(right).not.toBeNull();

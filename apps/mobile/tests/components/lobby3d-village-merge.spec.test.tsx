@@ -26,6 +26,15 @@
 // "새 벤치 재질은 소품의 다른 재질과 합쳐지지 않고 따로 하나가 된다"다. 그래서 M3의 소품 그려지는 메시를 둘(colormap·정점색, 그림 없음·정점색)에서
 // 셋(그 둘과 새 벤치 그림·정점색. 소품은 지금처럼 구석 어둠 정점색을 함께 굽는다)으로 바꾸고, colormap 그림은 소품에서 새 벤치 재질이 아닌 첫 그림으로 찾는다.
 // 풍차 탑(colormap 하나)과 "그려지는 메시는 모두 한 묶음의 삼각형만 갖는다"는 그대로다.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(생울타리·울타리·풍차: 마을 모델 안 묶음, 날개 돌기)로 qa가 고쳤다
+// (115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md). 115는 마을 모델에서 생울타리(hedges)·울타리(fences)·풍차(windmill, windmill-rotor)를 빼고,
+// 앱 코드에서 풍차를 뺀다(명세 3·4). 풍차·생울타리·울타리 말고 다른 것의 기대는 그대로다:
+// - 그린 장면에서 마을 모델 뿌리를 "windmill-rotor가 든 것" 대신 "소품 묶음(props)이 든 것"으로 찾는다(진짜 모델·합성 모델 모두 props가 있다).
+// - M3: 풍차 탑(windmill)의 그려지는 메시 기대를 뺐다. 소품 셋은 그대로다.
+// - M4: 합성 모델에서 풍차 탑·날개 묶음을 떼고(앱이 풍차 묶음을 따로 다루지 않게 되어도 나머지 합치기 규칙만 보도록) 풍차 탑 2 → 1, 날개 따로의 기대를 뺐다.
+//   소품 7 → 5, 유리·불빛 판·옛 길 조각, 삼각형 같음, 누르기는 그대로다.
+// - K1: 소품·풍차 탑 → 소품. K3: 견주는 묶음에서 생울타리·울타리·풍차 날개를 빼고 날개 돌기를 뺐다. 건물·유리·불빛 판·옛 길·나무 틀·나무·유리 재질은 그대로다.
+// - K4: "풍차 날개 메시 말고 모두 얼린다" → 마을 모델에 풍차 날개 묶음이 없고 모두 얼린다(바뀔 동작). 소품의 세계 행렬은 그대로 본다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -147,7 +156,8 @@ async function draw(scene: THREE.Object3D, season: Season = "summer", reduceMoti
   const roots = view.container
     .queryAll((instance: TestInstance) => instance.type === "primitive")
     .map((p) => (p.props as { object: THREE.Object3D }).object);
-  const models = roots.filter((r) => r.getObjectByName("windmill-rotor") !== undefined);
+  // 115: 마을 모델 뿌리 = 소품 묶음(props)이 든 것(풍차 날개가 빠진다)
+  const models = roots.filter((r) => r.getObjectByName("props") !== undefined);
   expect(models.length).toBe(1);
   await frames(2);
   return { roots, model: models[0], pick, light, sim, source: scene };
@@ -290,7 +300,7 @@ describe("[spec] 112 ③ 바뀔 동작: 계절 흩뿌림은 계절마다 인스�
 // ---------- 바뀔 동작: 마을 모델의 재질 합치기 ----------
 
 describe("[spec] 112 ③ 바뀔 동작: 마을 모델은 묶음 안에서 같은 재질끼리 메시 하나로 합친다(명세 바뀌는 동작 2)", () => {
-  it("M3 진짜 마을 모델(colormap 그림 한 장을 함께 씀): 소품(props)은 그려지는 메시 셋(colormap 그림·정점색, 그림 없음·정점색 = 물, 114 새 벤치 그림·정점색)이고 풍차 탑(windmill)은 하나(colormap 그림·정점색)다. 그려지는 메시는 모두 한 묶음의 삼각형만 갖는다", async () => {
+  it("M3 진짜 마을 모델(colormap 그림 한 장을 함께 씀): 소품(props)은 그려지는 메시 셋(colormap 그림·정점색, 그림 없음·정점색 = 물, 114 새 벤치 그림·정점색)이다(115: 풍차 탑 기대는 뺐다). 그려지는 메시는 모두 한 묶음의 삼각형만 갖는다", async () => {
     const scene = sceneFromGlbFull(nowVillageGlb());
     const colormap = colormapOf(scene);
     const benchMap = benchMapOf(scene);
@@ -300,14 +310,16 @@ describe("[spec] 112 ③ 바뀔 동작: 마을 모델은 묶음 안에서 같은
     const { groups, strange } = byLabel(modelMeshes(drawn), bank);
     expect(strange).toEqual([]);
     const classes = (label: string) => (groups.get(label) ?? []).map(drawnClass).sort();
-    expect({ props: classes("props"), windmill: classes("windmill") }).toEqual({
-      props: [classOf(colormap, true), classOf(null, true), classOf(benchMap, true)].sort(),
-      windmill: [classOf(colormap, true)]
+    expect({ props: classes("props") }).toEqual({
+      props: [classOf(colormap, true), classOf(null, true), classOf(benchMap, true)].sort()
     });
   });
 
-  it("M4 같은 재질의 정의(합성 모델): 같은 그림 원본(다른 THREE.Texture라도) 또는 둘 다 그림 없음이고 정점색 유무가 같으면 한 메시로 합친다(소품 7 → 5, 풍차 탑 2 → 1). 풍차 날개는 따로이고, 유리 둘·불빛 판 둘·옛 길 조각 둘은 합치지 않으며, 합친 메시의 삼각형(세계 자리·법선·그림 좌표·정점색·재질 종류)은 합치기 전과 같다", async () => {
-    const { scene, propsClasses, windmillClasses } = syntheticVillage112();
+  it("M4 같은 재질의 정의(합성 모델): 같은 그림 원본(다른 THREE.Texture라도) 또는 둘 다 그림 없음이고 정점색 유무가 같으면 한 메시로 합친다(소품 7 → 5). 유리 둘·불빛 판 둘·옛 길 조각 둘은 합치지 않으며, 합친 메시의 삼각형(세계 자리·법선·그림 좌표·정점색·재질 종류)은 합치기 전과 같다(115: 합성 모델의 풍차 탑·날개를 뗐다)", async () => {
+    const { scene, propsClasses } = syntheticVillage112();
+    // 115: 풍차 탑·날개 묶음을 뗀다(115가 마을 모델과 앱 코드에서 풍차를 뺀다)
+    for (const name of ["windmill", "windmill-rotor"]) scene.getObjectByName(name)?.removeFromParent();
+    expect(["windmill", "windmill-rotor"].map((name) => scene.getObjectByName(name))).toEqual([undefined, undefined]);
     const expected = sourceTriangles(scene, { glass: GLASS_MATERIAL });
     const bank = new TriBank(expected);
     const drawn = await draw(scene, "summer");
@@ -320,16 +332,14 @@ describe("[spec] 112 ③ 바뀔 동작: 마을 모델은 묶음 안에서 같은
     const g = shown.groups;
     expect({
       props: (g.get("props") ?? []).map(drawnClass).sort(),
-      windmill: (g.get("windmill") ?? []).map(drawnClass).sort(),
-      rotor: (g.get("windmill-rotor") ?? []).length,
       body: (g.get("bld-home") ?? []).length,
       glass: (g.get("bld-home:glass") ?? []).length,
       glow: (g.get("glow-lamp-0") ?? []).length,
       pathsDrawn: (g.get("paths") ?? []).length,
       pathsInScene: (every.groups.get("paths") ?? []).length
-    }).toEqual({ props: propsClasses, windmill: windmillClasses, rotor: 1, body: 1, glass: 2, glow: 2, pathsDrawn: 0, pathsInScene: 2 });
-    for (const label of ["props", "windmill", "windmill-rotor", "bld-home", "bld-home:glass", "glow-lamp-0"]) {
-      const mode = label === "props" || label === "windmill" ? "full+cls" : "full";
+    }).toEqual({ props: propsClasses, body: 1, glass: 2, glow: 2, pathsDrawn: 0, pathsInScene: 2 });
+    for (const label of ["props", "bld-home", "bld-home:glass", "glow-lamp-0"]) {
+      const mode = label === "props" ? "full+cls" : "full";
       const want = expected.filter((t) => t.label === label);
       const got = compareTriangles(want, drawnTris(g.get(label) ?? [], label), mode);
       expect({ label, missing: got.missing, extra: got.extra, examples: got.examples }).toEqual({ label, missing: 0, extra: 0, examples: [] });
@@ -343,14 +353,14 @@ describe("[spec] 112 ③ 바뀔 동작: 마을 모델은 묶음 안에서 같은
 // ---------- 그대로 둘 동작 ----------
 
 describe("[spec] 112 ③ 그대로 둘 동작: 진짜 마을 모델의 모양·누르기·얼리기(명세 바뀌는 동작 2의 '모양은 같다'·'누르기', 그대로여야 할 동작)", () => {
-  it("K1 소품·풍차 탑의 그려지는 메시들을 모은 삼각형(세계 자리·법선·그림 좌표·정점색·재질 종류)이 합치기 전 메시들을 모은 것과 같다", async () => {
+  it("K1 소품의 그려지는 메시들을 모은 삼각형(세계 자리·법선·그림 좌표·정점색·재질 종류)이 합치기 전 메시들을 모은 것과 같다(115: 풍차 탑은 뺐다)", async () => {
     const scene = sceneFromGlbFull(nowVillageGlb());
     const expected = sourceTriangles(scene, { glass: GLASS_MATERIAL });
     const bank = new TriBank(expected);
     const drawn = await draw(scene, "summer");
     const { groups, strange } = byLabel(modelMeshes(drawn), bank);
     expect(strange).toEqual([]);
-    for (const label of ["props", "windmill"]) {
+    for (const label of ["props"]) {
       const want = expected.filter((t) => t.label === label);
       expect(want.length).toBeGreaterThan(0);
       const got = compareTriangles(want, drawnTris(groups.get(label) ?? [], label), "full+cls");
@@ -426,7 +436,7 @@ describe("[spec] 112 ③ 그대로 둘 동작: 진짜 마을 모델의 모양·�
     expect(wrong.slice(0, 10)).toEqual([]);
   });
 
-  it("K3 그 밖의 마을 모델: 건물(유리 포함)·생울타리·울타리·풍차 날개의 그려지는 메시 수와 삼각형이 합치기 전과 같고, 풍차 날개는 따로 돌며, 불빛 판은 밤에만 그대로 그려지고, 옛 길 조각과 나무 틀은 그려지지 않으며, 나무는 새 나무 모델의 종류·단계·부품마다 인스턴스로 그려지고(113에서 고침), 유리는 반투명 재질이며 누르기 대상이 아니다", async () => {
+  it("K3 그 밖의 마을 모델: 건물(유리 포함)의 그려지는 메시 수와 삼각형이 합치기 전과 같고(115: 생울타리·울타리·풍차 날개는 뺐다), 불빛 판은 밤에만 그대로 그려지고, 옛 길 조각과 나무 틀은 그려지지 않으며, 나무는 새 나무 모델의 종류·단계·부품마다 인스턴스로 그려지고(113에서 고침), 유리는 반투명 재질이며 누르기 대상이 아니다", async () => {
     const scene = sceneFromGlbFull(nowVillageGlb());
     const expected = sourceTriangles(scene, { glass: GLASS_MATERIAL });
     const bank = new TriBank(expected);
@@ -445,8 +455,9 @@ describe("[spec] 112 ③ 그대로 둘 동작: 진짜 마을 모델의 모양·�
     const drawn = await draw(scene, "summer", true);
     const day = byLabel(modelMeshes(drawn), bank);
     expect(day.strange).toEqual([]);
-    const kept = [...sourceCount.keys()].filter((l) => l.startsWith("bld-") || l === "hedges" || l === "fences" || l === "windmill-rotor").sort();
-    expect(kept).toEqual(expect.arrayContaining(["bld-clothingShop", "bld-clothingShop:glass", "bld-furnitureShop", "bld-furnitureShop:glass", "bld-home", "fences", "hedges", "windmill-rotor"]));
+    // 115: 생울타리·울타리·풍차 날개는 견주는 묶음에서 뺀다
+    const kept = [...sourceCount.keys()].filter((l) => l.startsWith("bld-")).sort();
+    expect(kept).toEqual(expect.arrayContaining(["bld-clothingShop", "bld-clothingShop:glass", "bld-furnitureShop", "bld-furnitureShop:glass", "bld-home"]));
     for (const label of kept) {
       const meshes = day.groups.get(label) ?? [];
       const got = compareTriangles(expected.filter((t) => t.label === label), drawnTris(meshes, label), "full");
@@ -475,34 +486,22 @@ describe("[spec] 112 ③ 그대로 둘 동작: 진짜 마을 모델의 모양·�
       const got = compareTriangles(expected.filter((t) => t.label === label), drawnTris(meshes, label), "full");
       expect({ label, meshes: meshes.length, missing: got.missing, extra: got.extra }).toEqual({ label, meshes: sourceCount.get(label), missing: 0, extra: 0 });
     }
-    // 풍차 날개: 동작 줄이기가 아니면 프레임마다 delta × 2π / 14만큼 돈다(탑과 따로)
-    const rotor = (night.groups.get("windmill-rotor") ?? [])[0];
-    expect(rotor).toBeDefined();
-    drawn.sim.reduceMotion = false;
-    const tower = night.groups.get("windmill") ?? [];
-    expect(tower.length).toBeGreaterThan(0);
-    const before = rotor.rotation.z;
-    const towerBefore = tower.map((m) => m.matrixWorld.clone());
-    await frames(1);
-    expect(rotor.rotation.z - before).toBeCloseTo((-0.1 * Math.PI * 2) / 14, 9);
-    drawn.model.updateMatrixWorld(true);
-    expect(tower.map((m, i) => m.matrixWorld.equals(towerBefore[i]))).toEqual(tower.map(() => true));
+    // 115: 풍차 날개 돌기는 뺐다(115가 풍차를 뺀다)
   });
 
-  it("K4 위치 행렬 얼리기(112-② 그대로, 합친 메시도 얼린다): 첫 프레임 뒤 마을 모델 뿌리 아래 모든 물체는 풍차 날개 메시 말고 matrixAutoUpdate가 꺼져 있고, 소품·풍차 탑의 그려지는 메시의 세계 행렬이 자리·방향·크기로 계산한 값과 같다", async () => {
+  it("K4 위치 행렬 얼리기(112-② 그대로, 합친 메시도 얼린다. 115에서 고침): 마을 모델에 풍차 날개 묶음(windmill-rotor)이 없고, 첫 프레임 뒤 마을 모델 뿌리 아래 모든 물체는 matrixAutoUpdate가 꺼져 있으며, 소품의 그려지는 메시의 세계 행렬이 자리·방향·크기로 계산한 값과 같다", async () => {
     const scene = sceneFromGlbFull(nowVillageGlb());
     const bank = new TriBank(sourceTriangles(scene, { glass: GLASS_MATERIAL }));
     const drawn = await draw(scene, "summer");
     const { groups } = byLabel(modelMeshes(drawn), bank);
-    const rotor = (groups.get("windmill-rotor") ?? [])[0];
-    expect(rotor).toBeDefined();
+    // 115: 풍차 날개가 없으니 날개 메시를 빼지 않고 모두 얼린다
+    expect({ rotor: drawn.model.getObjectByName("windmill-rotor") !== undefined }).toEqual({ rotor: false });
     const thawed: string[] = [];
     drawn.model.traverse((o) => {
-      if (o !== rotor && o.matrixAutoUpdate) thawed.push(o.name || o.type);
+      if (o.matrixAutoUpdate) thawed.push(o.name || o.type);
     });
     expect(thawed).toEqual([]);
-    expect(rotor.matrixAutoUpdate).toBe(true);
-    const merged = [...(groups.get("props") ?? []), ...(groups.get("windmill") ?? [])];
+    const merged = [...(groups.get("props") ?? [])];
     expect(merged.length).toBeGreaterThan(0);
     for (const m of merged) {
       const want = new THREE.Matrix4();

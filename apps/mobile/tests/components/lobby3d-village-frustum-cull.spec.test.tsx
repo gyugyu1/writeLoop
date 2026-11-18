@@ -36,6 +36,12 @@
 // - K3: 흩뿌림을 가려낼 때 나무 메시도 뺀다(나무 틀 도형은 마을 모델 도형이라 빠졌으나 새 나무 도형은 아니다).
 // - K5: "계절이 바뀌면 잎 메시의 instanceColor version이 늘고 새 계절 색" 대신 "계절이 바뀌어도 잎 색은 기준 그대로"(113 바뀌는 동작 5)만 본다.
 // 장식·흩뿌림에 대한 단언과 입력은 그대로다.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(마을 나무 수와 자리, 사각형 가장자리 막힌 칸)로 qa가 K1·S2를 고쳤다(115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md):
+// - K1: 장식만으로 잰 sha256을 새 값으로 바꿨다. 115는 원 밖 칸을 막아 장식 자리가 따라 바뀐다(명세 "그대로여야 할 동작": 장식은 막힌 칸을 피하고, 그 때문에
+//   장식 자리가 바뀌는 것은 허용). 새 값은 115 기준 커밋 de49aef의 장식 자리 계산에 115의 막힌 칸만 넣어 잰 값이다. 메시 수·블록 수는 그대로다.
+// - S2: "옮김(반대쪽)" 카메라를 FAR_SIDE(60, 10) 대신 마을 오른쪽 바깥 둘레 숲을 보는 S2_FAR_SIDE로 바꿨다. 115에서 FAR_SIDE 둘레의 마을 나무가
+//   빠져(원 밖) 그 자리에서 시야각 14로 좁힌 뒤 가로세로비를 바꿔도 분명히 드는 인스턴스 수가 그대로라, "바꾼 것이 실제로 시야를 바꾸는지" 전제가 서지 않는다.
+//   둘레 숲은 ①에서 그대로라 S2_FAR_SIDE는 115 전·뒤 모두 전제가 선다. 단언(바꾼 바로 그 프레임 뒤 새 시야를 따른다)은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -339,6 +345,8 @@ const cameraAtStart = () => villageCamera(VILLAGE_START);
 const CORNER = { x: 6, z: 52 };
 /** 마을 오른쪽 뒤를 보는 카메라. */
 const FAR_SIDE = { x: 60, z: 10 };
+/** 115: S2의 "옮김(반대쪽)" 카메라. 마을 오른쪽 바깥 둘레 숲을 본다. */
+const S2_FAR_SIDE = { x: 74, z: 20 };
 /** 장식이 모인 곳을 보는 카메라(첫 장식 자리를 본다). */
 const decorLook = () => {
   const d = decorModule().villageDecorSpots()[0];
@@ -384,7 +392,7 @@ describe("[spec] 111 바뀔 동작: 나무·꽃풀 장식은 카메라 시야에
     await frames(2, { camera });
     const steps: [string, () => void][] = [
       ["옮김(구석)", () => aimCamera(camera, CORNER)],
-      ["옮김(반대쪽)", () => aimCamera(camera, FAR_SIDE)],
+      ["옮김(반대쪽)", () => aimCamera(camera, S2_FAR_SIDE)],
       [
         "투영(시야각 30 → 14)",
         () => {
@@ -683,4 +691,5 @@ describe("[spec] 111 그대로 둘 동작: 카메라가 없을 때, 메시, 겨�
 const K1_TREE_MESHES = 12;
 const K1_DECOR_MESHES = 6;
 const K1_LINES = 24;
-const K1_DIGEST = "35d966b6997baa368dc7dd2b97335b57fafb92b56f3c5e5474d9b23adde2435f";
+// 115 전 값 "35d966b6997baa368dc7dd2b97335b57fafb92b56f3c5e5474d9b23adde2435f". 115: 원 밖 칸이 막혀 장식 자리가 따라 바뀐 값(머리말)
+const K1_DIGEST = "5c9d0f82a9a1a94f8b22649f4cc672bc39b2e67cb97edb6bbe9a491df353c701";

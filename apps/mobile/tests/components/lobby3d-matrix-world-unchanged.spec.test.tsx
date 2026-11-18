@@ -24,6 +24,12 @@
 //   띄운 가구는 바닥 가구면 자리 y + 0.6 + sin(초 / 1.5 × 2π) × 0.06.
 //
 // 그대로 둘 동작(리팩터링이라 모두 지금 통과해야 한다): K1~K9.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(풍차 날개 돌기)로 qa가 K4·K5·K9를 고쳤다(115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md).
+// 115는 마을 모델과 앱 코드에서 풍차(windmill, windmill-rotor)를 빼고 "앱은 풍차 날개가 없어도 돈다"(명세 3·4). 풍차 말고 다른 것의 기대는 그대로다:
+// - K4: "풍차 날개가 프레임마다 돈다" → "그린 장면에 풍차 날개 묶음(windmill-rotor)이 없고, 프레임이 지나도 그려지는 물체의 세계 행렬이 지금과 같다"(바뀔 동작).
+// - K5: 동작 줄이기에서 날개가 멈추는지는 뺐다. 동작 줄이기로 여러 프레임 지나도 그려지는 물체의 세계 행렬이 지금과 같은지는 그대로 본다.
+// - K9: 다시 들어온 뒤 날개가 도는지는 뺐다. 그려지는 물체가 지금과 같고 라룹이·그림자가 따르는지는 그대로 본다.
+// - 마을에서 "적어도 50개 넘는 물체를 본다"(expectWorldMatricesAsNow의 최소 수)를 빠지는 묶음의 물체 8개만큼 줄여 42로 했다(VILLAGE_MIN_CHECKED).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, render } from "@testing-library/react-native";
 import { useState } from "react";
@@ -479,6 +485,12 @@ function mismatches(area: LobbyArea): { wrong: string[]; checked: number } {
   return { wrong, checked };
 }
 
+/**
+ * 마을에서 적어도 이만큼 넘는 물체를 봐야 한다(그려지는 물체가 거의 없는데 통과하지 않게). 115 전에는 50이었다.
+ * 115는 마을 모델에서 생울타리·울타리·풍차·풍차 날개 묶음(뿌리 넷과 그 아래 합친 메시 넷, 물체 8개)을 빼므로 그만큼 줄였다.
+ */
+const VILLAGE_MIN_CHECKED = 50 - 8;
+
 function expectWorldMatricesAsNow(area: LobbyArea, minChecked: number) {
   const { wrong, checked } = mismatches(area);
   expect(wrong).toEqual([]);
@@ -518,15 +530,13 @@ function roomGroup(): THREE.Object3D {
   return room;
 }
 
-function rotorMesh(): THREE.Mesh {
-  const holder = mockThree.scene!.getObjectByName("windmill-rotor");
-  expect(holder).toBeDefined();
-  let mesh: THREE.Mesh | null = null;
-  holder!.traverse((o) => {
-    if (!mesh && o instanceof THREE.Mesh) mesh = o;
+/** 115: 그린 장면에서 풍차 묶음(windmill, windmill-rotor와 그 아래 이름)을 가진 물체 이름. */
+function windmillObjects(): string[] {
+  const out: string[] = [];
+  mockThree.scene!.traverse((o) => {
+    if (/^windmill(-|$)/.test(o.name)) out.push(o.name);
   });
-  expect(mesh).not.toBeNull();
-  return mesh!;
+  return out;
 }
 
 function furnitureObjects(key: string): THREE.Object3D[] {
@@ -579,8 +589,6 @@ function toScreen(p: THREE.Vector3): { x: number; y: number } {
   expect(at.x > 0 && at.x < width && at.y > 0 && at.y < height).toBe(true);
   return at;
 }
-
-const turnPerFrame = (DELTA * Math.PI * 2) / 14;
 
 // ---------- 방 ----------
 
@@ -655,40 +663,30 @@ describe("마을", () => {
   it("K3 마을에서 서 있다가 걸으면, 그릴 때 그려지는 모든 물체의 세계 행렬이 지금과 같고 라룹이·그림자가 sim을 따르며 방 묶음은 숨겨져 있다", async () => {
     const sim = await draw("village");
     expect(roomGroup().visible).toBe(false);
-    expectWorldMatricesAsNow("village", 50);
+    expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
     walk.vx = -1;
     walk.vz = 1.5;
     for (let i = 0; i < 8; i += 1) {
       await frames(1);
-      expectWorldMatricesAsNow("village", 50);
+      expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
       expectAt(character(), sim.x, 0, sim.z);
       expectAt(footShadow(), sim.x, 0.01, sim.z);
     }
   });
 
-  it("K4 풍차 날개가 프레임마다 delta × 2π / 14만큼 돌고, 날개 메시의 세계 행렬이 그 회전을 따른다", async () => {
+  it("K4 마을에 풍차 날개(windmill-rotor)와 풍차(windmill) 묶음이 없고(115 ① 명세 3·4), 프레임이 지나도 그려지는 물체의 세계 행렬이 지금과 같다", async () => {
     await draw("village");
-    const rotor = rotorMesh();
-    const start = rotor.rotation.z;
-    let previous = rotor.matrixWorld.clone();
+    expect(windmillObjects()).toEqual([]);
     for (let i = 1; i <= 6; i += 1) {
       await frames(1);
-      expect(rotor.rotation.z).toBeCloseTo(start - turnPerFrame * i, 9);
-      expectWorldMatricesAsNow("village", 50);
-      expect(rotor.matrixWorld.equals(previous)).toBe(false);
-      previous = rotor.matrixWorld.clone();
+      expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
     }
   });
 
-  it("K5 동작 줄이기면 풍차 날개가 멈추고 날개 메시의 세계 행렬도 그대로다", async () => {
+  it("K5 동작 줄이기여도 여러 프레임 뒤 그려지는 물체의 세계 행렬이 지금과 같다(115: 풍차 날개 멈춤은 뺐다)", async () => {
     await draw("village", { reduceMotion: true });
-    const rotor = rotorMesh();
-    const start = rotor.rotation.z;
-    const before = rotor.matrixWorld.clone();
     await frames(6);
-    expect(rotor.rotation.z).toBe(start);
-    expect(rotor.matrixWorld.equals(before)).toBe(true);
-    expectWorldMatricesAsNow("village", 50);
+    expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
   });
 
   it("K6 마을에서 나중에 보이게 되는 물체(밤 불빛, 다른 계절 흩뿌림, 시야에 새로 든 나무)도 보이는 프레임에 세계 행렬이 지금과 같다", async () => {
@@ -700,7 +698,7 @@ describe("마을", () => {
     });
     await flush();
     await frames(35);
-    expectWorldMatricesAsNow("village", 50);
+    expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
     let fresh = [...shownSet()].filter((o) => !before.has(o));
     expect(fresh.some((o) => /glow/.test(label(o)))).toBe(true);
     // 가을: 그 계절 흩뿌림이 보인다
@@ -710,7 +708,7 @@ describe("마을", () => {
     });
     await flush();
     await frames(2);
-    expectWorldMatricesAsNow("village", 50);
+    expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
     fresh = [...shownSet()].filter((o) => !before.has(o));
     expect(fresh.length).toBeGreaterThan(0);
     // 마을 끝 쪽으로 걸어가면 시야에 새 나무가 든다
@@ -720,7 +718,7 @@ describe("마을", () => {
     sim.x = 1;
     sim.z = 1;
     await frames(30);
-    expectWorldMatricesAsNow("village", 50);
+    expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
     fresh = [...shownSet()].filter((o) => !before.has(o));
     expect(fresh.some((o) => o instanceof THREE.InstancedMesh)).toBe(true);
   });
@@ -728,7 +726,7 @@ describe("마을", () => {
   it("K7 마을 건물을 누르면 그 건물 위의 자리를 누른 곳으로 본다(누르기 판정이 그릴 때의 세계 행렬과 같은 자리를 쓴다)", async () => {
     await draw("village");
     await frames(2);
-    expectWorldMatricesAsNow("village", 50);
+    expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
     const building = mockThree.scene!.getObjectByName("bld-home-mesh") ?? mockThree.scene!.getObjectByName("bld-home");
     expect(building).toBeDefined();
     const box = new THREE.Box3();
@@ -774,7 +772,7 @@ describe("방과 마을을 오갈 때", () => {
     expectAt(footShadow(), sim.x, 0.01, sim.z);
   });
 
-  it("K9 마을을 나갔다가 다시 들어와도(마을을 다시 지을 때) 그려지는 물체가 지금과 같고, 풍차 날개가 돌며 라룹이가 따른다", async () => {
+  it("K9 마을을 나갔다가 다시 들어와도(마을을 다시 지을 때) 그려지는 물체가 지금과 같고, 라룹이가 따른다(115: 풍차 날개 돌기는 뺐다)", async () => {
     const sim = await draw("village");
     await frames(3);
     await goTo(sim, "room");
@@ -782,17 +780,12 @@ describe("방과 마을을 오갈 때", () => {
     expectWorldMatricesAsNow("room", 70);
     await goTo(sim, "village");
     await frames(1);
-    expectWorldMatricesAsNow("village", 50);
-    const rotor = rotorMesh();
-    const start = rotor.rotation.z;
+    expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
     walk.vx = 1;
     walk.vz = 0.5;
     for (let i = 1; i <= 4; i += 1) {
-      const previous = rotor.matrixWorld.clone();
       await frames(1);
-      expect(rotor.rotation.z).toBeCloseTo(start - turnPerFrame * i, 9);
-      expect(rotor.matrixWorld.equals(previous)).toBe(false);
-      expectWorldMatricesAsNow("village", 50);
+      expectWorldMatricesAsNow("village", VILLAGE_MIN_CHECKED);
       expectAt(character(), sim.x, 0, sim.z);
       expectAt(footShadow(), sim.x, 0.01, sim.z);
     }

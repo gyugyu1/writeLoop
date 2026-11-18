@@ -14,12 +14,16 @@
 // - K9: 마을 모델 파일이 바이트까지 같다 → 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths) 밖 묶음의 메시가 기준 커밋과 같다(098 K5와 같은 방법).
 // 작업 114(마을 벤치 모델) 명세의 "고칠 기존 테스트"(마을 모델 안 벤치 모양)로 qa가 K9를 고쳤다(114 qa 보고 02-qa-tests.md):
 // 소품 묶음에서 벤치 조각(점이 모두 벤치 둘레 상자 안인 프리미티브, tests/__fixtures__/village-bench-114.ts)만 빼고 견준다. 다른 묶음은 그대로 본다.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(마을 모델 묶음, 바위)로 qa가 K9를 고쳤다(115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md):
+// 빠지는 묶음(생울타리·울타리·풍차·풍차 날개)을 떼고, 소품 묶음에서 빠지는 바위 다섯의 삼각형을 뺀 뒤 견준다
+// (tests/__fixtures__/village-boundary-115.ts의 withoutBoundaryGlb115). 그 밖의 묶음은 그대로 본다.
 import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";
 import { imageSize, parseGlb } from "../__fixtures__/village-glb-098";
 import { VILLAGE_GLB_PATH_106, changedBy106, describeGroups } from "../__fixtures__/village-shops-106";
 import { withoutBenchPrimitives } from "../__fixtures__/village-bench-114";
+import { withoutBoundaryGlb115 } from "../__fixtures__/village-boundary-115";
 
 const MOBILE = join(__dirname, "..", "..");
 const REPO = join(MOBILE, "..", "..");
@@ -90,9 +94,9 @@ describe("[spec] 101 그대로 둘 동작: 앱 크기와 마을 모델 파일", 
     const base = parseGlb(execFileSync("git", ["show", `${BASE}:${path}`], { cwd: REPO, maxBuffer: 64 * 1024 * 1024 }));
     const now = parseGlb(readFileSync(join(REPO, path)));
     const keep = (name: string) => !changedBy106(name);
-    // 114: 소품 묶음의 벤치 조각만 빼고 견준다
-    const baseMeshes = describeGroups(withoutBenchPrimitives(base), keep);
+    // 114: 소품 묶음의 벤치 조각만 빼고 견준다. 115: 빠지는 묶음과 소품의 빠지는 바위 삼각형도 뺀다
+    const baseMeshes = describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(base)), keep);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect({ path: relative(REPO, join(REPO, path)).replace(/\\/g, "/"), meshes: describeGroups(withoutBenchPrimitives(now), keep) }).toEqual({ path, meshes: baseMeshes });
+    expect({ path: relative(REPO, join(REPO, path)).replace(/\\/g, "/"), meshes: describeGroups(withoutBenchPrimitives(withoutBoundaryGlb115(now)), keep) }).toEqual({ path, meshes: baseMeshes });
   });
 });

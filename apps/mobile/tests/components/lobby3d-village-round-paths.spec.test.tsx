@@ -37,6 +37,9 @@
 //
 // 작업 106(마을 가게 넣기) 바뀌는 동작 5(가게 유리는 누르기 대상이 아니다)로 qa가 K2를 고쳤다(106 qa 보고 02-qa-tests.md): 누르기 판정 대상으로 받는 건물 메시에서
 // 모델의 유리 재질(이름이 glass로 시작)을 쓰는 메시는 뺀다. 나머지 단언(건물·소품 메시뿐이고 그 밖의 물체는 그 아래에도 없다)은 그대로다.
+// 작업 115 ①(마을 경계를 원으로) 명세의 "고칠 기존 테스트"(생울타리)로 qa가 K3을 고쳤다(115 ① qa 보고 02-경계와-마을-모델/02-qa-tests.md):
+// 115는 마을 모델에서 생울타리(hedges)를 뺀다(명세 4). 그래서 K3에서 생울타리 계절 색을 보는 부분을 뺐다. 풀밭 판의 계절 색은 그대로 본다.
+// K1(마을 모델의 다른 묶음이 그대로 그려진다)은 모델에 있는 묶음을 돌며 보므로 생울타리·울타리·풍차가 빠져도 그대로 둔다.
 //
 // 작업 112 ③ 물체 합치기(private 작업 폴더 112-2026-11-18-마을-그리기-JS-줄이기/04-물체-합치기/01-main-spec.md)의 "고칠 기존 테스트"로 qa가 K1·K2를 고쳤다:
 // 112 ③은 마을 모델의 한 묶음 안에서 앱이 바꿔 끼우는 재질이 같은 메시(소품·풍차 탑의 primitive들)를 앱이 불러올 때 하나로 합친다(모양은 그대로).
@@ -625,9 +628,8 @@ describe("[spec] 099 그대로 둘 동작: 길 말고는 마을 그리기가 같
     expect({ missing: got.missing, extra: got.extra, examples: got.examples }).toEqual({ missing: 0, extra: 0, examples: [] });
   });
 
-  it("K3 풀밭과 생울타리의 계절 색(그대로): 계절마다 풀밭 판은 SEASON_COLORS의 ground, 생울타리는 bushes[0]이다", async () => {
+  it("K3 풀밭의 계절 색(그대로): 계절마다 풀밭 판은 SEASON_COLORS의 ground다(115: 생울타리는 마을 모델에서 빠져 뺐다)", async () => {
     const drawn = await draw("summer");
-    const hedges = sourceGeometries(drawn.source).byGroup.get("hedges")!;
     for (const season of ["summer", "autumn", "winter", "spring"] as Season[]) {
       if (season !== "summer") await setSeason(drawn, season);
       const objects = allObjects(drawn.roots);
@@ -642,14 +644,6 @@ describe("[spec] 099 그대로 둘 동작: 길 말고는 마을 그리기가 같
         season,
         ground: new THREE.Color(SEASON_COLORS[season].ground).getHex()
       });
-      const hedgeMeshes = objects.filter((o): o is THREE.Mesh => o instanceof THREE.Mesh && hedges.has(o.geometry));
-      expect(hedgeMeshes.length).toBeGreaterThan(0);
-      for (const m of hedgeMeshes) {
-        expect({ season, hedge: (m.material as THREE.MeshLambertMaterial).color.getHex() }).toEqual({
-          season,
-          hedge: new THREE.Color(SEASON_COLORS[season].bushes[0]).getHex()
-        });
-      }
     }
   });
 });

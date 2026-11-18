@@ -12,6 +12,12 @@
 // - "나무 가까이" = 마을 나무 가운데에서 0.6~1.4칸. "생울타리 가까이" = 마을 끝(뒤쪽·양옆)에서 1~2칸 안쪽 띠.
 //   이끼가 자리로 정해진다 = 나무·생울타리에서 4칸 넘게 떨어진 풀밭의 이끼 평균이 나무 둘레 평균의 절반 이하.
 // - "부드럽게 섞인다" = 이웃 픽셀 사이에서 맨땅·이끼 몫이 1칸당 0.5 넘게 바뀌지 않는다(픽셀 크기에 비례, 반올림 2/255 봐줌). 픽셀 한 변은 1칸 이하.
+// 작업 115 ②(숲과 땅 꾸밈) 명세의 "고칠 기존 테스트"(풀밭 무늬 자리 지도의 이끼)로 qa가 G6·G7을 고쳤다(115 ② qa 보고 03-숲과-땅-꾸밈/02-qa-tests.md).
+// 115 ②는 이끼를 옛 사각형 가장자리(옛 생울타리) 대신 원 경계(가운데 (29, 26), 반지름 26. 숲 가장자리) 둘레에 짙게 한다(명세 바뀌는 동작 3).
+// 마을 나무 둘레 이끼와 맨땅 규칙은 그대로다. 그래서 "생울타리 가까이"를 "원 경계 가까이"로 바꿨다:
+// - G6: "생울타리 안쪽 띠(마을 끝에서 1~2칸)" 대신 "원 경계 안쪽 1칸 띠(원 가운데에서 25~26칸)". 숲 가장자리는 원에서 바깥으로 0~2칸이라,
+//   원 경계로 재든 숲 가장자리로 재든 이끼가 닿는 원 바로 안쪽 띠를 골랐다. 나무에서 2칸·길에서 1칸 넘게, 건물 밖인 것은 그대로다.
+// - G7: "생울타리에서 4칸 넘게" 대신 "원 경계에서 4칸 넘게 안쪽(원 가운데에서 22칸 안)". 나무에서 4칸·길 칸에서 3.5칸 넘게는 그대로다.
 import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_PLACES, VILLAGE_TREES } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { freshSplatModule, rectsDistance, sampleMap, splatModule, type VillageGroundPlaceMap } from "../__fixtures__/village-splat-102";
@@ -28,8 +34,8 @@ const inVillage = (p: { x: number; z: number }) => p.x > 0 && p.x < VILLAGE.widt
 const inBuilding = (p: { x: number; z: number }) => VILLAGE_BUILDINGS.some((b) => p.x >= b.rect[0] && p.x <= b.rect[2] && p.z >= b.rect[1] && p.z <= b.rect[3]);
 const doorFronts = () => VILLAGE_BUILDINGS.map((b) => ({ id: b.id, ...VILLAGE_PLACES[b.id].faceTo }));
 const treeDistance = (p: { x: number; z: number }) => Math.min(...VILLAGE_TREES.map(([x, z]) => Math.hypot(p.x - x, p.z - z)));
-/** 마을 끝 뒤쪽(z 0)·양옆(x 0, x 끝)의 생울타리 줄(가장자리 한 칸)에서의 거리. 앞쪽(z 끝)은 나무 울타리라 넣지 않는다. */
-const hedgeDistance = (p: { x: number; z: number }) => Math.min(Math.abs(p.x - 1), Math.abs(VILLAGE.width - 1 - p.x), Math.abs(p.z - 1));
+/** 115 ②: 원 경계(가운데 (29, 26), 반지름 26)에서 안쪽으로 잰 거리(원 밖이면 음수). 115 전에는 마을 끝 뒤쪽·양옆의 생울타리 줄에서의 거리(hedgeDistance)를 썼다. */
+const circleInsideDistance = (p: { x: number; z: number }) => 26 - Math.hypot(p.x - 29, p.z - 26);
 
 /** 0.25칸 간격으로 마을 안 점들. */
 function villageGrid(step = 0.25): { x: number; z: number }[] {
@@ -158,16 +164,17 @@ describe("[spec] 102 바뀔 동작: 맨땅·이끼를 섞을 자리 지도(명�
     expect({ count: wrong.length, first: wrong.slice(0, 10) }).toEqual({ count: 0, first: [] });
   });
 
-  it("G6 나무·생울타리 가까이는 이끼: 마을 나무 가운데에서 0.6~1.4칸(길에서 1칸 넘게)과, 생울타리 안쪽 띠(마을 끝에서 1~2칸, 나무에서 2칸·길에서 1칸 넘게)의 이끼 몫 평균이 각각 0.25 이상이다", () => {
+  it("G6 나무·생울타리 가까이는 이끼(115 ②: 생울타리 대신 원 경계): 마을 나무 가운데에서 0.6~1.4칸(길에서 1칸 넘게)과, 원 경계 안쪽 1칸 띠(원 가운데에서 25~26칸, 나무에서 2칸·길에서 1칸 넘게)의 이끼 몫 평균이 각각 0.25 이상이다", () => {
     const index = shapeIndex(pathShapes());
     const awayFromPath = (p: { x: number; z: number }) => !index.inside(p) && index.distance(p) === Infinity;
     const nearTree = villageGrid().filter((p) => {
       const d = treeDistance(p);
       return inVillage(p) && d >= 0.6 && d <= 1.4 && awayFromPath(p) && !inBuilding(p);
     });
+    // 115 ②: 생울타리 안쪽 띠 대신 원 경계 안쪽 1칸 띠
     const nearHedge = villageGrid().filter((p) => {
-      const d = hedgeDistance(p);
-      return inVillage(p) && d >= 0 && d <= 1 && p.x >= 1 && p.x <= VILLAGE.width - 1 && p.z >= 1 && treeDistance(p) > 2 && awayFromPath(p) && !inBuilding(p);
+      const d = circleInsideDistance(p);
+      return inVillage(p) && d >= 0 && d <= 1 && treeDistance(p) > 2 && awayFromPath(p) && !inBuilding(p);
     });
     expect({ tree: nearTree.length > 200, hedge: nearHedge.length > 200 }).toEqual({ tree: true, hedge: true });
     const treeMoss = mean(nearTree.map((p) => sampleMap(map, 1, p.x, p.z)));
@@ -180,13 +187,14 @@ describe("[spec] 102 바뀔 동작: 맨땅·이끼를 섞을 자리 지도(명�
     });
   });
 
-  it("G7 이끼는 자리로 정한다: 나무·생울타리에서 4칸 넘게 떨어진 마을 안 풀밭(길 칸에서 3.5칸 넘게)의 이끼 몫 평균이 나무 둘레(G6) 평균의 절반 이하다", () => {
+  it("G7 이끼는 자리로 정한다(115 ②: 생울타리 대신 원 경계): 나무에서 4칸 넘게, 원 경계에서 4칸 넘게 안쪽인 마을 안 풀밭(길 칸에서 3.5칸 넘게)의 이끼 몫 평균이 나무 둘레(G6) 평균의 절반 이하다", () => {
     const index = shapeIndex(pathShapes());
     const nearTree = villageGrid().filter((p) => {
       const d = treeDistance(p);
       return inVillage(p) && d >= 0.6 && d <= 1.4 && !index.inside(p) && index.distance(p) === Infinity && !inBuilding(p);
     });
-    const far = villageGrid().filter((p) => inVillage(p) && treeDistance(p) > 4 && hedgeDistance(p) > 4 && rectsDistance(VILLAGE_PATH_RECTS, p) > 3.5 && !inBuilding(p));
+    // 115 ②: 생울타리에서 4칸 넘게 대신 원 경계에서 4칸 넘게 안쪽
+    const far = villageGrid().filter((p) => inVillage(p) && treeDistance(p) > 4 && circleInsideDistance(p) > 4 && rectsDistance(VILLAGE_PATH_RECTS, p) > 3.5 && !inBuilding(p));
     expect({ tree: nearTree.length > 200, far: far.length > 1000 }).toEqual({ tree: true, far: true });
     const treeMoss = mean(nearTree.map((p) => sampleMap(map, 1, p.x, p.z)));
     const farMoss = mean(far.map((p) => sampleMap(map, 1, p.x, p.z)));

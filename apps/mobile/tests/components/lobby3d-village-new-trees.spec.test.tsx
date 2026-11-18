@@ -34,6 +34,11 @@
 //   (02-qa-tests.md "판단이 필요한 것").
 // - N7: 마을 모델이 그려졌는지를 "windmill-rotor가 든 뿌리" 대신 "소품 묶음(props)이 든 뿌리"로 본다.
 // - N8: 그루 수와 자리 sha256을 위 계산으로 잰 새 값으로 바꿨다(마을 안 28 + 둘레 숲 287).
+// 작업 115 ②(숲과 땅 꾸밈) 명세의 "고칠 기존 테스트"(둘레 숲의 자리·그루 수·종류 수)로 qa가 N1·N2·N8을 고쳤다(115 ② qa 보고 03-숲과-땅-꾸밈/02-qa-tests.md).
+// 115 ②는 둘레 숲을 원 둘레 바깥에 약 2칸 간격으로 새로 심고(그루 수가 늘고 자리가 모두 바뀐다), 종류·단계·크기·방향·밝기 규칙과 마을 안 28그루는 그대로다.
+// - N1: 둘레 숲 그루 수 287과 견주던 것을 "둘레 숲 그루가 있다"로 바꿨다(단계·잎줄기 짝·카메라와 관계없는 단계는 그대로 본다).
+// - N2: 둘레 숲 종류를 정확한 수(A 111·B 25·C 151) 대신 113의 몫(A·C 각각 38~52%, B 5~15%)으로 새 그루 수에서 셈한 범위로 본다.
+// - N8: 마을 안 28그루의 자리(sha256, 115 ② 기준 커밋 be29bd1에서 잰 값)만 견준다. 둘레 숲의 새 자리는 115 ② qa 테스트 lobby3d-village-forest.spec.test.tsx가 본다.
 import { act, render } from "@testing-library/react-native";
 import { Suspense, type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -408,14 +413,19 @@ function treeTable(trees: Tree[]): Map<string, string> {
 // 기준 커밋 3b11555에서 잰 값(머리말): 나무 수와, 카메라 없이 처음 그린 잎(줄기) 인스턴스 자리 "x,y,z"(소수 셋째 자리)를 정렬해 줄로 이은 글의 sha256
 // 115 전 값: 마을 안 70, 둘레 숲 300, 자리 51fd2a5c…17b8, 숲 자리 a3505b7e…b0de.
 // 115: 마을 안 28(명세 3), 둘레 숲 287과 자리 sha256은 115 기준 커밋 de49aef의 나무 자리 계산에 115의 바뀜(마을 나무 28그루, 풍차 둘레 비우기 없앰)만 넣어 잰 값(머리말)
+// 115 ① 값: 둘레 숲 287, 자리 4526980f…18fa, 숲 자리 9c239afc…a842(둘레 숲 287그루를 넣은 값).
+// 115 ②: 둘레 숲을 원 둘레에 새로 심으므로(115 ② 명세 바뀌는 동작 1) 둘레 숲의 그루 수·자리는 견주지 않고, 마을 안 28그루의 자리만 견준다.
+// 마을 안 자리 sha256은 115 ② 기준 커밋 be29bd1에서 같은 방법(카메라 없이 처음 그린 마을 안 그루 자리 "x,y,z")으로 잰 값이다.
 const INTERIOR_TREES = 28;
-const FOREST_TREES = 287;
-const TREE_POSITIONS_DIGEST = "4526980ff3f991687cf0546c73a1da2b65da10f29214f080e1d6693a192918fa";
-const FOREST_POSITIONS_DIGEST = "9c239afcddaf59627a68e188a481f94052b5ee136416e1a4f76343405186a842";
+const INTERIOR_POSITIONS_DIGEST = "d0b329e8a7915d0418592dd1168839dbfedca32520504c9a4206cc742bd2ffaa";
 /** N2 마을 안의 몫(qa가 70그루일 때 정한 범위 14~32를 몫으로 적은 것. 115에서 그루 수가 바뀌어 몫으로 셈한다). */
 const INSIDE_SHARE = { lo: 14 / 70, hi: 32 / 70 };
-/** N2 둘레 숲의 종류별 그루 수: 115 기준 커밋 de49aef의 숲 자리·종류 계산에 115의 바뀜만 넣어 잰 값(머리말). 115 전 범위는 A·C 114~156, B 15~45. */
-const FOREST_KIND_COUNTS = { A: 111, B: 25, C: 151 };
+/**
+ * N2 둘레 숲의 종류별 몫: 113 qa가 300그루일 때 정한 범위(A·C 각각 114~156 = 38~52%, B 15~45 = 5~15%)를 몫으로 적은 것.
+ * 115 ①은 같은 계산으로 센 정확한 수(A 111·B 25·C 151, 287그루)와 견주고 "②에서 숲을 다시 심을 때 다시 정한다"고 했다(① 03-main-decision.md).
+ * 115 ②는 둘레 숲 그루 수가 바뀌므로 113의 몫으로 돌아가 새 그루 수의 범위를 셈한다(115 ② qa 보고 03-숲과-땅-꾸밈/02-qa-tests.md "판단이 필요한 것").
+ */
+const FOREST_SHARE = { AC: { lo: 0.38, hi: 0.52 }, B: { lo: 0.05, hi: 0.15 } };
 /** 몫 범위를 그루 수 범위로(아래는 올림, 위는 내림. 몫을 적을 때 생기는 소수 끝은 1e-9 안에서 봐준다). */
 const countRange = (total: number, share: { lo: number; hi: number }) => ({ lo: Math.ceil(total * share.lo - 1e-9), hi: Math.floor(total * share.hi + 1e-9) });
 
@@ -434,7 +444,7 @@ function sequence(seed: number): () => number {
 // ---------- 바뀔 동작 ----------
 
 describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명세 1~6)", () => {
-  it("[바뀔] N1 새 모델·단계(명세 1): 마을 나무는 새 나무 모델로 그리고 Kenney 나무 틀은 그리지 않는다. 마을 안 그루(VILLAGE_TREES 자리 70. 115: 28)는 LOD1, 둘레 숲 그루(300. 115: 287)는 LOD2이고, 자리마다 잎·줄기가 같은 종류·같은 변환으로 하나씩 있다. 카메라를 가까이·멀리 옮겨도 그루의 단계는 바뀌지 않는다", async () => {
+  it("[바뀔] N1 새 모델·단계(명세 1): 마을 나무는 새 나무 모델로 그리고 Kenney 나무 틀은 그리지 않는다. 마을 안 그루(VILLAGE_TREES 자리 70. 115: 28)는 LOD1, 둘레 숲 그루(300. 115 ①: 287. 115 ②: 수는 보지 않고 있기만)는 LOD2이고, 자리마다 잎·줄기가 같은 종류·같은 변환으로 하나씩 있다. 카메라를 가까이·멀리 옮겨도 그루의 단계는 바뀌지 않는다", async () => {
     const drawn = await draw("summer");
     const trees = needTrees(drawn);
     expect(drawnTemplateMeshes(drawn)).toEqual([]);
@@ -443,11 +453,12 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
       const mine = rows.filter((r) => r.part === part);
       const wrongLod = mine.filter((r) => (isInterior(r.x, r.z) ? r.lod !== 1 : r.lod !== 2)).map((r) => `LOD${r.lod} ${spotKey(r.x, r.z)}`);
       const perSpot = VILLAGE_TREES.map(([x, z]) => mine.filter((r) => Math.abs(r.x - x) < 1e-3 && Math.abs(r.z - z) < 1e-3).length);
-      expect({ part, wrongLod: wrongLod.slice(0, 10), spotsNotOnce: perSpot.filter((n) => n !== 1).length, forest: mine.filter((r) => !isInterior(r.x, r.z)).length }).toEqual({
+      // 115 ②: 둘레 숲 그루 수(115 ① 287)는 견주지 않고 둘레 숲 그루가 있는지만 본다(둘레 숲을 새로 심는다)
+      expect({ part, wrongLod: wrongLod.slice(0, 10), spotsNotOnce: perSpot.filter((n) => n !== 1).length, forest: mine.filter((r) => !isInterior(r.x, r.z)).length > 0 }).toEqual({
         part,
         wrongLod: [],
         spotsNotOnce: 0,
-        forest: FOREST_TREES
+        forest: true
       });
     }
     // 같은 그루의 잎과 줄기: (종류, 단계, 세계 변환)이 짝지어진다
@@ -478,7 +489,7 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     }
   });
 
-  it("[바뀔] N2 종류(명세 2): 마을 안은 A·B·C를 고르게(종류마다 14~32그루. 115: 마을 안 그루의 20%~45.7%), 둘레 숲은 A·C 위주로 B는 조금(A·C 각각 114~156그루, B 15~45그루. 115: 같은 계산으로 센 A 111·B 25·C 151) 섞는다. 다시 그려도(Math.random이 다른 값을 주어도) 그루마다 종류·단계·배율·방향·밝기가 같다", async () => {
+  it("[바뀔] N2 종류(명세 2): 마을 안은 A·B·C를 고르게(종류마다 14~32그루. 115: 마을 안 그루의 20%~45.7%), 둘레 숲은 A·C 위주로 B는 조금(A·C 각각 114~156그루, B 15~45그루. 115 ①: 같은 계산으로 센 A 111·B 25·C 151. 115 ②: 둘레 숲 그루의 A·C 각각 38~52%, B 5~15%) 섞는다. 다시 그려도(Math.random이 다른 값을 주어도) 그루마다 종류·단계·배율·방향·밝기가 같다", async () => {
     let seq = sequence(7);
     jest.spyOn(Math, "random").mockImplementation(() => seq());
     const first = await draw("summer");
@@ -490,20 +501,25 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     const insideCounts = Object.fromEntries(TREE_KINDS.map((k) => [k, count(inside, k)]));
     const forestCounts = Object.fromEntries(TREE_KINDS.map((k) => [k, count(forest, k)]));
     const between = (n: number, range: { lo: number; hi: number }) => n >= range.lo && n <= range.hi;
-    // 115: 마을 안은 정해 둔 몫으로 새 그루 수의 범위를 셈한다(70그루면 14~32 그대로). 둘레 숲은 같은 계산으로 센 종류별 수와 견준다
+    // 115: 마을 안은 정해 둔 몫으로 새 그루 수의 범위를 셈한다(70그루면 14~32 그대로).
+    // 115 ②: 둘레 숲도 113의 몫(A·C 각각 38~52%, B 5~15%)으로 새 그루 수의 범위를 셈한다(115 ① 정확한 수 A 111·B 25·C 151 대신)
     const insideRange = countRange(INTERIOR_TREES, INSIDE_SHARE);
+    const acRange = countRange(forest.length, FOREST_SHARE.AC);
+    const bRange = countRange(forest.length, FOREST_SHARE.B);
     expect({
       inside: insideCounts,
       insideTotal: inside.length,
       insideEven: TREE_KINDS.every((k) => between(insideCounts[k], insideRange)),
       forest: forestCounts,
-      forestTotal: forest.length
+      forestTotal: forest.length,
+      forestMostlyAC: between(forestCounts.A, acRange) && between(forestCounts.C, acRange) && between(forestCounts.B, bRange)
     }).toEqual({
       inside: insideCounts,
       insideTotal: INTERIOR_TREES,
       insideEven: true,
-      forest: FOREST_KIND_COUNTS,
-      forestTotal: FOREST_TREES
+      forest: forestCounts,
+      forestTotal: forest.length,
+      forestMostlyAC: true
     });
     const table1 = treeTable(trees);
     await act(async () => first.unmount());
@@ -798,7 +814,7 @@ function anyTrees(drawn: Drawn): { mesh: THREE.InstancedMesh; part: "foliage" | 
 }
 
 describe("[spec] 113 그대로 둘 동작: 나무 자리와 그루 수, 누르기", () => {
-  it("[그대로] N8 나무 자리 계산과 그루 수(그대로여야 할 동작): 카메라 없이 그린 잎과 줄기의 그루 자리가 기준 커밋과 같다(마을 안 70그루는 VILLAGE_TREES 자리, 둘레 숲 300그루는 같은 자리. 115: 마을 안 28그루, 둘레 숲 287그루의 새 자리)", async () => {
+  it("[그대로] N8 나무 자리 계산과 그루 수(그대로여야 할 동작): 카메라 없이 그린 잎과 줄기의 그루 자리가 기준 커밋과 같다(마을 안 70그루는 VILLAGE_TREES 자리, 둘레 숲 300그루는 같은 자리. 115 ①: 마을 안 28그루, 둘레 숲 287그루의 새 자리. 115 ②: 둘레 숲을 새로 심어 마을 안 28그루의 자리만 견준다)", async () => {
     const drawn = await draw("summer");
     const trees = anyTrees(drawn);
     expect(trees.length).toBeGreaterThan(0);
@@ -807,16 +823,15 @@ describe("[spec] 113 그대로 둘 동작: 나무 자리와 그루 수, 누르�
         .filter((t) => t.part === part)
         .flatMap((t) => slots(t.mesh))
         .map((i) => `${i.x.toFixed(3)},${i.world.elements[13].toFixed(3)},${i.z.toFixed(3)}`);
-      const forest = spots.filter((s) => {
+      // 115 ②: 둘레 숲 그루(마을 안 자리가 아닌 그루)는 뺀다. 둘레 숲 그루 수·자리는 115 ② 명세 바뀌는 동작 1로 바뀐다
+      const interior = spots.filter((s) => {
         const [x, , z] = s.split(",").map(Number);
-        return !isInterior(x, z);
+        return isInterior(x, z);
       });
-      expect({ part, count: spots.length, interior: spots.length - forest.length, digest: sha256([...spots].sort().join("\n")), forestDigest: sha256([...forest].sort().join("\n")) }).toEqual({
+      expect({ part, interior: interior.length, interiorDigest: sha256([...interior].sort().join("\n")) }).toEqual({
         part,
-        count: INTERIOR_TREES + FOREST_TREES,
         interior: INTERIOR_TREES,
-        digest: TREE_POSITIONS_DIGEST,
-        forestDigest: FOREST_POSITIONS_DIGEST
+        interiorDigest: INTERIOR_POSITIONS_DIGEST
       });
     }
   });

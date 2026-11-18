@@ -4,6 +4,7 @@
 #     laroopi-house=C:\WriteLoop-asset\마을-건물\라룹이-집\단계\09-나무-프레임\laroopi-house-angular-app3.glb
 #     furniture-shop=C:\WriteLoop-asset\마을-건물\가구점\단계\01-앱용-유리\furniture-shop-app.glb
 #     clothing-shop=C:\WriteLoop-asset\마을-건물\옷집\단계\02-옥상-다듬기\clothing-shop-app2.glb
+#     bench=C:\WriteLoop-asset\벤치\3d\WriteLoop_Village_Bench.glb  (벤치. 배치 파일 benches 자리마다 BENCH_SCALE배로 놓는다)
 #   배치 파일에서 'model'이 있는 건물은 부품으로 조립하지 않고 그 모델을 땅(rect)에 맞춰 놓는다.
 #   모델의 유리(재질 이름 glass)는 이름 그대로 남긴다(앱이 반투명 유리로 그린다)
 #   (Blender 5.2에서 확인. 출력은 apps/mobile/assets/models/lobby-village.glb로 복사한다)
@@ -147,6 +148,32 @@ def place(name, parent, x, z, rot=0.0, scale=S, y=0.0, uv_shift=None):
     o.scale = (scale, scale, scale) if not isinstance(scale, tuple) else scale
     o.parent = parent
     return o
+
+
+def load_model(path, name):
+    """WriteLoop 모델 glb 하나를 불러와 메시 하나로 합친 원본을 돌려준다(장면에서 숨긴다, 재질·그림은 그대로)."""
+    before = set(scene.objects)
+    bpy.ops.import_scene.gltf(filepath=path)
+    new = [o for o in scene.objects if o not in before]
+    meshes = [o for o in new if o.type == "MESH"]
+    for o in meshes:
+        o.data = o.data.copy()
+        o.data.transform(o.matrix_world)
+        o.parent = None
+        o.matrix_world = Matrix.Identity(4)
+    for o in new:
+        if o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    if len(meshes) > 1:
+        bpy.ops.object.select_all(action="DESELECT")
+        for o in meshes:
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = meshes[0]
+        bpy.ops.object.join()
+    base = meshes[0]
+    base.name = name
+    scene.collection.objects.unlink(base)
+    return base
 
 
 def group(name):
@@ -297,8 +324,21 @@ for i, (x, z) in enumerate(LAYOUT["lanterns"]):
     glow_quad(lamp, f"glow-lamp-{i}-a", x, 1.32 * LANTERN_SCALE, z + 0.001, 0.12 * LANTERN_SCALE, 0.16 * LANTERN_SCALE, "front")
 for s in LAYOUT["stalls"]:
     place("stall-red" if s["color"] == "red" else "stall-green", props, s["x"], s["z"], -90, scale=2.0)
+# 벤치: WriteLoop 벤치 모델(앉는 쪽이 모델 +Z = 앱 앞, 등받이가 뒤). rot 0이면 가로(x)로 길고 화면 쪽을 본다.
+# 모델 그림은 그대로 쓴다(Kenney 색 그림으로 바꾸지 않는다)
+if "bench" not in MODELS:
+    raise SystemExit("벤치 모델 파일이 없습니다: --model bench=<glb>")
+BENCH_SCALE = 1.3
+bench = load_model(MODELS["bench"], "src-bench")
 for bch in LAYOUT["benches"]:
-    place("stall-bench", props, bch["x"], bch["z"], bch["rot"], scale=2.4)
+    o = bench.copy()
+    o.data = bench.data.copy()
+    scene.collection.objects.link(o)
+    o.location = (bch["x"], -bch["z"], 0)
+    o.rotation_mode = "XYZ"
+    o.rotation_euler = (0, 0, math.radians(bch["rot"]))
+    o.scale = (BENCH_SCALE, BENCH_SCALE, BENCH_SCALE)
+    o.parent = props
 for x, z in LAYOUT["rocks"]:
     place("rock-large", props, x, z, 30, scale=1.2)
 

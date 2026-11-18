@@ -79,6 +79,10 @@ function propTiles(x: number, z: number, w: number, d: number): string[] {
   return rectTiles(x - w / 2, z - d / 2, x + w / 2, z + d / 2);
 }
 
+/** 벤치가 막는 넓이(칸): 길이(벤치가 길게 놓인 쪽)와 깊이. 마을 모델의 벤치(WriteLoop 벤치 원본 1.71 × 0.69를 1.3배)를 조금 넉넉히 덮는다. */
+const BENCH_LENGTH = 2.3;
+const BENCH_DEPTH = 0.9;
+
 function buildSolidTiles(): Set<string> {
   const solid = new Set<string>();
   const add = (tiles: string[]) => tiles.forEach((t) => solid.add(t));
@@ -88,9 +92,9 @@ function buildSolidTiles(): Set<string> {
   for (const b of VILLAGE_BUILDINGS) add(rectTiles(...b.rect));
   add(circleTiles(LAYOUT.fountain.x, LAYOUT.fountain.z, LAYOUT.fountain.radius));
   for (const [x, z] of LAYOUT.lanterns) add(propTiles(x, z, 0.6, 0.6));
-  // 노점(Kenney 한 칸을 2배로 놓았다: 2×2칸), 벤치(약 0.6×2.2칸, 돌려 놓으면 가로세로가 바뀐다)
+  // 노점(Kenney 한 칸을 2배로 놓았다: 2×2칸), 벤치(WriteLoop 벤치 1.3배: 길이 약 2.3 × 깊이 약 0.9칸. rot 0이면 가로로 길고, ±90이면 세로로 길다)
   for (const s of LAYOUT.stalls) add(propTiles(s.x, s.z, 2, 2));
-  for (const b of LAYOUT.benches) add(Math.abs(b.rot) === 90 ? propTiles(b.x, b.z, 0.6, 2.2) : propTiles(b.x, b.z, 2.2, 0.6));
+  for (const b of LAYOUT.benches) add(Math.abs(b.rot) === 90 ? propTiles(b.x, b.z, BENCH_DEPTH, BENCH_LENGTH) : propTiles(b.x, b.z, BENCH_LENGTH, BENCH_DEPTH));
   for (const [x, z] of LAYOUT.trees) add(propTiles(x, z, 0.8, 0.8));
   for (const [x, z] of LAYOUT.rocks) add(propTiles(x, z, 1.8, 1.8));
   return solid;

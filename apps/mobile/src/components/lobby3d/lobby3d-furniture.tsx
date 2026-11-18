@@ -271,6 +271,14 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
     built.requestShown();
     const view = built.view.current;
     if (!view) return;
+    // 창(또는 창을 담은 묶음)이 숨겨져 있으면(마을에 나가 방을 숨겼을 때) 쓰이지 않는 창밖 그림을 그리지 않는다.
+    // 다시 보이면 그 첫 프레임에 바로 그리도록 마지막으로 그린 때를 지운다
+    for (let o: THREE.Object3D | null = view.piece; o; o = o.parent) {
+      if (!o.visible) {
+        drawn.at = -Infinity;
+        return;
+      }
+    }
     const hung = viewWindow(lightLayout?.current ?? activeLobbyLayout());
     if (!hung) return;
     const mount = wallPiecePose(hung, ROOM.width);

@@ -9,6 +9,7 @@
 // 크기 증가에서 106이 키우는 마을 모델 파일(lobby-village.glb)은 뺀다. 1,100,000바이트 한도는 그대로다.
 // 작업 113(새 나무 모델 넣기) 15-main-decision.md 결정 1(사용자 2026-11-18 "3MB 받아들이고 qa가 고침"): 113이 새 나무 GLB 여섯(assets/models/trees/, 약 3MB)을
 // 넣어 앱이 그만큼 커지는 것을 사용자가 받아들였다. 그래서 크기 증가에서 나무 폴더(apps/mobile/assets/models/trees/)의 파일도 뺀다. 1,100,000바이트 한도는 그대로다.
+// 작업 122(마을 배경음악) 명세 "고칠 기존 테스트"·08-main-decision.md 2: 오디오 M4A 셋(assets/audio/)이 더해지므로 크기 증가에서 오디오 폴더의 파일도 뺀다. 한도는 그대로다.
 import { extname } from "node:path";
 import { baseAssets, newImageFiles, nowAssets } from "../__fixtures__/village-splat-102";
 import { VILLAGE_GLB_PATH_106 } from "../__fixtures__/village-shops-106";
@@ -27,9 +28,9 @@ describe("[spec] 102 바뀔 동작: 섞을 무늬 그림 자산(명세 3)", () =
 });
 
 describe("[spec] 102 그대로 둘 동작: 앱 크기", () => {
-  it("A5 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 1,100,000바이트 이하다(약 1MB 안. 106이 키우는 마을 모델 파일과 113이 넣는 나무 폴더는 뺀다)", () => {
+  it("A5 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 1,100,000바이트 이하다(약 1MB 안. 106이 키우는 마을 모델 파일과 113이 넣는 나무 폴더와 122가 넣는 오디오 폴더는 뺀다)", () => {
     const sum = (m: Map<string, number>) =>
-      [...m.entries()].filter(([path]) => path !== VILLAGE_GLB_PATH_106 && !path.startsWith("apps/mobile/assets/models/trees/")).reduce((a, [, b]) => a + b, 0);
+      [...m.entries()].filter(([path]) => path !== VILLAGE_GLB_PATH_106 && !path.startsWith("apps/mobile/assets/models/trees/") && !path.startsWith("apps/mobile/assets/audio/")).reduce((a, [, b]) => a + b, 0);
     const base = baseAssets();
     expect(base.size).toBeGreaterThan(0);
     const growth = sum(nowAssets()) - sum(base);

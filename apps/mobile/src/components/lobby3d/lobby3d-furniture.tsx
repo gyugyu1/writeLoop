@@ -334,9 +334,10 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
     return () => {
       if (outdoorRef?.current === outdoor.scene) outdoorRef.current = null;
       outdoor.dispose();
-      target.dispose();
     };
-  }, [outdoor, target, outdoorRef]);
+  }, [outdoor, outdoorRef]);
+  // 창 그림판은 가구 묶음과 함께 버린다(창밖 장면을 나무와 함께 다시 지어도 그림판은 그대로 둔다)
+  useEffect(() => () => target.dispose(), [target]);
 
   useEffect(() => {
     fallback.visible = false;

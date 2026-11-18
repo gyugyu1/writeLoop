@@ -339,14 +339,17 @@ export function createOutdoor(centerX: number, groundY: number, trees?: GLTF[]):
     bushMats.forEach((m, i) => m.color.setHex(c.bushes[i]));
     const winter = season === "winter";
     for (const o of notWinter) o.visible = !winter;
-    paintTrees();
   };
   // 심은 나무: 종류마다 잎·줄기 인스턴스 메시. 잎은 계절 그림 칸을 그리고 겨울에는 숨긴다(줄기는 눈 칸)
   let planted: { kit: TreeKit; foliage: { mesh: THREE.InstancedMesh; spots: typeof treeSpots }[]; all: THREE.InstancedMesh[] } | null = null;
-  const paintTrees = () => {
-    if (!planted || !seasonShown) return;
-    planted.kit.setSeason(seasonShown);
-    for (const { mesh } of planted.foliage) mesh.visible = seasonShown !== "winter";
+  // 나무 그림(계절 칸 옮김)은 마을 나무와 함께 쓰는 것이라, 지을 때 정한 계절(여름)로 칠하지 않고 실제 계절을 받을 때(setDaylight)만 칠한다.
+  // 마을에 있는 동안 창밖 장면을 다시 지어도 마을 나무의 계절이 바뀌지 않게 하려는 것이다(마을과 창밖은 늘 같은 계절을 따른다)
+  let treesShown: Season | null = null;
+  const paintTrees = (season: Season) => {
+    if (!planted || treesShown === season) return;
+    treesShown = season;
+    planted.kit.setSeason(season);
+    for (const { mesh } of planted.foliage) mesh.visible = season !== "winter";
   };
   const treeMatrix = new THREE.Matrix4();
   const treeTurn = new THREE.Quaternion();
@@ -412,6 +415,7 @@ export function createOutdoor(centerX: number, groundY: number, trees?: GLTF[]):
       stars.visible = ambience.stars > 0.01;
       cloudMaterial.emissive.copy(cloudNight).lerp(cloudDay, 1 - ambience.stars);
       paintSeason(season);
+      paintTrees(season);
       // 나비는 봄·여름·가을의 낮에만 난다
       const butterfliesOut = season !== "winter" && phase === "day";
       for (const b of butterflies) b.g.visible = butterfliesOut;

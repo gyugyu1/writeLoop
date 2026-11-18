@@ -639,6 +639,13 @@ class VillageGroundErrorBoundary extends Component<{ children: ReactNode }, { fa
   }
 }
 
+/** 건물 메시 하나와 그 평소(불투명) 재질, 라룹이를 가릴 때 바꿔 끼우는 반투명 재질. */
+interface BuildingPart {
+  mesh: THREE.Mesh;
+  opaque: THREE.MeshLambertMaterial;
+  fade: THREE.MeshLambertMaterial;
+}
+
 interface VillageModelProps {
   sim: LobbySim;
   daylight: DaylightState;
@@ -653,7 +660,8 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
   const built = useMemo(() => {
     // useLoader가 준 장면은 앱 전체에서 함께 쓰므로 복제해서 재질을 바꾼다
     const root = gltf.scene.clone(true);
-    const buildings = new Map<VillageBuildingId, { materials: THREE.MeshLambertMaterial[]; opacity: number }>();
+    // 건물마다: 메시와 그 평소(불투명) 재질·옅어질 때 바꿔 끼울 반투명 재질, 지금 불투명도
+    const buildings = new Map<VillageBuildingId, { parts: BuildingPart[]; opacity: number }>();
     const glows: THREE.Mesh[] = [];
     const glowMat = new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, toneMapped: false, depthWrite: false });
     // 가게 통유리: 낮에는 옅은 하늘색으로 안이 비치고, 밤에는 따뜻한 안쪽 불빛 색으로 밝아진다.
@@ -736,11 +744,13 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       if (name.startsWith("bld-")) {
         // 묶음 이름 bld-<id>(합친 메시는 bld-<id>-mesh)
         const id = /^bld-([A-Za-z]+)/.exec(name)![1] as VillageBuildingId;
-        // 라룹이를 가리면 점무늬(디더링)로 옅어진다: 처음부터 켜 두어 불투명도만 바꾼다(켜고 끄면 셰이더를 다시 컴파일해 화면이 끊긴다).
-        // 불투명도 1이면 점이 빠지지 않아 불투명과 같고, 불투명으로 그려 다른 반투명(유리)과 그리는 순서가 섞이지 않는다
-        material.alphaHash = true;
-        const entry = buildings.get(id) ?? { materials: [], opacity: 1 };
-        entry.materials.push(material);
+        // 라룹이를 가리면 같은 그림의 반투명 재질로 바꿔 끼워 옅게 한다. 재질의 transparent를 켜고 끄면 셰이더가 바뀌어
+        // 쓰지 않게 된 셰이더가 지워지고 다시 컴파일될 수 있어, 평소 재질(늘 불투명)과 반투명 재질(늘 반투명)을 따로 둔다
+        const fade = material.clone();
+        fade.transparent = true;
+        owned.push(fade);
+        const entry = buildings.get(id) ?? { parts: [], opacity: 1 };
+        entry.parts.push({ mesh: o, opaque: material, fade });
         buildings.set(id, entry);
         pick.push(o);
       } else if (name.startsWith("props")) {
@@ -793,6 +803,22 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     return { root, buildings, glows, glowMat, glasses, hedgeMats, owned, pick, leaves, rotor: rotor as THREE.Mesh | null, season: { shown: null as Season | null } };
   }, [gltf]);
 
+  // 반투명 재질은 마을을 처음 그릴 때 미리 컴파일한다(처음 옅어질 때 컴파일로 끊기지 않게). 장면의 빛으로 컴파일해야 같은 셰이더가 된다
+  const { gl, camera, scene } = useThree();
+  useEffect(() => {
+    // 테스트의 가짜 3D 환경처럼 그리개가 없거나 미리 컴파일을 못 하면 건너뛴다(처음 옅어질 때 컴파일된다)
+    if (!gl || typeof gl.compile !== "function") return;
+    const warm = new THREE.Scene();
+    for (const entry of built.buildings.values()) {
+      for (const part of entry.parts) warm.add(new THREE.Mesh(part.mesh.geometry, part.fade));
+    }
+    try {
+      gl.compile(warm, camera, scene);
+    } catch (error) {
+      console.warn("[lobby3d] 건물 반투명 재질을 미리 컴파일하지 못했습니다", error);
+    }
+  }, [built, gl, camera, scene]);
+
   useEffect(() => {
     pickTargets.current = built.pick;
     return () => {
@@ -810,7 +836,13 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       const next = entry.opacity < goal ? Math.min(goal, entry.opacity + step) : Math.max(goal, entry.opacity - step);
       if (next === entry.opacity) continue;
       entry.opacity = next;
-      for (const m of entry.materials) m.opacity = next;
+      // 옅어지는 동안은 반투명 재질, 다 돌아오면(1) 평소 재질
+      const faded = next < 1;
+      for (const part of entry.parts) {
+        part.fade.opacity = next;
+        const want = faded ? part.fade : part.opaque;
+        if (part.mesh.material !== want) part.mesh.material = want;
+      }
     }
     // 밤 불빛: 천장 조명과 같은 때(새벽·어스름·밤) 켜진다. 켜고 끌 때는 천장 조명처럼 부드럽게
     built.glowMat.opacity = 0.9 * daylight.ceiling;

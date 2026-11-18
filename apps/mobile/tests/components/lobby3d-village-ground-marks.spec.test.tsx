@@ -30,6 +30,12 @@
 // 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"와 바뀌는 동작 3(옷집 땅 안의 나무 [45.7, 19.2] 한 그루를 근처 빈 풀밭으로 옮긴다. 나무 수 그대로,
 // 그대로여야 할 동작: 옮기는 한 그루 말고 나무)으로 qa가 K8을 고쳤다(106 qa 보고 02-qa-tests.md): 옮기는 나무의 옛 자리와 새 자리에 찍힌 그루를 빼고
 // 나머지 그루의 찍은 수·자리·계절 색을 견준다. 그 값은 106 기준 커밋 c728f00에서 이 테스트로 잰 값이다(25e9cc7 뒤로 나무는 바뀌지 않았다).
+//
+// 작업 113(새 나무 모델 넣기) 명세의 "고칠 기존 테스트"(K8의 나무 sha256)로 qa가 K8을 고쳤다(113 qa 보고 02-qa-tests.md): 마을 나무는 Kenney 나무 틀 대신
+// 새 나무 모델(WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)로 그리고, 종류·배율이 바뀌며 그루마다 계절 잎 색을 입히던 것은 없앤다(113 바뀌는 동작 1·2·3·5).
+// 나무 자리 계산과 그루 수는 그대로다(113 그대로여야 할 동작). 그래서 K8은 "나무 틀 메시마다 찍은 변환·계절 색" 대신 "새 나무 모델의 잎·줄기 그루 자리(x, y, z)"를
+// 옮기는 한 그루(106)를 빼고 견준다. 그 값은 113 기준 커밋 3b11555에서 같은 방법(나무 틀의 잎·줄기 그루 자리)으로 잰 값이다.
+// 새 나무 파일은 가짜 불러오기가 앱 자산 폴더의 그 파일을 푼 모델로 준다(tests/__fixtures__/village-trees-113.ts). 장식·흩뿌림(S1~S6)의 단언·입력은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -54,6 +60,7 @@ import {
   sceneFromGlb,
   sourceGeometries
 } from "../__fixtures__/village-scene-101";
+import { allTreeFilesPresent, resetTreeLoader, treePartOf } from "../__fixtures__/village-trees-113";
 
 type FramePart = (state: unknown, delta: number) => void;
 
@@ -76,9 +83,14 @@ jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
 }));
 jest.mock("@react-three/fiber/native", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  const fake = (loader: unknown, input: unknown) =>
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    (require("../__fixtures__/village-scene-101") as typeof import("../__fixtures__/village-scene-101")).fakeUseLoader(loader, input);
+  // 113: 새 나무 파일은 그 파일을 푼 모델, 그 밖은 101의 가짜
+  const fake = (loader: unknown, input: unknown) => {
+    /* eslint-disable @typescript-eslint/no-require-imports */
+    const trees = require("../__fixtures__/village-trees-113") as typeof import("../__fixtures__/village-trees-113");
+    const scene101 = require("../__fixtures__/village-scene-101") as typeof import("../__fixtures__/village-scene-101");
+    /* eslint-enable @typescript-eslint/no-require-imports */
+    return trees.treeUseLoader(loader, input, scene101.fakeUseLoader);
+  };
   return {
     Canvas: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
     useThree: () => ({ camera: null, scene: mockScene, size: { width: 400, height: 800 }, gl: { capabilities: { getMaxAnisotropy: () => 1 } } }),
@@ -228,6 +240,7 @@ beforeEach(() => {
   mockFrames.length = 0;
   mockScene.background = null;
   resetFakeLoader();
+  resetTreeLoader();
   loaderState.village = { scene: sceneFromGlb(nowVillageGlb()) };
 });
 
@@ -350,45 +363,32 @@ describe("[spec] 101 바뀔 동작: 꽃·풀 장식(3D 모델)과 풀 자국 그
 
 // ---------- 그대로 둘 동작 ----------
 
-describe("[spec] 101 그대로 둘 동작: 나무", () => {
-  // 나무 = 마을 모델의 나무 틀 도형으로 찍은 인스턴스 메시. 메시마다 찍은 수, 찍은 자리(세계 변환, 소수 넷째 자리), 계절마다 그루별 색(16진)을 적어
-  // 그 글의 sha256을 기준 커밋 25e9cc7에서 이 테스트로 잰 값과 견준다.
-  it("K8 나무 자리와 계절에 따른 잎 색이 기준 커밋과 같다(01 그대로: 나무, 계절에 따른 나무 색. 106: 옮기는 한 그루는 옛 자리·새 자리 모두 뺀다)", async () => {
+describe("[spec] 101 그대로 둘 동작: 나무(113에서 고침)", () => {
+  // 나무 = 새 나무 모델(113)의 메시 도형으로 찍은 인스턴스 메시(tests/__fixtures__/village-trees-113.ts의 treePartOf). 잎(Tree_Foliage)과 줄기(Tree_Wood)마다
+  // 카메라 없이 그린 그루 자리(세계 변환의 옮김 x, y, z, 소수 셋째 자리)를 정렬해 줄로 이은 글의 sha256을 113 기준 커밋 3b11555에서 같은 방법으로 잰 값과 견준다.
+  it("K8 나무 자리가 기준 커밋과 같다(01 그대로: 나무. 106: 옮기는 한 그루는 옛 자리·새 자리 모두 뺀다. 113: 새 나무 모델의 잎·줄기 그루 자리로 보고 계절 잎 색은 보지 않는다)", async () => {
     const drawn = await draw("summer");
-    const templates = sourceGeometries(drawn.source).byGroup.get("tree-templates")!;
-    const trees = allObjects(drawn.roots).filter((o): o is THREE.InstancedMesh => o instanceof THREE.InstancedMesh && templates.has(o.geometry));
+    expect({ treeFilesInApp: allTreeFilesPresent() }).toEqual({ treeFilesInApp: true });
+    const trees = allObjects(drawn.roots).filter((o): o is THREE.InstancedMesh => o instanceof THREE.InstancedMesh && treePartOf(o.geometry) !== null);
     expect(trees.length).toBeGreaterThan(0);
     // 106이 옮기는 나무(옛 자리와 새 자리)에 찍힌 그루는 뺀다
     const moved = [MOVED_TREE, ...newTrees()];
-    const keptIndices = (m: THREE.InstancedMesh) =>
-      instanceWorldMatrices(m)
-        .map((w, i) => ({ w, i }))
-        .filter(({ w }) => !moved.some(([x, z]) => Math.abs(w.elements[12] - x) < 0.01 && Math.abs(w.elements[14] - z) < 0.01));
-    const lines: string[] = trees.map((m) => {
-      const kept = keptIndices(m);
-      return `${kept.length} ${kept.map(({ w }) => w.elements.map((v) => (Object.is(v, -0) ? 0 : v).toFixed(4)).join(",")).join(";")}`;
+    const rows = (["foliage", "wood"] as const).map((part) => {
+      const spots = trees
+        .filter((m) => treePartOf(m.geometry)!.part === part)
+        .flatMap((m) => instanceWorldMatrices(m))
+        .filter((w) => !moved.some(([x, z]) => Math.abs(w.elements[12] - x) < 0.01 && Math.abs(w.elements[14] - z) < 0.01))
+        .map((w) => `${w.elements[12].toFixed(3)},${w.elements[13].toFixed(3)},${w.elements[14].toFixed(3)}`)
+        .sort();
+      return { part, count: spots.length, digest: nodeCrypto.createHash("sha256").update(spots.join("\n")).digest("hex") };
     });
-    const keptByMesh = new Map(trees.map((m) => [m, new Set(keptIndices(m).map(({ i }) => i))]));
-    for (const season of ["summer", "autumn", "winter", "spring"] as Season[]) {
-      if (season !== "summer") await setSeason(drawn, season);
-      for (const m of trees) {
-        const colors: string[] = [];
-        const c = new THREE.Color();
-        for (let i = 0; i < m.count; i += 1) {
-          if (!keptByMesh.get(m)!.has(i)) continue;
-          if (m.instanceColor) {
-            m.getColorAt(i, c);
-            colors.push(c.getHexString());
-          }
-        }
-        lines.push(`${season} ${colors.join(",")}`);
-      }
-    }
-    const digest = nodeCrypto.createHash("sha256").update(lines.join("\n")).digest("hex");
-    expect({ trees: trees.length, digest }).toEqual({ trees: K8_TREES, digest: K8_DIGEST });
+    expect(rows).toEqual([
+      { part: "foliage", count: K8_TREES, digest: K8_DIGEST },
+      { part: "wood", count: K8_TREES, digest: K8_DIGEST }
+    ]);
   });
 });
 
-/** 기준 커밋 25e9cc7에서 K8로 잰 값. */
-const K8_TREES = 10;
-const K8_DIGEST = "efb5c68c2a1e5c3d08e89396912afdaf5951777a56052e599d3cee48163241ea";
+/** 113 기준 커밋 3b11555에서 잰 값(옮기는 한 그루를 뺀 그루 수와 자리 글의 sha256). */
+const K8_TREES = 369;
+const K8_DIGEST = "b05d9abc8108350c10a722ce8f36038e0f337c93a0bf2484e0fb487e3f56841c";

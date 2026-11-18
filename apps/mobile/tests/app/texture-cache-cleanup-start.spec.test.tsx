@@ -15,9 +15,13 @@
 // - 구현이 "한 번만" 같은 모듈 상태를 둘 수 있어 테스트마다 모듈을 새로 읽는다(jest.resetModules). 화면 테스트 도구도 테스트 안에서 새로 읽는다.
 /* eslint-disable @typescript-eslint/no-require-imports */
 import type { ComponentType } from "react";
+import { TREE_FILES, mockTreeAssets, treeAssetRel } from "../__fixtures__/tree-files-113";
 import { CACHE, cacheFiles, fsState, resetFs } from "../__fixtures__/texture-cache-105";
 
 // 작업 078·104 테스트와 같은, 앱이 시작될 때 읽는 모델 파일 목록(앱이 그대로 이어지는지 볼 때 쓴다)
+// 작업 113(새 나무 모델 넣기) 01-main-spec.md 불러오기 11(새 나무 GLB 6개를 앱이 시작할 때 미리 읽기에 더한다)과 "고칠 기존 테스트"(qa가 찾아 고친다):
+// 앱이 시작될 때 새 나무 GLB 여섯(assets/models 아래의 WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)도 읽는다. 이 목록에 더하고(assets/models에서의 상대 경로)
+// 그 파일을 이름 문자열로 바꾸는 가짜를 더했다(tests/__fixtures__/tree-files-113.ts. 파일이 아직 없으면 assets/models/trees/<이름>으로 가정). 단언은 그대로다.
 const MODEL_FILES = [
   "furniture/board.glb",
   "furniture/bookcase.glb",
@@ -30,8 +34,9 @@ const MODEL_FILES = [
   "lobby-village.glb",
   "village-flowers.glb",
   "wear-goggles.glb",
-  "writeloop.glb"
-];
+  "writeloop.glb",
+  ...TREE_FILES.map(treeAssetRel)
+].sort();
 
 const mockLoads: string[] = [];
 const mockThree = { camera: null as unknown, scene: null as unknown, size: { width: 400, height: 800 } };
@@ -121,6 +126,8 @@ jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
 jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 jest.mock("@/assets/models/village-flowers.glb", () => "village-flowers.glb");
+// 작업 113: 새 나무 파일(위 MODEL_FILES 머리말)
+mockTreeAssets((_name, rel) => rel);
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");
   return {

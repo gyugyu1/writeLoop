@@ -19,6 +19,7 @@
 // 테스트마다 모듈을 새로 읽어야 해서(jest.resetModules) require로 읽는다.
 /* eslint-disable @typescript-eslint/no-require-imports */
 import type { ComponentType } from "react";
+import { TREE_FILES, mockTreeAssets, treeAssetRel } from "../__fixtures__/tree-files-113";
 
 // 088 ② 03 결정 1(사용자, 2026-11-13 "qa가 새 동작에 맞게 고침"): 앱이 시작될 때 읽는 모델은 마을(lobby-village.glb)을 더한 넷이다
 // (② 02-qa-scenarios L1). 이 목록과 마을 모델 파일을 이름 문자열로 바꾸는 가짜만 더했고, 단언은 그대로다.
@@ -30,6 +31,9 @@ import type { ComponentType } from "react";
 // (assets/models/village-flowers.glb)도 미리 읽는다. 이 목록에 더하고 그 파일을 이름 문자열로 바꾸는 가짜를 더했다. 함께 미리 읽는 땅 그림 여덟은
 // GLTFLoader가 아니라 그림 불러오기(THREE.TextureLoader)로 읽으므로 이 목록에 들지 않는다. Jest에서는 r3f가 바꿔 둔 그림 불러오기가 돌지 않아
 // (기기의 그림 크기 읽기를 부른다) 끝내지 않는 가짜로 바꿨다(땅 그림 미리 읽기 자체는 tests/app/lobby-village-ground-preload.spec.test.tsx가 본다). 단언은 그대로다.
+// 작업 113(새 나무 모델 넣기) 01-main-spec.md 불러오기 11(새 나무 GLB 6개를 앱이 시작할 때 미리 읽기에 더한다)과 "고칠 기존 테스트"(qa가 찾아 고친다):
+// 앱이 시작될 때 새 나무 GLB 여섯(assets/models 아래의 WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)도 읽는다. 이 목록에 더하고(assets/models에서의 상대 경로)
+// 그 파일을 이름 문자열로 바꾸는 가짜를 더했다(tests/__fixtures__/tree-files-113.ts. 파일이 아직 없으면 assets/models/trees/<이름>으로 가정). 단언은 그대로다.
 const MODEL_FILES = [
   "furniture/board.glb",
   "furniture/bookcase.glb",
@@ -42,8 +46,9 @@ const MODEL_FILES = [
   "lobby-village.glb",
   "village-flowers.glb",
   "wear-goggles.glb",
-  "writeloop.glb"
-];
+  "writeloop.glb",
+  ...TREE_FILES.map(treeAssetRel)
+].sort();
 
 const mockLoads: string[] = [];
 const mockSession = { mode: "pending" as "pending" | "loggedOut" | "loggedIn" };
@@ -130,6 +135,8 @@ jest.mock("@/assets/models/furniture/lamp.glb", () => "furniture/lamp.glb");
 jest.mock("@/assets/models/lobby-village.glb", () => "lobby-village.glb");
 jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 jest.mock("@/assets/models/village-flowers.glb", () => "village-flowers.glb");
+// 작업 113: 새 나무 파일(위 MODEL_FILES 머리말)
+mockTreeAssets((_name, rel) => rel);
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");
   return {

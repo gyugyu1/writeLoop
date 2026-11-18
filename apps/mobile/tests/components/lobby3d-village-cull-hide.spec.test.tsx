@@ -18,6 +18,15 @@
 //
 // 바뀔 동작(구현 전 실패): C1, C2, C3.
 // 그대로 둘 동작(구현 전·뒤 통과): R1~R5. R5는 명세의 "바뀌는 동작"인 구역 단위 판정의 결과가 111 기준과 같아야 한다는 것으로, 지금 코드도 만족한다.
+//
+// 작업 113(새 나무 모델 넣기) 명세의 "고칠 기존 테스트"(112 qa 테스트의 나무 틀 찾기)로 qa가 고쳤다(113 qa 보고 02-qa-tests.md):
+// 113은 마을 나무를 Kenney 나무 틀 대신 새 나무 모델(WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)로 종류 × 단계 × 부품마다 인스턴스 메시 하나로 그리고,
+// 그루마다 계절 잎 색을 입히던 것을 없애며, 겨울에는 고른 수와 관계없이 잎 메시를 숨긴다(113 바뀌는 동작 1·4·5·6). 시야 고르기·숨기기는 그대로 받는다. 그래서:
+// - "나무 메시"는 나무 틀 도형 대신 새 나무 모델의 메시 도형으로 찍은 인스턴스 메시로 찾는다(tests/__fixtures__/village-trees-113.ts의 treePartOf).
+//   이름표는 <종류>-LOD<단계>-leaf(잎) / -trunk(줄기)다. 가짜 불러오기는 새 나무 파일에 앱 자산 폴더의 그 파일을 푼 모델을 준다.
+// - R1·R2: 겨울에 "나무는 111 기준대로 그려진다"를 줄기 메시에만 두고, 잎 메시는 그려지는 그루가 0이다(R2는 숨겨져 있다).
+// - R3: "여름 색과 가을 색이 다른 잎이 있다" 대신, 다시 보일 때 잎 메시가 가을 칸(glTF UV + (0, 0.5))을 그리는지 본다(113 바뀌는 동작 4).
+// 장식에 대한 단언과 입력은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -30,6 +39,7 @@ import { VILLAGE_START } from "@/lib/lobby3d/village";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { decorModule } from "../__fixtures__/village-decor-101";
 import { allObjects, instanceHeight, loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb, sourceGeometries } from "../__fixtures__/village-scene-101";
+import { FOLIAGE_OFFSET, resetTreeLoader, treePartOf, uvShiftError } from "../__fixtures__/village-trees-113";
 
 type FramePart = (state: unknown, delta: number) => void;
 
@@ -52,9 +62,14 @@ jest.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
 }));
 jest.mock("@react-three/fiber/native", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  const fake = (loader: unknown, input: unknown) =>
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    (require("../__fixtures__/village-scene-101") as typeof import("../__fixtures__/village-scene-101")).fakeUseLoader(loader, input);
+  // 113: 새 나무 파일은 그 파일을 푼 모델, 그 밖은 101의 가짜
+  const fake = (loader: unknown, input: unknown) => {
+    /* eslint-disable @typescript-eslint/no-require-imports */
+    const trees = require("../__fixtures__/village-trees-113") as typeof import("../__fixtures__/village-trees-113");
+    const scene101 = require("../__fixtures__/village-scene-101") as typeof import("../__fixtures__/village-scene-101");
+    /* eslint-enable @typescript-eslint/no-require-imports */
+    return trees.treeUseLoader(loader, input, scene101.fakeUseLoader);
+  };
   return {
     Canvas: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
     useThree: () => ({ camera: null, scene: mockScene, size: { width: 400, height: 800 }, gl: { capabilities: { getMaxAnisotropy: () => 1 } } }),
@@ -85,6 +100,7 @@ beforeEach(() => {
   mockFrames.length = 0;
   mockScene.background = null;
   resetFakeLoader();
+  resetTreeLoader();
   loaderState.village = { scene: sceneFromGlb(nowVillageGlb()) };
 });
 
@@ -125,13 +141,12 @@ async function setSeason(drawn: Drawn, season: Season, state: FrameState = {}, c
   await frames(count, state);
 }
 
-/** 나무 메시(나무 틀 도형으로 찍은 인스턴스 메시)와 장식 메시(모델 도형이 아니고 높이가 있으며 찍은 자리가 모두 장식 자리인 인스턴스 메시). 카메라 없이 처음 그린 뒤 찾는다. */
+/** 나무 메시(113: 새 나무 모델의 메시 도형으로 찍은 인스턴스 메시. 이름표는 <종류>-LOD<단계>-leaf/trunk)와 장식 메시(모델 도형이 아니고 높이가 있으며 찍은 자리가 모두 장식 자리인 인스턴스 메시). 카메라 없이 처음 그린 뒤 찾는다. */
 function findTracked(roots: THREE.Object3D[], source: THREE.Object3D): { trees: Tracked[]; decor: Tracked[] } {
-  const templates = source.getObjectByName("tree-templates")!;
-  const templateName = new Map<THREE.BufferGeometry, string>();
-  templates.traverse((o) => {
-    if (o instanceof THREE.Mesh) templateName.set(o.geometry, o.name);
-  });
+  const treeName = (geometry: THREE.BufferGeometry) => {
+    const info = treePartOf(geometry);
+    return info ? `${info.kind}-LOD${info.lod}-${info.part === "foliage" ? "leaf" : "trunk"}` : undefined;
+  };
   const fromModel = sourceGeometries(source).all;
   const decorSpots = decorModule().villageDecorSpots();
   const isDecorSpot = (x: number, z: number) => decorSpots.some((s) => Math.abs(s.x - x) <= 1e-3 && Math.abs(s.z - z) <= 1e-3);
@@ -139,7 +154,7 @@ function findTracked(roots: THREE.Object3D[], source: THREE.Object3D): { trees: 
   const decor: Tracked[] = [];
   for (const o of allObjects(roots)) {
     if (!(o instanceof THREE.InstancedMesh)) continue;
-    const name = templateName.get(o.geometry);
+    const name = treeName(o.geometry);
     if (name) {
       trees.push({ mesh: o, kind: name.endsWith("-leaf") ? "leaf" : "trunk", label: name });
       continue;
@@ -475,7 +490,7 @@ describe("[spec] 112-② 바뀔 동작: 카메라가 있을 때 고른 인스턴
 // ---------- 그대로 둘 동작 ----------
 
 describe("[spec] 112-② 그대로 둘 동작: 겨울 장식, 카메라가 없을 때, 숨은 동안의 계절 색, 같은 카메라, 그리는 인스턴스의 기준", () => {
-  it("R1 겨울에는 시야·카메라와 관계없이 장식이 보이지 않는다(명세 그대로 '겨울 동안 고른 수가 생겨도 보이지 않는다'): 겨울에 빈 시야 → 장식이 갈리는 시야 → 장식 자리 여러 곳 → 라룹이 집 앞을 한 프레임씩 주면 프레임마다 장식 메시가 모두 visible false이고 그려지는 장식이 0개다. 나무는 그동안 111 기준대로 그려진다", async () => {
+  it("R1 겨울에는 시야·카메라와 관계없이 장식이 보이지 않는다(명세 그대로 '겨울 동안 고른 수가 생겨도 보이지 않는다'): 겨울에 빈 시야 → 장식이 갈리는 시야 → 장식 자리 여러 곳 → 라룹이 집 앞을 한 프레임씩 주면 프레임마다 장식 메시가 모두 visible false이고 그려지는 장식이 0개다. 나무 줄기는 그동안 111 기준대로 그려지고, 잎은 그려지지 않는다(113에서 고침: 겨울에는 잎을 숨긴다)", async () => {
     const drawn = await draw("summer");
     const base = await baseline(drawn, ["winter", "summer"]);
     const decorMixed = mixedDecorLook(drawn, base);
@@ -495,14 +510,18 @@ describe("[spec] 112-② 그대로 둘 동작: 겨울 장식, 카메라가 없�
       expect(drawn.decor.map((t) => ({ step, mesh: t.label, visible: t.mesh.visible, drawn: drawnInstances(t, drawn.roots).length }))).toEqual(
         drawn.decor.map((t) => ({ step, mesh: t.label, visible: false, drawn: 0 }))
       );
-      const checks = checkSelection(drawn, base, camera, "winter", drawn.trees);
+      // 113: 줄기는 111 기준대로, 잎은 시야와 관계없이 그려지지 않는다
+      const trunks = drawn.trees.filter((t) => t.kind === "trunk");
+      const leaves = drawn.trees.filter((t) => t.kind === "leaf");
+      const checks = checkSelection(drawn, base, camera, "winter", trunks);
       expect({ step, checks }).toEqual({ step, checks: clean(checks) });
+      expect(leaves.map((t) => ({ step, mesh: t.label, drawn: drawnInstances(t, drawn.roots).length }))).toEqual(leaves.map((t) => ({ step, mesh: t.label, drawn: 0 })));
     }
     // 겨울 동안 시야에 드는 장식이 실제로 있었어야 뜻이 있다
     expect(decorInSeen).toBeGreaterThan(0);
   });
 
-  it("R2 카메라가 없으면 모든 인스턴스를 원래 순서로 그리고 메시는 보인다(겨울 장식은 빼고)(명세 그대로 '카메라가 없으면'): 빈 시야로 모두 숨긴 뒤 카메라 없는 프레임({} 또는 null)이면 그 프레임 뒤 나무·장식 메시가 모두 visible true이고 0번~끝 인스턴스가 카메라 없이 처음 그린 순서·행렬·계절 색 그대로다. 겨울이면 나무는 그렇게 보이고 장식은 숨은 채다", async () => {
+  it("R2 카메라가 없으면 모든 인스턴스를 원래 순서로 그리고 메시는 보인다(겨울 장식은 빼고)(명세 그대로 '카메라가 없으면'): 빈 시야로 모두 숨긴 뒤 카메라 없는 프레임({} 또는 null)이면 그 프레임 뒤 나무·장식 메시가 모두 visible true이고 0번~끝 인스턴스가 카메라 없이 처음 그린 순서·행렬·색 그대로다. 겨울이면 나무 줄기는 그렇게 보이고 장식과 나무 잎은 숨은 채다(113에서 고침: 겨울에는 잎을 숨긴다)", async () => {
     const drawn = await draw("summer");
     const base = await baseline(drawn, ["winter", "summer"]);
     const orderRows = (season: Season, meshes: Tracked[], tag: string) => ({
@@ -531,19 +550,22 @@ describe("[spec] 112-② 그대로 둘 동작: 겨울 장식, 카메라가 없�
     ] as const) {
       await frames(1, { camera: emptyCamera() });
       await frames(1, state);
-      const rows = orderRows("winter", drawn.trees, `겨울 ${name}`);
+      // 113: 겨울에는 줄기만 그렇게 보이고 잎 메시는 숨은 채다
+      const rows = orderRows("winter", drawn.trees.filter((t) => t.kind === "trunk"), `겨울 ${name}`);
       expect(rows.got).toEqual(rows.want);
+      const leaves = drawn.trees.filter((t) => t.kind === "leaf");
+      expect(leaves.map((t) => ({ name, mesh: t.label, visible: t.mesh.visible, drawn: drawnInstances(t, drawn.roots).length }))).toEqual(
+        leaves.map((t) => ({ name, mesh: t.label, visible: false, drawn: 0 }))
+      );
       expect(drawn.decor.map((t) => ({ name, mesh: t.label, visible: t.mesh.visible, drawn: drawnInstances(t, drawn.roots).length }))).toEqual(
         drawn.decor.map((t) => ({ name, mesh: t.label, visible: false, drawn: 0 }))
       );
     }
   });
 
-  it("R3 숨어 있는 동안 계절이 바뀐 메시도 다시 보일 때 그때 계절 색이다(명세 그대로 '시야 밖에서 계절이 바뀐 뒤 들어온 그루도 그때 계절 색'): 빈 시야에서 여름 → 가을로 바뀐 뒤 마을을 보면 그려지는 잎이 가을 색이고, 그 뒤 카메라가 없어지면 모든 잎이 가을 색이다", async () => {
+  it("R3 숨어 있는 동안 계절이 바뀐 메시도 다시 보일 때 그때 계절 모습이다(명세 그대로 '시야 밖에서 계절이 바뀐 뒤 들어온 그루도 그때 계절 색'. 113에서 고침: 계절 색 대신 계절 칸): 빈 시야에서 여름 → 가을로 바뀐 뒤 마을을 보면 그려지는 잎이 기준 색이고, 그 뒤 카메라가 없어지면 모든 잎이 기준 색이며 잎 메시가 가을 칸을 그린다", async () => {
     const drawn = await draw("summer");
     const base = await baseline(drawn, ["autumn", "summer"]);
-    const differs = drawn.trees.some((t) => [...base.get(t)!.rows.values()].some((r) => r.colors.summer !== r.colors.autumn));
-    expect(differs).toBe(true);
     const empty = emptyCamera();
     await frames(2, { camera: empty });
     await setSeason(drawn, "autumn", { camera: empty });
@@ -563,6 +585,11 @@ describe("[spec] 112-② 그대로 둘 동작: 겨울 장식, 카메라가 없�
       return { mesh: t.label, drawn: list.length, wrong: list.filter((i) => table.get(i.key)?.colors.autumn !== i.color).length };
     });
     expect(wrong).toEqual(drawn.trees.map((t) => ({ mesh: t.label, drawn: base.get(t)!.rows.size, wrong: 0 })));
+    // 113: 잎 메시는 가을 칸을 그린다
+    const leaves = drawn.trees.filter((t) => t.kind === "leaf");
+    expect(leaves.map((t) => ({ mesh: t.label, autumnCell: uvShiftError(t.mesh, treePartOf(t.mesh.geometry)!, FOLIAGE_OFFSET.autumn) <= 1e-5 }))).toEqual(
+      leaves.map((t) => ({ mesh: t.label, autumnCell: true }))
+    );
   });
 
   it("R4 같은 카메라면 다시 쓰지 않는다(명세 그대로 'instanceMatrix·instanceColor의 version이 늘지 않음'): 모두 숨는 빈 시야 카메라와 마을 카메라 각각을 그대로 두고 프레임을 더 돌리면 나무·장식 메시의 instanceMatrix·instanceColor version이 늘지 않는다", async () => {

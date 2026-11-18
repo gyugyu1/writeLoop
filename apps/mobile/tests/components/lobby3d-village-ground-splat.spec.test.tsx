@@ -6,6 +6,9 @@
 // 바뀔 동작(구현 전 실패): R1~R8. 그대로 둘 동작(구현 전·뒤 통과): K10·K11.
 // R7은 작업 103(마을 흩뿌림·흙길) 03 결정(사용자 2026-11-18 "둘 다 고침")으로 qa가 고쳤다. 103은 풀 자국을 계절 흩뿌림 조각으로 바꾸므로,
 // 인스턴스를 가려내는 "자국 자리"를 villageGrassMarks()에서 여름 흩뿌림 자리 villageSeasonScatter("summer")로 바꿨다(모양은 tests/__fixtures__/village-ground-103.ts). 단언은 그대로다.
+// R7은 작업 113(새 나무 모델 넣기) 명세의 "고칠 기존 테스트"(나무 틀로 나무를 확인하던 테스트)로 qa가 다시 고쳤다(113 qa 보고 02-qa-tests.md): 113은 마을 나무를
+// Kenney 나무 틀 대신 새 나무 모델(WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)로 그리므로, 인스턴스를 가려내는 "나무"를 나무 틀 도형에서 새 나무 모델의 메시 도형으로 바꿨다
+// (tests/__fixtures__/village-trees-113.ts의 treePartOf. 가짜 불러오기는 새 나무 파일에 앱 자산 폴더의 그 파일을 푼 모델을 준다). 단언은 그대로다.
 //
 // 어떻게 보나(02-qa-tests.md "관찰하는 방법"):
 // - react-three-fiber만 가짜로 둔다. 가짜 useLoader(village-splat-102.ts의 splatUseLoader)는 그림에 빈 THREE.Texture를 주며 어느 파일인지 적어 두고,
@@ -25,6 +28,7 @@ import { SEASON_COLORS } from "@/components/lobby3d/lobby3d-outdoor";
 import { daylightAt, type Season } from "@/lib/lobby3d/daylight";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_START } from "@/lib/lobby3d/village";
+import { resetTreeLoader, treePartOf } from "../__fixtures__/village-trees-113";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { decorModule } from "../__fixtures__/village-decor-101";
 import { scatterModule } from "../__fixtures__/village-ground-103";
@@ -67,8 +71,10 @@ jest.mock("@react-three/fiber/native", () => {
     /* eslint-disable @typescript-eslint/no-require-imports */
     const splat = require("../__fixtures__/village-splat-102") as typeof import("../__fixtures__/village-splat-102");
     const scene101 = require("../__fixtures__/village-scene-101") as typeof import("../__fixtures__/village-scene-101");
+    // 113: 새 나무 파일은 그 파일을 푼 모델(tests/__fixtures__/village-trees-113.ts), 그 밖은 지금 가짜
+    const trees = require("../__fixtures__/village-trees-113") as typeof import("../__fixtures__/village-trees-113");
     /* eslint-enable @typescript-eslint/no-require-imports */
-    return splat.splatUseLoader(loader, input, scene101.fakeUseLoader);
+    return trees.treeUseLoader(loader, input, (l, i) => splat.splatUseLoader(l, i, scene101.fakeUseLoader));
   };
   return {
     Canvas: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
@@ -214,6 +220,7 @@ beforeEach(() => {
   mockFrames.length = 0;
   mockScene.background = null;
   resetFakeLoader();
+  resetTreeLoader();
   splatLoader.failNew = false;
   loaderState.village = { scene: sceneFromGlb(nowVillageGlb()) };
 });
@@ -313,10 +320,9 @@ describe("[spec] 102 바뀔 동작: 풀밭 바탕을 여러 무늬의 섞임으�
     }
   });
 
-  it("R7 큰 얼룩 없애기(명세 2): 그린 장면의 인스턴스 메시는 나무(마을 모델의 나무 틀 도형)·3D 꽃·풀 장식(장식 자리)·풀 자국(자국 자리)뿐이고, 땅 높이(y −0.05~0)의 납작한 덮개는 풀밭 판 하나뿐이다(자국과 길은 빼고 본다)", async () => {
+  it("R7 큰 얼룩 없애기(명세 2): 그린 장면의 인스턴스 메시는 나무(113에서 고침: 새 나무 모델의 메시 도형)·3D 꽃·풀 장식(장식 자리)·풀 자국(자국 자리)뿐이고, 땅 높이(y −0.05~0)의 납작한 덮개는 풀밭 판 하나뿐이다(자국과 길은 빼고 본다)", async () => {
     const drawn = await draw("summer");
-    const { all: fromModel, byGroup } = sourceGeometries(drawn.source);
-    const templates = byGroup.get("tree-templates")!;
+    const { all: fromModel } = sourceGeometries(drawn.source);
     const mod = decorModule();
     const atDecor = spotFinder(mod.villageDecorSpots());
     // 작업 103: 풀 자국 대신 계절 흩뿌림 조각(여름)의 자리로 가려낸다
@@ -326,7 +332,7 @@ describe("[spec] 102 바뀔 동작: 풀밭 바탕을 여러 무늬의 섞임으�
     const markMeshes = new Set<THREE.Object3D>();
     for (const o of objects) {
       if (!(o instanceof THREE.InstancedMesh) || o.count === 0 || !drawnVisible(o, drawn.roots)) continue;
-      if (templates.has(o.geometry)) continue;
+      if (treePartOf(o.geometry)) continue;
       if (allAt(o, atMark)) {
         markMeshes.add(o);
         continue;

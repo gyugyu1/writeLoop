@@ -16,6 +16,11 @@
 // - 합치기 전 삼각형은 그리기 전에 넘길 장면에서 미리 모은다(앱이 도형을 바꿔도 기대값이 흔들리지 않게). 그린 메시의 묶음은 삼각형 자리로 정한다.
 // - "흩뿌림 메시" = 103 테스트와 같다: 그려지는 인스턴스 메시 가운데 마을 모델 도형이 아니고 납작한(인스턴스마다 높이 0.01칸 이하) 것.
 // 명세에 수가 없어 qa가 정한 값(02-qa-tests.md "가정"): 자리 1e-4칸, 법선 2e-3, 그림 좌표 1e-5, 정점색 1e-4, 인스턴스 색 1e-5, 누른 자리 1e-4칸.
+//
+// 작업 113(새 나무 모델 넣기) 명세의 "고칠 기존 테스트"(112-③ K3의 "나무 틀 10개")로 qa가 K3를 고쳤다(113 qa 보고 02-qa-tests.md):
+// 113은 마을 나무를 Kenney 나무 틀 대신 새 나무 모델(WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)로 종류 × 단계 × 부품마다 인스턴스 메시 하나로 그린다(113 바뀌는 동작 1·6).
+// 그래서 K3의 "나무는 틀마다 인스턴스로 그려진다(틀 도형 수 = 그려지는 나무 도형 수)"를 "나무 틀 도형으로 그리는 인스턴스는 없고, 새 나무 모델의
+// 종류·단계·부품 12가지가 하나씩 인스턴스로 그려진다"로 바꿨다. 가짜 불러오기는 새 나무 파일에 앱 자산 폴더의 그 파일을 푼 모델을 준다. 나머지 단언·입력은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -46,6 +51,7 @@ import {
 import { allObjects, drawnVisible, instanceHeight, instanceWorldMatrices, loaderState, mockUnreadableAssets, resetFakeLoader, sourceGeometries } from "../__fixtures__/village-scene-101";
 import { GLASS_MATERIAL } from "../__fixtures__/village-shops-106";
 import { mockImagesAsPaths, splatLoader } from "../__fixtures__/village-splat-102";
+import { TREE_KINDS, TREE_LODS, TREE_PARTS, resetTreeLoader, treePartOf } from "../__fixtures__/village-trees-113";
 
 type FramePart = (state: unknown, delta: number) => void;
 
@@ -72,8 +78,10 @@ jest.mock("@react-three/fiber/native", () => {
     /* eslint-disable @typescript-eslint/no-require-imports */
     const splat = require("../__fixtures__/village-splat-102") as typeof import("../__fixtures__/village-splat-102");
     const scene101 = require("../__fixtures__/village-scene-101") as typeof import("../__fixtures__/village-scene-101");
+    // 113: 새 나무 파일은 그 파일을 푼 모델(tests/__fixtures__/village-trees-113.ts), 그 밖은 지금 가짜
+    const trees = require("../__fixtures__/village-trees-113") as typeof import("../__fixtures__/village-trees-113");
     /* eslint-enable @typescript-eslint/no-require-imports */
-    return splat.splatUseLoader(loader, input, scene101.fakeUseLoader);
+    return trees.treeUseLoader(loader, input, (l, i) => splat.splatUseLoader(l, i, scene101.fakeUseLoader));
   };
   return {
     Canvas: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
@@ -217,6 +225,7 @@ beforeEach(() => {
   mockFrames.length = 0;
   mockScene.background = null;
   resetFakeLoader();
+  resetTreeLoader();
   splatLoader.failNew = false;
 });
 
@@ -397,7 +406,7 @@ describe("[spec] 112 ③ 그대로 둘 동작: 진짜 마을 모델의 모양·�
     expect(wrong.slice(0, 10)).toEqual([]);
   });
 
-  it("K3 그 밖의 마을 모델: 건물(유리 포함)·생울타리·울타리·풍차 날개의 그려지는 메시 수와 삼각형이 합치기 전과 같고, 풍차 날개는 따로 돌며, 불빛 판은 밤에만 그대로 그려지고, 옛 길 조각과 나무 틀은 그려지지 않으며, 나무는 틀마다 인스턴스로 그려지고, 유리는 반투명 재질이며 누르기 대상이 아니다", async () => {
+  it("K3 그 밖의 마을 모델: 건물(유리 포함)·생울타리·울타리·풍차 날개의 그려지는 메시 수와 삼각형이 합치기 전과 같고, 풍차 날개는 따로 돌며, 불빛 판은 밤에만 그대로 그려지고, 옛 길 조각과 나무 틀은 그려지지 않으며, 나무는 새 나무 모델의 종류·단계·부품마다 인스턴스로 그려지고(113에서 고침), 유리는 반투명 재질이며 누르기 대상이 아니다", async () => {
     const scene = sceneFromGlbFull(nowVillageGlb());
     const expected = sourceTriangles(scene, { glass: GLASS_MATERIAL });
     const bank = new TriBank(expected);
@@ -428,8 +437,15 @@ describe("[spec] 112 ③ 그대로 둘 동작: 진짜 마을 모델의 모양·�
     expect({ dayGlow: glows.flatMap((l) => day.groups.get(l) ?? []).length, paths: (day.groups.get("paths") ?? []).length, templates: (day.groups.get("tree-templates") ?? []).length }).toEqual({ dayGlow: 0, paths: 0, templates: 0 });
     const glassMeshes = [...day.groups.entries()].filter(([l]) => l.endsWith(":glass")).flatMap(([, m]) => m);
     expect(glassMeshes.map((m) => ({ transparent: materialOf(m).transparent, picked: drawn.pick.current.includes(m) }))).toEqual(glassMeshes.map(() => ({ transparent: true, picked: false })));
-    const treeGeometries = new Set(allObjects([drawn.model]).filter((o): o is THREE.InstancedMesh => o instanceof THREE.InstancedMesh && templates.has(o.geometry) && o.count > 0).map((o) => o.geometry));
-    expect(treeGeometries.size).toBe(templates.size);
+    // 113: 나무 틀 도형으로 그리는 인스턴스는 없고, 새 나무 모델의 종류·단계·부품 12가지가 하나씩 인스턴스로 그려진다
+    const drawnInstanced = allObjects(drawn.roots).filter((o): o is THREE.InstancedMesh => o instanceof THREE.InstancedMesh && o.count > 0 && drawnVisible(o, drawn.roots));
+    expect(drawnInstanced.filter((o) => templates.has(o.geometry)).map((o) => o.name || o.type)).toEqual([]);
+    const treeLabels = drawnInstanced
+      .map((o) => treePartOf(o.geometry))
+      .filter((info) => info !== null)
+      .map((info) => `${info!.kind}-LOD${info!.lod}-${info!.part}`)
+      .sort();
+    expect(treeLabels).toEqual(TREE_KINDS.flatMap((k) => TREE_LODS.flatMap((l) => TREE_PARTS.map((p) => `${k}-LOD${l}-${p}`))).sort());
     // 밤: 불빛 판이 그대로 그려진다
     drawn.light.ceiling = 1;
     await frames(1);

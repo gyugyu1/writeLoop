@@ -25,7 +25,7 @@
 // 카메라가 없어지면 모두 그림)이지만 지금 코드도 이미 만족하므로 구현 전에도 통과해야 한다.
 //
 // 작업 113(새 나무 모델 넣기) 명세의 "고칠 기존 테스트"(111 qa 테스트의 나무 틀 찾기)로 qa가 고쳤다(113 qa 보고 02-qa-tests.md):
-// 113은 마을 나무를 Kenney 나무 틀 대신 새 나무 모델(WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)로 종류 × 단계 × 부품마다 인스턴스 메시 하나로 그리고(12개),
+// 113은 마을 나무를 Kenney 나무 틀 대신 새 나무 모델(WriteLoop_Tree_<A·Pine>_LOD<1·2>.glb(116: 113의 A·B·C에서 바뀜))로 종류 × 단계 × 부품마다 인스턴스 메시 하나로 그리고(12개),
 // 그루마다 계절 잎 색을 입히던 것을 없애며(잎은 그루마다 계절과 관계없는 밝기), 계절은 그림 칸으로 보이고 겨울에는 잎을 그리지 않는다(113 바뀌는 동작 1·4·5·6).
 // 시야 고르기(111·112-①)는 그대로 받는다. 그래서:
 // - "나무 메시"는 나무 틀 도형 대신 새 나무 모델의 메시 도형으로 찍은 인스턴스 메시로 찾는다(tests/__fixtures__/village-trees-113.ts의 treePartOf).
@@ -33,6 +33,8 @@
 // - S5: "여름 색과 가을 색이 다른 잎이 있다" 대신, 가을로 바뀐 뒤 그려지는 잎 메시가 가을 칸(glTF UV + (0, 0.5))을 그리는지 본다(113 바뀌는 동작 4).
 // - K1: 나무는 메시 12개이고 계절마다 모든 그루를 그리되 겨울에는 잎을 그리지 않는지(113 바뀌는 동작 4·6)를 보고, 기준 sha256은 장식만으로 다시 쟀다
 //   (113 기준 커밋 3b11555. 장식은 113이 바꾸지 않는다).
+// 작업 116(나무 A·Pine 세트) 명세의 "고칠 기존 테스트"(메시 수, 겨울 잎 숨기기)로 qa가 고쳤다(116 qa 보고 02-qa-tests.md):
+// - K1: 나무 메시는 8개(종류 A·Pine × 단계 × 부품)이고, 겨울에는 A 잎 메시만 그리지 않고 Pine 잎 메시는 모든 그루를 그린다. 기준 sha256은 그대로다(장식만이다).
 // - K3: 흩뿌림을 가려낼 때 나무 메시도 뺀다(나무 틀 도형은 마을 모델 도형이라 빠졌으나 새 나무 도형은 아니다).
 // - K5: "계절이 바뀌면 잎 메시의 instanceColor version이 늘고 새 계절 색" 대신 "계절이 바뀌어도 잎 색은 기준 그대로"(113 바뀌는 동작 5)만 본다.
 // 장식·흩뿌림에 대한 단언과 입력은 그대로다.
@@ -550,7 +552,7 @@ describe("[spec] 111 그대로 둘 동작: 카메라가 없을 때, 메시, 겨�
   it.each([
     ["상태에 카메라 없음({})", {} as FrameState],
     ["카메라 null", { camera: null } as FrameState]
-  ])("K1 카메라가 없으면 모두 그린다(명세 그대로 2, 바뀌는 동작 7. 113에서 고침: 나무는 그루 수로, 겨울 잎은 그리지 않음): %s일 때 계절마다 그려지는 장식(메시마다 인스턴스 행렬·계절 색, 겨울 장식 숨김 포함)이 기준 커밋과 같고(순서는 보지 않는다), 나무 메시 12개는 계절마다 모든 그루를 그리되 겨울에는 잎 메시를 그리지 않는다", async (_name, state) => {
+  ])("K1 카메라가 없으면 모두 그린다(명세 그대로 2, 바뀌는 동작 7. 113에서 고침: 나무는 그루 수로, 겨울 잎은 그리지 않음): %s일 때 계절마다 그려지는 장식(메시마다 인스턴스 행렬·계절 색, 겨울 장식 숨김 포함)이 기준 커밋과 같고(순서는 보지 않는다), 나무 메시 8개는 계절마다 모든 그루를 그리되 겨울에는 A 잎 메시만 그리지 않는다(116)", async (_name, state) => {
     const drawn = await draw("summer");
     for (const t of [...drawn.trees, ...drawn.decor]) expect({ mesh: t.label, drawn: drawnInstances(t, drawn.roots).length }).toEqual({ mesh: t.label, drawn: t.mesh.instanceMatrix.count });
     const { treeCounts, ...got } = await drawnDigest(drawn, state);
@@ -558,7 +560,7 @@ describe("[spec] 111 그대로 둘 동작: 카메라가 없을 때, 메시, 겨�
     expect(treeCounts).toEqual(
       treeCounts.map((c) => {
         const t = drawn.trees.find((x) => x.label === c.mesh)!;
-        return { season: c.season, mesh: c.mesh, drawn: c.season === "winter" && t.kind === "leaf" ? 0 : t.mesh.instanceMatrix.count };
+        return { season: c.season, mesh: c.mesh, drawn: c.season === "winter" && t.kind === "leaf" && t.label.startsWith("A-") ? 0 : t.mesh.instanceMatrix.count };
       })
     );
   });
@@ -695,8 +697,8 @@ describe("[spec] 111 그대로 둘 동작: 카메라가 없을 때, 메시, 겨�
   });
 });
 
-/** K1의 기대값. 나무 메시 수는 113 명세(종류 × 단계 × 부품 = 12), 장식 메시 수·적은 블록 수·sha256은 113 기준 커밋 3b11555에서 장식만으로 잰 값(장식 메시 수는 1d07fa9와 같다). */
-const K1_TREE_MESHES = 12;
+/** K1의 기대값. 나무 메시 수는 113 명세(116: 종류 A·Pine × 단계 × 부품 = 8), 장식 메시 수·적은 블록 수·sha256은 113 기준 커밋 3b11555에서 장식만으로 잰 값(장식 메시 수는 1d07fa9와 같다). */
+const K1_TREE_MESHES = 8;
 const K1_DECOR_MESHES = 6;
 const K1_LINES = 24;
 // 115 전 값 "35d966b6997baa368dc7dd2b97335b57fafb92b56f3c5e5474d9b23adde2435f". 115: 원 밖 칸이 막혀 장식 자리가 따라 바뀐 값(머리말)

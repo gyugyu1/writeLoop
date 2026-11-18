@@ -20,7 +20,7 @@ import { CACHE, cacheFiles, fsState, resetFs } from "../__fixtures__/texture-cac
 
 // 작업 078·104 테스트와 같은, 앱이 시작될 때 읽는 모델 파일 목록(앱이 그대로 이어지는지 볼 때 쓴다)
 // 작업 113(새 나무 모델 넣기) 01-main-spec.md 불러오기 11(새 나무 GLB 6개를 앱이 시작할 때 미리 읽기에 더한다)과 "고칠 기존 테스트"(qa가 찾아 고친다):
-// 앱이 시작될 때 새 나무 GLB 여섯(assets/models 아래의 WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)도 읽는다. 이 목록에 더하고(assets/models에서의 상대 경로)
+// 앱이 시작될 때 나무 GLB 넷(assets/models 아래의 WriteLoop_Tree_<A·Pine>_LOD<1·2>.glb. 116: 113의 A·B·C 여섯에서 바뀜)도 읽는다. 이 목록에 더하고(assets/models에서의 상대 경로)
 // 그 파일을 이름 문자열로 바꾸는 가짜를 더했다(tests/__fixtures__/tree-files-113.ts. 파일이 아직 없으면 assets/models/trees/<이름>으로 가정). 단언은 그대로다.
 const MODEL_FILES = [
   "furniture/board.glb",

@@ -1,4 +1,4 @@
-// qa 테스트 도우미(작업 113 새 나무 모델 넣기): 새 나무 GLB 여섯(WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)의 이름·자리와, 앱 코드가 그 파일을 require할 때의 가짜.
+// qa 테스트 도우미(작업 113 새 나무 모델 넣기): 나무 GLB 넷(WriteLoop_Tree_<A·Pine>_LOD<1·2>.glb. 113은 A·B·C 여섯, 116이 A·Pine 넷으로 바꿨다)의 이름·자리와, 앱 코드가 그 파일을 require할 때의 가짜.
 // 이 파일은 테스트가 아니다(testMatch는 *.test.ts만 돈다). three를 읽지 않아 어느 테스트에서도 쓸 수 있다. 나무 모델 풀기는 village-trees-113.ts에 있다.
 //
 // - 나무 파일은 앱 자산 폴더(apps/mobile/assets/models 아래 어디든)에서 이름으로 찾는다. 명세 11은 "apps/mobile/assets/models/ 아래"만 정해서
@@ -8,14 +8,14 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 
 export const MODELS_DIR = join(__dirname, "..", "..", "assets", "models");
-export const TREE_KINDS = ["A", "B", "C"] as const;
+export const TREE_KINDS = ["A", "Pine"] as const;
 export const TREE_LODS = [1, 2] as const;
 export type TreeKind = (typeof TREE_KINDS)[number];
 export type TreeLod = (typeof TREE_LODS)[number];
 
 export const treeFileName = (kind: TreeKind, lod: TreeLod) => `WriteLoop_Tree_${kind}_LOD${lod}.glb`;
 export const TREE_FILES = TREE_KINDS.flatMap((kind) => TREE_LODS.map((lod) => treeFileName(kind, lod)));
-export const TREE_FILE_RE = /^WriteLoop_Tree_([ABC])_LOD([12])\.glb$/;
+export const TREE_FILE_RE = /^WriteLoop_Tree_(A|Pine)_LOD([12])\.glb$/;
 
 function listFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];

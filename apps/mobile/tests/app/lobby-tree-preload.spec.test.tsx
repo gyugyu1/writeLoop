@@ -1,4 +1,4 @@
-// [spec] qa 테스트(작업 113 새 나무 모델 넣기, 기능 변경, 모바일): 새 나무 GLB 여섯을 앱이 시작될 때 미리 읽고, 마을은 그 읽기를 함께 써서 다시 읽지 않는다.
+// [spec] qa 테스트(작업 113 새 나무 모델 넣기, 기능 변경, 모바일): 나무 GLB 넷(116: A·Pine)을 앱이 시작될 때 미리 읽고, 마을은 그 읽기를 함께 써서 다시 읽지 않는다.
 // 기대값은 명세(private 작업 폴더 113-2026-11-18-새-나무-모델-넣기/01-main-spec.md)의 불러오기 11에서만 가져온다.
 // 테스트 이름 앞의 [바뀔]은 구현 전에 실패해야 하는 테스트다(02-qa-tests.md의 분류와 같다).
 //
@@ -278,12 +278,18 @@ afterEach(async () => {
 
 const VILLAGE_TEST_TIMEOUT_MS = 60000;
 
-describe("[spec] 113 불러오기 11: 새 나무 GLB 여섯을 앱이 시작될 때 미리 읽고, 마을은 같은 읽기를 함께 쓴다", () => {
-  test("[바뀔] T1 앱 틀을 그린 바로 뒤(어떤 화면도 그리지 않고 로그인 확인 전이어도) 새 나무 GLB 여섯을 한 번씩 읽기 시작한다", async () => {
+describe("[spec] 113 불러오기 11(116: A·Pine 넷): 나무 GLB 넷을 앱이 시작될 때 미리 읽고, 마을은 같은 읽기를 함께 쓴다", () => {
+  test("[바뀔] T1 앱 틀을 그린 바로 뒤(어떤 화면도 그리지 않고 로그인 확인 전이어도) 나무 GLB 넷(A·Pine × LOD1·LOD2)을 한 번씩 읽기 시작한다", async () => {
     const m = loadModules();
     await startApp(m);
     expect(m.lib.screen.getByText("화면 묶음")).toBeTruthy();
     expect(treeLoads().sort()).toEqual([...TREE_FILES].sort());
+  });
+
+  test("[바뀔] T1b 읽는 순서는 A LOD1, A LOD2, Pine LOD1, Pine LOD2이고 B·C 파일은 읽지 않는다(116 명세 1)", async () => {
+    const m = loadModules();
+    await startApp(m);
+    expect(treeLoads()).toEqual(["WriteLoop_Tree_A_LOD1.glb", "WriteLoop_Tree_A_LOD2.glb", "WriteLoop_Tree_Pine_LOD1.glb", "WriteLoop_Tree_Pine_LOD2.glb"]);
   });
 
   test(

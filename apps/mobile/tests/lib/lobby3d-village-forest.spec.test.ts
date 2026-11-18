@@ -90,6 +90,12 @@ describe("[spec] 115 ② 흩뿌림·장식(명세 2)", () => {
     const mod = scatterModule();
     for (const season of SEASONS) {
       const inside = mod.villageSeasonScatter(season).filter((p) => insideCircle115b(p.x, p.z));
+      // 116 04 결정 3: 가을 낙엽은 A 그루 둘레에만 놓이므로 자리 모음은 바뀐다. 가을은 조각 크기(0.3~0.55)·밝기(0.85~1.15)·종류(0~7)가 그대로인지만 본다(봄·여름은 그대로 견준다)
+      if (season === "autumn") {
+        const bad = inside.filter((p) => p.size < 0.3 - 1e-6 || p.size > 0.55 + 1e-6 || p.shade < 0.85 - 1e-6 || p.shade > 1.15 + 1e-6 || !Number.isInteger(p.kind) || p.kind < 0 || p.kind > 7);
+        expect({ season, some: inside.length > 0, bad: bad.length }).toEqual({ season, some: true, bad: 0 });
+        continue;
+      }
       expect({ season, ...scatterDigest115b(inside) }).toEqual({ season, ...SCATTER_INSIDE_115_2[season] });
     }
   });
@@ -152,7 +158,7 @@ describe("[spec] 115 ② 자산 출처(명세 4)", () => {
     const now = readFileSync(join(REPO_115_2, CREDITS_PATH_115_2), "utf8");
     const base = gitShow115b(BASE_115_2, CREDITS_PATH_115_2);
     expect(villageCredit(now).rest).toBe(villageCredit(base).rest);
-    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`"));
+    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.includes("WriteLoop_Tree")); // 116 06 결정 2: 나무 줄(A·Pine으로 바뀜)은 양쪽에서 뺀다
     expect(others(now)).toEqual(others(base));
   });
 });

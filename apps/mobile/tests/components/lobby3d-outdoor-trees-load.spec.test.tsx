@@ -1,15 +1,15 @@
-// [spec] qa 테스트(작업 113, 기능 변경: 새 나무 모델 넣기, 모바일) — 새 나무 모델 불러오기의 방(창밖) 쪽.
+// [spec] qa 테스트(작업 113 → 116에서 A·Pine 기준으로 고침, 기능 변경, 모바일) — 새 나무 모델 불러오기의 방(창밖) 쪽.
 // 기대값은 명세(private 작업 폴더 113-2026-11-18-새-나무-모델-넣기/01-main-spec.md)에서만 가져온다.
 // 모든 테스트가 "바뀔 동작"이다(고치기 전에는 실패해야 한다). 03-qa-tests.md의 분류와 같다.
 //
 // 명세 바뀌는 동작:
-//  11. 새 나무 GLB 6개를 앱 자산(apps/mobile/assets/models/ 아래)에 넣는다. 앱이 시작할 때 미리 읽기(lobby3d-preload.ts)에 더한다
+//  11. (116: A·Pine GLB 4개, 로드 순서 A LOD1, A LOD2, Pine LOD1, Pine LOD2) 새 나무 GLB 4개를 앱 자산(apps/mobile/assets/models/ 아래)에 넣는다. 앱이 시작할 때 미리 읽기(lobby3d-preload.ts)에 더한다
 //      (104의 같은 키로 미리 읽기 규칙). 마을과 방(창밖)에서 함께 쓴다.
 //   7. 창밖 나무는 새 모델 LOD2로 그린다.
 //  12. 나무 모델을 읽지 못하면 나무만 빼고 그리고, 화면이 멈추지 않게 한다(마을의 땅 꾸밈을 읽지 못할 때처럼). 오류는 개발 콘솔에 남긴다.
 //
 // 어떻게 보나(구현 전이라 구현 이름을 모른다. 가정은 03-qa-tests.md에 적었다):
-// - 나무 파일은 메인 세션이 알려 준 자리 apps/mobile/assets/models/trees/WriteLoop_Tree_{A,B,C}_LOD{1,2}.glb다. 아직 저장소에 없어서
+// - 나무 파일은 메인 세션이 알려 준 자리 apps/mobile/assets/models/trees/WriteLoop_Tree_{A,Pine}_LOD{1,2}.glb다. 아직 저장소에 없어서
 //   상대 경로의 가상 가짜(virtual)로 이름 문자열을 준다(파일이 생기면 같은 파일을 부르는 모든 require에 이 가짜가 쓰인다).
 // - "미리 읽기"는 lobby3d-preload의 preloadLobbyModels()를 부르는 것, "모델을 읽는다"는 GLTFLoader의 load가 그 파일로 불리는 것으로 본다.
 //   읽기를 끝내는 때(성공·실패)는 테스트가 정한다. react-three-fiber는 진짜(useLoader와 그 캐시)를 쓴다(078 qa 테스트와 같은 방식).
@@ -27,12 +27,10 @@ import type { MutableRefObject } from "react";
 const TREE_FILES = [
   "trees/WriteLoop_Tree_A_LOD1.glb",
   "trees/WriteLoop_Tree_A_LOD2.glb",
-  "trees/WriteLoop_Tree_B_LOD1.glb",
-  "trees/WriteLoop_Tree_B_LOD2.glb",
-  "trees/WriteLoop_Tree_C_LOD1.glb",
-  "trees/WriteLoop_Tree_C_LOD2.glb"
+  "trees/WriteLoop_Tree_Pine_LOD1.glb",
+  "trees/WriteLoop_Tree_Pine_LOD2.glb"
 ];
-const LOD2_FILES = ["trees/WriteLoop_Tree_A_LOD2.glb", "trees/WriteLoop_Tree_B_LOD2.glb", "trees/WriteLoop_Tree_C_LOD2.glb"];
+const LOD2_FILES = ["trees/WriteLoop_Tree_A_LOD2.glb", "trees/WriteLoop_Tree_Pine_LOD2.glb"];
 
 type PendingLoad = { url: string; onLoad: (data: unknown) => void; onError: (error: unknown) => void; settled: boolean };
 
@@ -124,10 +122,8 @@ jest.mock("@/assets/models/village-flowers.glb", () => "village-flowers.glb");
 // 새 나무 파일(아직 저장소에 없어 가상 가짜. 상대 경로여야 파일이 없을 때도 가짜를 둘 수 있다)
 jest.mock("../../assets/models/trees/WriteLoop_Tree_A_LOD1.glb", () => "trees/WriteLoop_Tree_A_LOD1.glb", { virtual: true });
 jest.mock("../../assets/models/trees/WriteLoop_Tree_A_LOD2.glb", () => "trees/WriteLoop_Tree_A_LOD2.glb", { virtual: true });
-jest.mock("../../assets/models/trees/WriteLoop_Tree_B_LOD1.glb", () => "trees/WriteLoop_Tree_B_LOD1.glb", { virtual: true });
-jest.mock("../../assets/models/trees/WriteLoop_Tree_B_LOD2.glb", () => "trees/WriteLoop_Tree_B_LOD2.glb", { virtual: true });
-jest.mock("../../assets/models/trees/WriteLoop_Tree_C_LOD1.glb", () => "trees/WriteLoop_Tree_C_LOD1.glb", { virtual: true });
-jest.mock("../../assets/models/trees/WriteLoop_Tree_C_LOD2.glb", () => "trees/WriteLoop_Tree_C_LOD2.glb", { virtual: true });
+jest.mock("../../assets/models/trees/WriteLoop_Tree_Pine_LOD1.glb", () => "trees/WriteLoop_Tree_Pine_LOD1.glb", { virtual: true });
+jest.mock("../../assets/models/trees/WriteLoop_Tree_Pine_LOD2.glb", () => "trees/WriteLoop_Tree_Pine_LOD2.glb", { virtual: true });
 // 창밖 장면 모듈: 무엇을 부르든 인자를 적어 둔다
 jest.mock("@/components/lobby3d/lobby3d-outdoor", () => {
   const T = jest.requireMock<typeof import("three")>("three");
@@ -320,14 +316,14 @@ afterEach(async () => {
 });
 
 describe("[spec] 새 나무 모델을 앱 시작 때 미리 읽고 방(창밖)이 같은 것을 쓴다(113 명세 바뀌는 동작 11·7)", () => {
-  test("L1 미리 읽기(preloadLobbyModels)가 새 나무 GLB 6개를 한 번씩 읽기 시작한다", async () => {
+  test("L1 미리 읽기(preloadLobbyModels)가 새 나무 GLB 4개를 한 번씩 읽기 시작한다", async () => {
     const m = loadModules();
     m.preload.preloadLobbyModels();
     await flush(m.lib);
     expect(treeLoads()).toEqual(TREE_FILES);
   });
 
-  test("L2 미리 읽기가 끝난 뒤 방을 열면 나무 파일을 다시 읽지 않고, 가구 묶음이 그려지며, 창밖 장면이 A·B·C LOD2 모델을 받는다", async () => {
+  test("L2 미리 읽기가 끝난 뒤 방을 열면 나무 파일을 다시 읽지 않고, 가구 묶음이 그려지며, 창밖 장면이 A·Pine LOD2 모델을 받는다", async () => {
     const m = loadModules();
     m.preload.preloadLobbyModels();
     await flush(m.lib);
@@ -342,7 +338,7 @@ describe("[spec] 새 나무 모델을 앱 시작 때 미리 읽고 방(창밖)�
     expect(LOD2_FILES.map((file) => [file, outdoorReceived(file)])).toEqual(LOD2_FILES.map((file) => [file, true]));
   });
 
-  test("L3 미리 읽기가 끝나기 전에 방을 열어도 나무 파일을 두 번 읽지 않고, 읽기가 끝나면 창밖 장면이 A·B·C LOD2 모델을 받는다", async () => {
+  test("L3 미리 읽기가 끝나기 전에 방을 열어도 나무 파일을 두 번 읽지 않고, 읽기가 끝나면 창밖 장면이 A·Pine LOD2 모델을 받는다", async () => {
     const m = loadModules();
     m.preload.preloadLobbyModels();
     await flush(m.lib);
@@ -361,7 +357,7 @@ describe("[spec] 새 나무 모델을 앱 시작 때 미리 읽고 방(창밖)�
 });
 
 describe("[spec] 나무 모델을 읽지 못하면 나무만 빼고 그리고 멈추지 않는다(113 명세 바뀌는 동작 12)", () => {
-  test("L4 미리 읽기에서 나무 GLB 6개를 모두 읽지 못한 뒤 방을 열어도 가구 묶음과 창밖 장면은 그려지고, 처리되지 않은 실패가 없으며, 오류를 개발 콘솔(console.warn)에 남긴다", async () => {
+  test("L4 미리 읽기에서 나무 GLB 4개를 모두 읽지 못한 뒤 방을 열어도 가구 묶음과 창밖 장면은 그려지고, 처리되지 않은 실패가 없으며, 오류를 개발 콘솔(console.warn)에 남긴다", async () => {
     TREE_FILES.forEach((file) => mockFailing.add(file));
     const m = loadModules();
     m.preload.preloadLobbyModels();

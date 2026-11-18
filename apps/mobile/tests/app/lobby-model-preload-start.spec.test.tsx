@@ -32,7 +32,7 @@ import { TREE_FILES, mockTreeAssets, treeAssetRel } from "../__fixtures__/tree-f
 // GLTFLoader가 아니라 그림 불러오기(THREE.TextureLoader)로 읽으므로 이 목록에 들지 않는다. Jest에서는 r3f가 바꿔 둔 그림 불러오기가 돌지 않아
 // (기기의 그림 크기 읽기를 부른다) 끝내지 않는 가짜로 바꿨다(땅 그림 미리 읽기 자체는 tests/app/lobby-village-ground-preload.spec.test.tsx가 본다). 단언은 그대로다.
 // 작업 113(새 나무 모델 넣기) 01-main-spec.md 불러오기 11(새 나무 GLB 6개를 앱이 시작할 때 미리 읽기에 더한다)과 "고칠 기존 테스트"(qa가 찾아 고친다):
-// 앱이 시작될 때 새 나무 GLB 여섯(assets/models 아래의 WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)도 읽는다. 이 목록에 더하고(assets/models에서의 상대 경로)
+// 앱이 시작될 때 나무 GLB 넷(assets/models 아래의 WriteLoop_Tree_<A·Pine>_LOD<1·2>.glb. 116: 113의 A·B·C 여섯에서 바뀜)도 읽는다. 이 목록에 더하고(assets/models에서의 상대 경로)
 // 그 파일을 이름 문자열로 바꾸는 가짜를 더했다(tests/__fixtures__/tree-files-113.ts. 파일이 아직 없으면 assets/models/trees/<이름>으로 가정). 단언은 그대로다.
 const MODEL_FILES = [
   "furniture/board.glb",

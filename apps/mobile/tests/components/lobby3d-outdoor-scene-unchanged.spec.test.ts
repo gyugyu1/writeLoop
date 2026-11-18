@@ -17,7 +17,7 @@
 // 나무 부분을 뺐다. 나무 말고는 그대로여야 한다(명세 바뀌는 동작 10, 그대로여야 할 동작 "창밖 풍경의 나무 말고 모든 것").
 // - 나무를 빼는 법: 고치기 전 코드의 나무(줄기 원기둥을 가진, 장면 바로 아래 묶음)와, 새 나무(테스트가 준 가짜 나무 모델의 잎·줄기 그림을 쓰는
 //   물체, 그리고 그런 물체만 담은 묶음)와, 그릴 것이 하나도 없는 빈 묶음(Group)은 통째로 적지 않는다. 남은 물체의 자식 수도 남은 것만 센다.
-// - 새 나무 모델은 createOutdoor의 세 번째 인자로 준다고 가정했다(A·B·C LOD2 순서의 배열. 03-qa-tests.md). 고치기 전 코드는 이 인자를 무시한다.
+// - 새 나무 모델은 createOutdoor의 세 번째 인자로 준다고 가정했다(A·Pine LOD2 순서의 배열. 03-qa-tests.md). 고치기 전 코드는 이 인자를 무시한다.
 //   다른 방법으로 나무를 받는 구현이어도, 나무를 빼고 보므로 이 파일의 비교는 그대로 쓸 수 있다.
 // - 스냅숏은 고치기 전 코드(기준 커밋 3b11555)로 나무를 뺀 채 다시 만들었다. 나무 말고의 줄은 081 때 만든 스냅숏의 줄과 같다(03-qa-tests.md에 대조 결과).
 // - 무작위 순서: 나무 뒤에 짓는 덤불·꽃·구름·별도 같은 씨앗의 난수를 이어 쓰므로, 나무가 난수를 쓰는 횟수가 바뀌면 이 비교가 실패한다
@@ -113,12 +113,11 @@ function materialLine(m: THREE.Material): string {
 
 // ---------- 가짜 새 나무 모델(113) ----------
 // 명세 "새 나무 모델": 파일마다 메시 둘(Tree_Foliage 재질 Foliage 양면 알파 마스크 0.5, Tree_Wood 재질 Bark), 원점은 줄기 밑 가운데, 바닥 y = 0.
-// 잎 그림은 같은 단계끼리 A·B·C가 같은 그림, 줄기 그림은 A·B가 같고 C는 다르다. 크기는 높이만 명세 값(A 2.60, B 2.45, C 3.10)을 쓴다.
+// 잎 그림·줄기 그림은 A와 Pine이 서로 다르다. 크기는 높이만 명세 값(A 2.99, Pine 3.25)을 쓴다.
 
 const TREE_KINDS = [
-  { kind: "A", height: 2.6, width: 1.46 },
-  { kind: "B", height: 2.45, width: 1.57 },
-  { kind: "C", height: 3.1, width: 1.34 }
+  { kind: "A", height: 2.99, width: 1.84 },
+  { kind: "Pine", height: 3.25, width: 1.86 }
 ] as const;
 
 /** 네 꼭짓점 사각형들을 삼각형 둘씩으로 만든 모양. */
@@ -141,7 +140,7 @@ function quads(corners: readonly (readonly [number, number, number])[][], uvs: r
 }
 
 interface FakeTrees {
-  /** A·B·C LOD2 순서 */
+  /** A·Pine LOD2 순서 */
   models: GLTF[];
   /** 가짜 나무가 쓰는 그림(잎·줄기)의 파일 이름(image.data.localUri). 이 그림을 쓰는 물체를 새 나무로 본다. */
   images: Set<string>;
@@ -150,9 +149,10 @@ interface FakeTrees {
 function fakeTreeModels(): FakeTrees {
   // 그림은 앱의 그림 읽기(texture-file-loader)가 두는 모양({ data: { localUri }, width, height }). 같은 그림이면 같은 파일 이름이다.
   const image = (name: string) => ({ data: { localUri: `file:///cache/model-image-${name}.png` }, width: 2, height: 2 });
-  const FOLIAGE = "qa113-foliage-LOD2";
-  const BARK_AB = "qa113-bark-AB-LOD2";
-  const BARK_C = "qa113-bark-C-LOD2";
+  const FOLIAGE_A = "qa116-foliage-A-LOD2";
+  const FOLIAGE_PINE = "qa116-foliage-Pine-LOD2";
+  const BARK_A = "qa116-bark-A-LOD2";
+  const BARK_PINE = "qa116-bark-Pine-LOD2";
   const models = TREE_KINDS.map(({ kind, height, width }, i) => {
     const w = width / 2;
     const d = 0.01 * i;
@@ -172,9 +172,9 @@ function fakeTreeModels(): FakeTrees {
       [[[0.05 + d, 0.1], [0.45 - d, 0.1], [0.45 - d, 0.9], [0.05 + d, 0.9]]],
       [[0, 0, 1]]
     );
-    const foliageMap = new THREE.Texture(image(FOLIAGE) as never);
+    const foliageMap = new THREE.Texture(image(kind === "A" ? FOLIAGE_A : FOLIAGE_PINE) as never);
     foliageMap.flipY = false;
-    const woodMap = new THREE.Texture(image(kind === "C" ? BARK_C : BARK_AB) as never);
+    const woodMap = new THREE.Texture(image(kind === "A" ? BARK_A : BARK_PINE) as never);
     woodMap.flipY = false;
     const foliage = new THREE.Mesh(foliageGeometry, new THREE.MeshStandardMaterial({ name: "Foliage", map: foliageMap, alphaTest: 0.5, side: THREE.DoubleSide }));
     foliage.name = "Tree_Foliage";
@@ -185,13 +185,14 @@ function fakeTreeModels(): FakeTrees {
     scene.add(foliage, wood);
     return { scene, scenes: [scene], animations: [], cameras: [], asset: { version: "2.0" }, parser: {}, userData: {} } as unknown as GLTF;
   });
-  return { models, images: new Set([FOLIAGE, BARK_AB, BARK_C].map((name) => image(name).data.localUri)) };
+  return { models, images: new Set([FOLIAGE_A, FOLIAGE_PINE, BARK_A, BARK_PINE].map((name) => image(name).data.localUri)) };
 }
 
 const TREES = fakeTreeModels();
 
-/** 창밖 장면을 짓는다. 새 나무 모델(가짜 A·B·C LOD2)을 함께 준다. */
-const build = (centerX: number, groundY: number) => createOutdoor(centerX, groundY, TREES.models);
+/** 창밖 장면을 짓는다. 새 나무 모델(가짜 A·Pine LOD2)을 함께 준다. */
+// 고치기 전 코드는 모델 3개(A·B·C)를 읽으므로, 그 코드에서도 "나무 말고 그대로" 확인이 돌게 끝에 Pine 복사본을 하나 더 붙인다(새 코드는 앞 둘만 쓴다).
+const build = (centerX: number, groundY: number) => createOutdoor(centerX, groundY, [...TREES.models, TREES.models[1]]);
 
 // ---------- 나무 빼기(113) ----------
 

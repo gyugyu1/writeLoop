@@ -20,12 +20,14 @@
 // 그대로 둘 동작(구현 전·뒤 통과): R1~R5. R5는 명세의 "바뀌는 동작"인 구역 단위 판정의 결과가 111 기준과 같아야 한다는 것으로, 지금 코드도 만족한다.
 //
 // 작업 113(새 나무 모델 넣기) 명세의 "고칠 기존 테스트"(112 qa 테스트의 나무 틀 찾기)로 qa가 고쳤다(113 qa 보고 02-qa-tests.md):
-// 113은 마을 나무를 Kenney 나무 틀 대신 새 나무 모델(WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)로 종류 × 단계 × 부품마다 인스턴스 메시 하나로 그리고,
+// 113은 마을 나무를 Kenney 나무 틀 대신 새 나무 모델(WriteLoop_Tree_<A·Pine>_LOD<1·2>.glb(116: 113의 A·B·C에서 바뀜))로 종류 × 단계 × 부품마다 인스턴스 메시 하나로 그리고,
 // 그루마다 계절 잎 색을 입히던 것을 없애며, 겨울에는 고른 수와 관계없이 잎 메시를 숨긴다(113 바뀌는 동작 1·4·5·6). 시야 고르기·숨기기는 그대로 받는다. 그래서:
 // - "나무 메시"는 나무 틀 도형 대신 새 나무 모델의 메시 도형으로 찍은 인스턴스 메시로 찾는다(tests/__fixtures__/village-trees-113.ts의 treePartOf).
 //   이름표는 <종류>-LOD<단계>-leaf(잎) / -trunk(줄기)다. 가짜 불러오기는 새 나무 파일에 앱 자산 폴더의 그 파일을 푼 모델을 준다.
 // - R1·R2: 겨울에 "나무는 111 기준대로 그려진다"를 줄기 메시에만 두고, 잎 메시는 그려지는 그루가 0이다(R2는 숨겨져 있다).
 // - R3: "여름 색과 가을 색이 다른 잎이 있다" 대신, 다시 보일 때 잎 메시가 가을 칸(glTF UV + (0, 0.5))을 그리는지 본다(113 바뀌는 동작 4).
+// 작업 116(나무 A·Pine 세트) 명세의 "고칠 기존 테스트"(겨울 잎 숨기기)로 qa가 고쳤다(116 qa 보고 02-qa-tests.md): 겨울에는 A 잎 메시만 숨고 Pine 잎 메시는 시야 고르기대로 그려진다.
+// - R1·R2: 겨울에 "111 기준대로 그려진다"를 줄기와 Pine 잎 메시에 두고, A 잎 메시만 그려지는 그루가 0이다(R2는 숨겨져 있다). Pine 잎의 겨울 기준 색은 baseline이 잰 값이다.
 // 장식에 대한 단언과 입력은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
@@ -510,9 +512,10 @@ describe("[spec] 112-② 그대로 둘 동작: 겨울 장식, 카메라가 없�
       expect(drawn.decor.map((t) => ({ step, mesh: t.label, visible: t.mesh.visible, drawn: drawnInstances(t, drawn.roots).length }))).toEqual(
         drawn.decor.map((t) => ({ step, mesh: t.label, visible: false, drawn: 0 }))
       );
-      // 113: 줄기는 111 기준대로, 잎은 시야와 관계없이 그려지지 않는다
-      const trunks = drawn.trees.filter((t) => t.kind === "trunk");
-      const leaves = drawn.trees.filter((t) => t.kind === "leaf");
+      // 113: 줄기는 111 기준대로, 잎은 시야와 관계없이 그려지지 않는다. 116: Pine 잎은 줄기처럼 111 기준대로, A 잎만 그려지지 않는다
+      const trunks = drawn.trees.filter((t) => t.kind === "trunk" || t.label.startsWith("Pine-"));
+      const leaves = drawn.trees.filter((t) => t.kind === "leaf" && t.label.startsWith("A-"));
+      expect(leaves).toHaveLength(2);
       const checks = checkSelection(drawn, base, camera, "winter", trunks);
       expect({ step, checks }).toEqual({ step, checks: clean(checks) });
       expect(leaves.map((t) => ({ step, mesh: t.label, drawn: drawnInstances(t, drawn.roots).length }))).toEqual(leaves.map((t) => ({ step, mesh: t.label, drawn: 0 })));
@@ -550,10 +553,11 @@ describe("[spec] 112-② 그대로 둘 동작: 겨울 장식, 카메라가 없�
     ] as const) {
       await frames(1, { camera: emptyCamera() });
       await frames(1, state);
-      // 113: 겨울에는 줄기만 그렇게 보이고 잎 메시는 숨은 채다
-      const rows = orderRows("winter", drawn.trees.filter((t) => t.kind === "trunk"), `겨울 ${name}`);
+      // 113: 겨울에는 줄기만 그렇게 보이고 잎 메시는 숨은 채다. 116: 줄기와 Pine 잎이 그렇게 보이고 A 잎 메시만 숨은 채다
+      const rows = orderRows("winter", drawn.trees.filter((t) => t.kind === "trunk" || t.label.startsWith("Pine-")), `겨울 ${name}`);
       expect(rows.got).toEqual(rows.want);
-      const leaves = drawn.trees.filter((t) => t.kind === "leaf");
+      const leaves = drawn.trees.filter((t) => t.kind === "leaf" && t.label.startsWith("A-"));
+      expect(leaves).toHaveLength(2);
       expect(leaves.map((t) => ({ name, mesh: t.label, visible: t.mesh.visible, drawn: drawnInstances(t, drawn.roots).length }))).toEqual(
         leaves.map((t) => ({ name, mesh: t.label, visible: false, drawn: 0 }))
       );

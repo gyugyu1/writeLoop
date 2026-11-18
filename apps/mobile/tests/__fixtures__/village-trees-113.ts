@@ -1,4 +1,4 @@
-// qa 테스트 도우미(작업 113 새 나무 모델 넣기): 새 나무 GLB 여섯(WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)을 Jest에서 쓸 때의 가짜 불러오기와 나무 알아보기.
+// qa 테스트 도우미(작업 113 새 나무 모델 넣기): 나무 GLB 넷(WriteLoop_Tree_<A·Pine>_LOD<1·2>.glb. 116: 113의 A·B·C 여섯에서 바뀜)을 Jest에서 쓸 때의 가짜 불러오기와 나무 알아보기.
 // 이 파일은 테스트가 아니다(testMatch는 *.test.ts만 돈다).
 //
 // - 나무 파일 이름·자리 찾기와 require 가짜(mockTreeAssets)는 tree-files-113.ts에 있다(여기서 다시 내보낸다).
@@ -6,11 +6,11 @@
 //   도형은 position·normal·uv·번호, 재질은 MeshStandardMaterial(이름 Foliage·Bark, 색 흰색, 잎은 alphaTest 0.5·양면), 그림은 GLB마다 새 THREE.Texture
 //   (이름 = glTF 그림 이름, flipY false, sRGB). 그림 내용은 앱의 그림 읽기(texture-file-loader)처럼 image.data.localUri에 그림 바이트의 sha256 이름으로 둔다.
 //   같은 바이트의 그림도 GLB마다 다른 Texture다(GLTFLoader는 파일마다 따로 푼다). 같은 그림을 한 번만 쓰는 것은 앱이 할 일이다.
-//   주의: 그림 이름은 줄기 그림이 A·B와 C 모두 "Bark_Seasons_LOD<n>"이지만 바이트는 다르다.
+//   주의: 그림 이름이 같아도 바이트가 다를 수 있다(그림 내용은 바이트 sha256으로 가른다).
 // - 가짜 useLoader(treeUseLoader)는 나무 파일(이름이 WriteLoop_Tree_<종류>_LOD<단계>.glb)에는 위 가짜 모델을, 그 밖에는 넘겨받은 다른 가짜에 맡긴다.
 //   같은 묶음(resetTreeLoader 사이) 안에서는 같은 파일에 같은 모델 객체를 준다(react-three-fiber useLoader의 캐시처럼).
 //   treeLoader.fail을 넣으면 나무 파일을 읽을 때 그 오류를 던진다(react-three-fiber useLoader는 읽기에 실패하면 그리기 중에 그 오류를 던진다).
-// - 나무 알아보기(treePartOf): 그린 인스턴스 메시의 도형을 점 자리(소수 넷째 자리)로 여섯 파일의 두 메시 도형과 맞춘다(앱이 도형을 복제해도 알아본다).
+// - 나무 알아보기(treePartOf): 그린 인스턴스 메시의 도형을 점 자리(소수 넷째 자리)로 네 파일의 두 메시 도형과 맞춘다(앱이 도형을 복제해도 알아본다).
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
@@ -73,7 +73,7 @@ export function parsedTree(name: string): ParsedTree | null {
   return tree;
 }
 
-/** 여섯 파일이 모두 앱 자산 폴더에 있는가. */
+/** 네 파일이 모두 앱 자산 폴더에 있는가. */
 export const allTreeFilesPresent = () => TREE_FILES.every((n) => parsedTree(n) !== null);
 
 /** 그 파일·부품의 원래 glTF UV(점마다 [u, v]). */
@@ -207,7 +207,7 @@ function knownParts(): Map<string, TreePartInfo> {
 
 const partCache = new WeakMap<THREE.BufferGeometry, TreePartInfo | null>();
 
-/** 도형이 새 나무 모델의 어느 파일·부품인가(아니면 null). */
+/** 도형이 나무 모델의 어느 파일·부품인가(아니면 null). */
 export function treePartOf(geometry: THREE.BufferGeometry): TreePartInfo | null {
   if (partCache.has(geometry)) return partCache.get(geometry)!;
   const pos = geometry.getAttribute("position");

@@ -25,13 +25,9 @@ describe("[spec] 103 바뀔 동작: 계절 흩뿌림 조각 자리(명세 1)", (
     }
   });
 
-  it("L3 조각 수는 가을이 가장 많고, 여름은 가을·봄보다 드물다(가을 > 봄 > 여름)", () => {
+  it("L3 여름은 봄보다 조각이 드물다(봄 > 여름). 116 06 결정 1: 가을 낙엽은 A 그루 둘레에만 놓여 가을이 가장 많을 이유가 없어져 가을 비교를 뺐다", () => {
     const mod = scatterModule();
     const count = Object.fromEntries(SCATTER_SEASONS.map((s) => [s, mod.villageSeasonScatter(s).length])) as Record<(typeof SCATTER_SEASONS)[number], number>;
-    expect({ count, autumnMost: count.autumn > count.spring && count.autumn > count.summer, summerFewest: count.summer < count.spring && count.summer < count.autumn }).toEqual({
-      count,
-      autumnMost: true,
-      summerFewest: true
-    });
+    expect({ count, springMoreThanSummer: count.spring > count.summer }).toEqual({ count, springMoreThanSummer: true });
   });
 });

@@ -213,8 +213,8 @@ describe("[spec] 100 바뀔 동작: 각진 집 모델, 땅, 스크립트 머리�
       else added.push(l);
     }
     expect({ missingFromBase: baseLines.slice(at) }).toEqual({ missingFromBase: [] });
-    // 113: 파일 칸이 새 나무 GLB 이름(`…WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb`)으로 시작하는 표 줄도 새 모델 줄로 본다
-    const isTreeRow = (l: string) => /^\| `[^`]*WriteLoop_Tree_[ABC]_LOD[12]\.glb`[^|]*\|[^|]*\S[^|]*\|[^|]*\S[^|]*\|$/.test(l);
+    // 113: 파일 칸이 새 나무 GLB 이름(`…WriteLoop_Tree_<A·Pine>_LOD<1·2>.glb`(116: A·B·C에서 바뀜))으로 시작하는 표 줄도 새 모델 줄로 본다
+    const isTreeRow = (l: string) => /^\| `[^`]*WriteLoop_Tree_(?:A|Pine)_LOD[12]\.glb`[^|]*\|[^|]*\S[^|]*\|[^|]*\S[^|]*\|$/.test(l);
     const notNewModelRow = added.filter((l) => {
       if (isTreeRow(l)) return false;
       const m = /^\| `([^`]+\.(?:glb|gltf))` \|[^|]*\S[^|]*\|[^|]*\S[^|]*\|$/.exec(l);

@@ -1,27 +1,29 @@
-// [spec] qa 테스트(작업 113, 기능 변경: 새 나무 모델 넣기, 모바일) — 방 창밖 풍경(lobby3d-outdoor의 createOutdoor)의 나무.
+// [spec] qa 테스트(작업 113 → 116에서 A·Pine 기준으로 고침, 기능 변경, 모바일) — 방 창밖 풍경(lobby3d-outdoor의 createOutdoor)의 나무.
 // 기대값은 명세(private 작업 폴더 113-2026-11-18-새-나무-모델-넣기/01-main-spec.md)에서만 가져온다.
 // 모든 테스트가 "바뀔 동작"이다(고치기 전에는 실패해야 한다). 03-qa-tests.md의 분류와 같다.
 //
 // 명세 바뀌는 동작:
+// (116 명세: 창밖은 LOD2로 A·Pine 반반, 겨울에 A 잎만 숨기고 Pine 잎은 겨울 칸으로 계속 그린다. 줄기 겨울 칸(0.5,0)은 그대로.
+//  배율·자리·흔들림·읽기 실패·마을과 같은 계절은 그대로. 높이 A 2.99, Pine 3.25.)
 //   7. 창밖 나무(지금 코드로 지은 둥근 나무·소나무: 가까운 줄 약 9그루, 먼 줄 약 12그루)를 새 모델 LOD2로 바꾼다.
-//      종류는 A·B·C를 고르게(늘 같은 결과), 자리는 지금 규칙(가까운 줄·먼 줄, 창 정면 가운데 비우기), 크기는 대략 s × 1.4배(s = 지금 배율).
+//      종류는 A·Pine 반반(늘 같은 결과), 자리는 지금 규칙(가까운 줄·먼 줄, 창 정면 가운데 비우기), 크기는 대략 s × 1.4배(s = 지금 배율).
 //   8. 계절 칸을 따른다(겨울: 잎 숨김, 줄기 눈). 지금의 겨울 가지·소나무 눈 덮개와 잎 계절 색은 없앤다.
 //   9. 잎은 지금처럼 바람에 살짝 흔들린다(그루마다 위상이 다른 작은 흔들림).
 //  11. 마을과 방(창밖)에서 함께 쓴다.  12. 나무 모델을 읽지 못하면 나무만 빼고 그리고, 화면이 멈추지 않게 한다.
 // 명세 "새 나무 모델": 잎 UV는 봄 칸에 있고 계절마다 glTF UV에 더하는 값은 봄 (0, 0), 여름 (0.5, 0), 가을 (0, 0.5), 겨울 (0.5, 0.5).
-//   줄기 그림은 겨울에만 (0.5, 0)을 더한다. 원점은 줄기 밑 가운데, 바닥은 y = 0. 높이 A 2.60, B 2.45, C 3.10.
+//   줄기 그림은 겨울에만 (0.5, 0)을 더한다. 원점은 줄기 밑 가운데, 바닥은 y = 0. 높이 A 2.99, Pine 3.25.
 //
 // 지금 규칙(고치기 전 코드 lobby3d-outdoor.ts에서 읽은 자리 식, 명세 7 "자리는 지금 규칙 그대로"):
 //   가까운 줄 i = 0..8: x = c - 10 + 2.5i + (r - 0.5)·1.2, |x - c| < 2이면 심지 않음, z = -10 - 3r, s = 0.9 + 0.4r
 //   먼 줄 i = 0..11: x = c - 18 + 3.2i + (r - 0.5)·1.5, z = -20 - 8r, s = 1.4 + 0.5r   (r은 0 이상 1 미만의 난수, c는 창 가운데 x)
 //   그래서 가까운 줄은 z ∈ [-13, -10], x ∈ [c - 10.6, c + 10.6], 6~8그루. 먼 줄은 z ∈ [-28, -20], x ∈ [c - 18.75, c + 18.95], 12그루.
-//   새 배율은 s × 1.4: 가까운 줄 1.26~1.82, 먼 줄 1.96~2.66. 명세가 "대략"이라 위아래로 5%를 더 둔다(아래 SCALE_SLACK).
+//   새 배율은 116 결정으로 s × 1.26(아래 TREE_SCALE, SCALE_SLACK).
 //
 // 어떻게 보나(구현 전이라 구현 이름을 모른다. 가정은 03-qa-tests.md에 적었다):
-// - 새 나무 모델은 createOutdoor의 세 번째 인자로 A·B·C LOD2 순서의 GLTF 배열을 준다고 가정했다(build 한 곳에서만 부른다).
+// - 새 나무 모델은 createOutdoor의 세 번째 인자로 A·Pine LOD2 순서의 GLTF 배열을 준다고 가정했다(build 한 곳에서만 부른다).
 //   나무 모델이 없으면(읽기 실패) 세 번째 인자 없이 부른다.
 // - 나무 모델은 명세의 모양을 본뜬 가짜다(메시 Tree_Foliage 재질 Foliage, Tree_Wood 재질 Bark, 각자 그림 하나). 장면에서 그 잎·줄기 그림
-//   (그림 파일 이름 image.data.localUri로 가린다)을 쓰는 물체를 새 나무의 잎·줄기로 보고, 모양의 높이로 종류(A·B·C)를 가린다. 인스턴스 메시면 인스턴스마다 한 그루로 본다.
+//   (그림 파일 이름 image.data.localUri로 가린다)을 쓰는 물체를 새 나무의 잎·줄기로 보고, 모양의 높이로 종류(A·Pine)를 가린다. 인스턴스 메시면 인스턴스마다 한 그루로 본다.
 // - "계절 칸을 그린다"는 그 물체가 쓰는 그림 좌표(모양의 uv에 재질 그림의 변환 행렬을 곱한 값)가 원본 uv에 명세의 값을 더한 것과 같은 것으로 본다.
 // - "잎을 숨긴다"는 잎 물체(또는 그 위 묶음)가 보이지 않거나 인스턴스가 0개인 것으로 본다.
 // - "흔들린다"는 update(시각) 뒤 잎의 위쪽 축이 수직에서 기운 각도로 본다. "작은"은 지금 둥근 나무 흔들림의 가장 큰 기울기
@@ -46,11 +48,10 @@ jest.mock("three/examples/jsm/utils/BufferGeometryUtils.js", () => {
 
 // ---------- 가짜 새 나무 모델 ----------
 
-type Kind = "A" | "B" | "C";
+type Kind = "A" | "Pine";
 const TREE_KINDS: readonly { kind: Kind; height: number; width: number }[] = [
-  { kind: "A", height: 2.6, width: 1.46 },
-  { kind: "B", height: 2.45, width: 1.57 },
-  { kind: "C", height: 3.1, width: 1.34 }
+  { kind: "A", height: 2.99, width: 1.84 },
+  { kind: "Pine", height: 3.25, width: 1.86 }
 ];
 /** 가짜 줄기 높이 = 나무 높이 × 이 값(잎과 줄기 모양을 높이로 가린다). */
 const WOOD_RATIO = 0.55;
@@ -74,7 +75,7 @@ function quads(corners: readonly (readonly [number, number, number])[][], uvs: r
 }
 
 interface FakeTrees {
-  /** A·B·C LOD2 순서 */
+  /** A·Pine LOD2 순서 */
   models: GLTF[];
   /** 잎·줄기 그림의 파일 이름(image.data.localUri) */
   foliageImages: Set<string>;
@@ -85,13 +86,14 @@ interface FakeTrees {
 }
 
 function fakeTreeModels(): FakeTrees {
-  // 명세: 잎 그림은 같은 단계끼리 A·B·C가 같은 그림, 줄기 그림은 A·B가 같고 C는 다르다.
+  // 명세: A와 Pine은 잎 그림도 줄기 그림도 서로 다르다.
   // 그림은 앱의 그림 읽기(texture-file-loader)가 두는 모양({ data: { localUri }, width, height })을 따르고, 같은 그림이면 같은 파일 이름이다.
   // 모델(GLB)마다 그림 객체는 따로다(파일마다 따로 푼다).
   const image = (name: string) => ({ data: { localUri: `file:///cache/model-image-${name}.png` }, width: 2, height: 2 });
-  const FOLIAGE = "qa113-foliage-LOD2";
-  const BARK_AB = "qa113-bark-AB-LOD2";
-  const BARK_C = "qa113-bark-C-LOD2";
+  const FOLIAGE_A = "qa116-foliage-A-LOD2";
+  const FOLIAGE_PINE = "qa116-foliage-Pine-LOD2";
+  const BARK_A = "qa116-bark-A-LOD2";
+  const BARK_PINE = "qa116-bark-Pine-LOD2";
   const foliageUv = {} as Record<Kind, number[]>;
   const woodUv = {} as Record<Kind, number[]>;
   const models = TREE_KINDS.map(({ kind, height, width }, i) => {
@@ -117,9 +119,9 @@ function fakeTreeModels(): FakeTrees {
     );
     foliageUv[kind] = Array.from(foliageGeometry.attributes.uv.array as ArrayLike<number>);
     woodUv[kind] = Array.from(woodGeometry.attributes.uv.array as ArrayLike<number>);
-    const foliageMap = new THREE.Texture(image(FOLIAGE) as never);
+    const foliageMap = new THREE.Texture(image(kind === "A" ? FOLIAGE_A : FOLIAGE_PINE) as never);
     foliageMap.flipY = false;
-    const woodMap = new THREE.Texture(image(kind === "C" ? BARK_C : BARK_AB) as never);
+    const woodMap = new THREE.Texture(image(kind === "A" ? BARK_A : BARK_PINE) as never);
     woodMap.flipY = false;
     const foliage = new THREE.Mesh(foliageGeometry, new THREE.MeshStandardMaterial({ name: "Foliage", map: foliageMap, alphaTest: 0.5, side: THREE.DoubleSide }));
     foliage.name = "Tree_Foliage";
@@ -130,7 +132,7 @@ function fakeTreeModels(): FakeTrees {
     scene.add(foliage, wood);
     return { scene, scenes: [scene], animations: [], cameras: [], asset: { version: "2.0" }, parser: {}, userData: {} } as unknown as GLTF;
   });
-  return { models, foliageImages: new Set([image(FOLIAGE).data.localUri]), barkImages: new Set([image(BARK_AB).data.localUri, image(BARK_C).data.localUri]), foliageUv, woodUv };
+  return { models, foliageImages: new Set([image(FOLIAGE_A).data.localUri, image(FOLIAGE_PINE).data.localUri]), barkImages: new Set([image(BARK_A).data.localUri, image(BARK_PINE).data.localUri]), foliageUv, woodUv };
 }
 
 let TREES: FakeTrees;
@@ -327,9 +329,11 @@ const OLD_TREE_SEASON_COLORS: Record<Season, number[]> = {
   winter: [0xeef3f6, 0xeef3f6, 0xeef3f6, 0xeef3f6, 0x3d7a55]
 };
 
-const SCALE_SLACK = 0.05;
-const NEAR_SCALE = [0.9 * 1.4 * (1 - SCALE_SLACK), 1.3 * 1.4 * (1 + SCALE_SLACK)] as const;
-const FAR_SCALE = [1.4 * 1.4 * (1 - SCALE_SLACK), 1.9 * 1.4 * (1 + SCALE_SLACK)] as const;
+// 116 결정(04-main-decision.md 2): 창밖 그루 크기 s × 1.4 → s × 1.26. 가까운 줄 1.134~1.638, 먼 줄 1.764~2.394. 부동소수 오차만 보도록 위아래 2%.
+const SCALE_SLACK = 0.02;
+const TREE_SCALE = 1.26;
+const NEAR_SCALE = [0.9 * TREE_SCALE * (1 - SCALE_SLACK), 1.3 * TREE_SCALE * (1 + SCALE_SLACK)] as const;
+const FAR_SCALE = [1.4 * TREE_SCALE * (1 - SCALE_SLACK), 1.9 * TREE_SCALE * (1 + SCALE_SLACK)] as const;
 
 // ---------- 테스트 ----------
 
@@ -358,15 +362,15 @@ describe("[spec] 창밖 나무는 새 나무 모델 LOD2로 그린다(113 명세
     outdoor.dispose();
   });
 
-  test("C-O2 종류는 A·B·C를 고르게 섞고(종류마다 전체의 20% 이상 50% 이하), 두 번 지어도 같은 자리에 같은 종류다", () => {
+  test("C-O2 종류는 A·Pine 반반(종류마다 전체의 35% 이상 65% 이하)이고, 두 번 지어도 같은 자리에 같은 종류다", () => {
     const first = build(0, 0);
     const second = build(0, 0);
     const a = treesIn(first);
     const b = treesIn(second);
     const count = (kind: Kind) => a.filter((t) => t.kind === kind).length;
-    for (const kind of ["A", "B", "C"] as const) {
-      expect(count(kind)).toBeGreaterThanOrEqual(Math.ceil(a.length * 0.2));
-      expect(count(kind)).toBeLessThanOrEqual(Math.floor(a.length * 0.5));
+    for (const kind of ["A", "Pine"] as const) {
+      expect(count(kind)).toBeGreaterThanOrEqual(Math.ceil(a.length * 0.35));
+      expect(count(kind)).toBeLessThanOrEqual(Math.floor(a.length * 0.65));
     }
     const list = (trees: Tree[]) => trees.map((t) => `${t.kind} ${round(t.x)},${round(t.z)} ${t.scale.map(round).join("/")}`).sort();
     expect(a.length).toBeGreaterThan(0);
@@ -375,7 +379,7 @@ describe("[spec] 창밖 나무는 새 나무 모델 LOD2로 그린다(113 명세
     second.dispose();
   });
 
-  test("C-O3 크기는 지금 배율 s의 대략 1.4배(가까운 줄 1.26~1.82, 먼 줄 1.96~2.66에 위아래 5%)이고, 가로·세로·깊이가 같은 배율이다", () => {
+  test("C-O3 크기는 지금 배율 s의 1.26배(116 결정, 가까운 줄 1.134~1.638, 먼 줄 1.764~2.394에 위아래 2%)이고, 가로·세로·깊이가 같은 배율이다", () => {
     const outdoor = build(0, 0);
     paint(outdoor, "summer");
     const trees = treesIn(outdoor);
@@ -394,9 +398,9 @@ describe("[spec] 창밖 나무는 새 나무 모델 LOD2로 그린다(113 명세
     outdoor.dispose();
   });
 
-  test("C-O4 계절 칸: 잎은 그 계절 칸(봄 0,0 · 여름 0.5,0 · 가을 0,0.5)을 그리고 겨울에는 숨긴다. 줄기는 겨울에만 눈 칸(0.5,0)이고, 계절이 바뀌면 바로 따른다", () => {
+  test("C-O4 계절 칸: 잎은 그 계절 칸(봄 0,0 · 여름 0.5,0 · 가을 0,0.5 · 겨울 0.5,0.5)을 그리되 겨울에는 A 잎만 숨기고 Pine 잎은 계속 그린다(겨울이 끝나면 A 잎이 다시 보인다). 줄기는 겨울에만 눈 칸(0.5,0)이고, 계절이 바뀌면 바로 따른다", () => {
     const outdoor = build(0, 0);
-    const sequence: Season[] = ["summer", "winter", "autumn", "spring", "winter", "summer", "autumn"];
+    const sequence: Season[] = ["summer", "winter", "autumn", "spring", "winter", "spring", "winter", "summer", "autumn"];
     for (const season of sequence) {
       paint(outdoor, season);
       const parts = treeParts(outdoor);
@@ -406,8 +410,15 @@ describe("[spec] 창밖 나무는 새 나무 모델 LOD2로 그린다(113 명세
       expect(wood.length).toBeGreaterThan(0);
       expect(wood.filter((p) => !p.shown)).toHaveLength(0);
       for (const p of wood) expect([season, effectiveUvs(p.mesh)]).toEqual([season, shiftedUvs(TREES.woodUv[p.kind!], woodOffset(season))]);
+      const woodOf = (kind: Kind) => wood.filter((p) => p.kind === kind);
+      expect(woodOf("A").length).toBeGreaterThan(0);
+      expect(woodOf("Pine").length).toBeGreaterThan(0);
       if (season === "winter") {
-        expect([season, foliage.filter((p) => p.shown).length]).toEqual([season, 0]);
+        // A 잎은 숨기고(보이는 A 잎 0), Pine 잎은 그루마다 겨울 칸으로 계속 그린다
+        expect([season, foliage.filter((p) => p.kind === "A" && p.shown).length]).toEqual([season, 0]);
+        const pine = foliage.filter((p) => p.kind === "Pine");
+        expect([season, pine.filter((p) => p.shown).length]).toEqual([season, woodOf("Pine").length]);
+        for (const p of pine) expect([season, effectiveUvs(p.mesh)]).toEqual([season, shiftedUvs(TREES.foliageUv.Pine, FOLIAGE_OFFSET.winter)]);
       } else {
         expect(foliage.filter((p) => p.shown)).toHaveLength(wood.length);
         for (const p of foliage) expect([season, effectiveUvs(p.mesh)]).toEqual([season, shiftedUvs(TREES.foliageUv[p.kind!], FOLIAGE_OFFSET[season])]);
@@ -416,7 +427,7 @@ describe("[spec] 창밖 나무는 새 나무 모델 LOD2로 그린다(113 명세
     outdoor.dispose();
   });
 
-  test("C-O5 잎 계절 색과 겨울 가지·소나무 눈 덮개가 없다: 잎 재질 색은 봄·여름·가을이 같고(겨울은 잎을 숨긴다), 장면에 옛 나무 모양·색(잎·소나무 계절 색, 줄기·가지·눈)이 없다", () => {
+  test("C-O5 잎 계절 색과 겨울 가지·소나무 눈 덮개가 없다: 잎 재질 색은 봄·여름·가을이 같고, 장면에 옛 나무 모양·색(잎·소나무 계절 색, 줄기·가지·눈)이 없다", () => {
     const outdoor = build(0, 0);
     const leafColors: Record<string, string[]> = {};
     for (const season of ["spring", "summer", "autumn", "winter"] as const) {

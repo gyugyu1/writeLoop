@@ -39,6 +39,19 @@
 // - N1: 둘레 숲 그루 수 287과 견주던 것을 "둘레 숲 그루가 있다"로 바꿨다(단계·잎줄기 짝·카메라와 관계없는 단계는 그대로 본다).
 // - N2: 둘레 숲 종류를 정확한 수(A 111·B 25·C 151) 대신 113의 몫(A·C 각각 38~52%, B 5~15%)으로 새 그루 수에서 셈한 범위로 본다.
 // - N8: 마을 안 28그루의 자리(sha256, 115 ② 기준 커밋 be29bd1에서 잰 값)만 견준다. 둘레 숲의 새 자리는 115 ② qa 테스트 lobby3d-village-forest.spec.test.tsx가 본다.
+// 작업 116(나무 A·Pine 세트) 명세의 "고칠 기존 테스트"(A·B·C 전제의 종류 비율, 겨울 잎 숨기기, 같은 그림 공유, 메시 수)로 qa가 고쳤다(116 qa 보고 02-qa-tests.md).
+// 116은 나무 모델을 A·Pine 넷(LOD1·LOD2)으로 바꾼다. 마을 안(28그루)은 LOD1로 A 70%·Pine 30%, 둘레 숲은 LOD2로 Pine 65%·A 35%이고 늘 같은 결과다. 그래서:
+// - isInterior: "마을 안 그루"를 VILLAGE_TREES 자리 대신 마을 경계 원(115, 가운데 (29, 26)·반지름 26) 안의 그루로 본다(둘레 숲 그루 밑동은 늘 원 밖이다). 116 명세 3이
+//   길·문 앞을 덮는 마을 안 그루의 자리나 배율을 고치게 해서, 자리가 VILLAGE_TREES와 달라질 수 있기 때문이다.
+// - N1: 자리마다 하나씩 보던 단언을 "마을 안 잎·줄기가 각각 28그루"로 바꿨다(나머지 단언은 그대로).
+// - N2: 종류 몫을 마을 안 A 17~22·Pine 6~11(70%·30%에서 3그루 안), 둘레 숲 Pine 58~72%·A 28~42%(65%·35%에서 7%p 안)로 바꿨다(명세가 "대략"이라 그루 수가 적으면 몇 그루 차이를 허용한다는 것의 qa 허용치).
+// - N3(04 결정 2): 배율을 모두 0.9배로 줄인다: 마을 안 1.53~1.845, 둘레 숲 1.44~1.89(04 결정 1로 "가리는 그루 고침" 예외는 없다. 모든 그루가 같은 범위).
+// - N4: 겨울에는 A 잎만 숨기고 Pine 잎은 겨울 칸(glTF UV + (0.5, 0.5))으로 시야대로 그린다. 줄기·다른 계절은 그대로다.
+// - N6-a: 나무 메시 8개(종류 2 × 단계 2 × 부품 2). N6-b: A·Pine은 잎 그림도 줄기 그림도 서로 다르다.
+// - N6-d: 겨울 동안 A 잎 메시만 숨는다(Pine 잎은 시야대로). 겨울 → 봄이 되면 A 잎이 그 프레임부터 그때 고른 수에 따른다.
+// - N8: 04 결정 1로 자리를 고치는 그루가 없어서 마을 안 28그루 자리 sha256을 처음 값 그대로 견준다(자리는 그대로, 배율만 0.9배).
+// - (처음 쓴 N10a·N10b "수관이 길·문 앞을 덮지 않음·카메라가 가리지 않음"은 04 결정 1로 뺐다.)
+// - N11(새): 116 명세 4. 겨울에 마을을 보면 Pine 잎은 그려지고 A 잎은 그려지지 않으며, 겨울이 끝나면 A 잎이 다시 보인다. 마을과 방을 오가는 것(같은 계절)은 창밖·캔버스 테스트가 본다.
 import { act, render } from "@testing-library/react-native";
 import { Suspense, type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -47,7 +60,7 @@ import type * as VillageModule from "@/components/lobby3d/lobby3d-village";
 import type { DaylightState } from "@/components/lobby3d/lobby3d-daylight";
 import { daylightAt, type Season } from "@/lib/lobby3d/daylight";
 import type { LobbySim } from "@/lib/lobby3d/engine";
-import { VILLAGE_START, VILLAGE_TREES } from "@/lib/lobby3d/village";
+import { VILLAGE_BOUNDARY, VILLAGE_START, VILLAGE_TREES } from "@/lib/lobby3d/village";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { allObjects, loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb, sourceGeometries } from "../__fixtures__/village-scene-101";
 import {
@@ -283,7 +296,8 @@ function drawnInstances(mesh: THREE.InstancedMesh, roots: THREE.Object3D[]): Ins
   return shownChain(mesh, roots) ? slots(mesh) : [];
 }
 
-const isInterior = (x: number, z: number) => VILLAGE_TREES.some(([tx, tz]) => Math.abs(tx - x) < 1e-3 && Math.abs(tz - z) < 1e-3);
+/** 116: 마을 안 그루 = 밑동이 마을 경계 원 안인 그루(둘레 숲 그루 밑동은 늘 원 밖이다. 115). */
+const isInterior = (x: number, z: number) => Math.hypot(x - VILLAGE_BOUNDARY.x, z - VILLAGE_BOUNDARY.z) < VILLAGE_BOUNDARY.radius;
 
 // ---------- 카메라와 시야(111·112-② 테스트와 같다) ----------
 
@@ -418,14 +432,10 @@ function treeTable(trees: Tree[]): Map<string, string> {
 // 마을 안 자리 sha256은 115 ② 기준 커밋 be29bd1에서 같은 방법(카메라 없이 처음 그린 마을 안 그루 자리 "x,y,z")으로 잰 값이다.
 const INTERIOR_TREES = 28;
 const INTERIOR_POSITIONS_DIGEST = "d0b329e8a7915d0418592dd1168839dbfedca32520504c9a4206cc742bd2ffaa";
-/** N2 마을 안의 몫(qa가 70그루일 때 정한 범위 14~32를 몫으로 적은 것. 115에서 그루 수가 바뀌어 몫으로 셈한다). */
-const INSIDE_SHARE = { lo: 14 / 70, hi: 32 / 70 };
-/**
- * N2 둘레 숲의 종류별 몫: 113 qa가 300그루일 때 정한 범위(A·C 각각 114~156 = 38~52%, B 15~45 = 5~15%)를 몫으로 적은 것.
- * 115 ①은 같은 계산으로 센 정확한 수(A 111·B 25·C 151, 287그루)와 견주고 "②에서 숲을 다시 심을 때 다시 정한다"고 했다(① 03-main-decision.md).
- * 115 ②는 둘레 숲 그루 수가 바뀌므로 113의 몫으로 돌아가 새 그루 수의 범위를 셈한다(115 ② qa 보고 03-숲과-땅-꾸밈/02-qa-tests.md "판단이 필요한 것").
- */
-const FOREST_SHARE = { AC: { lo: 0.38, hi: 0.52 }, B: { lo: 0.05, hi: 0.15 } };
+/** N2 마을 안 종류별 그루 수 범위(116 명세 2: 28그루 가운데 A 70%(19.6)·Pine 30%(8.4)에서 qa가 3그루 안으로 잡은 허용치). */
+const INSIDE_COUNT = { A: { lo: 17, hi: 22 }, Pine: { lo: 6, hi: 11 } };
+/** N2 둘레 숲의 종류별 몫(116 명세 2: Pine 65%·A 35%에서 qa가 7%p 안으로 잡은 허용치). */
+const FOREST_SHARE = { Pine: { lo: 0.58, hi: 0.72 }, A: { lo: 0.28, hi: 0.42 } };
 /** 몫 범위를 그루 수 범위로(아래는 올림, 위는 내림. 몫을 적을 때 생기는 소수 끝은 1e-9 안에서 봐준다). */
 const countRange = (total: number, share: { lo: number; hi: number }) => ({ lo: Math.ceil(total * share.lo - 1e-9), hi: Math.floor(total * share.hi + 1e-9) });
 
@@ -452,12 +462,15 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     for (const part of TREE_PARTS) {
       const mine = rows.filter((r) => r.part === part);
       const wrongLod = mine.filter((r) => (isInterior(r.x, r.z) ? r.lod !== 1 : r.lod !== 2)).map((r) => `LOD${r.lod} ${spotKey(r.x, r.z)}`);
-      const perSpot = VILLAGE_TREES.map(([x, z]) => mine.filter((r) => Math.abs(r.x - x) < 1e-3 && Math.abs(r.z - z) < 1e-3).length);
+      // 116: 자리마다 하나씩 대신 마을 안 그루 수(28)와, 그 자리끼리 겹치지 않는 것을 본다
+      const interior = mine.filter((r) => isInterior(r.x, r.z));
+      const distinctSpots = new Set(interior.map((r) => spotKey(r.x, r.z))).size;
       // 115 ②: 둘레 숲 그루 수(115 ① 287)는 견주지 않고 둘레 숲 그루가 있는지만 본다(둘레 숲을 새로 심는다)
-      expect({ part, wrongLod: wrongLod.slice(0, 10), spotsNotOnce: perSpot.filter((n) => n !== 1).length, forest: mine.filter((r) => !isInterior(r.x, r.z)).length > 0 }).toEqual({
+      expect({ part, wrongLod: wrongLod.slice(0, 10), interior: interior.length, distinctSpots, forest: mine.filter((r) => !isInterior(r.x, r.z)).length > 0 }).toEqual({
         part,
         wrongLod: [],
-        spotsNotOnce: 0,
+        interior: INTERIOR_TREES,
+        distinctSpots: INTERIOR_TREES,
         forest: true
       });
     }
@@ -489,7 +502,7 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     }
   });
 
-  it("[바뀔] N2 종류(명세 2): 마을 안은 A·B·C를 고르게(종류마다 14~32그루. 115: 마을 안 그루의 20%~45.7%), 둘레 숲은 A·C 위주로 B는 조금(A·C 각각 114~156그루, B 15~45그루. 115 ①: 같은 계산으로 센 A 111·B 25·C 151. 115 ②: 둘레 숲 그루의 A·C 각각 38~52%, B 5~15%) 섞는다. 다시 그려도(Math.random이 다른 값을 주어도) 그루마다 종류·단계·배율·방향·밝기가 같다", async () => {
+  it("[바뀔] N2 종류(116 명세 2): 마을 안(28그루)은 A 70%·Pine 30%(A 17~22그루, Pine 6~11그루), 둘레 숲은 Pine 65%·A 35%(Pine 58~72%, A 28~42%)이고 종류는 A·Pine 둘뿐이다. 다시 그려도(Math.random이 다른 값을 주어도) 그루마다 종류·단계·배율·방향·밝기가 같다", async () => {
     let seq = sequence(7);
     jest.spyOn(Math, "random").mockImplementation(() => seq());
     const first = await draw("summer");
@@ -498,28 +511,26 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     const count = (group: Row[], kind: TreeKind) => group.filter((r) => r.kind === kind).length;
     const inside = leaves.filter((r) => isInterior(r.x, r.z));
     const forest = leaves.filter((r) => !isInterior(r.x, r.z));
-    const insideCounts = Object.fromEntries(TREE_KINDS.map((k) => [k, count(inside, k)]));
-    const forestCounts = Object.fromEntries(TREE_KINDS.map((k) => [k, count(forest, k)]));
+    const insideCounts = Object.fromEntries(TREE_KINDS.map((k) => [k, count(inside, k)])) as Record<TreeKind, number>;
+    const forestCounts = Object.fromEntries(TREE_KINDS.map((k) => [k, count(forest, k)])) as Record<TreeKind, number>;
     const between = (n: number, range: { lo: number; hi: number }) => n >= range.lo && n <= range.hi;
-    // 115: 마을 안은 정해 둔 몫으로 새 그루 수의 범위를 셈한다(70그루면 14~32 그대로).
-    // 115 ②: 둘레 숲도 113의 몫(A·C 각각 38~52%, B 5~15%)으로 새 그루 수의 범위를 셈한다(115 ① 정확한 수 A 111·B 25·C 151 대신)
-    const insideRange = countRange(INTERIOR_TREES, INSIDE_SHARE);
-    const acRange = countRange(forest.length, FOREST_SHARE.AC);
-    const bRange = countRange(forest.length, FOREST_SHARE.B);
+    // 116: 마을 안 A 70%·Pine 30%에서 3그루 안, 둘레 숲 Pine 65%·A 35%에서 7%p 안
+    const pineForest = countRange(forest.length, FOREST_SHARE.Pine);
+    const aForest = countRange(forest.length, FOREST_SHARE.A);
     expect({
+      kinds: [...TREE_KINDS],
       inside: insideCounts,
       insideTotal: inside.length,
-      insideEven: TREE_KINDS.every((k) => between(insideCounts[k], insideRange)),
-      forest: forestCounts,
-      forestTotal: forest.length,
-      forestMostlyAC: between(forestCounts.A, acRange) && between(forestCounts.C, acRange) && between(forestCounts.B, bRange)
+      insideShare: between(insideCounts.A, INSIDE_COUNT.A) && between(insideCounts.Pine, INSIDE_COUNT.Pine),
+      forestTotal: forest.length > 0,
+      forestShare: between(forestCounts.Pine, pineForest) && between(forestCounts.A, aForest)
     }).toEqual({
+      kinds: ["A", "Pine"],
       inside: insideCounts,
       insideTotal: INTERIOR_TREES,
-      insideEven: true,
-      forest: forestCounts,
-      forestTotal: forest.length,
-      forestMostlyAC: true
+      insideShare: true,
+      forestTotal: true,
+      forestShare: true
     });
     const table1 = treeTable(trees);
     await act(async () => first.unmount());
@@ -534,13 +545,13 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     expect({ size: table2.size, differ: differ.slice(0, 10) }).toEqual({ size: table1.size, differ: [] });
   });
 
-  it("[바뀔] N3 크기·방향(명세 3): 그루마다 새 모델 원본에 고르게 곱한 배율이 마을 안 1.7~2.05, 둘레 숲 1.6~2.1이고, 돌림은 y축 돌림뿐이며 밑은 y = 0이다. 배율과 방향은 그루마다 다르다", async () => {
+  it("[바뀔] N3 크기·방향(명세 3. 116 04 결정 2: 0.9배): 그루마다 새 모델 원본에 고르게 곱한 배율이 마을 안 1.53~1.845, 둘레 숲 1.44~1.89이고, 돌림은 y축 돌림뿐이며 밑은 y = 0이다. 배율과 방향은 그루마다 다르다", async () => {
     const drawn = await draw("summer");
     const rows = rowsOf(needTrees(drawn));
     const bad: string[] = [];
     for (const r of rows) {
       const [sx, sy, sz] = r.scale;
-      const [lo, hi] = isInterior(r.x, r.z) ? [1.7, 2.05] : [1.6, 2.1];
+      const [lo, hi] = isInterior(r.x, r.z) ? [1.53, 1.845] : [1.44, 1.89];
       if (Math.abs(sx - sy) > 1e-4 || Math.abs(sy - sz) > 1e-4) bad.push(`고르지 않은 배율 ${r.part} ${spotKey(r.x, r.z)} ${r.scale.map((v) => v.toFixed(4)).join("/")}`);
       if (sy < lo - 1e-4 || sy > hi + 1e-4) bad.push(`배율 밖 ${r.part} ${spotKey(r.x, r.z)} ${sy.toFixed(4)} (${lo}~${hi})`);
       if (Math.abs(r.quat.x) > 1e-5 || Math.abs(r.quat.z) > 1e-5) bad.push(`y축 말고 돌림 ${r.part} ${spotKey(r.x, r.z)}`);
@@ -558,7 +569,7 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     }).toEqual({ insideScales: true, forestScales: true, turns: true });
   });
 
-  it("[바뀔] N4 계절(명세 4): 잎은 그 계절 칸(glTF UV + 봄 (0,0)·여름 (0.5,0)·가을 (0,0.5))을 그리고, 겨울에는 잎이 그려지지 않으며 줄기는 눈 칸(+ (0.5,0)), 겨울이 아니면 줄기는 평소 칸(+ (0,0))이다. 계절이 바뀐 그 프레임에 따른다(카메라가 없을 때와 나무를 보는 카메라일 때 모두)", async () => {
+  it("[바뀔] N4 계절(명세 4. 116: 겨울에 A 잎만 숨김): 잎은 그 계절 칸(glTF UV + 봄 (0,0)·여름 (0.5,0)·가을 (0,0.5)·겨울 (0.5,0.5))을 그리되 겨울에는 A 잎이 그려지지 않고 Pine 잎은 겨울 칸으로 그려지며, 줄기는 눈 칸(+ (0.5,0)), 겨울이 아니면 줄기는 평소 칸(+ (0,0))이다. 계절이 바뀐 그 프레임에 따른다(카메라가 없을 때와 나무를 보는 카메라일 때 모두)", async () => {
     const drawn = await draw("summer");
     const trees = needTrees(drawn);
     for (const [state, name] of [
@@ -570,11 +581,11 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
         const got = trees.map((t) => {
           const drawnCount = drawnInstances(t.mesh, drawn.roots).length;
           const offset = t.info.part === "foliage" ? FOLIAGE_OFFSET[season] : woodOffset(season);
-          const hiddenFoliage = t.info.part === "foliage" && season === "winter";
+          const hiddenFoliage = t.info.part === "foliage" && t.info.kind === "A" && season === "winter";
           return { name, season, mesh: t.label, drawnNone: drawnCount === 0, cellOk: hiddenFoliage ? "보지 않음" : uvShiftError(t.mesh, t.info, offset) <= 1e-5 };
         });
         const want = trees.map((t) => {
-          const hiddenFoliage = t.info.part === "foliage" && season === "winter";
+          const hiddenFoliage = t.info.part === "foliage" && t.info.kind === "A" && season === "winter";
           // 카메라 없으면 모두 그린다. 카메라가 있으면 그려지는지는 시야를 따르므로 겨울 잎만 본다
           const drawnNone = hiddenFoliage ? true : state.camera ? got.find((g) => g.mesh === t.label)!.drawnNone : false;
           return { name, season, mesh: t.label, drawnNone, cellOk: hiddenFoliage ? "보지 않음" : true };
@@ -626,15 +637,16 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     expect(materialColors).toEqual(trees.map((t) => ({ mesh: t.label, color: 0xffffff })));
   });
 
-  it("[바뀔] N6-a 그리기 구조(명세 6): 나무 메시는 종류 × 단계 × 부품마다 하나씩 12개다", async () => {
+  it("[바뀔] N6-a 그리기 구조(명세 6. 116: A·Pine): 나무 메시는 종류(A·Pine) × 단계 × 부품마다 하나씩 8개다", async () => {
     const drawn = await draw("summer");
     const trees = needTrees(drawn);
     const labels = trees.map((t) => t.label).sort();
     const want = TREE_KINDS.flatMap((k) => TREE_LODS.flatMap((l) => TREE_PARTS.map((p) => `${k}-LOD${l}-${p}`))).sort();
     expect(labels).toEqual(want);
+    expect(want).toEqual(["A-LOD1-foliage", "A-LOD1-wood", "A-LOD2-foliage", "A-LOD2-wood", "Pine-LOD1-foliage", "Pine-LOD1-wood", "Pine-LOD2-foliage", "Pine-LOD2-wood"]);
   });
 
-  it("[바뀔] N6-b 재질과 같은 그림(명세 새 나무 모델·11): 잎은 그림이 있고 양면·알파 잘라내기 0.5, 줄기는 그림이 있다. 같은 단계의 잎 그림은 A·B·C가 하나(같은 그림 원본)를 함께 쓰고, 줄기 그림은 A·B가 하나를 함께 쓰며 C는 따로다. 그림은 그 파일의 그 그림이다", async () => {
+  it("[바뀔] N6-b 재질과 그림(명세 새 모델·4 계절 · 116): 잎은 그림이 있고 양면·알파 잘라내기 0.5, 줄기는 그림이 있다. A와 Pine은 잎 그림도 줄기 그림도 서로 다르다(같은 내용 그림만 함께 쓴다). 그림은 그 파일의 그 그림이다", async () => {
     const drawn = await draw("summer");
     const trees = needTrees(drawn);
     const mat = (t: Tree) => (Array.isArray(t.mesh.material) ? t.mesh.material[0] : t.mesh.material) as THREE.MeshStandardMaterial;
@@ -657,11 +669,9 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     for (const lod of TREE_LODS) {
       expect({
         lod,
-        foliageAB: sourceOf("A", lod, "foliage") === sourceOf("B", lod, "foliage"),
-        foliageAC: sourceOf("A", lod, "foliage") === sourceOf("C", lod, "foliage"),
-        woodAB: sourceOf("A", lod, "wood") === sourceOf("B", lod, "wood"),
-        woodAC: sourceOf("A", lod, "wood") === sourceOf("C", lod, "wood")
-      }).toEqual({ lod, foliageAB: true, foliageAC: true, woodAB: true, woodAC: false });
+        foliageAPine: sourceOf("A", lod, "foliage") === sourceOf("Pine", lod, "foliage"),
+        woodAPine: sourceOf("A", lod, "wood") === sourceOf("Pine", lod, "wood")
+      }).toEqual({ lod, foliageAPine: false, woodAPine: false });
     }
   });
 
@@ -688,22 +698,30 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     expect(view.checks).toEqual(view.want);
   });
 
-  it("[바뀔] N6-d 겨울 잎 숨기기와 시야 고르기(명세 6): 겨울 동안은 시야에 드는 그루가 있어도 잎 메시가 모두 숨는다. 빈 시야에서 겨울 → 봄이 되면 잎 메시는 숨은 채이고, 그 뒤 마을을 보면 그 프레임에 시야에 드는 잎이 있는 메시가 보인다. 마을을 보며 겨울 → 봄이 되면 그 프레임에 시야대로 그린다", async () => {
+  it("[바뀔] N6-d 겨울 잎 숨기기와 시야 고르기(명세 6. 116: A 잎만): 겨울 동안은 시야에 드는 그루가 있어도 A 잎 메시가 모두 숨고 Pine 잎은 시야대로 그려진다. 빈 시야에서 겨울 → 봄이 되면 잎 메시는 숨은 채이고, 그 뒤 마을을 보면 그 프레임에 시야에 드는 잎이 있는 메시가 보인다(A 잎도 다시). 마을을 보며 겨울 → 봄이 되면 그 프레임에 시야대로 그린다", async () => {
     const drawn = await draw("summer");
     const trees = needTrees(drawn);
+    const foliageA = trees.filter((t) => t.info.part === "foliage" && t.info.kind === "A");
     const foliage = trees.filter((t) => t.info.part === "foliage");
+    const shownInWinter = trees.filter((t) => !foliageA.includes(t));
     const base = baselineOf(trees);
     const looking = villageCamera(VILLAGE_START);
     await setSeason(drawn, "winter", { camera: looking }, 1);
     for (const camera of [looking, villageCamera(CORNER), villageCamera(MIDDLE, 30)]) {
       await frames(1, { camera });
-      expect(foliage.map((t) => ({ mesh: t.label, drawn: drawnInstances(t.mesh, drawn.roots).length }))).toEqual(foliage.map((t) => ({ mesh: t.label, drawn: 0 })));
+      expect(foliageA.map((t) => ({ mesh: t.label, drawn: drawnInstances(t.mesh, drawn.roots).length }))).toEqual(foliageA.map((t) => ({ mesh: t.label, drawn: 0 })));
+      // Pine 잎과 줄기는 시야대로 그려진다
+      const view = checkView(shownInWinter, base, drawn.roots, camera);
+      expect(view.checks).toEqual(view.want);
     }
+    // 이 시야에서 겨울에 Pine 잎이 실제로 그려졌어야 뜻이 있다
+    await frames(1, { camera: villageCamera(MIDDLE, 30) });
+    expect(trees.some((t) => t.info.part === "foliage" && t.info.kind === "Pine" && drawnInstances(t.mesh, drawn.roots).length > 0)).toBe(true);
     await frames(1, { camera: looking });
     await setSeason(drawn, "spring", { camera: looking }, 1);
     let view = checkView(trees, base, drawn.roots, looking);
     expect(view.checks).toEqual(view.want);
-    expect(foliage.some((t) => drawnInstances(t.mesh, drawn.roots).length > 0)).toBe(true);
+    expect(foliageA.some((t) => drawnInstances(t.mesh, drawn.roots).length > 0)).toBe(true);
     const empty = emptyCamera();
     await setSeason(drawn, "winter", { camera: empty }, 1);
     await setSeason(drawn, "spring", { camera: empty }, 1);
@@ -795,6 +813,27 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
   });
 });
 
+// ---------- 116 바뀔 동작: 겨울 ----------
+
+describe("[spec] 116 바뀔 동작: 겨울", () => {
+  it("[바뀔] N11 겨울에 마을을 보면 Pine 잎은 겨울 칸으로 그려지고 A 잎은 그려지지 않으며, 겨울이 끝나면 A 잎이 다시 그려진다(명세 4): 카메라 없이 그린 겨울에 A 잎 메시 둘은 그려지는 그루가 0이고 Pine 잎 메시 둘은 모든 그루가 그려지며 잎 그림 칸이 glTF UV + (0.5, 0.5)이다. 봄이 되면 A 잎 메시가 모든 그루를 그린다", async () => {
+    const drawn = await draw("summer");
+    const trees = needTrees(drawn);
+    const leaves = (kind: TreeKind) => trees.filter((t) => t.info.part === "foliage" && t.info.kind === kind);
+    expect(leaves("A")).toHaveLength(2);
+    expect(leaves("Pine")).toHaveLength(2);
+    await setSeason(drawn, "winter", {}, 2);
+    expect(leaves("A").map((t) => ({ mesh: t.label, drawn: drawnInstances(t.mesh, drawn.roots).length }))).toEqual(leaves("A").map((t) => ({ mesh: t.label, drawn: 0 })));
+    expect(
+      leaves("Pine").map((t) => ({ mesh: t.label, drawn: drawnInstances(t.mesh, drawn.roots).length, cell: uvShiftError(t.mesh, t.info, FOLIAGE_OFFSET.winter) <= 1e-5 }))
+    ).toEqual(leaves("Pine").map((t) => ({ mesh: t.label, drawn: t.mesh.count, cell: true })));
+    await setSeason(drawn, "spring", {}, 2);
+    expect(leaves("A").map((t) => ({ mesh: t.label, drawn: drawnInstances(t.mesh, drawn.roots).length, cell: uvShiftError(t.mesh, t.info, FOLIAGE_OFFSET.spring) <= 1e-5 }))).toEqual(
+      leaves("A").map((t) => ({ mesh: t.label, drawn: t.mesh.count, cell: true }))
+    );
+  });
+});
+
 // ---------- 그대로 둘 동작 ----------
 
 /** 나무로 보는 메시: 새 나무 모델 도형이거나(구현 뒤) Kenney 나무 틀 도형(구현 전)인 인스턴스 메시. 부품은 잎(foliage·leaf)과 줄기. */
@@ -823,7 +862,7 @@ describe("[spec] 113 그대로 둘 동작: 나무 자리와 그루 수, 누르�
         .filter((t) => t.part === part)
         .flatMap((t) => slots(t.mesh))
         .map((i) => `${i.x.toFixed(3)},${i.world.elements[13].toFixed(3)},${i.z.toFixed(3)}`);
-      // 115 ②: 둘레 숲 그루(마을 안 자리가 아닌 그루)는 뺀다. 둘레 숲 그루 수·자리는 115 ② 명세 바뀌는 동작 1로 바뀐다
+      // 115 ②: 둘레 숲 그루(마을 안 자리가 아닌 그루)는 뺀다. 116: 마을 안 그루는 경계 원 안의 그루이고, 04 결정 1로 자리를 고치는 그루가 없어 28그루 모두 지금 자리 그대로다
       const interior = spots.filter((s) => {
         const [x, , z] = s.split(",").map(Number);
         return isInterior(x, z);

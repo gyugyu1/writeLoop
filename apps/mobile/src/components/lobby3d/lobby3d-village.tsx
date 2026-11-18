@@ -1,5 +1,5 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber/native";
-import { Component, Suspense, useEffect, useMemo, type MutableRefObject, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { LobbySim } from "@/lib/lobby3d/engine";
@@ -803,11 +803,15 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     return { root, buildings, glows, glowMat, glasses, hedgeMats, owned, pick, leaves, rotor: rotor as THREE.Mesh | null, season: { shown: null as Season | null } };
   }, [gltf]);
 
-  // 반투명 재질은 마을을 처음 그릴 때 미리 컴파일한다(처음 옅어질 때 컴파일로 끊기지 않게). 장면의 빛으로 컴파일해야 같은 셰이더가 된다
-  const { gl, camera, scene } = useThree();
-  useEffect(() => {
+  // 반투명 재질은 마을을 처음 그릴 때 미리 컴파일한다(처음 옅어질 때 컴파일로 끊기지 않게). 장면의 빛으로 컴파일해야 같은 셰이더가 된다.
+  // 첫 프레임에 한다: 3D 화면의 프레임 처리가 먼저 돌아 그때는 방(방 조명 포함)이 이미 숨겨져 있다(마을에 다시 들어올 때도)
+  const warmed = useRef<unknown>(null);
+  const warmUp = (state: { gl?: THREE.WebGLRenderer; camera?: THREE.Camera; scene?: THREE.Scene }) => {
+    if (warmed.current === built) return;
+    warmed.current = built;
+    const { gl, camera, scene } = state;
     // 테스트의 가짜 3D 환경처럼 그리개가 없거나 미리 컴파일을 못 하면 건너뛴다(처음 옅어질 때 컴파일된다)
-    if (!gl || typeof gl.compile !== "function") return;
+    if (!gl || !camera || !scene || typeof gl.compile !== "function") return;
     const warm = new THREE.Scene();
     for (const entry of built.buildings.values()) {
       for (const part of entry.parts) warm.add(new THREE.Mesh(part.mesh.geometry, part.fade));
@@ -817,7 +821,7 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     } catch (error) {
       console.warn("[lobby3d] 건물 반투명 재질을 미리 컴파일하지 못했습니다", error);
     }
-  }, [built, gl, camera, scene]);
+  };
 
   useEffect(() => {
     pickTargets.current = built.pick;
@@ -827,7 +831,8 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
     };
   }, [built, pickTargets]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
+    warmUp(state);
     // 가리는 건물: 0.25초에 걸쳐 0.35까지 옅어지고, 벗어나면 같은 빠르기로 돌아온다
     const hiding = new Set(occludingBuildings({ x: sim.x, z: sim.z }));
     const step = Math.min(1, delta / FADE_SECONDS) * (1 - FADED_OPACITY);

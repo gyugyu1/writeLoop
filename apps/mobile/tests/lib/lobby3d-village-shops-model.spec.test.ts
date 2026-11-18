@@ -12,6 +12,8 @@
 //
 // 바뀔 동작(구현 전 실패): M1~M3, M5. M4는 명세 2의 바뀌는 동작(가구점을 모델로 바꿈)의 자리를 보지만 지금 조립한 가구점도 벽 가로 6·가운데 x 11·앞면 z 31이라
 // 구현 전에도 통과한다(구현 뒤에도 통과해야 한다). 그대로 둘 동작(구현 전·뒤 통과): K5.
+// 작업 114(마을 벤치 모델) 명세의 "고칠 기존 테스트"(마을 모델 안 벤치 모양)로 qa가 K5를 고쳤다(114 qa 보고 02-qa-tests.md):
+// 소품 묶음에서 벤치 조각(점이 모두 벤치 둘레 상자 안인 프리미티브, tests/__fixtures__/village-bench-114.ts)만 빼고 견준다. 묶음 이름과 다른 묶음은 그대로 본다.
 import {
   boxOf,
   imageBytes,
@@ -39,6 +41,7 @@ import {
   sha256,
   type Rect
 } from "../__fixtures__/village-shops-106";
+import { withoutBenchPrimitives } from "../__fixtures__/village-bench-114";
 
 /** 묶음 아래 메시의 프리미티브를 유리(재질 이름 glass…)와 그 밖으로 나눠 삼각형 수와 그 밖이 쓰는 색 그림(이미지 번호)을 센다. */
 function buildingParts(glb: Glb, group: string) {
@@ -128,8 +131,9 @@ describe("[spec] 106 그대로 둘 동작: 마을 모델의 건물 밖 묶음", 
     const base = parseGlb(gitShow(BASE_106, VILLAGE_GLB_PATH_106));
     const keep = (name: string) => !changedBy106(name);
     expect(rootNames(now).filter(keep)).toEqual(rootNames(base).filter(keep));
-    const baseMeshes = describeGroups(base, keep);
+    // 114: 소품 묶음의 벤치 조각만 빼고 견준다
+    const baseMeshes = describeGroups(withoutBenchPrimitives(base), keep);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeGroups(now, keep)).toEqual(baseMeshes);
+    expect(describeGroups(withoutBenchPrimitives(now), keep)).toEqual(baseMeshes);
   });
 });

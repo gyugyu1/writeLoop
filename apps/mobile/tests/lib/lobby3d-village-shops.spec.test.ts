@@ -15,6 +15,10 @@
 // - 가로 4 → 5, 깊이 약 3.3(3.0~3.6) → 약 4.2(4.1~4.3). 값은 tests/__fixtures__/village-home-size-107.ts.
 // - 걸어갈 수 있는 옛 땅: x 32 열·x 38 열의 z 7~11과 z 7 줄의 x 33~37 → x 32 열·x 38 열의 z 7~11(z 7 줄은 새 집이 막는다).
 // - 막힌 집 가운데: x 33~37, z 9~11 → 새 집 칸 전체 x 33~37, z 7~11.
+// 작업 114(마을 벤치 모델) 명세의 "고칠 기존 테스트"(벤치 방향 rot, 벤치 막히는 칸)로 qa가 K1·K2를 고쳤다(114 qa 보고 02-qa-tests.md).
+// 벤치 말고 다른 것의 기대는 그대로다(도우미·값은 tests/__fixtures__/village-bench-114.ts):
+// - K1: 배치 파일을 견줄 때 벤치의 rot만 뺀다(벤치 자리는 그대로 본다).
+// - K2: 견주는 칸에서 벤치가 바꿀 수 있는 곳(지금 벤치 칸과 새 벤치 칸)도 뺀다. 기대값은 587개 목록에서 지금 벤치 칸 12개를 뺀 575개(114 기준 커밋 d256ff4에서 잰 값).
 import { LobbySim, VILLAGE_MARK_IDS, applyArea, findPath, hasPlaceBubble, isFree, markInfo, type FloorPoint, type PlaceId } from "@/lib/lobby3d/engine";
 import { VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_PLACES, VILLAGE_SOLID_TILES, VILLAGE_START, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
@@ -43,9 +47,10 @@ import {
   type Rect
 } from "../__fixtures__/village-shops-106";
 import { HOME_DEPTH_107, HOME_NEAR_107, HOME_WIDTH_107 } from "../__fixtures__/village-home-size-107";
+import { BENCH_TILE_RECTS, SOLID_OUTSIDE_CHANGED_114, withoutBenchRot } from "../__fixtures__/village-bench-114";
 
 /** 막힌 칸 가운데 이번 작업이 바꾸는 곳(옛 라룹이 집·카페·도서관·옷집 땅, 옮긴 나무) 밖의 칸. 기준 커밋 c728f00에서 이 테스트의 계산으로 잰 값. */
-const SOLID_OUTSIDE_CHANGED = { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" };
+// { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" }. 114에서 벤치가 바꿀 수 있는 곳도 빼서 SOLID_OUTSIDE_CHANGED_114(village-bench-114.ts)로 견준다.
 
 const LABELS = ["가구점", "라룹이 집", "옷집"].sort();
 const tileCenter = (t: string): FloorPoint => {
@@ -199,7 +204,8 @@ describe("[spec] 106 그대로 둘 동작: 배치 파일·막힌 칸·나무·�
   it("K1 배치 파일에서 건물·길·나무(와 설명) 말고는 기준 커밋과 같다(마을 크기, 분수, 가로등, 노점, 벤치, 바위, 풍차). 라룹이 집의 id·이름·문·층수와 가구점의 id·이름·땅·층수도 같다", () => {
     type Layout = typeof LAYOUT & { _comment?: string };
     const strip = (layout: Layout) => {
-      const { buildings: _b, paths: _p, trees: _t, _comment: _c, ...rest } = layout;
+      // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다)
+      const { buildings: _b, paths: _p, trees: _t, _comment: _c, ...rest } = withoutBenchRot(layout);
       return rest;
     };
     const base = baseLayout106() as Layout;
@@ -214,7 +220,8 @@ describe("[spec] 106 그대로 둘 동작: 배치 파일·막힌 칸·나무·�
   });
 
   it("K2 막힌 칸 가운데 바뀌는 곳(옛 라룹이 집·카페·도서관·옷집 땅, 옮긴 나무가 막는 칸) 밖은 기준 커밋과 같다(개수와 목록의 sha256)", () => {
-    expect(solidOutsideChanged()).toEqual(SOLID_OUTSIDE_CHANGED);
+    // 114: 벤치가 바꿀 수 있는 곳도 빼고 견준다(587개 목록에서 지금 벤치 칸 12개를 뺀 575개)
+    expect(solidOutsideChanged([...BENCH_TILE_RECTS])).toEqual(SOLID_OUTSIDE_CHANGED_114);
   });
 
   it("K3 옮기는 한 그루 말고 나무 자리는 기준 커밋 그대로다(빠진 자리가 있으면 [45.7, 19.2]뿐이고, 더해진 자리는 많아야 하나)", () => {

@@ -16,6 +16,10 @@
 // - K5: 장소 넷 → 라룹이 집 장소 전체와, 가구점 장소의 x(문 x, 106이 옮긴다) 밖 값. 카페·도서관 장소는 뺐다.
 // - K6: paths 전체 → 106이 빼는 길 칸 밖의 길 칸이 기준 커밋과 같다.
 // - K7: 집 밖 묶음 → 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths) 밖의 묶음. 스크립트 코드가 같은지는 뺐다(106이 스크립트를 고친다).
+// 작업 114(마을 벤치 모델) 명세의 "고칠 기존 테스트"(벤치 막히는 칸, 마을 모델 안 벤치 모양)로 qa가 K4·K7을 고쳤다(114 qa 보고 02-qa-tests.md).
+// 벤치 말고 다른 것의 기대는 그대로다(도우미·값은 tests/__fixtures__/village-bench-114.ts):
+// - K4: 견주는 칸에서 벤치가 바꿀 수 있는 곳(지금 벤치 칸과 새 벤치 칸)도 뺀다. 기대값은 587개 목록에서 지금 벤치 칸 12개를 뺀 575개(114 기준 커밋 d256ff4에서 잰 값).
+// - K7: 소품 묶음에서 벤치 조각(점이 모두 벤치 둘레 상자 안인 프리미티브)만 빼고 견준다.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -24,6 +28,7 @@ import { VILLAGE, VILLAGE_PLACES, VILLAGE_SOLID_TILES, VILLAGE_START } from "@/l
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { meshNodesUnder, parseGlb, sceneRoots, worldMatrices, worldPoints, type Glb } from "../__fixtures__/village-glb-098";
 import { REMOVED_PATH_RECTS, changedBy106, rectTiles, solidOutsideChanged, type Rect } from "../__fixtures__/village-shops-106";
+import { BENCH_TILE_RECTS, SOLID_OUTSIDE_CHANGED_114, withoutBenchPrimitives } from "../__fixtures__/village-bench-114";
 
 const REPO = join(__dirname, "..", "..", "..", "..");
 /** 작업 099의 기준 커밋(명세 첫 줄). */
@@ -32,13 +37,11 @@ const baseFile = (path: string) => execFileSync("git", ["show", `${BASE}:${path}
 const sha256 = (data: Buffer | string) => createHash("sha256").update(data).digest("hex");
 
 describe("[spec] 099 그대로 둘 동작: 마을 데이터와 파일", () => {
-  it("K4 걸어갈 수 없는 칸 가운데 106이 바꾸는 곳 밖이 기준 커밋과 같다(마을 크기 70×60, 그 칸 587개와 목록의 sha256). 길은 걷기에 영향을 주지 않는다", () => {
+  it("K4 걸어갈 수 없는 칸 가운데 106이 바꾸는 곳 밖이 기준 커밋과 같다(마을 크기 70×60, 그 칸 587개와 목록의 sha256. 114: 벤치가 바꿀 수 있는 곳도 빼서 575개). 길은 걷기에 영향을 주지 않는다", () => {
     expect({ width: VILLAGE.width, depth: VILLAGE.depth }).toEqual({ width: 70, depth: 60 });
     expect(VILLAGE_SOLID_TILES.size).toBeGreaterThan(0);
-    expect(solidOutsideChanged()).toEqual({
-      count: 587,
-      sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651"
-    });
+    // 114 전 기대값: { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" }
+    expect(solidOutsideChanged([...BENCH_TILE_RECTS])).toEqual(SOLID_OUTSIDE_CHANGED_114);
   });
 
   it("K5 라룹이 집 장소(문 앞 자리·바라볼 곳·이름표 자리)와 라룹이가 나타나는 자리, 가구점 장소의 x(문 x, 106이 옮긴다) 밖 값이 기준 커밋과 같다", () => {
@@ -85,8 +88,9 @@ describe("[spec] 099 그대로 둘 동작: 마을 데이터와 파일", () => {
       }
       return out;
     };
-    const baseMeshes = describeMeshes(base);
+    // 114: 소품 묶음의 벤치 조각만 빼고 견준다
+    const baseMeshes = describeMeshes(withoutBenchPrimitives(base));
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeMeshes(now)).toEqual(baseMeshes);
+    expect(describeMeshes(withoutBenchPrimitives(now))).toEqual(baseMeshes);
   });
 });

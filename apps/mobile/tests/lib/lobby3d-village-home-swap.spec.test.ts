@@ -30,6 +30,11 @@
 // (땅 가로 4칸 → 5칸, 집 전체 1.25배)로 qa가 C3을 고쳤다(107 qa 보고 02-qa-tests.md):
 // - C3: 가로 약 4.3칸(4.2~4.4)·높이 약 3.27칸(3.2~3.35) → 1.25배: 크기 상자 가로 5.3775·높이 4.0890이라 가로 5.28~5.48, 높이 4.0~4.18.
 // C7(막힌 칸 범위 x 33~37, z 9~11과 옛 땅 밖 줄)은 새 땅 [33, 약 7.8, 38, 12]에서도 맞아 고치지 않았다(새 집 칸 전체는 107 qa 테스트 H2가 본다).
+// 작업 114(마을 벤치 모델) 명세의 "고칠 기존 테스트"(벤치 방향 rot, 벤치 막히는 칸, 마을 모델 안 벤치 모양)로 qa가 K2·K3·K5를 고쳤다(114 qa 보고 02-qa-tests.md).
+// 벤치 말고 다른 것의 기대는 그대로다(도우미·값은 tests/__fixtures__/village-bench-114.ts):
+// - K2: 배치 파일을 견줄 때 벤치의 rot만 뺀다(벤치 자리는 그대로 본다).
+// - K3: 견주는 칸에서 벤치가 바꿀 수 있는 곳(지금 벤치 칸과 새 벤치 칸)도 뺀다. 기대값은 587개 목록에서 지금 벤치 칸 12개를 뺀 575개(114 기준 커밋 d256ff4에서 잰 값).
+// - K5: 소품 묶음에서 벤치 조각(점이 모두 벤치 둘레 상자 안인 프리미티브)만 빼고 견준다.
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -56,6 +61,7 @@ import {
   type Glb
 } from "../__fixtures__/village-glb-098";
 import { HOME_MODEL, changedBy106, solidOutsideChanged } from "../__fixtures__/village-shops-106";
+import { BENCH_TILE_RECTS, SOLID_OUTSIDE_CHANGED_114, withoutBenchPrimitives, withoutBenchRot } from "../__fixtures__/village-bench-114";
 
 /** 지금(기준 커밋) 라룹이 집 땅. */
 const OLD_HOME_RECT = [31, 6, 40, 12] as const;
@@ -209,7 +215,7 @@ describe("[spec] 098 바뀔 동작: 라룹이 집 모델·크기·땅·가리기
 });
 
 /** 막힌 칸 중 옛 라룹이 집 땅 밖이면서 106이 바꾸는 곳(카페·도서관·옷집 땅, 옮긴 나무) 밖의 칸: 개수와 정렬한 "열,행" 목록(줄바꿈으로 이음)의 sha256. 106 기준 커밋 c728f00에서 잰 값. */
-const SOLID_OUTSIDE_HOME = { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" };
+// { count: 587, sha256: "a261d8ba50c1bf7ef47178706c1f74c5d952842b04c545454301b92038299651" }. 114에서 벤치가 바꿀 수 있는 곳도 빼서 SOLID_OUTSIDE_CHANGED_114(village-bench-114.ts)로 견준다.
 
 describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품, 막힌 칸, 마을 모델 묶음", () => {
   it("K6 자리(명세 3, 자리는 그대로): 집의 문 가운데(모델에서 크기 상자 가운데와 같다)가 x 35.5(±0.15)이고, 앞면이 z 12다(벽 앞면이 12면 처마 끝은 약 12.19라 11.95~12.25로 받는다)", () => {
@@ -235,7 +241,8 @@ describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품
   it("K2 배치 파일에서 건물·길·나무(106이 바꾼다) 말고는 기준 커밋과 같다(분수, 가로등, 노점, 벤치, 바위, 풍차, 마을 크기). 집의 id·이름·문 자리와 가구점의 id·이름·땅·층수도 같다", () => {
     const base = JSON.parse(baseFile(LAYOUT_PATH).toString("utf8")) as typeof LAYOUT;
     const strip = (layout: typeof LAYOUT) => {
-      const { buildings: _b, paths: _p, trees: _t, _comment: _ignored, ...rest } = layout as typeof LAYOUT & { _comment?: string };
+      // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다)
+      const { buildings: _b, paths: _p, trees: _t, _comment: _ignored, ...rest } = withoutBenchRot(layout as typeof LAYOUT & { _comment?: string });
       return rest;
     };
     expect(strip(LAYOUT)).toEqual(strip(base));
@@ -251,7 +258,8 @@ describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품
 
   it("K3 옛 라룹이 집 땅 밖(106이 바꾸는 곳도 밖)의 막힌 칸이 기준 커밋과 같다(개수와 목록의 sha256)", () => {
     expect(VILLAGE_SOLID_TILES.size).toBeGreaterThan(0);
-    expect(solidOutsideChanged([OLD_HOME_RECT])).toEqual(SOLID_OUTSIDE_HOME);
+    // 114: 벤치가 바꿀 수 있는 곳도 빼고 견준다(587개 목록에서 지금 벤치 칸 12개를 뺀 575개)
+    expect(solidOutsideChanged([OLD_HOME_RECT, ...BENCH_TILE_RECTS])).toEqual(SOLID_OUTSIDE_CHANGED_114);
   });
 
   it("K4 마을 모델 파일 이름 그대로이고, 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths) 밖 장면 뿌리의 묶음 이름이 기준 커밋과 같으며, bld-home이 있다", () => {
@@ -286,9 +294,10 @@ describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품
       }
       return out;
     };
-    const baseMeshes = describeMeshes(base);
+    // 114: 소품 묶음의 벤치 조각만 빼고 견준다
+    const baseMeshes = describeMeshes(withoutBenchPrimitives(base));
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeMeshes(now)).toEqual(baseMeshes);
+    expect(describeMeshes(withoutBenchPrimitives(now))).toEqual(baseMeshes);
   });
 });
 

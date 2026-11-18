@@ -12,6 +12,8 @@
 // - A5를 더했다: 앱 자산의 나무 GLB마다 안에 든 잎 그림(Tree_Foliage 재질의 기본 색 그림, PNG)의 가을 칸에, 알파 잘라내기(0.5)를 넘는 픽셀 가운데
 //   초록빛 픽셀(HSV 색상 60°~170°, 채도 0.15 초과)이 하나도 없다. 가을 칸은 glTF UV에 (0, 0.5)를 더한 칸이라 그림의 왼쪽 아래 4분의 1이다
 //   (glTF UV는 그림 왼쪽 위가 원점이고 v가 아래로 는다). A1·A5는 새 파일을 넣기 전에는 실패해야 한다(바뀔 동작).
+// 작업 114(마을 벤치 모델) 03-main-decision.md(사용자 2026-11-18 "qa가 고침"): 114가 CREDITS의 마을 모델(`lobby-village.glb`) 줄을 고친다(벤치는 WriteLoop 제작).
+// 그래서 A4는 양쪽에서 파일 칸이 `lobby-village.glb`인 줄만 빼고 견준다(그 줄은 100 N6·098 C10·088 F3·wearables·114 B8이 따로 본다). 나머지 단언은 그대로다.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -215,8 +217,10 @@ describe("[spec] 113 불러오기 11·13: 새 나무 GLB를 앱 자산에 넣고
   });
 
   it("[그대로] A4 자산 출처의 다른 모델 줄은 기준 커밋과 같고 차례도 같다(나무 줄을 더하기만 한다)", () => {
-    const now = tableRows(readFileSync(join(MODELS_DIR, "CREDITS.md"), "utf8")).map((cells) => cells.join(" | "));
-    const base = tableRows(execFileSync("git", ["show", `${BASE}:${CREDITS_PATH}`], { cwd: REPO }).toString("utf8")).map((cells) => cells.join(" | "));
+    // 114: 마을 모델(`lobby-village.glb`) 줄은 양쪽에서 뺀다
+    const notVillage = (cells: string[]) => cells[0] !== "`lobby-village.glb`";
+    const now = tableRows(readFileSync(join(MODELS_DIR, "CREDITS.md"), "utf8")).filter(notVillage).map((cells) => cells.join(" | "));
+    const base = tableRows(execFileSync("git", ["show", `${BASE}:${CREDITS_PATH}`], { cwd: REPO }).toString("utf8")).filter(notVillage).map((cells) => cells.join(" | "));
     expect(base.length).toBeGreaterThan(0);
     expect(now.filter((row) => base.includes(row))).toEqual(base);
   });

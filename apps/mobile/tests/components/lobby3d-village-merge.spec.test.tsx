@@ -21,6 +21,11 @@
 // 113은 마을 나무를 Kenney 나무 틀 대신 새 나무 모델(WriteLoop_Tree_<A·B·C>_LOD<1·2>.glb)로 종류 × 단계 × 부품마다 인스턴스 메시 하나로 그린다(113 바뀌는 동작 1·6).
 // 그래서 K3의 "나무는 틀마다 인스턴스로 그려진다(틀 도형 수 = 그려지는 나무 도형 수)"를 "나무 틀 도형으로 그리는 인스턴스는 없고, 새 나무 모델의
 // 종류·단계·부품 12가지가 하나씩 인스턴스로 그려진다"로 바꿨다. 가짜 불러오기는 새 나무 파일에 앱 자산 폴더의 그 파일을 푼 모델을 준다. 나머지 단언·입력은 그대로다.
+// 작업 114(마을 벤치 모델) 명세의 "고칠 기존 테스트"(마을 모델 안 벤치 모양·재질 수)로 qa가 M3을 고쳤다(114 qa 보고 02-qa-tests.md):
+// 114는 Kenney 벤치(colormap 그림) 대신 자기 그림(Village_Bench_Painted_Timber 재질)을 쓰는 새 벤치 모델을 소품 묶음에 넣고, 명세 "그대로여야 할 동작"이
+// "새 벤치 재질은 소품의 다른 재질과 합쳐지지 않고 따로 하나가 된다"다. 그래서 M3의 소품 그려지는 메시를 둘(colormap·정점색, 그림 없음·정점색)에서
+// 셋(그 둘과 새 벤치 그림·정점색. 소품은 지금처럼 구석 어둠 정점색을 함께 굽는다)으로 바꾸고, colormap 그림은 소품에서 새 벤치 재질이 아닌 첫 그림으로 찾는다.
+// 풍차 탑(colormap 하나)과 "그려지는 메시는 모두 한 묶음의 삼각형만 갖는다"는 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -208,15 +213,28 @@ function samePick(pick: THREE.Object3D[], allowed: THREE.Object3D[]): { notAllow
 
 const materialOf = (m: THREE.Mesh) => (Array.isArray(m.material) ? m.material[0] : m.material) as THREE.MeshLambertMaterial;
 
-/** 진짜 마을 모델의 colormap 그림(소품 첫 primitive의 그림). */
+/** 114: 새 벤치 재질 이름(새 벤치 모델에서 잰 값, tests/__fixtures__/village-bench-114.ts). Blender가 이름 뒤에 .001을 붙일 수 있어 앞머리로 본다. */
+const isBenchMaterial114 = (name: string) => name.startsWith("Village_Bench_Painted_Timber");
+
+/** 진짜 마을 모델의 colormap 그림(소품에서 새 벤치 재질이 아닌 첫 primitive의 그림. 114에서 새 벤치 재질을 건너뛰게 고침). */
 function colormapOf(scene: THREE.Object3D): THREE.Texture {
   let map: THREE.Texture | null = null;
   scene.getObjectByName("props")!.traverse((o) => {
-    const m = o instanceof THREE.Mesh ? (materialOf(o) as unknown as THREE.MeshStandardMaterial).map : null;
+    const m = o instanceof THREE.Mesh && !isBenchMaterial114(materialOf(o).name) ? (materialOf(o) as unknown as THREE.MeshStandardMaterial).map : null;
     if (!map && m) map = m;
   });
   expect(map).not.toBeNull();
   return map!;
+}
+
+/** 114: 진짜 마을 모델의 새 벤치 그림(소품에서 새 벤치 재질의 그림). 없으면 null. */
+function benchMapOf(scene: THREE.Object3D): THREE.Texture | null {
+  let map: THREE.Texture | null = null;
+  scene.getObjectByName("props")!.traverse((o) => {
+    const m = o instanceof THREE.Mesh && isBenchMaterial114(materialOf(o).name) ? (materialOf(o) as unknown as THREE.MeshStandardMaterial).map : null;
+    if (!map && m) map = m;
+  });
+  return map;
 }
 
 jest.setTimeout(300000);
@@ -272,16 +290,18 @@ describe("[spec] 112 ③ 바뀔 동작: 계절 흩뿌림은 계절마다 인스�
 // ---------- 바뀔 동작: 마을 모델의 재질 합치기 ----------
 
 describe("[spec] 112 ③ 바뀔 동작: 마을 모델은 묶음 안에서 같은 재질끼리 메시 하나로 합친다(명세 바뀌는 동작 2)", () => {
-  it("M3 진짜 마을 모델(colormap 그림 한 장을 함께 씀): 소품(props)은 그려지는 메시 둘(colormap 그림·정점색, 그림 없음·정점색 = 물)이고 풍차 탑(windmill)은 하나(colormap 그림·정점색)다. 그려지는 메시는 모두 한 묶음의 삼각형만 갖는다", async () => {
+  it("M3 진짜 마을 모델(colormap 그림 한 장을 함께 씀): 소품(props)은 그려지는 메시 셋(colormap 그림·정점색, 그림 없음·정점색 = 물, 114 새 벤치 그림·정점색)이고 풍차 탑(windmill)은 하나(colormap 그림·정점색)다. 그려지는 메시는 모두 한 묶음의 삼각형만 갖는다", async () => {
     const scene = sceneFromGlbFull(nowVillageGlb());
     const colormap = colormapOf(scene);
+    const benchMap = benchMapOf(scene);
+    expect({ benchMap: benchMap !== null, sameAsColormap: benchMap !== null && benchMap.source === colormap.source }).toEqual({ benchMap: true, sameAsColormap: false });
     const bank = new TriBank(sourceTriangles(scene, { glass: GLASS_MATERIAL }));
     const drawn = await draw(scene, "summer");
     const { groups, strange } = byLabel(modelMeshes(drawn), bank);
     expect(strange).toEqual([]);
     const classes = (label: string) => (groups.get(label) ?? []).map(drawnClass).sort();
     expect({ props: classes("props"), windmill: classes("windmill") }).toEqual({
-      props: [classOf(colormap, true), classOf(null, true)].sort(),
+      props: [classOf(colormap, true), classOf(null, true), classOf(benchMap, true)].sort(),
       windmill: [classOf(colormap, true)]
     });
   });

@@ -10,11 +10,18 @@
 // 바뀔 동작(구현 전 실패): H1~H5. 그대로 둘 동작(구현 전·뒤 통과): K1~K4.
 // 집 모델(나무 프레임 집)이 그대로인지는 H4(기준 커밋의 집 점을 1.25배한 것과 같은 모양)와 작업 100 N1·098 C1(삼각형 수·색 그림)이 본다.
 // 가리기 반투명·유리(106)는 106 qa 테스트(lobby3d-village-home-model·lobby3d-village-shops-glass)가 본다.
+// 작업 114(마을 벤치 모델) 명세의 "고칠 기존 테스트"(벤치 방향 rot, 벤치 막히는 칸, 마을 모델 안 벤치 모양)로 qa가 K1·K2·K4를 고쳤다(114 qa 보고 02-qa-tests.md).
+// 114는 배치 파일의 두 벤치 rot과 벤치가 막는 칸을 바꾸고, 마을 모델의 Kenney 벤치를 새 벤치 모델로 바꾼다. 벤치 말고 다른 것의 기대는 그대로다
+// (도우미·값은 tests/__fixtures__/village-bench-114.ts):
+// - K1: 배치 파일을 견줄 때 벤치의 rot만 뺀다(벤치 자리는 그대로 본다).
+// - K2: 견주는 칸에서 벤치가 바꿀 수 있는 곳(지금 벤치 칸과 새 벤치 칸)도 뺀다. 기대값은 624개 목록에서 지금 벤치 칸 12개를 뺀 것(114 기준 커밋 d256ff4에서 잰 값).
+// - K4: 소품 묶음에서 벤치 조각(점이 모두 벤치 둘레 상자 안인 프리미티브)만 빼고 견준다.
 import { applyArea, isFree, markInfo } from "@/lib/lobby3d/engine";
 import { VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_SOLID_TILES, VILLAGE_START, occludingBuildings } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { nowVillageGlb, triangleCount, meshNodesUnder, rootIndex, type Glb } from "../__fixtures__/village-glb-098";
 import { describeGroups, rectTiles, rootNames, sha256 } from "../__fixtures__/village-shops-106";
+import { BENCH_TILE_RECTS, SOLID_OUTSIDE_HOME_107_114, withoutBenchPrimitives, withoutBenchRot } from "../__fixtures__/village-bench-114";
 import {
   HOME_DEPTH_107,
   HOME_DOOR_X_107,
@@ -39,7 +46,7 @@ import {
 } from "../__fixtures__/village-home-size-107";
 
 /** 막힌 칸 가운데 새 집 땅이 막는 칸(x 33~37, z 7~11) 밖의 칸: 개수와 정렬한 "열,행" 목록(줄바꿈으로 이음)의 sha256. 기준 커밋 c4b7693에서 이 테스트의 계산으로 잰 값. */
-const SOLID_OUTSIDE_HOME_107 = { count: 624, sha256: "dbe5207c552fb6ccd93b85f2c40dbfb155f3852f6e1eaa72f5b16f1ea34fb4ea" };
+// { count: 624, sha256: "dbe5207c552fb6ccd93b85f2c40dbfb155f3852f6e1eaa72f5b16f1ea34fb4ea" }. 114에서 벤치가 바꿀 수 있는 곳도 빼서 SOLID_OUTSIDE_HOME_107_114(village-bench-114.ts)로 견준다.
 
 const tileFree = (t: string) => {
   const [c, r] = t.split(",").map(Number);
@@ -120,7 +127,8 @@ describe("[spec] 107 그대로 둘 동작: 배치 파일, 막힌 칸, 장소, �
   it("K1 배치 파일에서 라룹이 집 땅(rect) 말고는 기준 커밋과 같다(집의 id·이름·층수 1·모델·문 35.5, 가구점·옷집 전체, 길, 나무, 분수·가로등·노점·벤치·바위·풍차·마을 크기). 설명(_comment)은 보지 않는다", () => {
     type Layout = typeof LAYOUT & { _comment?: string };
     const strip = (layout: Layout) => {
-      const { _comment: _c, buildings, ...rest } = layout;
+      // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다)
+      const { _comment: _c, buildings, ...rest } = withoutBenchRot(layout);
       return { ...rest, buildings: buildings.map((b) => (b.id === "home" ? { ...b, rect: "home-rect" } : b)) };
     };
     expect(strip(LAYOUT as Layout)).toEqual(strip(baseLayout107()));
@@ -128,10 +136,10 @@ describe("[spec] 107 그대로 둘 동작: 배치 파일, 막힌 칸, 장소, �
     expect({ id: home.id, label: home.label, floors: home.floors, model: home.model, door: home.door }).toEqual({ id: "home", label: "라룹이 집", floors: 1, model: "laroopi-house", door: 35.5 });
   });
 
-  it("K2 막힌 칸 가운데 새 집 칸(x 33~37, z 7~11) 밖은 기준 커밋과 같다(개수 624와 목록의 sha256)", () => {
-    const region = rectTiles([HOME_TILES_RECT_107]);
+  it("K2 막힌 칸 가운데 새 집 칸(x 33~37, z 7~11) 밖은 기준 커밋과 같다(개수 624와 목록의 sha256. 114: 벤치가 바꿀 수 있는 곳도 빼서 612)", () => {
+    const region = rectTiles([HOME_TILES_RECT_107, ...BENCH_TILE_RECTS]);
     const outside = sorted(VILLAGE_SOLID_TILES).filter((t) => !region.has(t));
-    expect({ count: outside.length, sha256: sha256(outside.join("\n")) }).toEqual(SOLID_OUTSIDE_HOME_107);
+    expect({ count: outside.length, sha256: sha256(outside.join("\n")) }).toEqual(SOLID_OUTSIDE_HOME_107_114);
   });
 
   it("K3 장소 셋(문 앞 자리·바라볼 곳·이름표)과 라룹이가 나타나는 자리, 집 말풍선('집으로 들어갈까?', '들어가기')이 그대로다", () => {
@@ -151,8 +159,9 @@ describe("[spec] 107 그대로 둘 동작: 배치 파일, 막힌 칸, 장소, �
     const base = baseVillageGlb107();
     expect(rootNames(now)).toEqual(rootNames(base));
     const keep = (name: string) => name !== "bld-home";
-    const baseMeshes = describeGroups(base, keep);
+    // 114: 소품 묶음의 벤치 조각만 빼고 견준다
+    const baseMeshes = describeGroups(withoutBenchPrimitives(base), keep);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect(describeGroups(now, keep)).toEqual(baseMeshes);
+    expect(describeGroups(withoutBenchPrimitives(now), keep)).toEqual(baseMeshes);
   });
 });

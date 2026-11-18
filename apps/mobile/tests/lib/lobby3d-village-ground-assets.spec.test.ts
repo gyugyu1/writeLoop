@@ -12,11 +12,14 @@
 // 작업 113(새 나무 모델 넣기) 15-main-decision.md 결정 1(사용자 2026-11-18 "3MB 받아들이고 qa가 고침"): 113이 새 나무 GLB 여섯(assets/models/trees/, 약 3MB)을
 // 넣어 앱이 그만큼 커지는 것을 사용자가 받아들였다. 그래서 크기 증가에서 나무 폴더(apps/mobile/assets/models/trees/)의 파일도 뺀다. 1,100,000바이트 한도는 그대로다.
 // - K9: 마을 모델 파일이 바이트까지 같다 → 106이 바꾸는 묶음(건물 bld-*, 창 불빛 판, 옛 길 조각 paths) 밖 묶음의 메시가 기준 커밋과 같다(098 K5와 같은 방법).
+// 작업 114(마을 벤치 모델) 명세의 "고칠 기존 테스트"(마을 모델 안 벤치 모양)로 qa가 K9를 고쳤다(114 qa 보고 02-qa-tests.md):
+// 소품 묶음에서 벤치 조각(점이 모두 벤치 둘레 상자 안인 프리미티브, tests/__fixtures__/village-bench-114.ts)만 빼고 견준다. 다른 묶음은 그대로 본다.
 import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";
 import { imageSize, parseGlb } from "../__fixtures__/village-glb-098";
 import { VILLAGE_GLB_PATH_106, changedBy106, describeGroups } from "../__fixtures__/village-shops-106";
+import { withoutBenchPrimitives } from "../__fixtures__/village-bench-114";
 
 const MOBILE = join(__dirname, "..", "..");
 const REPO = join(MOBILE, "..", "..");
@@ -87,8 +90,9 @@ describe("[spec] 101 그대로 둘 동작: 앱 크기와 마을 모델 파일", 
     const base = parseGlb(execFileSync("git", ["show", `${BASE}:${path}`], { cwd: REPO, maxBuffer: 64 * 1024 * 1024 }));
     const now = parseGlb(readFileSync(join(REPO, path)));
     const keep = (name: string) => !changedBy106(name);
-    const baseMeshes = describeGroups(base, keep);
+    // 114: 소품 묶음의 벤치 조각만 빼고 견준다
+    const baseMeshes = describeGroups(withoutBenchPrimitives(base), keep);
     expect(Object.keys(baseMeshes).length).toBeGreaterThan(0);
-    expect({ path: relative(REPO, join(REPO, path)).replace(/\\/g, "/"), meshes: describeGroups(now, keep) }).toEqual({ path, meshes: baseMeshes });
+    expect({ path: relative(REPO, join(REPO, path)).replace(/\\/g, "/"), meshes: describeGroups(withoutBenchPrimitives(now), keep) }).toEqual({ path, meshes: baseMeshes });
   });
 });

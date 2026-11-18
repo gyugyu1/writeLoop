@@ -496,34 +496,45 @@ function VillageGround({ daylight, pathMaterials, groundMaterial }: VillageGroun
     scatterTexture.colorSpace = THREE.SRGBColorSpace;
     const scatterMat = new THREE.MeshLambertMaterial({ map: scatterTexture, alphaTest: 0.4 });
     owned.push(scatterMat);
+    // 칸마다 메시를 나누지 않고, 인스턴스마다 그 조각의 칸(그림 모음에서 칸 왼쪽 아래 uv)을 주어 판의 uv를 그 칸으로 옮긴다.
+    // three.js는 그릴 물체마다 준비(시야 판정·셰이더·값 확인)를 하므로 계절마다 메시 하나로 그린다
+    scatterMat.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader
+        .replace("#include <common>", "#include <common>\nattribute vec2 scatterCell;")
+        .replace("#include <uv_vertex>", "#include <uv_vertex>\n#ifdef USE_MAP\n  vMapUv = vMapUv + scatterCell;\n#endif");
+    };
+    scatterMat.customProgramCacheKey = () => "village-scatter-cell";
     const scatterMeshes = new Map<Season, THREE.InstancedMesh[]>();
     const shade = new THREE.Color();
     for (const season of SCATTER_SEASONS) {
       const pieces = villageSeasonScatter(season);
-      const meshes: THREE.InstancedMesh[] = [];
-      for (let kind = 0; kind < 16; kind += 1) {
-        const mine = pieces.filter((m) => m.kind === kind);
-        if (mine.length === 0) continue;
-        const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-        // 이 조각의 그림 칸으로 uv를 옮긴다(그림 맨 위 줄이 0~3번)
-        const col = kind % 4;
-        const row = Math.floor(kind / 4);
-        const uv = geo.getAttribute("uv");
-        for (let i = 0; i < uv.count; i += 1) uv.setXY(i, (col + uv.getX(i)) / 4, (3 - row + uv.getY(i)) / 4);
-        owned.push(geo);
-        const mesh = new THREE.InstancedMesh(geo, scatterMat, mine.length);
-        mine.forEach((m, i) => {
-          q.setFromAxisAngle(up, m.turn);
-          m4.compose(new THREE.Vector3(m.x, SCATTER_Y, m.z), q, new THREE.Vector3(m.size, 1, m.size));
-          mesh.setMatrixAt(i, m4);
-          mesh.setColorAt(i, shade.setScalar(m.shade));
-        });
-        mesh.raycast = () => {};
-        mesh.visible = false;
-        meshes.push(mesh);
-        root.add(mesh);
+      if (pieces.length === 0) {
+        scatterMeshes.set(season, []);
+        continue;
       }
-      scatterMeshes.set(season, meshes);
+      const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+      // 판의 uv는 칸 하나 크기(그림 모음의 1/4)로 줄여 두고, 인스턴스마다 그 칸 왼쪽 아래만큼 옮긴다
+      const uv = geo.getAttribute("uv");
+      for (let i = 0; i < uv.count; i += 1) uv.setXY(i, uv.getX(i) / 4, uv.getY(i) / 4);
+      // 조각의 그림 칸(그림 맨 위 줄이 0~3번): 칸 왼쪽 아래 uv
+      const cells = new Float32Array(pieces.length * 2);
+      pieces.forEach((m, i) => {
+        cells[i * 2] = (m.kind % 4) / 4;
+        cells[i * 2 + 1] = (3 - Math.floor(m.kind / 4)) / 4;
+      });
+      geo.setAttribute("scatterCell", new THREE.InstancedBufferAttribute(cells, 2));
+      owned.push(geo);
+      const mesh = new THREE.InstancedMesh(geo, scatterMat, pieces.length);
+      pieces.forEach((m, i) => {
+        q.setFromAxisAngle(up, m.turn);
+        m4.compose(new THREE.Vector3(m.x, SCATTER_Y, m.z), q, new THREE.Vector3(m.size, 1, m.size));
+        mesh.setMatrixAt(i, m4);
+        mesh.setColorAt(i, shade.setScalar(m.shade));
+      });
+      mesh.raycast = () => {};
+      mesh.visible = false;
+      root.add(mesh);
+      scatterMeshes.set(season, [mesh]);
     }
     // 3D 꽃·풀 장식: 종류마다 모델 메시 하나를 인스턴스로 찍는다
     const decor = villageDecorSpots();
@@ -706,7 +717,7 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       side: THREE.DoubleSide
     });
     const hedgeMats: THREE.MeshLambertMaterial[] = [];
-    const owned: THREE.Material[] = [glowMat, glassBase];
+    const owned: { dispose(): void }[] = [glowMat, glassBase];
     const glasses: { material: THREE.MeshLambertMaterial; building: VillageBuildingId | null }[] = [];
     const glassByBuilding = new Map<string, THREE.MeshLambertMaterial>();
     const glassOf = (group: string): THREE.MeshLambertMaterial => {
@@ -743,6 +754,39 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
       const center = r.geometry.boundingBox!.getCenter(new THREE.Vector3());
       r.geometry.translate(-center.x, -center.y, -center.z);
       r.position.add(center);
+    }
+    // 메시 하나가 재질별로 나뉜 묶음(glTF 메시 하나의 여러 조각: props-mesh, windmill-mesh 등)에서, 아래에서 바꿔 끼울 재질이
+    // 같은 것(같은 그림 또는 그림 없음, 정점색 유무 같음)끼리 메시 하나로 합친다. 그릴 물체마다 드는 준비를 줄이려는 것이다.
+    // 유리·밤 불빛·옛 길 조각·풍차 날개는 따로 다루므로 합치지 않는다
+    const parents = new Set<THREE.Object3D>();
+    root.traverse((o) => {
+      if (o instanceof THREE.Mesh && o.parent) parents.add(o.parent);
+    });
+    for (const parent of parents) {
+      const group = groupOf(parent);
+      if (!group || /^(glow-|paths)/.test(group)) continue;
+      const byKind = new Map<string, THREE.Mesh[]>();
+      for (const child of parent.children) {
+        if (!(child instanceof THREE.Mesh) || child === rotor || child.children.length > 0) continue;
+        const source = child.material as THREE.MeshStandardMaterial;
+        if (Array.isArray(child.material) || /^glass/.test(source.name)) continue;
+        const key = `${source.map ? source.map.source.uuid : "none"}|${child.geometry.hasAttribute("color")}`;
+        const list = byKind.get(key) ?? [];
+        list.push(child);
+        byKind.set(key, list);
+      }
+      for (const list of byKind.values()) {
+        if (list.length < 2) continue;
+        const merged = mergeParts(list.map((m) => m.geometry.clone().applyMatrix4(m.matrix)));
+        // 속성이 서로 달라 합칠 수 없으면 그대로 둔다
+        if (!merged) continue;
+        owned.push(merged);
+        const first = list[0];
+        const mesh = new THREE.Mesh(merged, first.material);
+        mesh.name = first.name;
+        parent.add(mesh);
+        for (const m of list) m.removeFromParent();
+      }
     }
     root.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;
@@ -915,6 +959,45 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
 
   // eslint-disable-next-line react/no-unknown-property
   return <primitive object={built.root} />;
+}
+
+/**
+ * 도형 여럿을 하나로 합친다(속성 이름·칸 수가 모두 같고, 모두 번호 목록이 있거나 모두 없을 때만. 아니면 null).
+ * 값은 정규화를 푼 실수로 옮긴다. three의 BufferGeometryUtils 대신 쓰는 것은, 몇몇 테스트가 three 예제 모듈을 가짜로 바꿔 두기 때문이다.
+ */
+function mergeParts(geos: THREE.BufferGeometry[]): THREE.BufferGeometry | null {
+  const names = Object.keys(geos[0].attributes).sort();
+  const indexed = geos[0].index !== null;
+  for (const g of geos) {
+    const own = Object.keys(g.attributes).sort();
+    if (own.join() !== names.join() || (g.index !== null) !== indexed) return null;
+    if (names.some((n) => g.getAttribute(n).itemSize !== geos[0].getAttribute(n).itemSize)) return null;
+  }
+  const merged = new THREE.BufferGeometry();
+  const vertexCount = geos.reduce((sum, g) => sum + g.getAttribute("position").count, 0);
+  for (const name of names) {
+    const size = geos[0].getAttribute(name).itemSize;
+    const out = new Float32Array(vertexCount * size);
+    let at = 0;
+    for (const g of geos) {
+      const a = g.getAttribute(name);
+      for (let i = 0; i < a.count; i += 1) for (let k = 0; k < size; k += 1) out[at++] = a.getComponent(i, k);
+    }
+    merged.setAttribute(name, new THREE.BufferAttribute(out, size));
+  }
+  if (indexed) {
+    const indexCount = geos.reduce((sum, g) => sum + g.index!.count, 0);
+    const out = new Uint32Array(indexCount);
+    let at = 0;
+    let base = 0;
+    for (const g of geos) {
+      for (let i = 0; i < g.index!.count; i += 1) out[at++] = g.index!.getX(i) + base;
+      base += g.getAttribute("position").count;
+    }
+    merged.setIndex(new THREE.BufferAttribute(out, 1));
+  }
+  for (const g of geos) g.dispose();
+  return merged;
 }
 
 /** 마을 모델을 불러오지 못하면 풀밭·나무·하늘만 보이게 한다. 오류는 개발 콘솔에 남긴다. */

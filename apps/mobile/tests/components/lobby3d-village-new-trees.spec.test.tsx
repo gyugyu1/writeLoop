@@ -113,7 +113,33 @@ beforeEach(() => {
   loaderState.village = { scene: sceneFromGlb(nowVillageGlb()) };
 });
 
-afterEach(() => {
+// 07 결정 뒤(qa): 단언이 실패해도 그 테스트가 그린 화면을 치운다(실패가 뒤 테스트로 번지지 않게). 단언·입력은 바꾸지 않는다
+const mounted: (() => void)[] = [];
+
+/** 한 번만 치우는 unmount를 적어 두고 돌려준다. */
+function track(unmount: () => void): () => void {
+  let done = false;
+  const once = () => {
+    if (done) return;
+    done = true;
+    unmount();
+  };
+  mounted.push(once);
+  return once;
+}
+
+afterEach(async () => {
+  const pending = mounted.splice(0);
+  await act(async () => {
+    for (const unmount of pending) {
+      try {
+        unmount();
+      } catch {
+        // 이미 치운 화면은 넘어간다
+      }
+    }
+  });
+  mockFrames.length = 0;
   jest.restoreAllMocks();
 });
 
@@ -175,7 +201,7 @@ async function draw(season: Season = "summer", opts: { layer?: boolean; onFailed
     .map((p) => (p.props as { object: THREE.Object3D }).object);
   expect(roots.length).toBeGreaterThan(0);
   await frames(2, opts.firstFrame ?? {});
-  return { roots, light, source, pick, unmount: () => view.unmount() };
+  return { roots, light, source, pick, unmount: track(() => view.unmount()) };
 }
 
 /** 그린 장면의 나무 메시(머리말). */
@@ -268,6 +294,16 @@ function emptyCamera(): THREE.PerspectiveCamera {
 }
 
 const CORNER = { x: 6, z: 52 };
+/**
+ * 07 결정(사용자 2026-11-18 "qa가 카메라 자리를 고침"): N1의 "가까이(폭 5)" 시야는 라룹이 집 문 앞(VILLAGE_START) 대신, 집 문 앞에서 가장 가까운
+ * 마을 안 나무 자리(지금 배치로 (42.2, 9.8))를 본다. 집 문 앞 폭 5 시야에는 나무 공이 분명히 드는 그루가 없었다.
+ * qa가 새 나무 LOD1 도형의 boundingSphere로 계산해 보니, 마을 안 나무 자리 70곳 어디를 이 카메라로 보아도 그 자리 그루는 종류 A·B·C × 배율 1.7·2.05 ×
+ * 방향 36가지 모두에서 잎·줄기 공이 여섯 면 안쪽으로 3.2칸 넘게 들어 있다.
+ */
+const NEAR_TREE = (() => {
+  const [x, z] = [...VILLAGE_TREES].sort((a, b) => Math.hypot(a[0] - VILLAGE_START.x, a[1] - VILLAGE_START.z) - Math.hypot(b[0] - VILLAGE_START.x, b[1] - VILLAGE_START.z))[0];
+  return { x, z };
+})();
 const FAR_SIDE = { x: 60, z: 10 };
 const MIDDLE = { x: 35, z: 30 };
 const EPS = 1e-3;
@@ -405,7 +441,7 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
     // 카메라 거리와 관계없이: 가까운 시야·먼 시야·구석에서 그려지는 LOD1 그루는 모두 마을 안, LOD2 그루는 모두 둘레 숲이고 메시의 도형은 처음 그대로다
     const geometryAtStart = new Map(trees.map((t) => [t.mesh, t.mesh.geometry]));
     for (const [name, camera] of [
-      ["가까이(폭 5)", villageCamera(VILLAGE_START, 5)],
+      ["가까이(폭 5)", villageCamera(NEAR_TREE, 5)],
       ["멀리(폭 40)", villageCamera(MIDDLE, 40)],
       ["구석", villageCamera(CORNER)]
     ] as const) {
@@ -455,7 +491,7 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
       forestB: true
     });
     const table1 = treeTable(trees);
-    first.unmount();
+    await act(async () => first.unmount());
     mockFrames.length = 0;
     resetFakeLoader();
     resetTreeLoader();
@@ -666,9 +702,10 @@ describe("[spec] 113 바뀔 동작: 마을 나무를 새 모델로 그린다(명
         <village.VillageModel sim={{ x: VILLAGE_START.x, z: VILLAGE_START.z, reduceMotion: true } as unknown as LobbySim} daylight={light as unknown as DaylightState} pickTargets={pick} />
       </>
     );
+    const unmount = track(() => view.unmount());
     roots = view.container.queryAll((instance: TestInstance) => instance.type === "primitive").map((p) => (p.props as { object: THREE.Object3D }).object);
     await frames(1, { gl, camera, scene });
-    const trees = needTrees({ roots, light, source: (loaderState.village as { scene: THREE.Object3D }).scene, pick, unmount: () => view.unmount() });
+    const trees = needTrees({ roots, light, source: (loaderState.village as { scene: THREE.Object3D }).scene, pick, unmount });
     expect(
       trees.map((t) => ({
         mesh: t.label,

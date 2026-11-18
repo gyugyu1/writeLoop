@@ -2,7 +2,7 @@
 name: qa
 description: 중간 규모 이상 작업에서 구현과 독립적으로 기대 결과를 정하고, 실행해 기록하고, 검증한다. 메인 세션이 작업 폴더의 절대경로와 단계를 넘긴다. 구현 전에는 명세만 보고 시나리오(새 기능)나 테스트 코드(버그 수정·리팩터링·기능 변경), 겨냥 회귀 케이스를 쓴다. 커밋 뒤에는 `work.sh run`으로 테스트·빌드·마이그레이션 확인·LLM 회귀·설정 문법 검사를 실행해 기록하고, 변경분을 읽어 문제를 보고한다. 구현 쪽 설명(-impl.md)은 읽지 않고, 운영 코드는 고치지 않는다.
 tools: Read, Grep, Glob, Edit, Write, Bash
-model: inherit
+model: sonnet
 skills:
   - code-rules
 ---

@@ -2,20 +2,24 @@ import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { Season } from "@/lib/lobby3d/daylight";
 
-// 마을과 방 창밖에 심는 나무 모델(WriteLoop 제작, assets/models/trees). 종류 A(기본형)·B(낮고 넓은 그늘형)·C(휘어 올라가는 형)마다
+// 마을과 방 창밖에 심는 나무 모델(WriteLoop 제작, assets/models/trees). 종류 A(둥근 활엽수)·Pine(소나무)마다
 // LOD1(가까이 보이는 마을 안)·LOD2(둘레 숲·창밖) 두 단계가 있다. 파일마다 잎(Tree_Foliage)과 줄기(Tree_Wood) 메시 하나씩이다.
 // 잎 그림은 2×2 계절 칸(봄 왼쪽 위, 여름 오른쪽 위, 가을 왼쪽 아래, 겨울 오른쪽 아래)이고 잎 UV는 봄 칸에 있다.
 // 줄기 그림은 2×1(평소 왼쪽, 눈 오른쪽)이다. 계절은 그림 위치(offset)만 옮겨 바꾼다(셰이더를 고치지 않는다).
 
-export type TreeSpecies = "A" | "B" | "C";
+export type TreeSpecies = "A" | "Pine";
 export type TreeLod = 1 | 2;
-export const TREE_SPECIES: readonly TreeSpecies[] = ["A", "B", "C"];
+export const TREE_SPECIES: readonly TreeSpecies[] = ["A", "Pine"];
+/** 겨울에 잎을 숨기는 종류(맨가지가 된다). Pine은 겨울에도 잎(눈 덮인 칸)을 그린다. */
+export function dropsLeavesInWinter(species: TreeSpecies): boolean {
+  return species === "A";
+}
 export const TREE_LODS: readonly TreeLod[] = [1, 2];
 
 let treeAssets: string[] | null = null;
 
 /**
- * 나무 모델 파일 목록(순서: A LOD1, A LOD2, B LOD1, B LOD2, C LOD1, C LOD2). 늘 같은 배열이라 useLoader의 키가 같다(미리 읽기와 쓰는 곳이 함께 쓴다).
+ * 나무 모델 파일 목록(순서: A LOD1, A LOD2, Pine LOD1, Pine LOD2). 늘 같은 배열이라 useLoader의 키가 같다(미리 읽기와 쓰는 곳이 함께 쓴다).
  * 파일은 처음 부를 때 require한다(이 모듈을 들여오기만 하는 곳은 모델 파일을 읽지 않는다).
  */
 export function treeModelAssets(): string[] {
@@ -23,10 +27,8 @@ export function treeModelAssets(): string[] {
   treeAssets ??= [
     require("../../../assets/models/trees/WriteLoop_Tree_A_LOD1.glb"),
     require("../../../assets/models/trees/WriteLoop_Tree_A_LOD2.glb"),
-    require("../../../assets/models/trees/WriteLoop_Tree_B_LOD1.glb"),
-    require("../../../assets/models/trees/WriteLoop_Tree_B_LOD2.glb"),
-    require("../../../assets/models/trees/WriteLoop_Tree_C_LOD1.glb"),
-    require("../../../assets/models/trees/WriteLoop_Tree_C_LOD2.glb")
+    require("../../../assets/models/trees/WriteLoop_Tree_Pine_LOD1.glb"),
+    require("../../../assets/models/trees/WriteLoop_Tree_Pine_LOD2.glb")
   ] as string[];
   /* eslint-enable @typescript-eslint/no-require-imports */
   return treeAssets;
@@ -51,7 +53,7 @@ export interface TreePart {
 export interface TreeKit {
   parts: TreePart[];
   part(species: TreeSpecies, lod: TreeLod): TreePart;
-  /** 잎·줄기 그림을 그 계절 칸으로 옮긴다(겨울에 잎을 숨기는 것은 쓰는 쪽이 한다). */
+  /** 잎·줄기 그림을 그 계절 칸으로 옮긴다(겨울에 A 잎을 숨기는 것은 쓰는 쪽이 한다). */
   setSeason(season: Season): void;
   /** 만든 재질을 버린다(모양과 그림은 불러오기가 들고 있으므로 버리지 않는다). */
   dispose(): void;
@@ -76,12 +78,12 @@ function imageKey(texture: THREE.Texture): string {
 }
 
 /**
- * 불러온 나무 모델로 종류·단계마다 모양과 재질을 만든다. gltfs는 종류(A·B·C)마다 lods 순서로 늘어놓은 것이다(기본은 treeModelAssets 순서).
+ * 불러온 나무 모델로 종류·단계마다 모양과 재질을 만든다. gltfs는 종류(A·Pine)마다 lods 순서로 늘어놓은 것이다(기본은 treeModelAssets 순서).
  * 같은 내용의 그림은 그림 하나·재질 하나를 함께 쓴다(GPU에 한 번만 올라가게).
  * 그림 위치(offset)를 계절마다 옮기므로, 같은 그림을 쓰는 마을·창밖이 함께 그 계절이 된다.
  */
 export function buildTreeKit(gltfs: GLTF[], lods: readonly TreeLod[] = TREE_LODS): TreeKit {
-  // 같은 내용의 그림은 그림 하나·재질 하나를 함께 쓴다(잎 그림은 단계마다 셋이 같고, 줄기 그림은 A·B가 같다)
+  // 같은 내용의 그림은 그림 하나·재질 하나를 함께 쓴다(A·Pine은 잎·줄기 그림이 서로 다르다)
   const foliageTextures = new Set<THREE.Texture>();
   const woodTextures = new Set<THREE.Texture>();
   const materials = new Map<string, THREE.MeshLambertMaterial>();

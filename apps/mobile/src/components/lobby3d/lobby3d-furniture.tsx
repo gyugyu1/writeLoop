@@ -99,7 +99,7 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
   }, [starters]);
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판.
   // 장면은 뒷벽 가운데(x 0) 너머에 짓고, 그릴 때마다 창문이 걸린 벽 너머로 옮기고 돌린다(어느 벽이든 같은 마당이 보인다)
-  // 창밖 나무 모델(A·B·C의 LOD2). 다 읽으면 창밖 장면을 나무와 함께 다시 짓는다(못 읽으면 나무 없이 둔다)
+  // 창밖 나무 모델(A·Pine의 LOD2). 다 읽으면 창밖 장면을 나무와 함께 다시 짓는다(못 읽으면 나무 없이 둔다)
   const [outdoorTrees, setOutdoorTrees] = useState<GLTF[] | null>(null);
   const outdoor = useMemo(() => createOutdoor(0, 0, outdoorTrees ?? undefined), [outdoorTrees]);
   // 창이 높이 걸려도 창 너머 풀밭과 덤불이 창 아래쪽에 보이게, 바깥 풀밭을 창 가운데보다 OUTDOOR_DROP 아래에 둔다
@@ -371,7 +371,7 @@ export function BakedFurniture({ layout, added, fallback, daylight, lightLayout,
   );
 }
 
-/** 마을과 같은 나무 모델을 읽어(미리 읽기와 같은 목록) 창밖에 쓸 LOD2(A·B·C)를 넘긴다. */
+/** 마을과 같은 나무 모델을 읽어(미리 읽기와 같은 목록) 창밖에 쓸 LOD2(A·Pine)를 넘긴다. */
 function OutdoorTrees({ onLoaded }: { onLoaded: (trees: GLTF[]) => void }) {
   const gltfs = useLoader(GLTFLoader, treeModelAssets()) as GLTF[];
   useEffect(() => {

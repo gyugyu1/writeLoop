@@ -1,10 +1,12 @@
 // 바깥 마을 땅의 꽃·풀 장식(3D 모델)과 계절 흩뿌림(낙엽·꽃잎·잎, 납작한 그림 판)을 둘 자리. 정해진 씨앗값으로 늘 같은 자리를 준다.
 // 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다. 좌표는 마을 칸 단위(x 왼쪽→오른쪽, z 뒤→앞).
 // - 장식: 걸을 수 있는 풀밭에 몇 개씩 모아 심는다. 길 경계와 막힌 칸(건물·나무·바위·소품·가장자리)에서 떨어뜨린다.
-// - 계절 흩뿌림: 가을 낙엽·봄 꽃잎·여름 잎을 마을 땅에 흩되, 자리마다 빽빽한 정도를 부드러운 잡음으로 달리한다. 길과 건물 땅 위에는 두지 않는다. 겨울에는 없다(눈).
+// - 계절 흩뿌림: 봄 꽃잎·여름 잎은 마을 땅에 흩되, 자리마다 빽빽한 정도를 부드러운 잡음으로 달리한다. 가을 낙엽은 단풍이 드는 A 그루 둘레에만
+//   떨어뜨린다(밑동에 가까울수록 빽빽하다). 길과 건물 땅 위, 경계 원 밖에는 두지 않는다. 겨울에는 없다(눈).
 import type { Season } from "./daylight";
 import { VILLAGE, VILLAGE_BOUNDARY, VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_SOLID_TILES } from "./village";
 import { pathCells, pointInLoop, roundedPathShapes, type PathPoint } from "./village-paths";
+import { villageTreeSpots } from "./village-trees";
 
 export type VillageDecorKind = "flowerWhite" | "flowerYellow" | "flowerPink" | "flowerRed" | "clover" | "grassTuft";
 
@@ -199,6 +201,29 @@ export function villageDecorSpots(): VillageDecorSpot[] {
 
 const scatterCache = new Map<Season, VillageScatterPiece[]>();
 
+/** 낙엽이 떨어지는 범위: 수관 반폭(모델 원본 0.92칸) × 그루 배율 × 1.6. */
+const LEAF_CROWN_HALF = 0.92;
+const LEAF_REACH = 1.6;
+/** 나무 밑 낙엽은 마을 전체에 흩던 때보다 빽빽하게(밑동 칸에 최대 maxPerCell × 2장). */
+const LEAF_DENSITY = 2;
+let leafTrees: { x: number; z: number; reach: number }[] | null = null;
+
+/** 자리 (x, z)의 낙엽 빽빽한 정도 0~1: 가장 가까운 A 그루 밑동에서 1, 떨어지는 범위 끝에서 0. */
+function leafFall(x: number, z: number): number {
+  leafTrees ??= villageTreeSpots()
+    .filter((t) => t.species === "A")
+    .map((t) => ({ x: t.x, z: t.z, reach: LEAF_CROWN_HALF * t.scale * LEAF_REACH }));
+  let best = 0;
+  for (const t of leafTrees) {
+    const dx = x - t.x;
+    const dz = z - t.z;
+    if (Math.abs(dx) > t.reach || Math.abs(dz) > t.reach) continue;
+    const f = 1 - Math.hypot(dx, dz) / t.reach;
+    if (f > best) best = f;
+  }
+  return best <= 0 ? 0 : best ** 0.8;
+}
+
 /** 계절 흩뿌림 조각 자리. 칸마다 빽빽한 정도(부드러운 잡음)만큼 찍고, 종류·방향·크기·밝기를 조금씩 달리한다. 계절마다 늘 같은 결과이고 겨울에는 빈 목록이다. */
 export function villageSeasonScatter(season: Season): VillageScatterPiece[] {
   if (season === "winter") return [];
@@ -212,7 +237,11 @@ export function villageSeasonScatter(season: Season): VillageScatterPiece[] {
     for (let r = 0; r < VILLAGE.depth; r += 1) {
       // 빽빽한 정도: 큰 얼룩(약 9칸)과 작은 얼룩(약 3칸)을 섞은 0~1 값 → 칸당 0~maxPerCell개
       const n = smoothNoise(c / 9, r / 9, 11) * 0.7 + smoothNoise(c / 3, r / 3, 23) * 0.3;
-      const density = Math.max(0, (n - 0.25) / 0.75) ** 1.4 * conf.maxPerCell;
+      // 가을은 A 그루 둘레(밑동에 가까울수록 빽빽하게)에만, 작은 얼룩으로 조금 고르지 않게 한다
+      const density =
+        season === "autumn"
+          ? leafFall(c + 0.5, r + 0.5) * (0.6 + 0.4 * smoothNoise(c / 3, r / 3, 23)) * conf.maxPerCell * LEAF_DENSITY
+          : Math.max(0, (n - 0.25) / 0.75) ** 1.4 * conf.maxPerCell;
       let count = Math.floor(density);
       if (rnd() < density - count) count += 1;
       for (let k = 0; k < count; k += 1) {
@@ -222,6 +251,7 @@ export function villageSeasonScatter(season: Season): VillageScatterPiece[] {
         const half = size / 2;
         if (VILLAGE_BUILDINGS.some((b) => x > b.rect[0] - half && x < b.rect[2] + half && z > b.rect[1] - half && z < b.rect[3] + half)) continue;
         if (paths.inside(x, z) || paths.distance(x, z) < half) continue;
+        if (season === "autumn" && leafFall(x, z) <= 0) continue;
         pieces.push({ kind: conf.kinds[Math.floor(rnd() * conf.kinds.length)], x, z, turn: rnd() * Math.PI * 2, size, shade: 0.85 + rnd() * 0.3 });
       }
     }

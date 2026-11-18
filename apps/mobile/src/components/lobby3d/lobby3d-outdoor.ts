@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Ambience, DayPhase, Season } from "@/lib/lobby3d/daylight";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { TREE_SPECIES, buildTreeKit, type TreeKit, type TreeSpecies } from "./tree-models";
+import { TREE_SPECIES, buildTreeKit, dropsLeavesInWinter, type TreeKit, type TreeSpecies } from "./tree-models";
 
 // 라룹이 방 창문 너머의 바깥(실제 풍경이 아니다). 방과 따로 둔 장면이라 방 화면에는 그려지지 않고,
 // lobby3d-furniture가 창문 자리에서 들여다본 모습을 그림판에 그려 창 안쪽에 붙인다.
@@ -68,7 +68,7 @@ function seeded(seed: number) {
 
 /**
  * centerX는 창 가운데 x, groundY는 바깥 풀밭 높이다(창턱이 풀밭에서 1.2쯤 위에 오게 앱이 정한다).
- * trees는 나무 모델 A·B·C의 LOD2(그 순서)다. 없으면(아직 못 읽었거나 읽지 못함) 나무 없이 짓는다.
+ * trees는 나무 모델 A·Pine의 LOD2(그 순서)다. 없으면(아직 못 읽었거나 읽지 못함) 나무 없이 짓는다.
  */
 export function createOutdoor(centerX: number, groundY: number, trees?: GLTF[]): Outdoor {
   const scene = new THREE.Scene();
@@ -204,10 +204,10 @@ export function createOutdoor(centerX: number, groundY: number, trees?: GLTF[]):
   // 겨울에 숨기는 것(꽃)
   const notWinter: THREE.Object3D[] = [];
   // 나무 자리: 예전 둥근 나무·소나무와 같은 자리·같은 난수 순서로 정해 두고(아래 언덕·덤불·꽃 자리가 그대로이게), 모델을 다 읽으면 심는다.
-  // 종류·밝기는 따로 둔 난수로 고른다. 크기는 예전 둥근 나무 높이(약 3.7×s)와 비슷하게 s×1.4배다
+  // 종류·밝기는 따로 둔 난수로 고른다. 크기는 s×1.26배다(예전 둥근 나무 높이에 맞춘 1.4배를, 새 모델이 커서 0.9배로 줄였다)
   const treeRnd = seeded(23);
   const treeSpots: { x: number; z: number; scale: number; turn: number; phase: number; species: TreeSpecies; shade: number }[] = [];
-  const TREE_SCALE = 1.4;
+  const TREE_SCALE = 1.26;
   const tree = (x: number, z: number, s: number) => {
     const species = TREE_SPECIES[Math.floor(rnd() * TREE_SPECIES.length)];
     const turn = rnd() * Math.PI * 2;
@@ -340,8 +340,8 @@ export function createOutdoor(centerX: number, groundY: number, trees?: GLTF[]):
     const winter = season === "winter";
     for (const o of notWinter) o.visible = !winter;
   };
-  // 심은 나무: 종류마다 잎·줄기 인스턴스 메시. 잎은 계절 그림 칸을 그리고 겨울에는 숨긴다(줄기는 눈 칸)
-  let planted: { kit: TreeKit; foliage: { mesh: THREE.InstancedMesh; spots: typeof treeSpots }[]; all: THREE.InstancedMesh[] } | null = null;
+  // 심은 나무: 종류마다 잎·줄기 인스턴스 메시. 잎은 계절 그림 칸을 그리고 겨울에는 A 잎만 숨긴다(Pine 잎은 눈 덮인 칸, 줄기는 눈 칸)
+  let planted: { kit: TreeKit; foliage: { mesh: THREE.InstancedMesh; species: TreeSpecies; spots: typeof treeSpots }[]; all: THREE.InstancedMesh[] } | null = null;
   // 나무 그림(계절 칸 옮김)은 마을 나무와 함께 쓰는 것이라, 지을 때 정한 계절(여름)로 칠하지 않고 실제 계절을 받을 때(setDaylight)만 칠한다.
   // 마을에 있는 동안 창밖 장면을 다시 지어도 마을 나무의 계절이 바뀌지 않게 하려는 것이다(마을과 창밖은 늘 같은 계절을 따른다)
   let treesShown: Season | null = null;
@@ -349,7 +349,7 @@ export function createOutdoor(centerX: number, groundY: number, trees?: GLTF[]):
     if (!planted || treesShown === season) return;
     treesShown = season;
     planted.kit.setSeason(season);
-    for (const { mesh } of planted.foliage) mesh.visible = season !== "winter";
+    for (const { mesh, species } of planted.foliage) mesh.visible = !(season === "winter" && dropsLeavesInWinter(species));
   };
   const treeMatrix = new THREE.Matrix4();
   const treeTurn = new THREE.Quaternion();
@@ -378,7 +378,7 @@ export function createOutdoor(centerX: number, groundY: number, trees?: GLTF[]):
   // 나무 심기: 종류마다 잎·줄기 인스턴스 메시(모양·그림은 불러온 모델 것을 함께 쓰고, 재질만 따로 만든다)
   if (trees) {
     const kit = buildTreeKit(trees, [2]);
-    const foliage: { mesh: THREE.InstancedMesh; spots: typeof treeSpots }[] = [];
+    const foliage: { mesh: THREE.InstancedMesh; species: TreeSpecies; spots: typeof treeSpots }[] = [];
     const all: THREE.InstancedMesh[] = [];
     const shade = new THREE.Color();
     for (const species of TREE_SPECIES) {
@@ -394,7 +394,7 @@ export function createOutdoor(centerX: number, groundY: number, trees?: GLTF[]):
         });
         scene.add(mesh);
         all.push(mesh);
-        if (which === "foliage") foliage.push({ mesh, spots: mine });
+        if (which === "foliage") foliage.push({ mesh, species, spots: mine });
       }
     }
     planted = { kit, foliage, all };

@@ -51,6 +51,10 @@
 | "푸시해"를 받았을 때, 재배포·롤백, 운영 장애 조사, 스토어 빌드 | `deploy-ops` |
 
 - 질문, 설명, 조사만 할 때는 `task-triage`부터 이어지는 작업 공정과 backlog 확인을 따르지 않는다. 답하다가 고칠 것을 찾으면 고치기 전에 묻는다.
+- 3D 모델·그림 같은 그래픽 작업은 메인 세션이 직접 하지 않고, Codex의 아스트라 6.2에 reasoning ultra로 맡긴다(2026-11-18 사용자 결정).
+  - 저장소 밖 결과 폴더 `C:\WriteLoop-asset\<주제>\`에 영어 지시서 `prompt.md`를 쓰고, 그 폴더에서 실행한다: `codex exec --skip-git-repo-check -s workspace-write -m gpt-6.2-astra -c model_reasoning_effort=ultra -o codex-last-message.txt < prompt.md > codex-run.log`
+  - Claude 하위 에이전트가 아니라 사용자의 ChatGPT 요금제로 도는 별도 프로그램이다. 실행할 때마다 새 맥락이라, 지시서에 배경·판정 기준·이미 해 본 것을 모두 적는다.
+  - 결과(파일, `notes.md`, 미리 보기)를 메인 세션이 확인한 뒤 저장소 반영은 작업 공정대로 한다.
 
 ## 운영과 비밀 정보
 

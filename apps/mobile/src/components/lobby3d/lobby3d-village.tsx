@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import type { Season } from "@/lib/lobby3d/daylight";
-import { VILLAGE, VILLAGE_PATH_RECTS, VILLAGE_TREES, VILLAGE_WINDMILL, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
+import { VILLAGE, VILLAGE_PATH_RECTS, VILLAGE_TREES, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import { villageDecorSpots, villageSeasonScatter, type VillageDecorKind } from "@/lib/lobby3d/village-decor";
 import { villageGroundPlaceMap } from "@/lib/lobby3d/village-ground-splat";
 import { villageFlowersAsset, villageGroundTextureAssets } from "./village-ground-assets";
@@ -202,9 +202,7 @@ function treeSpots(): TreeSpot[] {
       const jx = x + (rnd() - 0.5) * 1.6;
       const jz = z + (rnd() - 0.5) * 1.6;
       const inside = jx > -1 && jx < VILLAGE.width + 1 && jz > -1 && jz < VILLAGE.depth + 1;
-      // 풍차 탑과 도는 날개 둘레는 비운다
-      const nearMill = Math.abs(jx - VILLAGE_WINDMILL.x) < MILL_CLEAR && Math.abs(jz - VILLAGE_WINDMILL.z) < MILL_CLEAR;
-      if (inside || nearMill || rnd() < 0.12) continue;
+      if (inside || rnd() < 0.12) continue;
       spots.push({ species: pick(FOREST_TREE_SPECIES), lod: 2, x: jx, z: jz, scale: 1.6 + rnd() * 0.5, turn: rnd() * Math.PI * 2, shade: TREE_SHADE_MIN + rnd() * TREE_SHADE_SPAN });
     }
   }
@@ -217,8 +215,6 @@ const FOREST_TREE_SPECIES: readonly TreeSpecies[] = [..."AAAAAAAAA", ..."CCCCCCC
 /** 그루마다 잎에 곱하는 밝기 범위(0.9~1.05). */
 const TREE_SHADE_MIN = 0.9;
 const TREE_SHADE_SPAN = 0.15;
-/** 둘레 숲을 심지 않는 풍차 둘레(풍차 가운데에서 가로·깊이로, 칸). 탑 반 폭 1.5 + 날개 길이 약 3.7 + 나무 잎 반지름 약 1. */
-const MILL_CLEAR = 6.5;
 /** 풍차 날개가 한 바퀴 도는 시간(초). */
 const ROTOR_TURN_SECONDS = 14;
 

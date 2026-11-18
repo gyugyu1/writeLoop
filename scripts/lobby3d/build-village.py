@@ -13,10 +13,8 @@
 #   bld-<건물 id>  건물 하나(벽·문·창·지붕). 라룹이를 가리면 앱이 반투명하게 한다
 #   glow-<무엇>    밤에 켜지는 불빛 판(창, 가로등). 앱이 새벽·어스름·밤에만 보인다
 #   props          분수·가로등·노점·벤치·바위
+# 마을 경계는 배치 파일의 원(boundary)이고, 원 밖은 앱이 심는 숲이다(생울타리·울타리·풍차는 두지 않는다)
 #   paths          돌길
-#   hedges         뒤쪽·양옆 가장자리 생울타리(계절 색은 앱이 칠한다)
-#   fences         앞쪽(카메라 쪽) 가장자리 나무 울타리
-#   windmill       마을 끝 바깥 뒤쪽의 풍차 탑. windmill-rotor는 그 날개(앱이 날개 가운데를 축으로 돌린다)
 #   tpl-<나무>-leaf / tpl-<나무>-trunk  나무 틀(원점, 크기 1). 앱이 마을 나무·둘레 숲 자리에 여러 그루로 찍고, 잎은 계절 색으로 칠한다
 # 풀밭은 앱이 코드로 짓는다(계절 색).
 # 좌표: 앱 (x, y 위, z 앞) = Blender (x, -y, z). glTF 내보내기가 Blender Z 위를 Y 위로 바꾼다.
@@ -349,33 +347,7 @@ for x0, z0, x1, z1 in LAYOUT["paths"]:
         for z in range(int(z0), int(z1)):
             place("road", paths, x + 0.5, z + 0.5, 0, scale=(1.0, 1.0, 1.0), y=0.005)
 
-# ---------- 가장자리 생울타리 ----------
-hedges = group("hedges")
-for x in range(W):
-    place("hedge-large", hedges, x + 0.5, 0.5, FACE_ROT["back"], scale=(1.0, 1.0, 1.6))
-for z in range(1, D - 1):
-    place("hedge-large", hedges, 0.5, z + 0.5, FACE_ROT["left"], scale=(1.0, 1.0, 1.6))
-    place("hedge-large", hedges, W - 0.5, z + 0.5, FACE_ROT["right"], scale=(1.0, 1.0, 1.6))
-
-# ---------- 앞쪽 가장자리 울타리 ----------
-# 카메라 쪽은 키가 낮은 나무 울타리로 둘러 마을 안이 가리지 않게 한다(Kenney 한 칸 = 앱 1칸 너비로 이어 붙인다)
-fences = group("fences")
-for x in range(W):
-    place("fence", fences, x + 0.5, D - 0.5, FACE_ROT["front"], scale=(1.0, 1.0, 2.0))
-
-# ---------- 풍차(장식, 마을 끝 바깥 뒤쪽 숲 옆) ----------
-# Kenney 키트의 windmill은 날개뿐이라, 탑은 벽 한 칸 두 층과 뾰족 지붕으로 짓는다. 날개는 탑 앞면(카메라 쪽) 위에 붙인다
-MILL = LAYOUT["windmill"]
-mill = group("windmill")
-for f in range(2):
-    for face in ("front", "back", "left", "right"):
-        piece = WALLS["plaster"]["window"] if (face == "front" and f == 1) else WALLS["plaster"]["plain"]
-        place(piece, mill, MILL["x"], MILL["z"], FACE_ROT[face], y=f * S)
-place("roof-point", mill, MILL["x"], MILL["z"], 0, y=2 * S, uv_shift=ROOF_UV["red"])
-rotor = group("windmill-rotor")
-# 날개는 얇은 쪽이 부품 x라, 앱 앞(카메라 쪽)을 보게 돌린다
-# 날개 길이(바퀴 가운데에서 끝까지)가 바퀴 높이보다 짧아야 돌 때 땅에 박히지 않는다(부품 날개 길이 1.56 × 2.4 ≈ 3.7 < 바퀴 높이 4.65)
-place("windmill", rotor, MILL["x"], MILL["z"] + S / 2 + 0.25, FACE_ROT["front"], scale=2.4, y=S * 1.55)
+# 마을 경계는 생울타리·울타리 없이 원 둘레 숲이다(앱이 나무로 심는다). 풍차도 두지 않는다
 
 # ---------- 나무 틀 ----------
 # 잎(색 그림의 초록 칸)과 줄기(그 밖)를 나눠 원점에 둔다. 앱이 계절 색으로 잎을 칠한다(구석 어둠은 굽지 않는다)

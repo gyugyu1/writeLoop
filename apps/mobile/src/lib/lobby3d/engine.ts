@@ -1,6 +1,6 @@
 import { DEFAULT_LOBBY_LAYOUT, isClosetPlaceId, layoutGeometry, type ClosetPlaceId, type LobbyLayout, type WallSide } from "./lobby-layout";
 import { currentRoom, outsideExit, outsidePlace, setCurrentRoom, type RoomSpec } from "./room";
-import { VILLAGE, VILLAGE_PLACES, VILLAGE_SOLID_TILES, type VillageBuildingId } from "./village";
+import { VILLAGE, VILLAGE_BOUNDARY, VILLAGE_PLACES, VILLAGE_SOLID_TILES, type VillageBuildingId } from "./village";
 
 // 3D 로비(라이트루프의 방)의 동작 규칙. 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 // 좌표: 바닥 한 칸 = 1. x는 왼쪽→오른쪽(0..width), z는 뒷벽→앞(0..depth). 높이는 y.
@@ -433,16 +433,16 @@ export const ROOM_BOUNDS = {
 };
 
 /**
- * 마을 끝을 둘러싼 상자: 마을 바닥 가장자리(높이 0). 화면에 보이는 바닥이 마을 끝을 넘지 않게 카메라가 멈춘다.
+ * 마을 끝을 둘러싼 상자: 경계 원을 감싸는 상자(높이 0). 화면에 보이는 바닥이 이 상자를 넘지 않게 카메라가 멈춘다(그 너머는 숲이다).
  * 건물·나무는 이 상자보다 높아도 화면 위로 그대로 보인다(그 너머는 풀밭·숲이라 검지 않다).
  */
 export const VILLAGE_BOUNDS = {
-  minX: 0,
-  maxX: VILLAGE.width,
+  minX: VILLAGE_BOUNDARY.x - VILLAGE_BOUNDARY.radius,
+  maxX: VILLAGE_BOUNDARY.x + VILLAGE_BOUNDARY.radius,
   minY: 0,
   maxY: 0,
-  minZ: 0,
-  maxZ: VILLAGE.depth
+  minZ: VILLAGE_BOUNDARY.z - VILLAGE_BOUNDARY.radius,
+  maxZ: VILLAGE_BOUNDARY.z + VILLAGE_BOUNDARY.radius
 };
 
 /** 지금 구역의 끝 상자(카메라가 넘지 않는다). */

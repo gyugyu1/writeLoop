@@ -44,8 +44,8 @@ export const VILLAGE_BUILDINGS: readonly VillageBuilding[] = LAYOUT.buildings.ma
 
 const key = (c: number, r: number) => `${c},${r}`;
 
-/** 풍차 자리(마을 끝 바깥 장식, 가운데 x·z). 둘레 숲이 이 둘레를 비운다. */
-export const VILLAGE_WINDMILL: VillagePoint = LAYOUT.windmill;
+/** 마을 경계 원(가운데 x·z, 반지름). 걸을 수 있는 땅은 이 원 안이고, 원 밖은 숲이다. */
+export const VILLAGE_BOUNDARY: { readonly x: number; readonly z: number; readonly radius: number } = LAYOUT.boundary;
 
 /** 길 사각형([x0, z0, x1, z1], x1·z1은 들지 않음). 그리기(lobby3d-village)가 이 칸들로 둥근 길을 짓는다(village-paths). */
 export const VILLAGE_PATH_RECTS: readonly (readonly [number, number, number, number])[] = LAYOUT.paths as unknown as [number, number, number, number][];
@@ -86,9 +86,13 @@ const BENCH_DEPTH = 0.9;
 function buildSolidTiles(): Set<string> {
   const solid = new Set<string>();
   const add = (tiles: string[]) => tiles.forEach((t) => solid.add(t));
-  // 가장자리 한 줄: 뒤쪽·양옆은 생울타리, 앞쪽은 나무 울타리
-  for (let c = 0; c < LAYOUT.width; c += 1) add([key(c, 0), key(c, LAYOUT.depth - 1)]);
-  for (let r = 0; r < LAYOUT.depth; r += 1) add([key(0, r), key(LAYOUT.width - 1, r)]);
+  // 경계 원 밖(칸 가운데가 원 밖인 칸)은 숲이라 걸을 수 없다
+  const { x: bx, z: bz, radius } = LAYOUT.boundary;
+  for (let c = 0; c < LAYOUT.width; c += 1) {
+    for (let r = 0; r < LAYOUT.depth; r += 1) {
+      if (Math.hypot(c + 0.5 - bx, r + 0.5 - bz) > radius) add([key(c, r)]);
+    }
+  }
   for (const b of VILLAGE_BUILDINGS) add(rectTiles(...b.rect));
   add(circleTiles(LAYOUT.fountain.x, LAYOUT.fountain.z, LAYOUT.fountain.radius));
   for (const [x, z] of LAYOUT.lanterns) add(propTiles(x, z, 0.6, 0.6));

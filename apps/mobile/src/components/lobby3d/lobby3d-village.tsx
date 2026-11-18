@@ -617,7 +617,7 @@ function VillageGround({ daylight, pathMaterials, groundMaterial }: VillageGroun
     const winter = season === "winter";
     // 계절 흩뿌림은 그 계절 조각만 보인다(겨울에는 없음). 장식은 겨울에 숨긴다
     for (const [s, meshes] of built.scatterMeshes) for (const m of meshes) m.visible = s === season;
-    for (const m of built.decorMeshes) m.visible = !winter;
+    built.decorCulling.setHidden(winter);
     // 겨울에는 맨땅도 눈으로 덮는다(맨땅 몫을 0으로: 풀 무늬가 덮고 흰 계절 색을 곱한다)
     built.splatUniforms.groundBareAmount.value = winter ? 0 : 1;
   });

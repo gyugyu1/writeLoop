@@ -5,6 +5,11 @@
 //
 // 바뀔 동작(구현 전 실패): F1·F2(흩뿌림 조각), P6~P9(흙길). 그대로 둘 동작(구현 전·뒤 통과): K12.
 //
+// 작업 112 ③ 물체 합치기(private 작업 폴더 112-2026-11-18-마을-그리기-JS-줄이기/04-물체-합치기/01-main-spec.md)의 "고칠 기존 테스트"로 qa가 F1을 고쳤다:
+// 112 ③은 계절 흩뿌림을 칸마다 메시 하나 대신 계절마다 인스턴스 메시 하나로 그리고, 인스턴스마다 그 조각의 그림 칸을 갖게 한다.
+// 그래서 "메시마다 한 칸"(103 drawnCell) 대신 "인스턴스마다 한 칸"(tests/__fixtures__/village-merge-112.ts의 instanceCell, 계약은 그 파일 머리말)으로 보고,
+// 그 계절의 흩뿌림 메시가 하나인지 본다. 찍은 자리마다 그 자리 조각의 칸과 같고 그 계절 조각이 모두 찍힌다는 단언·입력은 그대로다.
+//
 // 어떻게 보나(02-qa-tests.md "관찰하는 방법", 계약은 tests/__fixtures__/village-ground-103.ts 머리말):
 // - react-three-fiber만 가짜로 둔다. 가짜 useLoader는 작업 102의 것(village-splat-102.ts의 splatUseLoader)이다: 그림에는 빈 THREE.Texture를 주며 어느 파일인지 적어 두고,
 //   그 밖(마을 모델·꽃 모델)은 작업 101의 가짜 불러오기에 넘긴다. 자산 폴더의 그림 파일은 "저장소 기준 경로" 글자로 바꿔 둔다. 불러온 파일 이름은 모두 적어 둔다.
@@ -35,7 +40,6 @@ import {
   SCATTER_SEASONS,
   baseFileSha,
   coveredBy,
-  drawnCell,
   fileSha,
   newImageFiles103,
   opacityField,
@@ -44,6 +48,7 @@ import {
   type VillageScatterPiece
 } from "../__fixtures__/village-ground-103";
 import { shapeIndex, tilesOf, type PathShape, type Rect, type RoundedPathShapes } from "../__fixtures__/village-paths-099";
+import { instanceCell } from "../__fixtures__/village-merge-112";
 import { allObjects, drawnVisible, instanceHeight, instanceWorldMatrices, loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb, sourceGeometries } from "../__fixtures__/village-scene-101";
 import { mockImagesAsPaths, numbers, readSplat, splatLoader, type SplatRead } from "../__fixtures__/village-splat-102";
 
@@ -264,23 +269,23 @@ beforeEach(() => {
 // ---------- 바뀔 동작: 계절 흩뿌림 ----------
 
 describe("[spec] 103 바뀔 동작: 계절 흩뿌림 조각 그리기(명세 1·4)", () => {
-  it.each(SCATTER_SEASONS)("F1 %s: 그려지는 납작한 인스턴스 메시는 모두 그 계절의 흩뿌림 조각이다. 메시마다 그림 모음의 한 칸을 그리고, 찍은 자리마다 그 자리 조각의 칸과 같으며, 그 계절 조각이 모두 찍힌다(풀 자국은 남지 않는다)", async (season) => {
+  it.each(SCATTER_SEASONS)("F1 %s: 그려지는 납작한 인스턴스 메시는 그 계절의 흩뿌림 조각을 찍는 메시 하나다(112 ③에서 고침: 칸마다 메시 하나 대신 계절마다 하나). 인스턴스마다 그림 모음의 한 칸을 그리고, 찍은 자리마다 그 자리 조각의 칸과 같으며, 그 계절 조각이 모두 찍힌다(풀 자국은 남지 않는다)", async (season) => {
     const pieces = scatterModule().villageSeasonScatter(season);
     expect(pieces.length).toBeGreaterThan(0);
     const find = pieceFinder(pieces);
     const drawn = await draw("summer");
     if (season !== "summer") await setSeason(drawn, season);
     const meshes = scatterMeshes(drawn);
-    expect(meshes.length).toBeGreaterThan(0);
+    expect(meshes.length).toBe(1);
     const matched = new Set<number>();
     const wrong: string[] = [];
     for (const mesh of meshes) {
-      const cell = drawnCell(mesh);
-      if (typeof cell !== "number") {
-        wrong.push(`${mesh.name || "이름 없음"}: ${cell}`);
-        continue;
-      }
       instanceWorldMatrices(mesh).forEach((w, i) => {
+        const cell = instanceCell(mesh, i);
+        if (typeof cell !== "number") {
+          wrong.push(`${mesh.name || "이름 없음"} 인스턴스 ${i}: ${cell}`);
+          return;
+        }
         const p = new THREE.Vector3().setFromMatrixPosition(w);
         const hit = find(p.x, p.z).filter((k) => pieces[k].kind === cell);
         if (hit.length === 0) wrong.push(`${mesh.name || "이름 없음"} 칸 ${cell} 인스턴스 ${i} (${p.x.toFixed(2)}, ${p.z.toFixed(2)}): 그 자리에 칸 ${cell} 조각 없음`);

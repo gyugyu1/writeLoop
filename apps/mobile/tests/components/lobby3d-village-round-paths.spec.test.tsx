@@ -37,6 +37,13 @@
 //
 // 작업 106(마을 가게 넣기) 바뀌는 동작 5(가게 유리는 누르기 대상이 아니다)로 qa가 K2를 고쳤다(106 qa 보고 02-qa-tests.md): 누르기 판정 대상으로 받는 건물 메시에서
 // 모델의 유리 재질(이름이 glass로 시작)을 쓰는 메시는 뺀다. 나머지 단언(건물·소품 메시뿐이고 그 밖의 물체는 그 아래에도 없다)은 그대로다.
+//
+// 작업 112 ③ 물체 합치기(private 작업 폴더 112-2026-11-18-마을-그리기-JS-줄이기/04-물체-합치기/01-main-spec.md)의 "고칠 기존 테스트"로 qa가 K1·K2를 고쳤다:
+// 112 ③은 마을 모델의 한 묶음 안에서 앱이 바꿔 끼우는 재질이 같은 메시(소품·풍차 탑의 primitive들)를 앱이 불러올 때 하나로 합친다(모양은 그대로).
+// 그래서 소품·풍차 메시를 모델의 원본 도형·메시 이름과 같은 것으로 찾지 않고, 삼각형 자리로 본다(tests/__fixtures__/village-merge-112.ts):
+// - K1: 묶음마다 "같은 메시 이름들" 대신 "그 묶음 아래 그려지는 메시들의 삼각형 세계 자리가 모델의 그 묶음 삼각형과 같다"(불빛 판은 하나도 그려지지 않고, 장면에 있는 메시들의 삼각형이 같다).
+// - K2: "모델 도형이 건물·소품의 것인 메시" 대신 "삼각형이 모두 건물(유리 빼고)·소품 삼각형인 그려지는 메시"를 누르기 대상으로 기대하고, 대상의 삼각형이 건물·소품 삼각형을 모두 덮는지 더 본다.
+// 기대값은 그리기에 넘긴 장면과 따로 푼 같은 모델에서 모은다. 묶음 이름·그려짐·누르기 대상의 뜻과 나무 틀 단언은 그대로다.
 import { act, render } from "@testing-library/react-native";
 import { type MutableRefObject } from "react";
 import type { TestInstance } from "test-renderer";
@@ -51,6 +58,7 @@ import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { GLASS_MATERIAL } from "../__fixtures__/village-shops-106";
 import { nowVillageGlb } from "../__fixtures__/village-glb-098";
 import { shapeIndex, tilesOf, type PathShape, type Rect, type RoundedPathShapes } from "../__fixtures__/village-paths-099";
+import { TriBank, compareTriangles, labelOfMesh, sourceTriangles, trianglesOf as meshTriangles } from "../__fixtures__/village-merge-112";
 import { loaderState, mockUnreadableAssets, resetFakeLoader, sceneFromGlb } from "../__fixtures__/village-scene-101";
 
 type FramePart = (state: unknown, delta: number) => void;
@@ -551,58 +559,70 @@ describe("[spec] 099 바뀔 동작: 둥근 길 그리기(명세 1~3)", () => {
 // ---------- 그대로 둘 동작 ----------
 
 describe("[spec] 099 그대로 둘 동작: 길 말고는 마을 그리기가 같다", () => {
-  it("K1 마을 모델의 다른 묶음(건물·불빛 판·소품·생울타리·울타리·풍차)의 메시는 모두 그대로 장면에 있고, 불빛 판 말고는 그려진다(낮). 나무 틀은 장면에서 떼어 둔다", async () => {
+  it("K1 마을 모델의 다른 묶음(건물·불빛 판·소품·생울타리·울타리·풍차)의 삼각형은 모두 그대로 장면의 같은 이름 묶음 아래에 있고, 불빛 판 말고는 그려진다(낮). 나무 틀은 장면에서 떼어 둔다(112 ③에서 고침: 메시 이름 대신 삼각형 자리로 본다)", async () => {
     const drawn = await draw();
     const { byGroup } = sourceGeometries(drawn.source);
     const objects = allObjects(drawn.roots);
-    const meshNames = (top: THREE.Object3D) => {
-      const out: string[] = [];
-      top.traverse((o) => {
-        if (o instanceof THREE.Mesh) out.push(o.name);
-      });
-      return out.sort();
-    };
+    // 기대값: 그리기에 넘긴 장면과 따로 푼 같은 모델의 묶음별 삼각형(세계 자리)
+    const expected = sourceTriangles(sceneFromGlb(nowVillageGlb()));
     for (const top of drawn.source.children) {
       const name = top.name;
       if (name === "paths" || name === "tree-templates") continue;
       // 그린 장면에서 같은 이름의 묶음(풍차 날개는 그리기가 도형을 복제해 옮기므로 도형이 아니라 이름으로 찾는다)
       const drawnTops = objects.filter((o) => o.name === name && o.parent !== null && drawn.roots.includes(o.parent));
       expect({ name, found: drawnTops.length }).toEqual({ name, found: 1 });
-      expect({ name, meshes: meshNames(drawnTops[0]) }).toEqual({ name, meshes: meshNames(top) });
       const meshes: THREE.Mesh[] = [];
       drawnTops[0].traverse((o) => {
         if (o instanceof THREE.Mesh) meshes.push(o);
       });
       const shouldShow = !name.startsWith("glow");
-      expect({ name, shown: meshes.map((m) => drawnVisible(m, drawn.roots)) }).toEqual({ name, shown: meshes.map(() => shouldShow) });
+      const shown = meshes.filter((m) => drawnVisible(m, drawn.roots));
+      // 불빛 판 말고는 그려지는 메시들이, 불빛 판은 장면에 있는 메시들이 모델의 그 묶음 삼각형을 그대로 갖는다. 불빛 판은 하나도 그려지지 않는다
+      const got = compareTriangles(
+        expected.filter((t) => t.label === name),
+        (shouldShow ? shown : meshes).flatMap((m) => meshTriangles(m, name, "")),
+        "shape"
+      );
+      expect({ name, missing: got.missing, extra: got.extra, examples: got.examples, shown: shouldShow || shown.length === 0 }).toEqual({
+        name,
+        missing: 0,
+        extra: 0,
+        examples: [],
+        shown: true
+      });
     }
     const templates = byGroup.get("tree-templates")!;
     expect(objects.filter((o) => o instanceof THREE.Mesh && !(o instanceof THREE.InstancedMesh) && templates.has(o.geometry))).toEqual([]);
   });
 
-  it("K2 누르기(그대로, 106: 유리 빼고): 누르기 판정 대상은 건물(bld-*, 유리 재질 메시 빼고)과 소품(props)의 메시뿐이고, 그 밖의 물체(길 포함)는 그 아래에도 없다", async () => {
+  it("K2 누르기(그대로, 106: 유리 빼고. 112 ③에서 고침: 모델 도형과 같은 물체 대신 삼각형이 건물·소품의 것인 메시로 본다): 누르기 판정 대상은 건물(bld-*, 유리 재질 메시 빼고)과 소품(props)의 메시뿐이고 그 삼각형을 모두 덮으며, 그 밖의 물체(길 포함)는 그 아래에도 없다", async () => {
     const drawn = await draw();
-    const { byGroup } = sourceGeometries(drawn.source);
-    const glass = new Set<THREE.BufferGeometry>();
-    drawn.source.traverse((o) => {
-      if (o instanceof THREE.Mesh && GLASS_MATERIAL.test((o.material as THREE.Material).name)) glass.add(o.geometry);
-    });
-    const allowed = new Set<THREE.BufferGeometry>();
-    for (const [name, geometries] of byGroup) {
-      if (!(name.startsWith("bld-") || name === "props")) continue;
-      for (const g of geometries) if (!glass.has(g)) allowed.add(g);
-    }
+    // 기대값: 그리기에 넘긴 장면과 따로 푼 같은 모델의 삼각형(묶음 이름, 유리 재질 메시는 ":glass"를 붙임)
+    const sourceTris = sourceTriangles(sceneFromGlb(nowVillageGlb()), { glass: GLASS_MATERIAL });
+    const bank = new TriBank(sourceTris);
+    const isAllowed = (label: string) => (label.startsWith("bld-") && !label.endsWith(":glass")) || label === "props";
     const objects = allObjects(drawn.roots);
-    const expected = objects.filter((o) => o instanceof THREE.Mesh && allowed.has(o.geometry));
+    const labels = new Map<THREE.Object3D, string>();
+    const labelFor = (o: THREE.Object3D) => {
+      if (!labels.has(o)) labels.set(o, o instanceof THREE.Mesh && !(o instanceof THREE.InstancedMesh) ? labelOfMesh(o, bank) : "메시 아님");
+      return labels.get(o)!;
+    };
+    const expected = objects.filter((o) => o instanceof THREE.Mesh && drawnVisible(o, drawn.roots) && isAllowed(labelFor(o)));
     expect(drawn.pick.current.length).toBe(expected.length);
     expect(new Set(drawn.pick.current)).toEqual(new Set(expected));
     const strangers: string[] = [];
     for (const target of drawn.pick.current) {
       target.traverse((o) => {
-        if (o !== target && o instanceof THREE.Mesh && !allowed.has(o.geometry)) strangers.push(o.name || o.type);
+        if (o !== target && o instanceof THREE.Mesh && !isAllowed(labelFor(o))) strangers.push(o.name || o.type);
       });
     }
     expect(strangers).toEqual([]);
+    const got = compareTriangles(
+      sourceTris.filter((t) => isAllowed(t.label)),
+      (drawn.pick.current as THREE.Mesh[]).flatMap((m) => meshTriangles(m, "", "")),
+      "shape"
+    );
+    expect({ missing: got.missing, extra: got.extra, examples: got.examples }).toEqual({ missing: 0, extra: 0, examples: [] });
   });
 
   it("K3 풀밭과 생울타리의 계절 색(그대로): 계절마다 풀밭 판은 SEASON_COLORS의 ground, 생울타리는 bushes[0]이다", async () => {

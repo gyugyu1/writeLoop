@@ -3,7 +3,7 @@
 // - 장식: 걸을 수 있는 풀밭에 몇 개씩 모아 심는다. 길 경계와 막힌 칸(건물·나무·바위·소품·가장자리)에서 떨어뜨린다.
 // - 계절 흩뿌림: 가을 낙엽·봄 꽃잎·여름 잎을 마을 땅에 흩되, 자리마다 빽빽한 정도를 부드러운 잡음으로 달리한다. 길과 건물 땅 위에는 두지 않는다. 겨울에는 없다(눈).
 import type { Season } from "./daylight";
-import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_SOLID_TILES } from "./village";
+import { VILLAGE, VILLAGE_BOUNDARY, VILLAGE_BUILDINGS, VILLAGE_PATH_RECTS, VILLAGE_SOLID_TILES } from "./village";
 import { pathCells, pointInLoop, roundedPathShapes, type PathPoint } from "./village-paths";
 
 export type VillageDecorKind = "flowerWhite" | "flowerYellow" | "flowerPink" | "flowerRed" | "clover" | "grassTuft";
@@ -226,6 +226,8 @@ export function villageSeasonScatter(season: Season): VillageScatterPiece[] {
       }
     }
   }
-  scatterCache.set(season, pieces);
-  return pieces.map((m) => ({ ...m }));
+  // 경계 원 밖(숲 밑)의 조각은 다 계산한 뒤 뺀다(원 안 조각의 자리·종류는 그대로 두려고 난수 순서를 바꾸지 않는다)
+  const kept = pieces.filter((m) => Math.hypot(m.x - VILLAGE_BOUNDARY.x, m.z - VILLAGE_BOUNDARY.z) <= VILLAGE_BOUNDARY.radius);
+  scatterCache.set(season, kept);
+  return kept.map((m) => ({ ...m }));
 }

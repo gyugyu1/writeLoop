@@ -104,7 +104,7 @@ function buildSolidTiles(): Set<string> {
   return solid;
 }
 
-/** 걸어갈 수 없는 칸("열,행"): 가장자리 생울타리·울타리, 건물, 분수, 가로등, 노점, 벤치, 나무, 바위. */
+/** 걸어갈 수 없는 칸("열,행"): 경계 원 밖(숲), 건물, 분수, 가로등, 노점, 벤치, 나무, 바위. */
 export const VILLAGE_SOLID_TILES: ReadonlySet<string> = buildSolidTiles();
 
 export interface VillagePlace {

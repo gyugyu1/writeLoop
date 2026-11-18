@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import type { Season } from "@/lib/lobby3d/daylight";
-import { VILLAGE, VILLAGE_PATH_RECTS, VILLAGE_TREES, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
+import { VILLAGE, VILLAGE_BOUNDARY, VILLAGE_PATH_RECTS, VILLAGE_TREES, occludingBuildings, type VillageBuildingId } from "@/lib/lobby3d/village";
 import { villageDecorSpots, villageSeasonScatter, type VillageDecorKind } from "@/lib/lobby3d/village-decor";
 import { villageGroundPlaceMap } from "@/lib/lobby3d/village-ground-splat";
 import { villageFlowersAsset, villageGroundTextureAssets } from "./village-ground-assets";
@@ -15,7 +15,7 @@ import { InstanceCulling } from "./instance-culling";
 import { freezeMatrices } from "./static-matrices";
 import { buildTreeKit, treeModelAssets, type TreeLod, type TreeSpecies } from "./tree-models";
 
-// 바깥 마을 그리기. 풀밭·하늘·길(코드로 짓고 풀밭은 계절·하루의 때를 따른다. 길은 칸 모양의 경계를 둥글게 다듬어 짓는다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·풍차·나무 틀)을 그린다.
+// 바깥 마을 그리기. 풀밭·하늘·길(코드로 짓고 풀밭은 계절·하루의 때를 따른다. 길은 칸 모양의 경계를 둥글게 다듬어 짓는다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·나무 틀)을 그린다.
 // 풀밭 바탕은 여러 무늬(짧은 풀·무성한 풀·클로버·이끼·맨땅)를 잡음과 자리 지도로 섞어 그리고(셰이더), 그 위에 계절 흩뿌림(가을 낙엽·봄 꽃잎·여름 잎)을 흩고, 3D 꽃·풀 장식(village-flowers.glb)을 무리 지어 심으며, 길에 흙 무늬를 입힌다(VillageGround. 그림·모델을 못 불러오면 빼고 그린다).
 // 나무는 모델의 나무 틀을 마을 나무 자리와 둘레 숲에 여러 그루 찍고(인스턴스), 잎을 계절 색으로 칠한다.
 // 모델을 불러오지 못하면 풀밭·길·하늘만 보인다(길은 배치 파일에서 코드로 짓는다. 걸어갈 수 없는 곳은 village.ts 데이터대로 막는다).
@@ -189,7 +189,10 @@ interface TreeSpot {
   shade: number;
 }
 
-/** 마을 나무 자리(배치 데이터)와 둘레 숲(마을 끝 바깥을 채운다. 화면 어디에도 검은 바깥이 보이지 않게). */
+/**
+ * 마을 나무 자리(배치 데이터)와 둘레 숲. 숲은 경계 원 바깥에 빽빽하게(FOREST_STEP칸 격자에 흔들기) 심어,
+ * 마을 카메라가 보여 줄 수 있는 곳까지 채운다(화면 어디에도 빈 바깥이 보이지 않게). 안쪽 가장자리는 원을 따라가되 살짝 들쭉날쭉하다.
+ */
 function treeSpots(): TreeSpot[] {
   const rnd = seeded(11);
   const spots: TreeSpot[] = [];
@@ -197,18 +200,32 @@ function treeSpots(): TreeSpot[] {
   for (const [x, z] of VILLAGE_TREES) {
     spots.push({ species: pick(VILLAGE_TREE_SPECIES), lod: 1, x, z, scale: 1.7 + rnd() * 0.35, turn: rnd() * Math.PI * 2, shade: TREE_SHADE_MIN + rnd() * TREE_SHADE_SPAN });
   }
-  for (let x = -FOREST_MARGIN; x <= VILLAGE.width + FOREST_MARGIN; x += 2.7) {
-    for (let z = -FOREST_MARGIN; z <= VILLAGE.depth + FOREST_MARGIN; z += 2.7) {
-      const jx = x + (rnd() - 0.5) * 1.6;
-      const jz = z + (rnd() - 0.5) * 1.6;
-      const inside = jx > -1 && jx < VILLAGE.width + 1 && jz > -1 && jz < VILLAGE.depth + 1;
-      if (inside || rnd() < 0.12) continue;
+  const { x: bx, z: bz, radius } = VILLAGE_BOUNDARY;
+  for (let x = bx - radius - FOREST_REACH_SIDE; x <= bx + radius + FOREST_REACH_SIDE; x += FOREST_STEP) {
+    for (let z = bz - radius - FOREST_REACH_BACK; z <= bz + radius + FOREST_REACH_FRONT; z += FOREST_STEP) {
+      const jx = x + (rnd() - 0.5) * FOREST_JITTER;
+      const jz = z + (rnd() - 0.5) * FOREST_JITTER;
+      // 숲 가장자리: 원 반지름에 각도마다 부드럽게 바뀌는 0~2칸을 더한 곳부터 바깥(그루 밑동은 늘 원 밖이다)
+      const inside = Math.hypot(jx - bx, jz - bz) < forestEdge(Math.atan2(jz - bz, jx - bx), radius);
+      if (inside || rnd() < FOREST_GAP) continue;
       spots.push({ species: pick(FOREST_TREE_SPECIES), lod: 2, x: jx, z: jz, scale: 1.6 + rnd() * 0.5, turn: rnd() * Math.PI * 2, shade: TREE_SHADE_MIN + rnd() * TREE_SHADE_SPAN });
     }
   }
   return spots;
 }
 
+/** 둘레 숲 격자 간격(칸)과 흔들기 폭, 빈자리로 둘 몫. */
+const FOREST_STEP = 2;
+const FOREST_JITTER = 1.2;
+const FOREST_GAP = 0.06;
+/** 원을 감싸는 상자에서 숲을 더 심는 칸(옆·뒤·앞). 마을 카메라가 끝에서 보여 주는 바깥(옆은 화면 가로, 뒤는 화면 위 끝 너머)을 채운다. */
+const FOREST_REACH_SIDE = 9;
+const FOREST_REACH_BACK = 12;
+const FOREST_REACH_FRONT = 4;
+/** 숲 안쪽 가장자리 반지름(각도 a에서): 원 반지름 + 0~2칸. 사인 둘을 섞어 부드럽게 들쭉날쭉하다. */
+function forestEdge(a: number, radius: number): number {
+  return radius + 1 + 0.6 * Math.sin(3 * a + 1.3) + 0.4 * Math.sin(7 * a + 0.4);
+}
 /** 마을 안에 섞어 심는 나무(A·B·C 고르게)와 둘레 숲 나무(좁고 키 큰 A·C 위주, 넓은 B는 조금: 약 45·45·10%). 한 번 뽑기로 고른다(자리 계산의 난수 순서를 지킨다). */
 const VILLAGE_TREE_SPECIES: readonly TreeSpecies[] = ["A", "B", "C"];
 const FOREST_TREE_SPECIES: readonly TreeSpecies[] = [..."AAAAAAAAA", ..."CCCCCCCCC", "B", "B"] as TreeSpecies[];

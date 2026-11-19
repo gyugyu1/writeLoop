@@ -667,7 +667,8 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
   const gltf = useLoader(GLTFLoader, VILLAGE_ASSET as string) as GLTF;
   const fountainGltf = useLoader(GLTFLoader, villageFountainAsset()) as GLTF;
   const fountain = useMemo(() => buildVillageFountain(fountainGltf), [fountainGltf]);
-  // 분수의 누르기 대상: 돌만(가속 판정). 물은 모양이 움직여 가속할 수 없고, 돌 수조 안이라 물을 눌러도 수조 바닥(돌)에 맞는다
+  // 분수의 누르기 대상: 돌만(가속 판정). 물은 모양이 움직여 가속할 수 없다. 돌 모델에는 수조 안쪽 바닥이 없어 물을 누르면 광선이 땅에 닿는데,
+  // 그 바닥 점이 분수 둘레 안이면 3D 화면이 분수를 누른 것으로 본다(lobby3d-canvas의 마을 판정)
   const fountainPick = useMemo(() => {
     const stone = fountain.meshes.filter((m) => !m.geometry.morphAttributes.position?.length);
     for (const m of stone) accelerateRaycast(m);

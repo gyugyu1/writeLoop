@@ -20,7 +20,7 @@ import {
   type PlaceId,
   type PointerHit
 } from "@/lib/lobby3d/engine";
-import { VILLAGE_PLACES } from "@/lib/lobby3d/village";
+import { VILLAGE_FOUNTAIN, VILLAGE_PLACES } from "@/lib/lobby3d/village";
 import type { WearLook, WearState } from "@/lib/lobby3d/wear";
 import { layoutGeometry, layoutItem, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
 import { BASIC_ROOM, currentRoom, outsideExit } from "@/lib/lobby3d/room";
@@ -1009,7 +1009,10 @@ function Scene({
         if (hit && (hit.object.userData as { isCharacter?: boolean }).isCharacter) return { point: floorPoint(), mark: null, onCharacter: true };
         // 건물·소품: 장소가 있는 건물(bld-<id>)이면 그 장소(문 앞으로 간다), 아니면 맞은 자리
         if (hit) return { point: { x: hit.point.x, z: hit.point.z }, mark: null, onCharacter: false, onScenery: true, building: villageBuildingMark(hit.object) };
-        return { point: floorPoint(), mark: null, onCharacter: false };
+        // 분수 물은 누르기 대상이 아니고(모양이 움직임) 돌 수조에는 안쪽 바닥이 없어, 물을 누르면 광선이 땅에 닿는다. 그 점이 분수 둘레 안이면 분수를 누른 것이다
+        const ground = floorPoint();
+        if (ground && Math.hypot(ground.x - VILLAGE_FOUNTAIN.x, ground.z - VILLAGE_FOUNTAIN.z) <= VILLAGE_FOUNTAIN.radius) return { point: ground, mark: null, onCharacter: false, onScenery: true, building: null };
+        return { point: ground, mark: null, onCharacter: false };
       }
       // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).
       const objects: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...world.markObjects.map((m) => m.object), ...world.blockers];

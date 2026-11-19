@@ -108,15 +108,14 @@ function buildSolidTiles(): Set<string> {
   for (const b of VILLAGE_BUILDINGS) add(rectTiles(...b.rect));
   add(circleTiles(LAYOUT.fountain.x, LAYOUT.fountain.z, LAYOUT.fountain.radius));
   for (const [x, z] of LAYOUT.lanterns) add(propTiles(x, z, 0.6, 0.6));
-  // 노점(Kenney 한 칸을 2배로 놓았다: 2×2칸), 벤치(WriteLoop 벤치 1.3배: 길이 약 2.3 × 깊이 약 0.9칸. rot 0이면 가로로 길고, ±90이면 세로로 길다)
-  for (const s of LAYOUT.stalls) add(propTiles(s.x, s.z, 2, 2));
+  // 벤치(WriteLoop 벤치 1.3배: 길이 약 2.3 × 깊이 약 0.9칸. rot 0이면 가로로 길고, ±90이면 세로로 길다)
   for (const b of LAYOUT.benches) add(Math.abs(b.rot) === 90 ? propTiles(b.x, b.z, BENCH_DEPTH, BENCH_LENGTH) : propTiles(b.x, b.z, BENCH_LENGTH, BENCH_DEPTH));
   for (const [x, z] of LAYOUT.trees) add(propTiles(x, z, 0.8, 0.8));
   for (const [x, z] of LAYOUT.rocks) add(propTiles(x, z, 1.8, 1.8));
   return solid;
 }
 
-/** 걸어갈 수 없는 칸("열,행"): 경계 원 밖(숲), 건물, 분수, 가로등, 노점, 벤치, 나무, 바위. */
+/** 걸어갈 수 없는 칸("열,행"): 경계 원 밖(숲), 건물, 분수, 가로등, 벤치, 나무, 바위. */
 export const VILLAGE_SOLID_TILES: ReadonlySet<string> = buildSolidTiles();
 
 export interface VillagePlace {

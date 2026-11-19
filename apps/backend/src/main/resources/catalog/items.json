@@ -1,5 +1,5 @@
 {
-  "_comment": "라이트루프 아이템 목록(가구·옷). 서버의 홈쇼핑 가격표·옷 부위·배치 검사·처음 가진 가구와 GET /api/catalog가 모두 이 파일을 읽는다. 파는 아이템은 가격이 낮은 것부터 적고(같은 가격이면 적은 순서), 오늘의 방송도 이 순서로 돈다. 가구의 draw는 앱이 그리는 값(앱 furniture-catalog와 같은 모양)이고 서버 검사(두는 곳·장소·소품 자리 수)도 여기서 만든다. 옷의 draw는 앱이 라룹이에 입히는 값이다: attach(bone 뼈에 붙임, skin 라룹이 뼈대로 휨), bone(붙일 뼈), mirror(좌우로 뒤집어 하나 더 붙일 뼈), color(모델 색 대신 칠할 색), body(맞춘 라룹이 몸 판. 앱은 자기 몸과 같은 판만 그린다). 서버 옷 검사는 slot만 본다. 라룹이 고글은 모두 처음부터 가진 얼굴장식이라 모델(wear-goggles.glb)과 그림이 앱에 들어 있어 draw와 files가 없다. files는 옆 폴더 files/ 안의 모델(glb)·아이콘(png) 이름이다(가구 묶음에서 나누는 스크립트: scripts/lobby3d/split-furniture.py, 서버로만 더하는 가구: build-extra-furniture.py, 착용 모델을 모델마다 만드는 스크립트: scripts/lobby3d/build-wearables.py, 그림: render-wearable-icons.py). 아이템을 더하거나 고치면 이 파일과 files/를 고쳐 배포한다.",
+  "_comment": "라이트루프 아이템 목록(가구·옷·애셋). 서버의 홈쇼핑 가격표·옷 부위·배치 검사·처음 가진 가구와 GET /api/catalog가 모두 이 파일을 읽는다. 파는 아이템은 가격이 낮은 것부터 적고(같은 가격이면 적은 순서), 오늘의 방송도 이 순서로 돈다. 가구의 draw는 앱이 그리는 값(앱 furniture-catalog와 같은 모양)이고 서버 검사(두는 곳·장소·소품 자리 수)도 여기서 만든다. 옷의 draw는 앱이 라룹이에 입히는 값이다: attach(bone 뼈에 붙임, skin 라룹이 뼈대로 휨), bone(붙일 뼈), mirror(좌우로 뒤집어 하나 더 붙일 뼈), color(모델 색 대신 칠할 색), body(맞춘 라룹이 몸 판. 앱은 자기 몸과 같은 판만 그린다). 서버 옷 검사는 slot만 본다. 라룹이 고글은 모두 처음부터 가진 얼굴장식이라 모델(wear-goggles.glb)과 그림이 앱에 들어 있어 draw와 files가 없다. files는 옆 폴더 files/ 안의 모델(glb)·아이콘(png) 이름이다(가구 묶음에서 나누는 스크립트: scripts/lobby3d/split-furniture.py, 서버로만 더하는 가구: build-extra-furniture.py, 착용 모델을 모델마다 만드는 스크립트: scripts/lobby3d/build-wearables.py, 그림: render-wearable-icons.py). 애셋(kind asset)은 팔지도 방에 놓지도 않는 모델 파일만 담는다(마을 가구점 실내·주인 버들). 모델 파일만 있고 draw·가격·부위가 없으며, 앱이 가구점에 들어갈 때 받는다. 아이템을 더하거나 고치면 이 파일과 files/를 고쳐 배포한다.",
   "items": [
     {
       "id": "books",
@@ -1069,6 +1069,158 @@
       "price": null,
       "slot": "face",
       "alwaysOwned": true
+    },
+    {
+      "id": "walnutBed",
+      "kind": "furniture",
+      "name": "호두껍질 침대",
+      "shopName": "호두껍질 침대",
+      "description": "갈라진 호두껍질 굴곡에 파스텔 녹색 이불을 덮었어요.",
+      "category": null,
+      "price": null,
+      "draw": {
+        "mount": "floor",
+        "size": {
+          "width": 2,
+          "depth": 3
+        },
+        "height": {
+          "bottom": 0,
+          "top": 1.296
+        },
+        "blocksWalk": true,
+        "removable": true,
+        "model": {
+          "piece": "walnutBed",
+          "box": {
+            "width": 1.61,
+            "height": 1.296,
+            "depth": 2.972
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              1.71,
+              3.072,
+              0.32
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "walnut-bed.glb",
+        "icon": null
+      }
+    },
+    {
+      "id": "grandmasFloorBedding",
+      "kind": "furniture",
+      "name": "할머니 댁 이부자리",
+      "shopName": "할머니 댁 이부자리",
+      "description": "방바닥에 포근한 요를 펴고 솜이불과 베개를 놓았어요.",
+      "category": null,
+      "price": null,
+      "draw": {
+        "mount": "floor",
+        "size": {
+          "width": 2,
+          "depth": 3
+        },
+        "height": {
+          "bottom": 0,
+          "top": 0.47744
+        },
+        "blocksWalk": true,
+        "removable": true,
+        "model": {
+          "piece": "grandmasFloorBedding",
+          "box": {
+            "width": 1.87913,
+            "height": 0.47744,
+            "depth": 2.93539
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              1.979,
+              3.055,
+              0.32
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "grandmas-floor-bedding.glb",
+        "icon": null
+      }
+    },
+    {
+      "id": "cloudDesk",
+      "kind": "furniture",
+      "name": "구름 책상",
+      "shopName": "구름 책상",
+      "description": "구름 모양 상판에 하늘색으로 포인트를 줬어요.",
+      "category": null,
+      "price": null,
+      "draw": {
+        "mount": "floor",
+        "size": {
+          "width": 3,
+          "depth": 2
+        },
+        "height": {
+          "bottom": 0,
+          "top": 1.292
+        },
+        "blocksWalk": true,
+        "removable": true,
+        "model": {
+          "piece": "cloudDesk",
+          "box": {
+            "width": 2.511,
+            "height": 1.292,
+            "depth": 1.385
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              2.611,
+              1.485,
+              0.32
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "cloud-desk.glb",
+        "icon": null
+      }
+    },
+    {
+      "id": "shopInterior",
+      "kind": "asset",
+      "name": "가구점 실내",
+      "shopName": "가구점 실내",
+      "description": "",
+      "category": null,
+      "price": null,
+      "files": {
+        "model": "shop-interior.glb",
+        "icon": null
+      }
+    },
+    {
+      "id": "shopkeeperBeodeul",
+      "kind": "asset",
+      "name": "가구점 주인 버들",
+      "shopName": "가구점 주인 버들",
+      "description": "",
+      "category": null,
+      "price": null,
+      "files": {
+        "model": "shopkeeper-beodeul.glb",
+        "icon": null
+      }
     }
   ]
 }

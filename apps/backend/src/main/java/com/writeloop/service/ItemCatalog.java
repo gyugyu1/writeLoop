@@ -62,6 +62,11 @@ public class ItemCatalog {
             return "wearable".equals(kind);
         }
 
+        /** 애셋: 팔지도 방에 놓지도 않는 모델 파일만 담는다(마을 가구점 실내·주인). 배치 검사·홈쇼핑·옷 소유에 들어가지 않는다. */
+        public boolean isAsset() {
+            return "asset".equals(kind);
+        }
+
         public boolean sold() {
             return price != null;
         }
@@ -206,11 +211,24 @@ public class ItemCatalog {
         }
     }
 
+    /** 애셋 검사: 모델 파일이 있어야 하고, 그리기 정보·가격·부위는 없어야 한다(팔지도 놓지도 입지도 않는다). */
+    private static void validateAsset(Item item) {
+        if (item.files() == null || item.files().model() == null) {
+            throw new IllegalStateException("모델 파일이 없는 애셋: " + item.id());
+        }
+        if ((item.draw() != null && !item.draw().isNull()) || item.price() != null || item.slot() != null) {
+            throw new IllegalStateException("애셋에 그리기 정보·가격·부위가 있다: " + item.id());
+        }
+    }
+
     private void validate() {
         Integer last = null;
         for (Item item : items) {
-            if (!item.isFurniture() && !item.isWearable()) {
+            if (!item.isFurniture() && !item.isWearable() && !item.isAsset()) {
                 throw new IllegalStateException("모르는 아이템 종류: " + item.id() + " " + item.kind());
+            }
+            if (item.isAsset()) {
+                validateAsset(item);
             }
             if (item.isFurniture()) {
                 if (item.draw() == null || !item.draw().isObject()) {

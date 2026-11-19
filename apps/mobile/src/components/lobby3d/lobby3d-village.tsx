@@ -16,6 +16,7 @@ import { InstanceCulling } from "./instance-culling";
 import { freezeMatrices } from "./static-matrices";
 import { buildTreeKit, dropsLeavesInWinter, treeModelAssets } from "./tree-models";
 import { buildVillageFountain, startFountainFlow, villageFountainAsset } from "./village-fountain";
+import { accelerateRaycast, releaseRaycast } from "./raycast-acceleration";
 import { buildVillageStreetlamps, villageStreetlampAsset } from "./village-streetlamp";
 
 // 바깥 마을 그리기. 풀밭·하늘·길(코드로 짓고 풀밭은 계절·하루의 때를 따른다. 길은 칸 모양의 경계를 둥글게 다듬어 짓는다)과, Kenney 키트로 조립한 마을 모델(lobby-village.glb: 건물·소품·나무 틀)을 그린다.
@@ -666,6 +667,18 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
   const gltf = useLoader(GLTFLoader, VILLAGE_ASSET as string) as GLTF;
   const fountainGltf = useLoader(GLTFLoader, villageFountainAsset()) as GLTF;
   const fountain = useMemo(() => buildVillageFountain(fountainGltf), [fountainGltf]);
+  // 분수의 누르기 대상: 돌만(가속 판정). 물은 모양이 움직여 가속할 수 없고, 돌 수조 안이라 물을 눌러도 수조 바닥(돌)에 맞는다
+  const fountainPick = useMemo(() => {
+    const stone = fountain.meshes.filter((m) => !m.geometry.morphAttributes.position?.length);
+    for (const m of stone) accelerateRaycast(m);
+    return stone;
+  }, [fountain]);
+  useEffect(
+    () => () => {
+      for (const m of fountainPick) releaseRaycast(m);
+    },
+    [fountainPick]
+  );
   const lampGltf = useLoader(GLTFLoader, villageStreetlampAsset()) as GLTF;
   // 가로등 넷: 인스턴스 메시 하나(모양·그림·재질 하나를 함께 쓴다). 마을을 나가면 가로등용 재질을 버린다
   const lamps = useMemo(() => buildVillageStreetlamps(lampGltf), [lampGltf]);
@@ -801,6 +814,9 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
         o.raycast = () => {};
       }
     });
+    // 누르기 대상(건물·합친 소품)은 삼각형이 수천~1만 개라, 삼각형을 하나씩 보는 광선 판정이 휴대폰에서 한 번에 수십 ms 걸렸다.
+    // 지을 때 한 번 가속 구조를 만들어 둔다(마을이 검게 가린 동안 짓는다). 맞는 결과는 같다
+    for (const o of pick) if (o instanceof THREE.Mesh) accelerateRaycast(o);
     return { root, buildings, glows, glowMat, glasses, owned, pick };
   }, [gltf]);
 
@@ -832,12 +848,19 @@ export function VillageModel({ sim, daylight, pickTargets }: VillageModelProps) 
 
   useEffect(() => {
     // 분수·가로등은 예전 마을 모델의 분수·가로등(소품 묶음)처럼 누르면 그 자리를 누른 곳으로 본다
-    pickTargets.current = [...built.pick, ...fountain.meshes, ...(lamps ? [lamps.mesh] : [])];
+    pickTargets.current = [...built.pick, ...fountainPick, ...(lamps ? [lamps.mesh] : [])];
     return () => {
       pickTargets.current = [];
     };
-  }, [built, fountain, lamps, pickTargets]);
+  }, [built, fountainPick, lamps, pickTargets]);
   useEffect(() => () => built.owned.forEach((m) => m.dispose()), [built]);
+  // 마을을 나가면 누르기 판정 가속 구조를 버린다
+  useEffect(
+    () => () => {
+      for (const o of built.pick) if (o instanceof THREE.Mesh) releaseRaycast(o);
+    },
+    [built]
+  );
 
   useFrame((state, delta) => {
     warmUp(state);

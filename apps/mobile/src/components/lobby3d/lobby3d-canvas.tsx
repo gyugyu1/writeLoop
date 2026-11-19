@@ -123,10 +123,10 @@ export interface Lobby3dCanvasProps {
 const LINE = 0x3d1b0f;
 
 export default function Lobby3dCanvas(props: Lobby3dCanvasProps) {
-  const pickRef = useRef<((x: number, y: number) => PointerHit | null) | null>(null);
+  const pickRef = useRef<((x: number, y: number, phase?: LobbyPointerPhase) => PointerHit | null) | null>(null);
   const send = (phase: LobbyPointerPhase, event: GestureResponderEvent) => {
     const { locationX, locationY } = event.nativeEvent;
-    const hit = phase === "cancel" || phase === "up" ? null : pickRef.current?.(locationX, locationY) ?? null;
+    const hit = phase === "cancel" || phase === "up" ? null : pickRef.current?.(locationX, locationY, phase) ?? null;
     props.onPointer(phase, hit, locationX, locationY);
   };
   return (
@@ -854,7 +854,7 @@ function Scene({
   wear,
   look,
   pickRef
-}: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
+}: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number, phase?: LobbyPointerPhase) => PointerHit | null) | null> }) {
   // 3D 가구는 지금 배치(보관함 가구는 숨겨서)로 만들고, 배치 표시 수(layoutKey)가 바뀌면 다시 만든다(서버 배치 받기 등).
   // 그 밖에는 다시 만들지 않는다. 끌기·돌리기는 자리만, 치우기·꺼내기는 보이기만 바꾼다(poseFurniture).
   // 꾸미기 '완료'로 지금 배치가 바뀌어도(layoutKey는 그대로) 꾸미던 3D를 그대로 쓰고, poseFurniture가 지금 배치로 맞춘다.
@@ -963,7 +963,7 @@ function Scene({
 
   // 누르기 판정. 장면 부분이 다시 만들어질 때 새 것이 먼저 넣고 옛 것의 정리가 뒤에 돌 수 있어, 정리는 자기가 넣은 판정일 때만 지운다
   useEffect(() => {
-    const pick = (x: number, y: number): PointerHit | null => {
+    const pick = (x: number, y: number, phase?: LobbyPointerPhase): PointerHit | null => {
       if (size.width <= 0 || size.height <= 0) return null;
       const ndc = new THREE.Vector2((x / size.width) * 2 - 1, -(y / size.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
@@ -983,6 +983,9 @@ function Scene({
         const first = (onParent ? hits[at] : hits[0])?.object.userData as { pickPiece?: string } | undefined;
         return { point: floorPoint(), mark: null, onCharacter: false, piece: first?.pickPiece ?? null, wall: wallUnderRay(raycaster.ray) };
       }
+      // 누르고 있거나 끄는 동안(이동)은 손가락 아래 바닥 점만 본다. 끌기는 바닥 점만 쓰는데, 이동 이벤트가 초당 수십 번 와서
+      // 그때마다 라룹이·건물로 광선 판정을 하면(한 번 4~6ms, 가끔 60ms) 프레임이 끊겼다. 누르는 순간·꾸미기 편집은 아래 판정 그대로다
+      if (phase === "move") return { point: floorPoint(), mark: null, onCharacter: false };
       // 마을: 이름표를 누르면 그 장소, 라룹이 아니면 맞은 건물·소품의 그 자리(없으면 바닥)를 누른 곳으로 본다. 걸어갈 수 없는 곳이면 sim이 가장 가까운 곳으로 간다
       if (areaRef.current === "village") {
         // 이름표(화면 이름표 상자: 가운데에서 가로 ±40, 세로 ±22)는 3D 물체가 아니라 화면 자리로 본다

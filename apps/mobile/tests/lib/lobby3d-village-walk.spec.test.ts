@@ -11,6 +11,7 @@
 // 작업 106(마을 가게 넣기) 명세의 "그 때문에 고칠 기존 테스트"(카페·도서관을 보는 테스트는 빼거나 옷집으로 바꾼다)로 qa가 고쳤다(106 qa 보고 02-qa-tests.md).
 // - 말풍선 표: 카페·도서관을 빼고 옷집("옷집은 곧 열려요", 버튼 없음. 106 명세 4)을 더했다. 옷집 id는 명세에 없어 이름 "옷집"으로 찾는다.
 // - B2의 "분수 바로 앞" 자리를 찾는 끝: 도서관 뒷면 → 마을 앞끝(도서관이 없어진다). 찾는 방법·단언은 그대로다.
+// 작업 125: B9의 건물 가운데 누르기 항목을 문 앞으로 가는 새 동작 테스트로 바꿨다(맨 아래).
 // - B5·B6: (집 → 카페) → (집 → 옷집), (도서관 → 집) → (옷집 → 집), (집 → 도서관)은 뺐다. (집 → 가구점)과 단언은 그대로다.
 import { LobbySim, applyArea, isClearLine, isFree, type FloorPoint, type PointerHit } from "@/lib/lobby3d/engine";
 import { VILLAGE, VILLAGE_BUILDINGS, VILLAGE_PLACES, VILLAGE_START, type VillageBuildingId } from "@/lib/lobby3d/village";
@@ -189,7 +190,6 @@ describe("[spec] 마을에서 움직이기(B1~B9)", () => {
 
   const unwalkable: [string, () => FloorPoint][] = [
     ["분수 가운데", () => fountain],
-    ...VILLAGE_BUILDINGS.map((b) => [`${b.label} 가운데`, () => ({ x: (b.rect[0] + b.rect[2]) / 2, z: (b.rect[1] + b.rect[3]) / 2 })] as [string, () => FloorPoint]),
     ["마을 밖 (-2, 12)", () => ({ x: -2, z: 12 })]
   ];
 
@@ -202,5 +202,18 @@ describe("[spec] 마을에서 움직이기(B1~B9)", () => {
     expect(sim.snapshot(now).moving).toBe(false);
     expect(isFree(end.x, end.z)).toBe(true);
     expect(dist(end, pressed)).toBeLessThanOrEqual(dist(nearestFreeTile(pressed), pressed) + 1e-6);
+  });
+
+  // 작업 125 명세 "고칠 기존 테스트"(마을에서 건물을 누르면 맞은 자리 근처로 간다고 보던 B9의 건물 가운데 누르기)를 qa가 새 동작(바뀜 4)으로 고쳤다:
+  // 건물을 톡으로 누르면 맞은 자리 근처가 아니라 그 건물 문 앞으로 간다. 건물 위를 누른 판정의 모양(onScenery·building)은 가정이다(lobby3d-village-press-building.spec.test.ts 머리말).
+  it.each(VILLAGE_BUILDINGS.map((b) => [b.label, b] as const))("B9(125 고침): 건물 %s 가운데를 톡하면 누른 곳 근처가 아니라 그 건물 문 앞으로 걸어가 도착한다", (_name, b) => {
+    const other = VILLAGE_BUILDINGS.find((x) => x.id !== b.id)!;
+    const sim = newSim(placeOf(other.id).approach[0]);
+    const pressed = { x: (b.rect[0] + b.rect[2]) / 2, z: (b.rect[1] + b.rect[3]) / 2 };
+    const hit = { point: pressed, mark: null, onCharacter: false, onScenery: true, building: b.id } as PointerHit;
+    expect(tap(sim, hit)).toBe("walk");
+    run(sim, 30);
+    expect(dist({ x: sim.x, z: sim.z }, placeOf(b.id).approach[0])).toBeLessThanOrEqual(0.06);
+    expect(sim.snapshot(now).arrived).toBe(b.id);
   });
 });

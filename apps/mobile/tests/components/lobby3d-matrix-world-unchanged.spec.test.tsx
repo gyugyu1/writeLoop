@@ -29,7 +29,7 @@
 // - K4: "풍차 날개가 프레임마다 돈다" → "그린 장면에 풍차 날개 묶음(windmill-rotor)이 없고, 프레임이 지나도 그려지는 물체의 세계 행렬이 지금과 같다"(바뀔 동작).
 // - K5: 동작 줄이기에서 날개가 멈추는지는 뺐다. 동작 줄이기로 여러 프레임 지나도 그려지는 물체의 세계 행렬이 지금과 같은지는 그대로 본다.
 // - K9: 다시 들어온 뒤 날개가 도는지는 뺐다. 그려지는 물체가 지금과 같고 라룹이·그림자가 따르는지는 그대로 본다.
-// - 마을에서 "적어도 50개 넘는 물체를 본다"(expectWorldMatricesAsNow의 최소 수)를 빠지는 묶음의 물체 8개만큼 줄여 42로 했다(VILLAGE_MIN_CHECKED).
+// - 마을에서 "적어도 50개 넘는 물체를 본다"(expectWorldMatricesAsNow의 최소 수)를 빠지는 묶음의 물체 8개만큼 줄여 42로 했다(VILLAGE_MIN_CHECKED. 120·127에서 더 줄였다).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, render } from "@testing-library/react-native";
 import { useState } from "react";
@@ -489,7 +489,7 @@ function mismatches(area: LobbyArea): { wrong: string[]; checked: number } {
  * 마을에서 적어도 이만큼 넘는 물체를 봐야 한다(그려지는 물체가 거의 없는데 통과하지 않게). 115 전에는 50이었다.
  * 115는 마을 모델에서 생울타리·울타리·풍차·풍차 날개 묶음(뿌리 넷과 그 아래 합친 메시 넷, 물체 8개)을 빼므로 그만큼 줄였다.
  */
-const VILLAGE_MIN_CHECKED = 50 - 8 - 4; // 120: 옛 가로등 불빛 판 묶음(넷)이 빠져 본 물체가 줄었다(가장 적은 장면에서 43 → 40). 아직 그만큼 많이 봐야 한다
+const VILLAGE_MIN_CHECKED = 50 - 8 - 4 - 2; // 127: 옛 노점 둘이 마을 모델에서 빠져 본 물체가 둘 줄었다(가장 적은 장면에서 40 → 38. 지금 코드에서는 40이라 36보다 많아 통과한다). 120: 옛 가로등 불빛 판 묶음(넷)이 빠져 본 물체가 줄었다(가장 적은 장면에서 43 → 40). 아직 그만큼 많이 봐야 한다
 
 function expectWorldMatricesAsNow(area: LobbyArea, minChecked: number) {
   const { wrong, checked } = mismatches(area);

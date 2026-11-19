@@ -246,7 +246,7 @@ describe("[spec] 098 그대로 둘 동작: 문 앞 자리, 다른 건물·소품
     expect({ door: layoutHome().door, front: homeBuilding().rect[3] }).toEqual({ door: DOOR_X, front: FRONT_Z });
   });
 
-  it("K2 배치 파일에서 건물·길·나무(106이 바꾼다) 말고는 기준 커밋과 같다(분수, 가로등, 노점, 벤치, 바위, 풍차, 마을 크기). 집의 id·이름·문 자리와 가구점의 id·이름·땅·층수도 같다", () => {
+  it("K2 배치 파일에서 건물·길·나무(106이 바꾼다) 말고는 기준 커밋과 같다(분수, 가로등, 벤치, 바위, 풍차, 마을 크기). 집의 id·이름·문 자리와 가구점의 id·이름·땅·층수도 같다", () => {
     const base = JSON.parse(baseFile(LAYOUT_PATH).toString("utf8")) as typeof LAYOUT;
     const strip = (layout: typeof LAYOUT) => {
       // 114: 벤치의 rot은 보지 않는다(벤치 자리는 본다). 115: 풍차·경계 원 열쇠를 빼고 바위는 원 안의 것만 본다

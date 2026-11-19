@@ -98,10 +98,9 @@ describe("[spec] 마을 모양과 데이터(A1~A12)", () => {
     expect(isFree(fountain.x, fountain.z)).toBe(false);
   });
 
-  it("A7: 노점·벤치·나무·가로등 기둥·바위 자리는 걸어갈 수 없다(벤치는 04 결정 2)", () => {
+  it("A7: 벤치·나무·가로등 기둥·바위 자리는 걸어갈 수 없다(벤치는 04 결정 2. 127: 노점은 없어져 뺐다)", () => {
     const things: [string, number, number][] = [
       ...LAYOUT.lanterns.map(([x, z]) => ["가로등", x, z] as [string, number, number]),
-      ...LAYOUT.stalls.map((s) => ["노점", s.x, s.z] as [string, number, number]),
       ...LAYOUT.benches.map((b) => ["벤치", b.x, b.z] as [string, number, number]),
       ...LAYOUT.trees.map(([x, z]) => ["나무", x, z] as [string, number, number]),
       ...LAYOUT.rocks.map(([x, z]) => ["바위", x, z] as [string, number, number])

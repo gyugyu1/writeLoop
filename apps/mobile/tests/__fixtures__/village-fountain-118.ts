@@ -106,7 +106,7 @@ export function isFountainMesh118(o: unknown): boolean {
 
 // ---------- 마을 모델에서 옛 Kenney 분수를 뺀 모양 ----------
 
-/** 옛 분수가 있던 곳: 가운데 x·z에서 1.7칸 안(옛 분수 반지름 1.6 + 여유 0.1). 높이는 땅 아래 −0.01부터. 이 안에 다른 소품(가로등·노점·벤치·바위)이 없음은 테스트 F1이 본다. */
+/** 옛 분수가 있던 곳: 가운데 x·z에서 1.7칸 안(옛 분수 반지름 1.6 + 여유 0.1). 높이는 땅 아래 −0.01부터. 이 안에 다른 소품(가로등·벤치·바위)이 없음은 테스트 F1이 본다. */
 export const OLD_FOUNTAIN_AREA_RADIUS = FOUNTAIN_LAYOUT.radius + 0.1;
 export function inOldFountainArea([x, y, z]: readonly number[]): boolean {
   return y >= -0.01 && Math.hypot(x - FOUNTAIN_LAYOUT.x, z - FOUNTAIN_LAYOUT.z) <= OLD_FOUNTAIN_AREA_RADIUS;

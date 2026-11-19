@@ -17,7 +17,7 @@
 //   이끼 몫 평균이, 마을 나무 둘레(가운데에서 0.6~1.4칸, 102 테스트 G6과 같은 곳)의 평균의 절반 이하다(102 테스트 G7 "자리로 정한다"와 같은 기준).
 // - E6 맨땅 규칙과 마을 나무 둘레 이끼 그대로: 지도 범위·픽셀 수가 같고, 맨땅 몫(R)은 지도 전체가, 이끼 몫(G)은 원 가운데에서 20칸 안(원 경계에서 6칸 넘게 안쪽,
 //   옛 사각형 끝에서 6칸 넘게)이 지금과 같다.
-// - E7 출처: 마을 모델 줄의 Kenney 부품 목록("Fantasy Town Kit"부터 `scripts/lobby3d/build-village.py` 앞까지)에 생울타리·울타리·풍차가 없고, 분수·가로등·노점·바위·길은 있다.
+// - E7 출처: 마을 모델 줄의 Kenney 부품 목록("Fantasy Town Kit"부터 `scripts/lobby3d/build-village.py` 앞까지)에 생울타리·울타리·풍차가 없고, 분수·가로등·바위·길은 있다(127: 노점은 일부러 보지 않는다. 노점이 빠진 것은 127 테스트가 본다).
 // - E9 옛 경계 설명: 명세 5가 든 네 파일(lobby3d-village.tsx, village.ts, engine.ts, village-ground-splat.ts)에 "풍차"와 "울타리" 낱말이 없다(지금 네 파일의 이 낱말은
 //   모두 명세 5가 든 옛 경계 설명이다).
 import { readFileSync } from "node:fs";
@@ -152,12 +152,12 @@ function villageCredit(text: string): { line: string; kenneyParts: string; rest:
 describe("[spec] 115 ② 자산 출처(명세 4)", () => {
   // 118(명세 6, 고칠 기존 테스트): 마을 모델 줄의 Kenney 부품에서 분수를 뺀다(분수는 WriteLoop 제작 모델 village-fountain.glb로 따로 적는다). 나머지 기대는 그대로다
   // 120(명세 6, 고칠 기존 테스트): 마을 모델 줄의 Kenney 부품에서 가로등도 뺀다(가로등은 WriteLoop 제작 모델 village-streetlamp.glb로 따로 적는다). 나머지 기대는 그대로다
-  it("[바뀔] E7 CREDITS.md의 마을 모델 줄: Kenney 부품 목록에 생울타리·나무 울타리·풍차·분수·가로등이 없고, 노점·바위·길은 그대로 있다", () => {
+  it("[바뀔] E7 CREDITS.md의 마을 모델 줄: Kenney 부품 목록에 생울타리·나무 울타리·풍차·분수·가로등이 없고, 바위·길은 그대로 있다(127: 노점은 보지 않는다)", () => {
     const { kenneyParts } = villageCredit(readFileSync(join(REPO_115_2, CREDITS_PATH_115_2), "utf8"));
     expect({
       kenneyParts,
       removed: ["생울타리", "울타리", "풍차", "분수", "가로등"].filter((w) => kenneyParts.includes(w)),
-      missing: ["노점", "바위", "길"].filter((w) => !kenneyParts.includes(w))
+      missing: ["바위", "길"].filter((w) => !kenneyParts.includes(w))
     }).toEqual({ kenneyParts, removed: [], missing: [] });
   });
 

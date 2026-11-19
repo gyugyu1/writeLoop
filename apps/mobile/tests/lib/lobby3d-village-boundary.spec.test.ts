@@ -47,6 +47,7 @@ import {
   withoutBoundary115,
   withoutBoundaryGlb115
 } from "../__fixtures__/village-boundary-115";
+import { stallTiles127 } from "../__fixtures__/village-stalls-127";
 import { withoutFountainAndLanternsGlb120 } from "../__fixtures__/village-streetlamp-120";
 
 type Circle = { x: number; z: number; radius: number };
@@ -115,7 +116,8 @@ describe("[spec] 115 ① 바뀔 동작: 경계 원, 막힌 칸, 빠지는 나무
   it("B4 막힌 칸 전체(명세 2): 원 밖 칸 + 원 안에서 그대로 둘 막힌 칸이다. 117: 마을 안 나무 28자리(새 자리)가 막는 칸을 더한 것과 개수·정렬한 목록이 같다", () => {
     // 115 전 기대값 SOLID_ALL_115 = { count: 2309, sha256: "975d2f05…" }(마을 안 나무가 옛 28자리일 때). 117: 바뀌는 나무 칸(옛·새 자리)은 solidKeep115가 빼므로 새 자리 칸을 따로 더한다
     const expected = [...new Set([...allTiles().filter(tileOutside115), ...solidKeep115(), ...rectTiles(NEW_TREES_117.map(trunkRect117))])].sort();
-    expect(digest115([...VILLAGE_SOLID_TILES].sort())).toEqual(digest115(expected));
+    // 127: 노점이 막던 칸(stallTiles127)은 양쪽에서 뺀다(solidKeep115가 이미 뺐다. 노점을 없애는 일은 127 테스트가 본다)
+    expect(digest115([...VILLAGE_SOLID_TILES].filter((t) => !stallTiles127().has(t)).sort())).toEqual(digest115(expected));
   });
 
   it("B5 마을 나무(명세 3, 117 명세 1): 마을 안 나무는 28자리이고 원 가운데까지 24.5(반지름 − 1.5) 안에 있으며, 자리는 117 명세 표의 28자리다. VILLAGE_TREES도 같다", () => {
@@ -199,7 +201,7 @@ describe("[spec] 115 ① 바뀔 동작: 경계 원, 막힌 칸, 빠지는 나무
 });
 
 describe("[spec] 115 ① 그대로 둘 동작: 배치 파일의 다른 값, 원 안의 막힌 칸, 마을 모델의 다른 묶음", () => {
-  it("K1 배치 파일에서 풍차·경계 원과 빠지는 나무·바위 말고는 기준 커밋과 같다(마을 크기 70×60, 건물·분수·가로등·노점·벤치·길, 원 안에 남는 나무·바위의 자리). 설명(_comment)은 보지 않는다", () => {
+  it("K1 배치 파일에서 풍차·경계 원과 빠지는 나무·바위 말고는 기준 커밋과 같다(마을 크기 70×60, 건물·분수·가로등·벤치·길, 원 안에 남는 나무·바위의 자리). 설명(_comment)은 보지 않는다", () => {
     const strip = (layout: Parameters<typeof withoutBoundary115>[0]) => {
       const { _comment: _c, ...rest } = withoutBoundary115(layout) as typeof layout & { _comment?: string };
       return rest;
@@ -208,11 +210,11 @@ describe("[spec] 115 ① 그대로 둘 동작: 배치 파일의 다른 값, 원 
     expect({ width: LAYOUT.width, depth: LAYOUT.depth }).toEqual({ width: 70, depth: 60 });
   });
 
-  it("K2 원 안의 막힌 칸(건물·분수·가로등·노점·벤치·남는 나무·바위) 가운데 115가 바꾸지 않는 곳(가장자리 줄·빠지는 나무·바위 칸 밖)이 기준 커밋과 같다: 개수와 목록의 sha256(117: 마을 안 나무 옛·새 자리 칸도 빼서 150개)", () => {
+  it("K2 원 안의 막힌 칸(건물·분수·가로등·벤치·남는 나무·바위) 가운데 115가 바꾸지 않는 곳(가장자리 줄·빠지는 나무·바위 칸 밖)이 기준 커밋과 같다: 개수와 목록의 sha256(117: 마을 안 나무 옛·새 자리 칸도 빼서 150개)", () => {
     expect(digest115(solidKeep115())).toEqual(SOLID_KEEP_115);
   });
 
-  it("K3 마을 모델의 장면 뿌리 묶음 이름이 빠지는 묶음(생울타리·울타리·풍차·풍차 날개) 말고 기준 커밋과 같고, 그 밖의 모든 묶음(건물·유리·불빛·길·나무 틀, 소품의 분수·가로등·노점·벤치·남는 바위)의 메시가 기준 커밋과 같다", () => {
+  it("K3 마을 모델의 장면 뿌리 묶음 이름이 빠지는 묶음(생울타리·울타리·풍차·풍차 날개) 말고 기준 커밋과 같고, 그 밖의 모든 묶음(건물·유리·불빛·길·나무 틀, 소품의 분수·가로등·벤치·남는 바위)의 메시가 기준 커밋과 같다", () => {
     const now = parseGlb(readFileSync(join(REPO, VILLAGE_GLB_PATH_115)));
     const base = parseGlb(gitShow(BASE_115, VILLAGE_GLB_PATH_115));
     expect(rootNamesKept115(now)).toEqual(rootNamesKept115(base));

@@ -7,8 +7,8 @@
 //
 // - 자산 출처(CREDITS.md)는 코드와 따로 하는 docs 커밋이라(명세 6) 코드 커밋 시점 기록에서는 실패할 수 있다. 이름 앞에 [docs 커밋]을 붙였다.
 // - 마을 모델에서 옛 가로등이 빠졌는지는 소품 묶음(props)의 삼각형 가운데 점 셋이 모두 옛 가로등 자리(배치 파일 lanterns에서 0.9칸 안, 땅 높이)에 드는 것의 수로 본다
-//   (tests/__fixtures__/village-streetlamp-120.ts. 기준 커밋 모델에서는 632개, 분수·노점·벤치·바위는 이 안에 들지 않는다).
-// - 다른 묶음(건물, 노점, 벤치, 바위, 창 불빛 판, 길)이 그대로인지는 명세 "고칠 기존 테스트"로 고친 기존 테스트(099 K7, 101 K9, 106 K5, 107 K4, 114 K4, 115 K3, 098 K5 등)가
+//   (tests/__fixtures__/village-streetlamp-120.ts. 기준 커밋 모델에서는 632개, 분수·벤치·바위는 이 안에 들지 않는다).
+// - 다른 묶음(건물, 벤치, 바위, 창 불빛 판, 길)이 그대로인지는 명세 "고칠 기존 테스트"로 고친 기존 테스트(099 K7, 101 K9, 106 K5, 107 K4, 114 K4, 115 K3, 098 K5 등)가
 //   옛 가로등을 뺀 기준 모델과 견주어 본다. 여기서는 소품 묶음 삼각형 수가 "기준 − 분수 삼각형 − 가로등 삼각형"과 같은지와 창 불빛 판이 그대로인지만 더 본다.
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -17,6 +17,7 @@ import { VILLAGE_SOLID_TILES } from "@/lib/lobby3d/village";
 import LAYOUT from "@/lib/lobby3d/village-layout.json";
 import { CREDITS_PATH, REPO, meshNodesUnder, nowVillageGlb, rootIndex, sceneRoots, triangleCount } from "../__fixtures__/village-glb-098";
 import { describeGroups } from "../__fixtures__/village-shops-106";
+import { STALL_TRIANGLES_127 } from "../__fixtures__/village-stalls-127";
 import {
   BASE_120,
   LAMP_ASSET_FILE,
@@ -85,7 +86,7 @@ describe("[spec] 120 마을 모델에서 옛 Kenney 가로등과 불빛 판 빼�
     expect(now.json.nodes.map((n) => n.name ?? "").filter(isLampGlowRoot)).toEqual([]);
   });
 
-  it("[바뀔] F3 소품 묶음의 삼각형 수는 기준 커밋보다 옛 가로등 삼각형(632개)만큼만 줄었고, 장면 뿌리 묶음 이름은 가로등 불빛 판 넷만 빠지고 그대로다(다른 소품과 묶음은 그대로)", () => {
+  it("[바뀔] F3 소품 묶음의 삼각형 수는 기준 커밋보다 옛 가로등 삼각형(632개)과 옛 노점 삼각형(127: 592개)만큼만 줄었고, 장면 뿌리 묶음 이름은 가로등 불빛 판 넷만 빠지고 그대로다(다른 소품과 묶음은 그대로)", () => {
     const propsTriangles = (glb: ReturnType<typeof nowVillageGlb>) => {
       const root = rootIndex(glb, "props");
       expect(root).toBeGreaterThanOrEqual(0);
@@ -93,7 +94,8 @@ describe("[spec] 120 마을 모델에서 옛 Kenney 가로등과 불빛 판 빼�
     };
     const base = baseVillageGlb120();
     const now = nowVillageGlb();
-    expect(propsTriangles(now)).toBe(propsTriangles(base) - 632);
+    // 127: 옛 Kenney 노점 둘의 삼각형(592개)도 빠진다
+    expect(propsTriangles(now)).toBe(propsTriangles(base) - 632 - STALL_TRIANGLES_127);
     expect(rootNames120(now)).toEqual(rootNames120(base).filter((n) => !isLampGlowRoot(n)));
     expect(sceneRoots(now).length).toBe(sceneRoots(base).length - 4);
   });
@@ -123,10 +125,11 @@ describe("[spec] 120 마을 모델 만드는 스크립트(명세 바뀌는 동�
     expect(now.filter(lampLine)).toEqual([]);
   });
 
-  it("[그대로] S2 build-village.py의 가로등 줄 밖의 코드 줄(건물·노점·벤치·바위·길·창 불빛·나무 틀)은 기준 커밋과 같다(분수 줄은 118이 뺐다)", () => {
+  it("[그대로] S2 build-village.py의 가로등 줄 밖의 코드 줄(건물·벤치·바위·길·창 불빛·나무 틀)은 기준 커밋과 같다(분수 줄은 118이 뺐다. 127: 노점 줄도 양쪽에서 뺀다)", () => {
     const base = codeLines(gitShow(SCRIPT));
     const now = codeLines(readFileSync(join(REPO, SCRIPT), "utf8"));
-    expect(now.filter((l) => !lampLine(l))).toEqual(base.filter((l) => !lampLine(l)));
+    const stallLine = (l: string) => /stall|LAYOUT\["stalls"\]/.test(l);
+    expect(now.filter((l) => !lampLine(l) && !stallLine(l))).toEqual(base.filter((l) => !lampLine(l) && !stallLine(l)));
   });
 });
 
@@ -140,7 +143,8 @@ describe("[spec] 120 자리와 막힌 칸(명세 3, 그대로 둘 동작)", () =
     ]);
     const base = JSON.parse(gitShow("apps/mobile/src/lib/lobby3d/village-layout.json")) as Record<string, unknown>;
     const strip = (layout: Record<string, unknown>) => {
-      const { _comment: _c, ...rest } = layout;
+      // 127: 노점(stalls)은 없어지므로 양쪽에서 뺀다
+      const { _comment: _c, stalls: _s, ...rest } = layout;
       return rest;
     };
     expect(strip(LAYOUT as unknown as Record<string, unknown>)).toEqual(strip(base));
@@ -167,7 +171,7 @@ describe("[spec] 120 자리와 막힌 칸(명세 3, 그대로 둘 동작)", () =
 describe("[spec] 120 자산 출처(명세 6, docs 커밋)", () => {
   const lines = () => readFileSync(join(REPO, CREDITS_PATH), "utf8").split(/\r?\n/);
 
-  it("[docs 커밋] C1 CREDITS.md 마을 모델(lobby-village.glb) 줄의 Kenney 부품에서 가로등이 빠지고, 노점·바위·길은 남는다", () => {
+  it("[docs 커밋] C1 CREDITS.md 마을 모델(lobby-village.glb) 줄의 Kenney 부품에서 가로등이 빠지고, 바위·길은 남는다(127: 노점은 보지 않는다)", () => {
     const village = lines().filter((l) => l.includes("`lobby-village.glb`"));
     expect(village).toHaveLength(1);
     const line = village[0];
@@ -175,7 +179,7 @@ describe("[spec] 120 자산 출처(명세 6, docs 커밋)", () => {
     const to = line.indexOf("`scripts/lobby3d/build-village.py`", from);
     expect({ from: from >= 0, to: to > from }).toEqual({ from: true, to: true });
     const parts = line.slice(from, to);
-    expect({ parts, lantern: parts.includes("가로등"), missing: ["노점", "바위", "길"].filter((w) => !parts.includes(w)) }).toEqual({ parts, lantern: false, missing: [] });
+    expect({ parts, lantern: parts.includes("가로등"), missing: ["바위", "길"].filter((w) => !parts.includes(w)) }).toEqual({ parts, lantern: false, missing: [] });
   });
 
   it("[docs 커밋] C2 CREDITS.md에 가로등 파일(village-streetlamp.glb) 줄이 하나 있고 WriteLoop 제작으로 적혀 있다", () => {

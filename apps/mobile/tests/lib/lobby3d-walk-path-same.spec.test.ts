@@ -30,15 +30,14 @@ describe("마을", () => {
   });
 
   test("P2 가구점에서 옷집까지, 여러 목표 중 가장 가까운 곳, 제자리, 갈 수 없는 목표", () => {
+    // 127(마을 노점 없애기, 03-main-decision.md): 노점이 있던 자리(x 26.5~28.5·z 28.5~30.5, x 42.5~44.5·z 28.5~30.5)가 열려 길이 더 곧아진다.
+    // 새 값은 노점 칸을 비운 배치(stalls: [])로 길찾기를 돌려 얻었다(노점이 아직 있으면 이 단언은 실패한다).
     expect(findPath(FURNITURE_DOOR, VILLAGE_MARKS.clothingShop.approach)).toEqual([
-      { x: 37.5, z: 31.5 },
-      { x: 41.5, z: 27.5 },
+      { x: 48.5, z: 23.5 },
       { x: 49.2, z: 22.9 }
     ]);
     expect(findPath(HOME, [{ x: 1.5, z: 1.5 }, { x: 20.5, z: 40.5 }, { x: 60.5, z: 50.5 }])).toEqual([
       { x: 30.5, z: 17.5 },
-      { x: 29.5, z: 22.5 },
-      { x: 29.5, z: 31.5 },
       { x: 20.5, z: 40.5 }
     ]);
     expect(findPath(HOME, [HOME])).toEqual([{ x: 35.5, z: 12.9 }]);

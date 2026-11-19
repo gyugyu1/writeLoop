@@ -7,8 +7,8 @@
 //
 // - 자산 출처(CREDITS.md)는 코드와 따로 하는 docs 커밋이라(명세 6) 코드 커밋 시점 기록에서는 실패할 수 있다. 이름 앞에 [docs 커밋]을 붙였다.
 // - 마을 모델에서 옛 분수가 빠졌는지는 소품 묶음(props)의 삼각형 가운데 점 셋이 모두 옛 분수 자리(가운데에서 1.7칸 안, 땅 높이)에 드는 것의 수로 본다
-//   (tests/__fixtures__/village-fountain-118.ts. 기준 커밋 모델에서는 1628개, 가로등·노점·벤치·바위는 이 안에 들지 않는다).
-// - 다른 묶음(건물, 가로등, 노점, 벤치, 바위, 불빛 판, 길)이 그대로인지는 명세 "고칠 기존 테스트"로 고친 기존 테스트(099 K7, 101 K9, 106 K5, 107 K4, 114 K4, 115 K3, 098 K5)가
+//   (tests/__fixtures__/village-fountain-118.ts. 기준 커밋 모델에서는 1628개, 가로등·벤치·바위는 이 안에 들지 않는다).
+// - 다른 묶음(건물, 가로등, 벤치, 바위, 불빛 판, 길)이 그대로인지는 명세 "고칠 기존 테스트"로 고친 기존 테스트(099 K7, 101 K9, 106 K5, 107 K4, 114 K4, 115 K3, 098 K5)가
 //   분수를 뺀 기준 모델과 견주어 본다. 여기서는 소품 묶음 삼각형 수가 "기준 − 분수 삼각형"과 같은지만 더 본다.
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -37,6 +37,7 @@ import {
 } from "../__fixtures__/village-fountain-118";
 // 120(마을 가로등 교체, 명세 "고칠 기존 테스트"): 마을 모델에서 옛 Kenney 가로등 넷(소품 묶음 632 삼각형)과 가로등 불빛 판(glow-lamp-0~3)도 빠지므로 아래 견주기에 그만큼을 반영한다
 import { isLampGlowRoot } from "../__fixtures__/village-streetlamp-120";
+import { STALL_TRIANGLES_127 } from "../__fixtures__/village-stalls-127";
 const OLD_LAMP_TRIANGLES_120 = 632;
 
 const gitShow = (path: string) => execFileSync("git", ["show", `${BASE_118}:${path}`], { cwd: REPO, maxBuffer: 64 * 1024 * 1024 }).toString("utf8");
@@ -74,7 +75,7 @@ describe("[spec] 118 마을 모델에서 옛 Kenney 분수 빼기(명세 1)", ()
     expect(propsTrianglesInOldFountain(nowVillageGlb())).toBe(0);
   });
 
-  it("[바뀔] F2 소품 묶음의 삼각형 수는 기준 커밋보다 옛 분수 삼각형(1628개)과 옛 가로등 삼각형(120: 632개)만큼만 줄었고, 장면 뿌리 묶음 이름은 가로등 불빛 판(glow-lamp-0~3, 120)만 빠지고 그대로다(다른 소품과 묶음은 그대로)", () => {
+  it("[바뀔] F2 소품 묶음의 삼각형 수는 기준 커밋보다 옛 분수 삼각형(1628개)과 옛 가로등 삼각형(120: 632개)과 옛 노점 삼각형(127: 592개)만큼만 줄었고, 장면 뿌리 묶음 이름은 가로등 불빛 판(glow-lamp-0~3, 120)만 빠지고 그대로다(다른 소품과 묶음은 그대로)", () => {
     const propsTriangles = (glb: ReturnType<typeof nowVillageGlb>) => {
       const root = rootIndex(glb, "props");
       expect(root).toBeGreaterThanOrEqual(0);
@@ -82,7 +83,8 @@ describe("[spec] 118 마을 모델에서 옛 Kenney 분수 빼기(명세 1)", ()
     };
     const base = baseVillageGlb118();
     const now = nowVillageGlb();
-    expect(propsTriangles(now)).toBe(propsTriangles(base) - 1628 - OLD_LAMP_TRIANGLES_120);
+    // 127: 옛 Kenney 노점 둘의 삼각형(592개)도 빠진다
+    expect(propsTriangles(now)).toBe(propsTriangles(base) - 1628 - OLD_LAMP_TRIANGLES_120 - STALL_TRIANGLES_127);
     expect(rootNames118(now)).toEqual(rootNames118(base).filter((n) => !isLampGlowRoot(n)));
     expect(sceneRoots(now).length).toBe(sceneRoots(base).length - 4);
   });
@@ -99,20 +101,22 @@ describe("[spec] 118 마을 모델 만드는 스크립트(명세 바뀌는 동�
 
   it("[바뀔] S1 build-village.py에서 fountain-round-detail을 놓는 코드가 없고, 그 밖의 코드 줄은 기준 커밋과 같다(분수 배치 줄과 그 자리 변수 줄만 빠질 수 있다)", () => {
     const base = codeLines(gitShow(SCRIPT));
-    const now = codeLines(readFileSync(join(REPO, SCRIPT), "utf8"));
+    // 127: 노점을 놓는 코드 줄(노점 반복문과 그 안의 줄)은 양쪽에서 뺀다(노점 코드가 빠진 것은 127 테스트가 본다)
+    const stall = (l: string) => /stall|LAYOUT\["stalls"\]/.test(l);
+    const now = codeLines(readFileSync(join(REPO, SCRIPT), "utf8")).filter((l) => !stall(l));
     expect(base.some((l) => l.includes("fountain-round-detail"))).toBe(true);
     expect(now.filter((l) => l.includes("fountain-round-detail"))).toEqual([]);
     const placing = (l: string) => l.includes("fountain-round-detail");
     const slot = 'fx = LAYOUT["fountain"]';
     // 120: 가로등 배치 줄(등 배율·자리 반복·놓기·불빛 판 줄)도 빠진다
     const lamp = (l: string) => /lantern|LANTERN|glow-lamp|lamp = group|glow_quad\(lamp/.test(l);
-    const withoutPlacing = base.filter((l) => !placing(l) && !lamp(l));
+    const withoutPlacing = base.filter((l) => !placing(l) && !lamp(l) && !stall(l));
     // 자리 변수 줄(fx = ...)은 쓰지 않으면 지워도 되고 남겨도 된다
     expect([withoutPlacing, withoutPlacing.filter((l) => l !== slot)]).toContainEqual(now);
   });
 
-  it("[그대로] S2 build-village.py가 노점·벤치·바위를 놓는 코드는 기준 커밋과 같다(120: 가로등은 뺀다)", () => {
-    const pick = (text: string) => codeLines(text).filter((l) => /place\("(stall-red|stall-green|rock)|BENCH_SCALE|LAYOUT\["(stalls|benches|rocks)"\]/.test(l));
+  it("[그대로] S2 build-village.py가 벤치·바위를 놓는 코드는 기준 커밋과 같다(120: 가로등은 뺀다. 127: 노점도 뺀다)", () => {
+    const pick = (text: string) => codeLines(text).filter((l) => /place\("rock|BENCH_SCALE|LAYOUT\["(benches|rocks)"\]/.test(l));
     const base = pick(gitShow(SCRIPT));
     expect(base.length).toBeGreaterThan(0);
     expect(pick(readFileSync(join(REPO, SCRIPT), "utf8"))).toEqual(base);
@@ -146,7 +150,7 @@ describe("[spec] 118 자리와 막힌 칸(명세 3, 그대로 둘 동작)", () =
 describe("[spec] 118 자산 출처(명세 6, docs 커밋)", () => {
   const lines = () => readFileSync(join(REPO, CREDITS_PATH), "utf8").split(/\r?\n/);
 
-  it("[docs 커밋] C1 CREDITS.md 마을 모델(lobby-village.glb) 줄의 Kenney 부품에서 분수가 빠지고, 노점·바위·길은 남는다(120: 가로등도 빠진다. 그 줄은 120 qa 테스트가 본다)", () => {
+  it("[docs 커밋] C1 CREDITS.md 마을 모델(lobby-village.glb) 줄의 Kenney 부품에서 분수가 빠지고, 바위·길은 남는다(127: 노점은 보지 않는다. 120: 가로등도 빠진다. 그 줄은 120 qa 테스트가 본다)", () => {
     const village = lines().filter((l) => l.includes("`lobby-village.glb`"));
     expect(village).toHaveLength(1);
     const line = village[0];
@@ -154,7 +158,7 @@ describe("[spec] 118 자산 출처(명세 6, docs 커밋)", () => {
     const to = line.indexOf("`scripts/lobby3d/build-village.py`", from);
     expect({ from: from >= 0, to: to > from }).toEqual({ from: true, to: true });
     const parts = line.slice(from, to);
-    expect({ parts, fountain: parts.includes("분수"), missing: ["노점", "바위", "길"].filter((w) => !parts.includes(w)) }).toEqual({ parts, fountain: false, missing: [] });
+    expect({ parts, fountain: parts.includes("분수"), missing: ["바위", "길"].filter((w) => !parts.includes(w)) }).toEqual({ parts, fountain: false, missing: [] });
   });
 
   it("[docs 커밋] C2 CREDITS.md에 분수 파일(village-fountain.glb) 줄이 하나 있고 WriteLoop 제작으로 적혀 있다", () => {

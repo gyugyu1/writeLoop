@@ -66,7 +66,7 @@ export function isLampMesh120(o: unknown): boolean {
 
 // ---------- 마을 모델에서 옛 Kenney 가로등과 불빛 판을 뺀 모양 ----------
 
-/** 옛 가로등이 있던 곳: 자리마다 x·z에서 이 거리 안(옛 가로등 모양은 배율 1.6의 Kenney 가로등). 높이는 땅 아래 −0.01부터. 이 안에 다른 소품(분수·노점·벤치·바위)이 없음은 테스트 F1이 본다. */
+/** 옛 가로등이 있던 곳: 자리마다 x·z에서 이 거리 안(옛 가로등 모양은 배율 1.6의 Kenney 가로등). 높이는 땅 아래 −0.01부터. 이 안에 다른 소품(분수·벤치·바위)이 없음은 테스트 F1이 본다. */
 export const OLD_LAMP_AREA_RADIUS = 0.9;
 export function inOldLampArea([x, y, z]: readonly number[]): boolean {
   return y >= -0.01 && LANTERNS.some(([lx, lz]) => Math.hypot(x - lx, z - lz) <= OLD_LAMP_AREA_RADIUS);

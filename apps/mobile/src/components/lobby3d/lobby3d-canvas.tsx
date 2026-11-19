@@ -23,7 +23,7 @@ import {
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_FOUNTAIN, VILLAGE_PLACES } from "@/lib/lobby3d/village";
 import { SHOP_LABEL_POINTS, type ShopPlaceId } from "@/lib/lobby3d/shop";
-import { prefetchShopFiles, shopFilesStatus } from "@/lib/lobby3d/shop-files";
+import { prefetchShopFiles, shopProductUris } from "@/lib/lobby3d/shop-files";
 import { useItemCatalog } from "@/lib/item-catalog-store";
 import { useItemFiles } from "@/lib/item-files";
 import type { WearLook, WearState } from "@/lib/lobby3d/wear";
@@ -1458,8 +1458,9 @@ const noop = () => undefined;
 
 /**
  * 마을 가구점 실내(실내 모델·버들·진열 상품과 실내 빛). 가구점 모듈은 가구점에 처음 들어올 때 불러온다.
- * 진열 상품 셋의 모델은 서버에서 받는다(shop-files. 실내·버들은 앱에 들어 있다): 다 받을 때까지 아무것도 그리지 않고, 목록에 없거나 받지 못하면 onFailed로 알린다.
- * 다 받으면 마을과 같이 읽고 장면에 들어온 뒤 셰이더·그림을 미리 준비하고 알린다(VillageWarmUp).
+ * 실내·버들(앱 자산)을 읽어 장면에 들어오면 마을과 같이 셰이더·그림을 미리 준비하고 알린다(VillageWarmUp). 읽지 못하면 onFailed.
+ * 진열 상품 셋의 모델은 서버에서 받는다(shop-files). 기다리지 않고, 받아 둔 상품만 그 슬롯에 붙이며 받는 대로 나타난다
+ * (목록에 없거나 받지 못한 상품의 슬롯은 빈다).
  */
 function ShopLayer({
   daylight,
@@ -1476,24 +1477,19 @@ function ShopLayer({
   onReady?: () => void;
   onFailed?: () => void;
 }) {
-  // 목록·받은 파일이 바뀌면 다시 본다
+  // 목록·받은 파일이 바뀌면 다시 본다(받은 상품이 생기면 그 슬롯에 붙는다)
   useItemCatalog();
   useItemFiles();
-  const files = shopFilesStatus();
+  const products = shopProductUris();
   useEffect(() => {
     prefetchShopFiles();
   }, []);
-  const failed = files.status === "failed";
-  useEffect(() => {
-    if (failed) onFailed?.();
-  }, [failed, onFailed]);
-  if (files.status !== "ready") return null;
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const shop = require("./lobby3d-shop") as typeof ShopModule;
   return (
-    <shop.ShopModelErrorBoundary files={files} onFailed={onFailed}>
+    <shop.ShopModelErrorBoundary onFailed={onFailed}>
       <Suspense fallback={null}>
-        <shop.ShopModel files={files} daylight={daylight} kit={kit} outline={outline} pickTargets={pickTargets} />
+        <shop.ShopModel products={products} daylight={daylight} kit={kit} outline={outline} pickTargets={pickTargets} />
         <VillageWarmUp onReady={onReady ?? noop} />
       </Suspense>
     </shop.ShopModelErrorBoundary>

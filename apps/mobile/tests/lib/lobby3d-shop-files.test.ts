@@ -1,5 +1,5 @@
-// 메인 세션 테스트(작업 128 14 결정): 가구점 진열 상품 셋을 서버 목록(팔지 않는 가구)에서 받는 상태(목록에 없음·받는 중·다 받음·실패)와 미리 받기.
-// 실내·주인 버들은 앱에 들어 있어 받지 않는다.
+// 메인 세션 테스트(작업 128 14 결정, 129): 가구점 진열 상품 셋을 서버 목록(팔지 않는 가구)에서 받는 상품마다의 상태(있음·받는 중·없음)와 미리 받기·다시 받기.
+// 실내·주인 버들은 앱에 들어 있어 받지 않는다. 가구점은 상품을 기다리지 않고 들어가고, 없는 상품의 진열대만 빈다(129).
 import { setItemCatalog, parseItemCatalog } from "@/lib/item-catalog-store";
 
 const mockFiles = {
@@ -23,7 +23,7 @@ jest.mock("@/lib/item-files", () => ({
 }));
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { SHOP_FILE_ITEMS, prefetchShopFiles, retryShopFiles, shopFilesStatus } = require("@/lib/lobby3d/shop-files") as typeof import("@/lib/lobby3d/shop-files");
+const { SHOP_FILE_ITEMS, prefetchShopFiles, retryShopFiles, shopProductFile, shopProductUris } = require("@/lib/lobby3d/shop-files") as typeof import("@/lib/lobby3d/shop-files");
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 const sha = (i: number) => String(i).repeat(64).slice(0, 64);
@@ -31,18 +31,21 @@ const sha = (i: number) => String(i).repeat(64).slice(0, 64);
 function catalogWith(ids: readonly string[]) {
   const data = parseItemCatalog({
     version: "v1",
-    items: ids.map((id, i) => ({
-      id,
-      kind: "furniture",
-      name: id,
-      shopName: id,
-      description: "",
-      category: null,
-      slot: null,
-      price: null,
-      draw: { mount: "floor" },
-      assets: { model: { url: `/api/catalog/files/${sha(i + 1)}.glb`, sha256: sha(i + 1), bytes: 10 }, icon: null }
-    }))
+    items: ids.map((id) => {
+      const i = SHOP_FILE_ITEMS.indexOf(id) + 1;
+      return {
+        id,
+        kind: "furniture",
+        name: id,
+        shopName: id,
+        description: "",
+        category: null,
+        slot: null,
+        price: null,
+        draw: { mount: "floor" },
+        assets: { model: { url: `/api/catalog/files/${sha(i)}.glb`, sha256: sha(i), bytes: 10 }, icon: null }
+      };
+    })
   });
   setItemCatalog(data!);
 }
@@ -58,31 +61,31 @@ it("받는 것은 진열 상품 셋(서버 가구 id)뿐이다", () => {
   expect(SHOP_FILE_ITEMS).toEqual(["walnutBed", "grandmasFloorBedding", "cloudDesk"]);
 });
 
-it("셋 중 하나라도 목록에 없으면 실패이고 받기를 시작하지 않는다", () => {
-  catalogWith(SHOP_FILE_ITEMS.slice(0, 2));
-  expect(shopFilesStatus()).toEqual({ status: "failed" });
+it("목록에 없는 상품은 없음이고 받지 않지만, 있는 상품은 받기 시작한다(129: 하나가 없어도 나머지는 받는다)", () => {
+  catalogWith(["walnutBed", "cloudDesk"]);
+  expect(shopProductFile("grandmasFloorBedding")).toBe("missing");
+  expect(shopProductFile("walnutBed")).toBe("loading");
   prefetchShopFiles();
-  expect(mockFiles.fetched).toEqual([]);
+  expect(mockFiles.fetched).toEqual([sha(1), sha(3)]);
 });
 
-it("목록에 셋이 있으면 미리 받기가 셋을 받기 시작하고, 받는 동안은 loading, 다 있으면 ready(상품 순서)", () => {
+it("받는 동안은 받는 중, 기기에 있으면 그 주소이고, 주소 표는 없는 상품을 null로 둔다", () => {
   catalogWith(SHOP_FILE_ITEMS);
-  expect(shopFilesStatus()).toEqual({ status: "loading" });
-  prefetchShopFiles();
-  expect(mockFiles.fetched).toEqual([1, 2, 3].map(sha));
-  [1, 2, 3].forEach((i) => mockFiles.cached.set(sha(i), `file:///${i}.glb`));
-  expect(shopFilesStatus()).toEqual({ status: "ready", products: ["file:///1.glb", "file:///2.glb", "file:///3.glb"] });
+  mockFiles.cached.set(sha(3), "file:///3.glb");
+  expect(shopProductFile("cloudDesk")).toBe("file:///3.glb");
+  expect(shopProductFile("walnutBed")).toBe("loading");
+  expect(shopProductUris()).toEqual({ walnutBed: null, grandmasFloorBedding: null, cloudDesk: "file:///3.glb" });
 });
 
-it("받기에 실패한 파일이 있으면 failed이고, 다시 들어가기(retry)는 실패 기록을 지우고 다시 받는다", () => {
+it("받기에 실패한 상품은 없음이고 미리 받기가 건너뛰며, 다시 받기(들어가기·마을에 나가기)는 실패 기록을 지우고 다시 받는다", () => {
   catalogWith(SHOP_FILE_ITEMS);
   mockFiles.failed.add(sha(2));
-  expect(shopFilesStatus()).toEqual({ status: "failed" });
+  expect(shopProductFile("grandmasFloorBedding")).toBe("missing");
   prefetchShopFiles();
-  expect(mockFiles.fetched).not.toContain(sha(2));
+  expect(mockFiles.fetched).toEqual([sha(1), sha(3)]);
   mockFiles.fetched = [];
   retryShopFiles();
   expect(mockFiles.retried).toBe(1);
   expect(mockFiles.fetched).toEqual([1, 2, 3].map(sha));
-  expect(shopFilesStatus()).toEqual({ status: "loading" });
+  expect(shopProductFile("grandmasFloorBedding")).toBe("loading");
 });

@@ -186,6 +186,29 @@ describe("가구점 장면 짓기", () => {
     expect(count(interior.scene, (o) => o.name.startsWith("shop-display-"))).toBe(0);
   });
 
+  it("(129) 상품 없이 지으면 진열대가 비고, 상품 모델이 들어오는 대로 그 상품의 슬롯에만 붙는다", () => {
+    const built = buildShop(interior, keeper, [], kit());
+    expect(built.setStock(shop.shopDisplay())).toEqual([0, 1, 2]);
+    expect(built.slotItems).toEqual([null, null, null]);
+    expect(built.slotProducts).toEqual(["walnutBed", "grandmasFloorBedding", "cloudDesk"]);
+    // 받은 상품 하나(구름 책상)만 들어오면 그 슬롯(3)에만 붙고 나머지는 빈 채다
+    built.addProduct("cloudDesk", products[2]);
+    expect(built.hasProduct("cloudDesk")).toBe(true);
+    expect(built.setStock(shop.shopDisplay())).toEqual([2]);
+    expect(built.slotItems[0]).toBeNull();
+    expect(built.slotItems[1]).toBeNull();
+    expect(built.slotItems[2]?.name).toBe("shop-display-3");
+    const desk = built.slotItems[2];
+    // 다시 맞춰도 붙은 상품은 그대로(새로 만들지 않는다)
+    expect(built.setStock(shop.shopDisplay())).toEqual([]);
+    expect(built.slotItems[2]).toBe(desk);
+    // 비어 있는 슬롯에서 상품을 바꾸면 진열 상태는 바뀌고, 모델이 있는 상품이면 붙는다
+    shop.setShopDisplay(0, "cloudDesk");
+    expect(built.setStock(shop.shopDisplay())).toEqual([0]);
+    expect(built.slotItems[0]?.name).toBe("shop-display-1");
+    expect(built.pickTargets.filter((o) => o.name.startsWith("shop-display-"))).toHaveLength(2);
+  });
+
   it("누르기 대상: 버들·계산대는 계산대 장소, 진열대·상품은 그 진열대, 문은 출입문", () => {
     const built = buildShop(interior, keeper, products, kit());
     built.setStock(shop.shopDisplay());

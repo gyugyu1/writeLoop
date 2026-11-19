@@ -20,7 +20,8 @@ import type { DaylightState } from "./lobby3d-daylight";
 import { OUTLINE_THICKNESS, characterOutlineMaterial, type CharacterOutlineUniforms, type ToonKit } from "./lobby3d-character";
 
 // 마을 가구점 실내(구역 shop): 실내 모델, 계산대 뒤 버들, 진열대 셋의 상품.
-// 실내·버들 모델은 앱에 들어 있고, 진열 상품 셋은 서버 아이템 목록에서 받아 기기에 둔 것을 읽는다(shop-files). 3D 화면이 상품을 다 받은 뒤에 이것을 그린다.
+// 실내·버들 모델은 앱에 들어 있고, 진열 상품 셋은 서버 아이템 목록에서 받아 기기에 둔 것을 읽는다(shop-files).
+// 상품은 기다리지 않는다: 슬롯마다 받은 상품 파일을 읽는 대로 붙이고, 없거나 읽지 못하면 그 슬롯을 비워 둔다.
 // 실내에 있는 동안만 장면에 있고, 나가면 빠진다(다시 들어오면 새로 붙인다. 모델 파일은 useLoader가 한 번만 읽어 둔다).
 // 실내 모델 좌표에 SHOP_OFFSET을 더한 자리에 놓는다(앱 좌표 = 모델 좌표 + (4.5, 0, 4.5)).
 
@@ -29,9 +30,23 @@ const INTERIOR_ASSET = require("../../../assets/models/shop/furniture-shop-inter
 const SHOPKEEPER_ASSET = require("../../../assets/models/shop/beodeul.glb");
 /* eslint-enable @typescript-eslint/no-require-imports */
 
-/** 진열 상품 셋 모델의 기기 주소(SHOP_PRODUCTS 순서. 서버에서 받아 둔 것). */
-export interface ShopModelFiles {
-  products: string[];
+/** 진열 상품마다 받아 둔 모델의 기기 주소(없으면 null: 목록에 없음·받는 중·받기 실패). */
+export type ShopProductUris = Record<ShopProductId, string | null>;
+
+/** 받은 상품 파일을 읽은 결과(주소마다 한 번만 읽는다). 읽지 못하면 null이고, 다음에 다시 읽게 지운다. */
+const productLoads = new Map<string, Promise<GLTF | null>>();
+
+function loadProductModel(uri: string): Promise<GLTF | null> {
+  let job = productLoads.get(uri);
+  if (!job) {
+    job = new GLTFLoader().loadAsync(uri).catch((error: unknown) => {
+      console.warn("[lobby3d] 가구점 상품 모델을 읽지 못했습니다", error);
+      productLoads.delete(uri);
+      return null;
+    });
+    productLoads.set(uri, job);
+  }
+  return job;
 }
 
 /** 유리 너머(실내 바깥)의 낮 바깥색. */
@@ -101,8 +116,15 @@ export interface BuiltShop {
   slotItems: (THREE.Object3D | null)[];
   /** 지금 슬롯마다 붙은 상품. */
   slotProducts: (ShopProductId | null)[];
-  /** 진열을 맞춘다: 바뀐 슬롯만 붙인 상품을 떼고 새 상품을 붙인다. 바뀐 슬롯 번호를 돌려준다. */
+  /**
+   * 진열을 맞춘다: 바뀐 슬롯만 붙인 상품을 떼고 새 상품을 붙인다. 상품 모델이 아직 없으면 그 슬롯은 비워 두고,
+   * 나중에 모델이 들어오면(addProduct 뒤 다시 부르면) 그 슬롯에 붙인다. 바뀐 슬롯 번호를 돌려준다.
+   */
   setStock(stock: readonly ShopProductId[]): number[];
+  /** 상품 모델이 들어왔을 때(받아서 읽음): 진열용 원본을 만든다. 이미 있으면 아무것도 하지 않는다. */
+  addProduct(id: ShopProductId, gltf: GLTF): void;
+  /** 그 상품의 진열용 원본이 있는지. */
+  hasProduct(id: ShopProductId): boolean;
   /** 외곽선 굵기(배율). */
   setOutline(outline: number): void;
   /** 만든 재질을 버린다(모양은 useLoader의 원본과 함께 쓰므로 버리지 않는다). */
@@ -113,7 +135,12 @@ export interface BuiltShop {
  * 실내·버들·상품 모델로 가구점 장면을 짓는다(3D 그리기와 테스트가 부른다). kit의 카툰 명암을 버들에 쓴다.
  * 진열은 처음에 비어 있고, setStock으로 붙인다.
  */
-export function buildShop(interiorGltf: GLTF, shopkeeperGltf: GLTF, productGltfs: readonly GLTF[], kit: ToonKit): BuiltShop {
+export function buildShop(
+  interiorGltf: GLTF,
+  shopkeeperGltf: GLTF,
+  productGltfs: readonly (GLTF | null | undefined)[],
+  kit: ToonKit
+): BuiltShop {
   const owned: THREE.Material[] = [];
   const root = new THREE.Group();
   root.name = "shop-root";
@@ -211,20 +238,23 @@ export function buildShop(interiorGltf: GLTF, shopkeeperGltf: GLTF, productGltfs
   pickTargets.push(hit);
   root.add(shopkeeper);
 
-  // 상품 원본: 재질을 한 번 바꾸고 크기를 잰다
+  // 상품 원본: 재질을 한 번 바꾸고 크기를 잰다(지금 있는 상품만. 나머지는 들어오는 대로 addProduct가 만든다)
   const templates = new Map<ShopProductId, ProductTemplate>();
-  SHOP_PRODUCTS.forEach((product, i) => {
-    const gltf = productGltfs[i];
-    if (!gltf) return;
+  const addTemplate = (id: ShopProductId, gltf: GLTF) => {
+    if (templates.has(id)) return;
     const object = gltf.scene.clone(true);
     convertMaterials(object, owned);
     object.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(object);
-    templates.set(product.id, {
-      id: product.id,
+    templates.set(id, {
+      id,
       object,
       box: { minX: bounds.min.x, maxX: bounds.max.x, minZ: bounds.min.z, maxZ: bounds.max.z, height: bounds.max.y - Math.min(0, bounds.min.y) }
     });
+  };
+  SHOP_PRODUCTS.forEach((product, i) => {
+    const gltf = productGltfs[i];
+    if (gltf) addTemplate(product.id, gltf);
   });
 
   const slotNodes = SHOP_SLOTS.map((slot) => interior.getObjectByName(slot.node) ?? interior);
@@ -243,7 +273,8 @@ export function buildShop(interiorGltf: GLTF, shopkeeperGltf: GLTF, productGltfs
       const changed: number[] = [];
       SHOP_SLOTS.forEach((slot, i) => {
         const want = stock[i] ?? null;
-        if (want === slotProducts[i]) return;
+        // 같은 상품이면 그대로(다만 비어 있던 슬롯에 그 상품 모델이 들어왔으면 붙인다)
+        if (want === slotProducts[i] && (slotItems[i] !== null || !want || !templates.has(want))) return;
         // 이 슬롯에 붙인 이전 상품만 뗀다(모양·재질은 원본과 함께 쓰므로 버리지 않는다)
         const old = slotItems[i];
         if (old) {
@@ -269,6 +300,12 @@ export function buildShop(interiorGltf: GLTF, shopkeeperGltf: GLTF, productGltfs
       });
       return changed;
     },
+    addProduct(id, gltf) {
+      addTemplate(id, gltf);
+    },
+    hasProduct(id) {
+      return templates.has(id);
+    },
     setOutline(outline) {
       uniforms.thickness.value = OUTLINE_THICKNESS * outline;
     },
@@ -285,8 +322,8 @@ export function buildShop(interiorGltf: GLTF, shopkeeperGltf: GLTF, productGltfs
 }
 
 export interface ShopModelProps {
-  /** 받아 둔 모델 파일(기기 주소). */
-  files: ShopModelFiles;
+  /** 진열 상품마다 받아 둔 모델의 기기 주소(없으면 null). 바뀌면(새로 받음) 그 상품을 읽어 붙인다. */
+  products: ShopProductUris;
   daylight: DaylightState;
   kit: ToonKit;
   outline: number;
@@ -294,12 +331,14 @@ export interface ShopModelProps {
   pickTargets: MutableRefObject<THREE.Object3D[]>;
 }
 
-/** 가구점 실내를 읽어 장면에 붙인다(다 읽을 때까지는 아무것도 그리지 않는다: Suspense). */
-export function ShopModel({ files, daylight, kit, outline, pickTargets }: ShopModelProps) {
+/**
+ * 가구점 실내를 읽어 장면에 붙인다. 실내·버들(앱 자산)을 다 읽을 때까지는 아무것도 그리지 않는다(Suspense).
+ * 진열 상품은 기다리지 않는다: 받아 둔 상품 파일을 읽는 대로 그 상품이 진열된 슬롯에 붙인다.
+ */
+export function ShopModel({ products, daylight, kit, outline, pickTargets }: ShopModelProps) {
   const interiorGltf = useLoader(GLTFLoader, INTERIOR_ASSET as string) as GLTF;
   const shopkeeperGltf = useLoader(GLTFLoader, SHOPKEEPER_ASSET as string) as GLTF;
-  const productGltfs = useLoader(GLTFLoader, files.products) as GLTF[];
-  const built = useMemo(() => buildShop(interiorGltf, shopkeeperGltf, productGltfs, kit), [interiorGltf, shopkeeperGltf, productGltfs, kit]);
+  const built = useMemo(() => buildShop(interiorGltf, shopkeeperGltf, [], kit), [interiorGltf, shopkeeperGltf, kit]);
   useEffect(() => () => built.dispose(), [built]);
   const stock = useSyncExternalStore(subscribeShopDisplay, shopDisplay, shopDisplay);
   // 진열 목록에서 바꾸면 그 슬롯만 바뀐다(누르기 판정 목록도 함께 맞춘다)
@@ -307,6 +346,26 @@ export function ShopModel({ files, daylight, kit, outline, pickTargets }: ShopMo
     built.setStock(stock);
     pickTargets.current = [...built.pickTargets];
   }, [built, stock, pickTargets]);
+  // 받아 둔 상품 파일을 읽어 원본을 만들고, 그 상품이 진열된 비어 있던 슬롯에 붙인다
+  const productKey = SHOP_PRODUCTS.map((p) => products[p.id] ?? "").join("|");
+  useEffect(() => {
+    let alive = true;
+    for (const product of SHOP_PRODUCTS) {
+      const uri = products[product.id];
+      if (!uri || built.hasProduct(product.id)) continue;
+      void loadProductModel(uri).then((gltf) => {
+        if (!alive || !gltf) return;
+        built.addProduct(product.id, gltf);
+        built.setStock(shopDisplay());
+        pickTargets.current = [...built.pickTargets];
+      });
+    }
+    return () => {
+      alive = false;
+    };
+    // 주소가 바뀔 때만 다시 본다(products 객체는 그릴 때마다 새로 만들어진다)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [built, productKey, pickTargets]);
   useEffect(
     () => () => {
       pickTargets.current = [];
@@ -354,8 +413,8 @@ export function ShopModel({ files, daylight, kit, outline, pickTargets }: ShopMo
   );
 }
 
-/** 가구점 모델을 읽지 못하면 아무것도 그리지 않고 알린다(로비 화면이 마을로 되돌린다). 다음에 다시 읽게 캐시를 비운다. */
-export class ShopModelErrorBoundary extends Component<{ children: ReactNode; files: ShopModelFiles; onFailed?: () => void }, { failed: boolean }> {
+/** 실내·버들 모델(앱 자산)을 읽지 못하면 아무것도 그리지 않고 알린다(로비 화면이 마을로 되돌린다). 다음에 다시 읽게 캐시를 비운다. */
+export class ShopModelErrorBoundary extends Component<{ children: ReactNode; onFailed?: () => void }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -364,10 +423,8 @@ export class ShopModelErrorBoundary extends Component<{ children: ReactNode; fil
 
   componentDidCatch(error: unknown) {
     console.warn("[lobby3d] 가구점 모델을 불러오지 못했습니다", error);
-    const { files } = this.props;
     useLoader.clear(GLTFLoader, INTERIOR_ASSET as string);
     useLoader.clear(GLTFLoader, SHOPKEEPER_ASSET as string);
-    useLoader.clear(GLTFLoader, files.products);
     this.props.onFailed?.();
   }
 

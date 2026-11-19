@@ -1,9 +1,10 @@
 // [spec] qa 테스트(작업 128 가구점 실내, 07·14 결정: 진열 상품 셋을 서버에서 받기, 모바일): 08-qa-scenarios.md의 C1~C6, D1~D6을 14 결정으로 바꾼 것.
 // 기대값은 private 작업 폴더 128-2026-11-19-가구점-실내/07-main-decision.md "바뀐 명세 1"과 14-main-decision.md(실내·버들은 앱 자산, 애셋 종류 없음, 서버에서 받는 것은 상품 셋뿐)에서만 가져온다.
 // 구현에서 읽은 것은 부르는 방법뿐이다: item-catalog-store(parseItemCatalog·setItemCatalog), item-files(받기·기기 파일), shop-files(prefetchShopFiles·
-// retryShopFiles·shopFilesStatus·SHOP_FILE_ITEMS), item-catalog(refreshItemCatalog), 로비 화면과 3D 그리기 가짜(onShopReady·onShopFailed).
-// 3D 그리기(ShopLayer가 다 받을 때까지 그리지 않고 실패를 알림)는 Jest에서 돌릴 수 없어, 그 판정의 근거인 shopFilesStatus(ready·loading·failed)와
-// 화면이 하는 일(마을에 나가면 받기 시작, 들어가기에서 다시 받기)을 본다. 화면이 어두운 채 기다리고 실패 시 마을로 돌아오는 것은 lobby3d-shop-flow.spec.test.tsx가 본다.
+// retryShopFiles·shopProductFile·SHOP_FILE_ITEMS), item-catalog(refreshItemCatalog), 로비 화면과 3D 그리기 가짜(onShopReady).
+// 129 결정(05): 가구점은 상품을 기다리지 않고 들어가고 상품은 상품마다(슬롯마다) 받는 대로 붙는다. 그래서 전체 상태(loading/ready/failed) 대신
+// 상품마다의 상태(shopProductFile: 기기 주소=있음, "loading"=받는 중·아직 안 받음, "missing"=목록에 없거나 받기 실패)를 본다.
+// 3D 그리기(ShopLayer)는 Jest에서 돌릴 수 없어 그 판정의 근거인 상품별 상태와 화면이 하는 일(마을에 나가면 받기 시작, 들어가기에서 다시 받기)을 본다.
 // 기기 파일은 expo-file-system 가짜(주소 → 크기 표, 받기는 테스트가 답을 정한다)로 대신한다(tests/lib/furniture-download.spec.test.ts와 같은 방식).
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { AccessibilityInfo, Animated } from "react-native";
@@ -12,7 +13,7 @@ import Lobby3dScreen from "@/components/lobby3d/lobby3d-screen";
 import { refreshItemCatalog } from "@/lib/item-catalog";
 import { parseItemCatalog, setItemCatalog } from "@/lib/item-catalog-store";
 import { MARKS, applyArea, type FloorPoint, type PointerHit } from "@/lib/lobby3d/engine";
-import { SHOP_FILE_ITEMS, prefetchShopFiles, retryShopFiles, shopFilesStatus } from "@/lib/lobby3d/shop-files";
+import { SHOP_FILE_ITEMS, prefetchShopFiles, retryShopFiles, shopProductFile } from "@/lib/lobby3d/shop-files";
 import { VILLAGE_PLACES } from "@/lib/lobby3d/village";
 
 type Reply = { bytes: number } | "fail";
@@ -196,12 +197,22 @@ describe("[spec] 목록 읽기(C1·C6)", () => {
     }
   });
 
-  it("C6·D3: 목록이 없거나 셋 중 하나라도 없으면 받기를 시작하지 않고 실패 상태다(오류 없이)", () => {
+  it("C6·D3(129): 목록에 없는 상품만 빠지고 목록에 있는 상품은 받기를 시작한다(오류 없이). 없는 상품은 missing이다", async () => {
     const five = putCatalog(SHOP_FILE_ITEMS.slice(0, 2));
     serverHas(five, [0, 1, 2]);
     expect(() => prefetchShopFiles()).not.toThrow();
-    expect(shopFilesStatus()).toEqual({ status: "failed" });
+    await settle();
+    expect(downloadedPaths().sort()).toEqual([five.paths[0], five.paths[1]].sort());
+    expect(shopProductFile(SHOP_FILE_ITEMS[0] as never)).toBe(uriOf(five.sha[0]));
+    expect(shopProductFile(SHOP_FILE_ITEMS[1] as never)).toBe(uriOf(five.sha[1]));
+    expect(shopProductFile(SHOP_FILE_ITEMS[2] as never)).toBe("missing");
+  });
+
+  it("C6·D3(129): 목록이 아예 비어 있으면 받기를 시작하지 않고 상품마다 missing이다(오류 없이)", () => {
+    setItemCatalog(parseItemCatalog({ version: "empty-d3", items: [] })!);
+    expect(() => prefetchShopFiles()).not.toThrow();
     expect(mockDevice.downloads).toEqual([]);
+    for (const id of SHOP_FILE_ITEMS) expect(shopProductFile(id as never)).toBe("missing");
   });
 });
 
@@ -220,7 +231,7 @@ describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
     putOnDevice(five, [0, 1, 2]);
     prefetchShopFiles();
     expect(mockDevice.downloads).toEqual([]);
-    expect(shopFilesStatus().status).toBe("ready");
+    SHOP_FILE_ITEMS.forEach((id, i) => expect(shopProductFile(id as never)).toBe(uriOf(five.sha[i])));
   });
 
   it("C3: 일부만 있으면 없는 것만 받는다", async () => {
@@ -232,16 +243,13 @@ describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
     expect(downloadedPaths().sort()).toEqual([five.paths[1], five.paths[2]].sort());
   });
 
-  it("D1·D2: 받는 동안은 loading, 다 받으면 ready이고 상품 셋 순서의 기기 주소가 나온다", async () => {
+  it("D1·D2(129): 받기 전 상품은 loading, 받으면 상품마다 그 기기 주소가 된다", async () => {
     const five = putCatalog();
     serverHas(five, [0, 1, 2]);
-    expect(shopFilesStatus()).toEqual({ status: "loading" });
+    for (const id of SHOP_FILE_ITEMS) expect(shopProductFile(id as never)).toBe("loading");
     prefetchShopFiles();
     await settle();
-    expect(shopFilesStatus()).toEqual({
-      status: "ready",
-      products: [uriOf(five.sha[0]), uriOf(five.sha[1]), uriOf(five.sha[2])]
-    });
+    SHOP_FILE_ITEMS.forEach((id, i) => expect(shopProductFile(id as never)).toBe(uriOf(five.sha[i])));
   });
 
   it("D4: 받기가 실패하면(서버 오류·오프라인) 실패 상태가 된다", async () => {
@@ -249,8 +257,10 @@ describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
     serverHas(five, [0, 1]); // 셋째 상품은 서버가 못 줌
     prefetchShopFiles();
     await settle();
-    expect(shopFilesStatus()).toEqual({ status: "failed" });
-    void five;
+    // 못 받은 상품만 missing이고, 받은 상품은 그대로 있다
+    expect(shopProductFile(SHOP_FILE_ITEMS[2] as never)).toBe("missing");
+    expect(shopProductFile(SHOP_FILE_ITEMS[0] as never)).toBe(uriOf(five.sha[0]));
+    expect(shopProductFile(SHOP_FILE_ITEMS[1] as never)).toBe(uriOf(five.sha[1]));
   });
 
   it("D4: 받은 크기가 목록과 다르면(깨진 파일) 지우고 실패 상태가 된다", async () => {
@@ -259,22 +269,24 @@ describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
     mockDevice.replies.set(five.paths[1], { bytes: BYTES - 1 });
     prefetchShopFiles();
     await settle();
-    expect(shopFilesStatus()).toEqual({ status: "failed" });
+    expect(shopProductFile(SHOP_FILE_ITEMS[1] as never)).toBe("missing");
+    expect(shopProductFile(SHOP_FILE_ITEMS[0] as never)).toBe(uriOf(five.sha[0]));
+    expect(shopProductFile(SHOP_FILE_ITEMS[2] as never)).toBe(uriOf(five.sha[2]));
     expect(mockDevice.files.has(uriOf(five.sha[1]))).toBe(false);
   });
 
-  it("D5: 실패한 뒤 다시 들어가기(retry)를 하면 다시 받아 보고, 서버가 돌아왔으면 ready가 된다", async () => {
+  it("D5(129): 실패한 뒤 다시 들어가기(retry)를 하면 다시 받아 보고, 서버가 돌아왔으면 그 상품에 기기 주소가 생긴다", async () => {
     const five = putCatalog();
     serverHas(five, [0, 2]);
     prefetchShopFiles();
     await settle();
-    expect(shopFilesStatus().status).toBe("failed");
+    expect(shopProductFile(SHOP_FILE_ITEMS[1] as never)).toBe("missing");
     mockDevice.downloads = [];
     serverHas(five, [1]);
     retryShopFiles();
     await settle();
     expect(downloadedPaths()).toContain(five.paths[1]);
-    expect(shopFilesStatus().status).toBe("ready");
+    expect(shopProductFile(SHOP_FILE_ITEMS[1] as never)).toBe(uriOf(five.sha[1]));
   });
 
   it("D6: 같은 파일을 동시에 두 번 받지 않는다(미리 받기와 다시 받기가 겹쳐도 파일마다 한 번)", async () => {
@@ -399,13 +411,13 @@ describe("[spec] 화면: 마을에 나가면 미리 받기, 들어가기에서 �
     await fireEvent.press(screen.getByRole("button", { name: "나가기" }));
     await frames(1.2);
     await settle();
-    expect(shopFilesStatus().status).toBe("failed");
+    expect(shopProductFile(SHOP_FILE_ITEMS[1] as never)).toBe("missing");
     mockDevice.downloads = [];
     serverHas(five, [1]);
     await walkTo(VILLAGE_PLACES.furnitureShop.approach[0], "furnitureShop");
     await fireEvent.press(screen.getByRole("button", { name: "들어가기" }));
     await settle();
     expect(downloadedPaths()).toContain(five.paths[1]);
-    expect(shopFilesStatus().status).toBe("ready");
+    expect(shopProductFile(SHOP_FILE_ITEMS[1] as never)).toBe(uriOf(five.sha[1]));
   });
 });

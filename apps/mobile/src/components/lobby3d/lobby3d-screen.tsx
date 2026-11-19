@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type MutableRefObject } from "react";
 import { AccessibilityInfo, ActivityIndicator, Animated, BackHandler, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Lobby3dCanvas, {
@@ -167,6 +167,207 @@ function sameView(a: ViewState, b: ViewState) {
   );
 }
 
+/** 값 하나를 갖고, 바뀌면 구독한 부분만 다시 그리게 알리는 작은 저장소(화면 상태로 두면 화면 전체가 다시 그려진다). */
+interface Store<T> {
+  get(): T;
+  set(next: T): void;
+  subscribe(listener: () => void): () => void;
+}
+
+function createStore<T>(initial: T): Store<T> {
+  let value = initial;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => value,
+    set(next) {
+      if (Object.is(next, value)) return;
+      value = next;
+      for (const listener of [...listeners]) listener();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    }
+  };
+}
+
+function useStore<T>(store: Store<T>): T {
+  return useSyncExternalStore(store.subscribe, store.get, store.get);
+}
+
+interface LobbyBubblesProps {
+  viewStore: Store<ViewState>;
+  /** 말풍선 자리가 멈출 때마다 늘어나는 수. 바뀌면 말풍선 묶음을 다시 그려 버튼을 누르는 자리를 실제 자리와 맞춘다. */
+  settleStore: Store<number>;
+  area: LobbyArea;
+  hidden: boolean;
+  sim: LobbySim;
+  placeOpacity: Record<PlaceId, Animated.Value>;
+  bubbleLeft: Animated.Value;
+  bubbleTop: Animated.Value;
+  bubbleOpacity: Animated.Value;
+  renderedLine: MutableRefObject<string>;
+  applyOverlay: (snap: LobbySnapshot) => void;
+  idleButton: { label: string; onPress: () => void } | null;
+  onPlaceButton: (id: PlaceId) => void;
+}
+
+/**
+ * 장소 안내 말풍선(장소마다 미리 만들어 두고 지금 장소의 것만 네이티브 쪽 투명도로 보인다)과 인사·짧은 말 말풍선.
+ * 말풍선 상태(viewStore)를 구독해 이 부분만 다시 그린다. 자리·투명도는 로비 화면이 프레임마다 네이티브 값으로 옮긴다.
+ */
+const LobbyBubbles = memo(function LobbyBubbles({
+  viewStore,
+  settleStore,
+  area,
+  hidden,
+  sim,
+  placeOpacity,
+  bubbleLeft,
+  bubbleTop,
+  bubbleOpacity,
+  renderedLine,
+  applyOverlay,
+  idleButton,
+  onPlaceButton
+}: LobbyBubblesProps) {
+  const view = useStore(viewStore);
+  useStore(settleStore);
+  // 말풍선 높이(재어 본 값). 꼬리 끝이 머리 위 점에 오도록 이만큼 올린다.
+  const [bubbleHeight, setBubbleHeight] = useState(60);
+  // 재지 않은 장소(처음 보이는 옷장)는 80으로 본다
+  const [placeHeights, setPlaceHeights] = useState<Partial<Record<PlaceId, number>>>(
+    () => Object.fromEntries(ALL_PLACE_IDS.map((id) => [id, 80])) as Record<PlaceId, number>
+  );
+  // 장소 안내가 아닌 말(인사·짧은 말). 장소 안내는 아래에서 장소마다 미리 만든 말풍선이 보인다.
+  const lineText = view.place === null ? view.bubbleText : "";
+  const showIdleButton = Boolean(idleButton) && view.idleBubble;
+  // 그린 뒤 그린 글을 적어 두고 보임을 다시 맞춘다(프레임을 기다리지 않게)
+  useLayoutEffect(() => {
+    renderedLine.current = lineText;
+    applyOverlay(sim.snapshot(Date.now()));
+  });
+  return (
+    <>
+      {/* 대사도 버튼도 없는 장소는 말풍선이 없다. 대사가 없는 장소(옷장)는 버튼만 있는 말풍선이다 */}
+      {hidden ? null : placesOf(area).filter((id) => hasPlaceBubble(id)).map((id) => {
+        const active = view.place === id;
+        return (
+          <Animated.View
+            key={`place-${id}`}
+            // 지금 장소가 아닌 말풍선은 누르기와 화면 읽기에서 뺀다(투명도는 프레임마다 네이티브 쪽에서 바뀐다)
+            pointerEvents={active ? "box-none" : "none"}
+            accessibilityElementsHidden={!active}
+            importantForAccessibility={active ? "auto" : "no-hide-descendants"}
+            onLayout={(e) => {
+              const h = Math.round(e.nativeEvent.layout.height);
+              if (h > 0 && h !== (placeHeights[id] ?? 80)) setPlaceHeights((prev) => ({ ...prev, [id]: h }));
+            }}
+            style={[
+              styles.bubbleWrap,
+              {
+                opacity: placeOpacity[id],
+                transform: [{ translateX: bubbleLeft }, { translateY: bubbleTop }, { translateY: -(placeHeights[id] ?? 80) - 12 }]
+              }
+            ]}
+          >
+            <View style={styles.bubble} pointerEvents="box-none">
+              {markInfo(id).prompt ? (
+                <View pointerEvents="none">
+                  <Text style={styles.bubbleText}>{markInfo(id).prompt}</Text>
+                </View>
+              ) : null}
+              {markInfo(id).buttonLabel ? (
+              <Pressable
+                accessibilityRole="button"
+                style={styles.bubbleButton}
+                onPress={() => onPlaceButton(id)}
+              >
+                <Text style={styles.bubbleButtonText}>{markInfo(id).buttonLabel}</Text>
+              </Pressable>
+              ) : null}
+            </View>
+            <View style={styles.bubbleTail} pointerEvents="none" />
+          </Animated.View>
+        );
+      })}
+
+      {lineText && !hidden ? (
+        <Animated.View
+          pointerEvents="box-none"
+          onLayout={(e) => {
+            const h = Math.round(e.nativeEvent.layout.height);
+            if (h > 0 && h !== bubbleHeight) setBubbleHeight(h);
+          }}
+          style={[
+            styles.bubbleWrap,
+            {
+              opacity: bubbleOpacity,
+              transform: [{ translateX: bubbleLeft }, { translateY: bubbleTop }, { translateY: -bubbleHeight - 12 }]
+            }
+          ]}
+        >
+          {/* 글 부분은 누르기를 받지 않고(뒤의 방이 받는다) 버튼만 누를 수 있다 */}
+          <View style={styles.bubble} pointerEvents="box-none">
+            <View pointerEvents="none">
+              <Text style={styles.bubbleText}>{lineText}</Text>
+            </View>
+            {showIdleButton && idleButton ? (
+              <Pressable
+                accessibilityRole="button"
+                style={styles.bubbleButton}
+                onPress={() => {
+                  // 누른 순간 인사 말풍선을 보이는 중일 때만 누른다(걷기 시작해 숨었는데 아직 다시 그리기 전이면 누르지 않은 것으로 본다)
+                  if (sim.snapshot(Date.now()).idleBubble) idleButton.onPress();
+                }}
+              >
+                <Text style={styles.bubbleButtonText}>{idleButton.label}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          <View style={styles.bubbleTail} pointerEvents="none" />
+        </Animated.View>
+      ) : null}
+    </>
+  );
+});
+
+/** 아래 메뉴. 지금 장소에 맞는 메뉴를 강조한다(강조 테두리는 로비 화면이 네이티브 쪽 투명도로 바로 바꾸고, 화면 읽기의 선택 상태는 여기서 그린다). */
+const LobbyMenu = memo(function LobbyMenu({
+  viewStore,
+  menuLitOpacity,
+  onPress
+}: {
+  viewStore: Store<ViewState>;
+  menuLitOpacity: Record<LobbyMenuId, Animated.Value>;
+  onPress: (item: (typeof MENU)[number]) => void;
+}) {
+  const place = useStore(viewStore).place;
+  const litMenu = place ? MENU_FOR_MARK[place] ?? null : null;
+  return (
+    <View style={styles.menu}>
+      {MENU.map((item) => {
+        const lit = litMenu === item.id;
+        return (
+          <Pressable
+            key={item.id}
+            accessibilityRole="button"
+            accessibilityState={{ selected: lit }}
+            style={[styles.menuButton, item.primary && styles.menuPrimary]}
+            onPress={() => onPress(item)}
+          >
+            {/* 강조 테두리. 끄는 중에도 바로 따라가게 네이티브 쪽 투명도로 보인다 */}
+            <Animated.View pointerEvents="none" style={[styles.menuLitRing, { opacity: menuLitOpacity[item.id] }]} />
+            <Text style={[styles.menuText, item.primary && styles.menuPrimaryText]}>{item.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+});
+
 export interface Lobby3dScreenProps {
   /** 시험판(동작 버튼·속도·명암·외곽선 조절). 기본은 켬(개발 화면). */
   devPanel?: boolean;
@@ -316,7 +517,9 @@ export default function Lobby3dScreen({
     []
   );
 
-  const [view, setView] = useState<ViewState>({ bubbleText: "", bubbleButton: null, place: null, idleBubble: false });
+  // 말풍선·장소 안내·메뉴 강조의 상태. 화면 상태로 두면 바뀔 때마다 로비 화면 전체가 다시 그려져(개발 빌드에서 한 번 26~34ms) 한 프레임이 끊겼다.
+  // 그래서 화면 밖 저장소에 두고, 그 상태를 쓰는 말풍선 묶음(LobbyBubbles)과 아래 메뉴(LobbyMenu)만 구독해 다시 그린다
+  const viewStore = useRef(createStore<ViewState>({ bubbleText: "", bubbleButton: null, place: null, idleBubble: false })).current;
   // 초당 프레임 표시. 값이 바뀔 때만 다시 그린다(이름표·말풍선 자리는 아래 Animated 값으로 옮긴다).
   // 초당 프레임 수는 작은 표시(FpsText)만 다시 그린다(로비 화면 전체를 1초마다 다시 그리면 그때마다 프레임이 끊겼다)
   const fpsListener = useRef<((fps: number) => void) | null>(null);
@@ -341,8 +544,6 @@ export default function Lobby3dScreen({
   useEffect(() => () => setVillageBgmArea(false, "day"), []);
   const shownHours = clockOverride?.hours ?? Math.round((clock.getHours() + clock.getMinutes() / 60) * 4) / 4;
   const shownMonth = clockOverride?.month ?? clock.getMonth() + 1;
-  // 말풍선 높이(재어 본 값). 꼬리 끝이 머리 위 점에 오도록 이만큼 올린다.
-  const [bubbleHeight, setBubbleHeight] = useState(60);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const syncView = useCallback((given?: LobbySnapshot) => {
@@ -353,9 +554,9 @@ export default function Lobby3dScreen({
       place: snap.place,
       idleBubble: snap.idleBubble
     };
-    setView((prev) => (sameView(prev, next) ? prev : next));
+    if (!sameView(viewStore.get(), next)) viewStore.set(next);
     actionListener.current?.(snap.action?.type ?? null);
-  }, [sim]);
+  }, [sim, viewStore]);
 
   // 편집 모드('꾸미기'). editorRef가 편집 중인 배치와 고른 가구를 갖고, editView는 그릴 때 쓰는 그 모습이다(바뀔 때만 다시 그린다).
   const editorRef = useRef<LobbyEditor | null>(null);
@@ -521,10 +722,6 @@ export default function Lobby3dScreen({
   const menuLitOpacity = useRef(
     Object.fromEntries(MENU.map((item) => [item.id, nativeValue(0)])) as Record<LobbyMenuId, Animated.Value>
   ).current;
-  // 재지 않은 장소(처음 보이는 옷장)는 80으로 본다
-  const [placeHeights, setPlaceHeights] = useState<Partial<Record<PlaceId, number>>>(
-    () => Object.fromEntries(ALL_PLACE_IDS.map((id) => [id, 80])) as Record<PlaceId, number>
-  );
   // 화면에 그려 둔 인사·짧은 말 말풍선의 글. 다시 그리기가 밀려 글이 지금 말과 다르면 그 말풍선을 보이지 않는다.
   const renderedLine = useRef("");
   const lastSent = useRef(new Map<Animated.Value, number>()).current;
@@ -532,7 +729,8 @@ export default function Lobby3dScreen({
   // 말풍선 버튼을 누르는 자리가 실제 자리와 맞게 한다(누른 채 손가락이 살짝 움직여도 눌림이 취소되지 않게).
   // 서 있거나 앉아 있을 때도 머리가 숨 쉬듯 1~2픽셀 오르내리므로, 마지막으로 다시 그린 자리에서 4픽셀 넘게 옮겨졌을 때만 다시 그린다
   // (눌림이 취소되는 여유 20픽셀보다 충분히 작다).
-  const [, setBubbleSettled] = useState(0);
+  // 다시 그리는 것은 말풍선 묶음뿐이다(LobbyBubbles가 이 수를 구독한다)
+  const settleStore = useRef(createStore(0)).current;
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settledAt = useRef({ left: Number.NaN, top: Number.NaN });
   useEffect(
@@ -568,7 +766,7 @@ export default function Lobby3dScreen({
         if (settleTimer.current) clearTimeout(settleTimer.current);
         settleTimer.current = setTimeout(() => {
           settledAt.current = { left: lastSent.get(bubbleLeft) ?? left, top: lastSent.get(bubbleTop) ?? top };
-          setBubbleSettled((n) => n + 1);
+          settleStore.set(settleStore.get() + 1);
         }, 150);
       }
       for (const id of Object.keys(labels) as PlaceId[]) {
@@ -578,7 +776,7 @@ export default function Lobby3dScreen({
         send(labelPos[id].top, at.y, 0.5);
       }
     },
-    [bubbleLeft, bubbleTop, labelPos, send, lastSent]
+    [bubbleLeft, bubbleTop, labelPos, send, lastSent, settleStore]
   );
 
   /** 스냅숏대로 장소 안내 말풍선·인사 말풍선·메뉴 강조의 보임을 네이티브 쪽에서 바로 바꾼다. */
@@ -905,7 +1103,6 @@ export default function Lobby3dScreen({
   // 슬라이더는 왼쪽이 멀리(넓게 보임), 오른쪽이 가까이다.
   const closeness = VIEW_WIDTH_MAX + VIEW_WIDTH_MIN - viewWidth;
   const closenessPercent = Math.round(((closeness - VIEW_WIDTH_MIN) / (VIEW_WIDTH_MAX - VIEW_WIDTH_MIN)) * 100);
-  const litMenu = view.place ? MENU_FOR_MARK[view.place] ?? null : null;
   const handleProjection = useCallback(
     (next: LobbyProjection) => {
       fpsListener.current?.(next.fps);
@@ -914,14 +1111,36 @@ export default function Lobby3dScreen({
     [onProjection]
   );
   const shownToon = devPanel ? toon : HOME_TOON;
-  // 장소 안내가 아닌 말(인사·짧은 말). 장소 안내는 아래에서 장소마다 미리 만든 말풍선이 보인다.
-  const lineText = view.place === null ? view.bubbleText : "";
-  const showIdleButton = Boolean(idleButton) && view.idleBubble;
-  // 그린 뒤 그린 글을 적어 두고 보임을 다시 맞춘다(프레임을 기다리지 않게)
-  useLayoutEffect(() => {
-    renderedLine.current = lineText;
-    applyOverlay(sim.snapshot(Date.now()));
-  });
+  // 장소 안내 말풍선의 버튼과 아래 메뉴 버튼. 말풍선 묶음·메뉴가 다시 그려지지 않게 늘 같은 함수를 넘기고, 하는 일은 지금 그린 화면의 것을 부른다
+  const pressPlaceRef = useRef<(id: PlaceId) => void>(() => {});
+  pressPlaceRef.current = (id: PlaceId) => {
+    // 걷기 시작해 이 안내가 사라졌는데 아직 다시 그리기 전이면 누르지 않은 것으로 본다
+    if (sim.snapshot(Date.now()).place !== id) return;
+    // 방의 '나가기'는 마을로, 마을 집의 '들어가기'는 방으로 간다
+    if (id === "door") {
+      travel("village");
+      return;
+    }
+    if (id === "home") {
+      travel("room");
+      return;
+    }
+    // 장소마다 동작(생각하기·의자에 앉기·책 꺼내기)을 한 뒤 들어간다. 동작이 없거나 "동작 줄이기"면 바로 들어간다
+    if (sim.startScene(id, Date.now())) {
+      syncView();
+      return;
+    }
+    enterPlace(id);
+  };
+  const pressPlace = useCallback((id: PlaceId) => pressPlaceRef.current(id), []);
+  const pressMenuRef = useRef<(item: (typeof MENU)[number]) => void>(() => {});
+  pressMenuRef.current = (item) => {
+    // '들어가기' 동작 중이면 거두고 이 메뉴가 하는 일을 바로 한다
+    sim.cancelScene();
+    if (onMenu) onMenu(item.id);
+    else showToast(`${item.label} 화면으로 가요`);
+  };
+  const pressMenu = useCallback((item: (typeof MENU)[number]) => pressMenuRef.current(item), []);
 
   return (
     <View style={styles.root}>
@@ -984,103 +1203,22 @@ export default function Lobby3dScreen({
         </Animated.View>
       ))}
 
-      {/* 대사도 버튼도 없는 장소는 말풍선이 없다. 대사가 없는 장소(옷장)는 버튼만 있는 말풍선이다 */}
-      {editing || !roomShown || returning ? null : placesOf(area).filter((id) => hasPlaceBubble(id)).map((id) => {
-        const active = view.place === id;
-        return (
-          <Animated.View
-            key={`place-${id}`}
-            // 지금 장소가 아닌 말풍선은 누르기와 화면 읽기에서 뺀다(투명도는 프레임마다 네이티브 쪽에서 바뀐다)
-            pointerEvents={active ? "box-none" : "none"}
-            accessibilityElementsHidden={!active}
-            importantForAccessibility={active ? "auto" : "no-hide-descendants"}
-            onLayout={(e) => {
-              const h = Math.round(e.nativeEvent.layout.height);
-              if (h > 0 && h !== (placeHeights[id] ?? 80)) setPlaceHeights((prev) => ({ ...prev, [id]: h }));
-            }}
-            style={[
-              styles.bubbleWrap,
-              {
-                opacity: placeOpacity[id],
-                transform: [{ translateX: bubbleLeft }, { translateY: bubbleTop }, { translateY: -(placeHeights[id] ?? 80) - 12 }]
-              }
-            ]}
-          >
-            <View style={styles.bubble} pointerEvents="box-none">
-              {markInfo(id).prompt ? (
-                <View pointerEvents="none">
-                  <Text style={styles.bubbleText}>{markInfo(id).prompt}</Text>
-                </View>
-              ) : null}
-              {markInfo(id).buttonLabel ? (
-              <Pressable
-                accessibilityRole="button"
-                style={styles.bubbleButton}
-                onPress={() => {
-                  // 걷기 시작해 이 안내가 사라졌는데 아직 다시 그리기 전이면 누르지 않은 것으로 본다
-                  if (sim.snapshot(Date.now()).place !== id) return;
-                  // 방의 '나가기'는 마을로, 마을 집의 '들어가기'는 방으로 간다
-                  if (id === "door") {
-                    travel("village");
-                    return;
-                  }
-                  if (id === "home") {
-                    travel("room");
-                    return;
-                  }
-                  // 장소마다 동작(생각하기·의자에 앉기·책 꺼내기)을 한 뒤 들어간다. 동작이 없거나 "동작 줄이기"면 바로 들어간다
-                  if (sim.startScene(id, Date.now())) {
-                    syncView();
-                    return;
-                  }
-                  enterPlace(id);
-                }}
-              >
-                <Text style={styles.bubbleButtonText}>{markInfo(id).buttonLabel}</Text>
-              </Pressable>
-              ) : null}
-            </View>
-            <View style={styles.bubbleTail} pointerEvents="none" />
-          </Animated.View>
-        );
-      })}
-
-      {lineText && !editing && roomShown && !returning ? (
-        <Animated.View
-          pointerEvents="box-none"
-          onLayout={(e) => {
-            const h = Math.round(e.nativeEvent.layout.height);
-            if (h > 0 && h !== bubbleHeight) setBubbleHeight(h);
-          }}
-          style={[
-            styles.bubbleWrap,
-            {
-              opacity: bubbleOpacity,
-              transform: [{ translateX: bubbleLeft }, { translateY: bubbleTop }, { translateY: -bubbleHeight - 12 }]
-            }
-          ]}
-        >
-          {/* 글 부분은 누르기를 받지 않고(뒤의 방이 받는다) 버튼만 누를 수 있다 */}
-          <View style={styles.bubble} pointerEvents="box-none">
-            <View pointerEvents="none">
-              <Text style={styles.bubbleText}>{lineText}</Text>
-            </View>
-            {showIdleButton && idleButton ? (
-              <Pressable
-                accessibilityRole="button"
-                style={styles.bubbleButton}
-                onPress={() => {
-                  // 누른 순간 인사 말풍선을 보이는 중일 때만 누른다(걷기 시작해 숨었는데 아직 다시 그리기 전이면 누르지 않은 것으로 본다)
-                  if (sim.snapshot(Date.now()).idleBubble) idleButton.onPress();
-                }}
-              >
-                <Text style={styles.bubbleButtonText}>{idleButton.label}</Text>
-              </Pressable>
-            ) : null}
-          </View>
-          <View style={styles.bubbleTail} pointerEvents="none" />
-        </Animated.View>
-      ) : null}
+      {/* 장소 안내 말풍선과 인사·짧은 말 말풍선. 편집 모드, 방이 보이기 전, '완료' 뒤 로딩 표시가 떠 있는 동안에는 숨긴다 */}
+      <LobbyBubbles
+        viewStore={viewStore}
+        settleStore={settleStore}
+        area={area}
+        hidden={editing || !roomShown || returning}
+        sim={sim}
+        placeOpacity={placeOpacity}
+        bubbleLeft={bubbleLeft}
+        bubbleTop={bubbleTop}
+        bubbleOpacity={bubbleOpacity}
+        renderedLine={renderedLine}
+        applyOverlay={applyOverlay}
+        idleButton={idleButton}
+        onPlaceButton={pressPlace}
+      />
 
       <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
         {editing ? (
@@ -1405,29 +1543,7 @@ export default function Lobby3dScreen({
           </View>
         ) : null}
         {editing ? null : (
-        <View style={styles.menu}>
-          {MENU.map((item) => {
-            const lit = litMenu === item.id;
-            return (
-              <Pressable
-                key={item.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected: lit }}
-                style={[styles.menuButton, item.primary && styles.menuPrimary]}
-                onPress={() => {
-                  // '들어가기' 동작 중이면 거두고 이 메뉴가 하는 일을 바로 한다
-                  sim.cancelScene();
-                  if (onMenu) onMenu(item.id);
-                  else showToast(`${item.label} 화면으로 가요`);
-                }}
-              >
-                {/* 강조 테두리. 끄는 중에도 바로 따라가게 네이티브 쪽 투명도로 보인다 */}
-                <Animated.View pointerEvents="none" style={[styles.menuLitRing, { opacity: menuLitOpacity[item.id] }]} />
-                <Text style={[styles.menuText, item.primary && styles.menuPrimaryText]}>{item.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <LobbyMenu viewStore={viewStore} menuLitOpacity={menuLitOpacity} onPress={pressMenu} />
         )}
       </View>
       {/* 방↔마을 전환: 검게 어두워졌다 밝아진다. 로비의 맨 위에 덮여, 전환 중에는 3D·위 줄·아래 메뉴 모두 누르기가 닿지 않는다 */}

@@ -28,8 +28,9 @@ import {
 } from "@/lib/lobby3d/shop";
 
 const MOBILE = join(__dirname, "../..");
-// 07 결정: 가구점 모델은 앱에 없고 서버 아이템 목록 파일 폴더에 있다
-const SHOP_DIR = join(MOBILE, "../backend/src/main/resources/catalog/files");
+// 14 결정: 실내·버들은 앱 자산(assets/models/shop), 진열 상품 셋은 서버 아이템 목록 파일 폴더
+const SHOP_DIR = join(MOBILE, "assets/models/shop");
+const SERVER_FILES = join(MOBILE, "../backend/src/main/resources/catalog/files");
 
 /** GLB 좌표 → 앱 좌표(명세 2-2). */
 const app = (x: number, z: number): FloorPoint => ({ x: x + 4.5, z: z + 4.5 });
@@ -44,7 +45,7 @@ function gltfNodes(file: string): GltfNode[] {
   const length = data.readUInt32LE(12);
   return (JSON.parse(data.subarray(20, 20 + length).toString("utf8")) as { nodes: GltfNode[] }).nodes;
 }
-const interiorNodes = gltfNodes("shop-interior.glb");
+const interiorNodes = gltfNodes("furniture-shop-interior.glb");
 const glbNode = (name: string) => {
   const n = interiorNodes.find((x) => x.name === name);
   if (!n) throw new Error(`no node ${name}`);
@@ -71,35 +72,47 @@ function shopMarks() {
 }
 const byLabel = (label: string) => shopMarks().filter((m) => m.info.label === label);
 
-describe("[spec] 애셋(S01·S02, 07 결정으로 바뀜)", () => {
-  const walk = (dir: string): string[] =>
-    readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
-
-  it("S01: 앱에 assets/models/shop 폴더가 없고, 앱 코드 어디에서도 그 경로를 require·import하지 않는다(주석은 보지 않는다)", () => {
-    expect(existsSync(join(MOBILE, "assets/models/shop"))).toBe(false);
-    const offenders = walk(join(MOBILE, "src")).filter((f) => /\.(ts|tsx)$/.test(f) && /(require|import)[^\n]*models\/shop/.test(readFileSync(f, "utf8")));
-    expect(offenders).toEqual([]);
-  });
-
-  it("S01(B1 모바일 쪽 확인): 서버 파일 폴더에 다섯 모델이 있고 크기가 약 1.98·1.61·1.58·0.26·0.70MB다", () => {
-    const sizes: [string, number][] = [
-      ["shop-interior.glb", 1.98],
-      ["shopkeeper-beodeul.glb", 1.61],
-      ["grandmas-floor-bedding.glb", 1.58],
-      ["walnut-bed.glb", 0.26],
-      ["cloud-desk.glb", 0.7]
-    ];
-    for (const [file, mb] of sizes) {
+describe("[spec] 애셋(S01·S02, 14 결정)", () => {
+  it("S01: 실내·버들 GLB는 앱 assets/models/shop에 있고 크기가 약 1.98·1.61MB다", () => {
+    for (const [file, mb] of [
+      ["furniture-shop-interior.glb", 1.98],
+      ["beodeul.glb", 1.61]
+    ] as const) {
       expect({ file, exists: existsSync(join(SHOP_DIR, file)) }).toEqual({ file, exists: true });
       expect(statSync(join(SHOP_DIR, file)).size / 1_000_000).toBeCloseTo(mb, 1);
     }
+    // 원본이 이 컴퓨터에 있으면 바이트가 같다(없는 환경에서는 크기만 본다)
+    for (const [file, original] of [
+      ["furniture-shop-interior.glb", "C:/WriteLoop-asset/마을건물/가구점/내부/furniture-shop-interior.glb"],
+      ["beodeul.glb", "C:/WriteLoop-asset/이웃/버들-가구점_주인/3d/WriteLoop_Beodeul.glb"]
+    ] as const) {
+      if (existsSync(original)) expect(readFileSync(join(SHOP_DIR, file)).equals(readFileSync(original))).toBe(true);
+    }
   });
 
-  it("S02: 앱 CREDITS.md에 가구점 모델 줄이 없다(앱에 든 파일이 아니다)", () => {
-    const text = readFileSync(join(MOBILE, "assets/models/CREDITS.md"), "utf8");
-    for (const name of ["shop/", "furniture-shop-interior", "beodeul", "walnut-bed", "grandmas-floor-bedding", "cloud-desk"]) {
-      expect({ name, listed: text.includes(name) }).toEqual({ name, listed: false });
+  it("S01: 진열 상품 셋은 앱에 없고(assets/models/shop에 상품 파일 없음) 서버 파일 폴더에 있다(약 0.26·1.58·0.70MB). 실내·버들은 서버 폴더에 없다", () => {
+    const appFiles = readdirSync(SHOP_DIR).sort();
+    expect(appFiles).toEqual(["beodeul.glb", "furniture-shop-interior.glb"]);
+    for (const [file, mb] of [
+      ["walnut-bed.glb", 0.26],
+      ["grandmas-floor-bedding.glb", 1.58],
+      ["cloud-desk.glb", 0.7]
+    ] as const) {
+      expect({ file, exists: existsSync(join(SERVER_FILES, file)) }).toEqual({ file, exists: true });
+      expect(statSync(join(SERVER_FILES, file)).size / 1_000_000).toBeCloseTo(mb, 1);
     }
+    for (const file of ["shop-interior.glb", "shopkeeper-beodeul.glb"]) expect({ file, exists: existsSync(join(SERVER_FILES, file)) }).toEqual({ file, exists: false });
+  });
+
+  it("S02: 앱 CREDITS.md에 실내·버들 두 모델 줄이 있고 WriteLoop 제작이며, 진열 상품 셋 줄은 없다(앱에 든 파일이 아니다)", () => {
+    const lines = readFileSync(join(MOBILE, "assets/models/CREDITS.md"), "utf8").split(/\r?\n/);
+    for (const name of ["shop/furniture-shop-interior.glb", "shop/beodeul.glb"]) {
+      const rows = lines.filter((l) => l.startsWith("| `" + name + "`"));
+      expect({ name, rows: rows.length }).toEqual({ name, rows: 1 });
+      expect(rows[0]).toContain("WriteLoop");
+    }
+    const text = lines.join("\n");
+    for (const name of ["walnut-bed", "grandmas-floor-bedding", "cloud-desk"]) expect({ name, listed: text.includes(name) }).toEqual({ name, listed: false });
   });
 });
 

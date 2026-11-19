@@ -40,14 +40,19 @@ jest.mock("@/components/lobby3d/lobby3d-character", () => {
   };
 });
 
+// 실내·버들은 앱 자산이라 장면 짓기가 불러오는 모듈이 require한다(Jest는 GLB를 풀지 못해 이름만 준다)
+jest.mock("../../assets/models/shop/furniture-shop-interior.glb", () => "interior.glb");
+jest.mock("../../assets/models/shop/beodeul.glb", () => "beodeul.glb");
+
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { GLTFLoader } = require("three/examples/jsm/loaders/GLTFLoader.js") as typeof import("three/examples/jsm/loaders/GLTFLoader.js");
 const { buildShop } = require("@/components/lobby3d/lobby3d-shop") as typeof import("@/components/lobby3d/lobby3d-shop");
 const shop = require("@/lib/lobby3d/shop") as typeof import("@/lib/lobby3d/shop");
 /* eslint-enable @typescript-eslint/no-require-imports */
 
-// 07 결정: 가구점 모델은 앱에 없고 서버 아이템 목록 파일 폴더에 있다
-const MODELS = join(__dirname, "../../../backend/src/main/resources/catalog/files");
+// 14 결정: 실내·버들은 앱 자산, 진열 상품 셋은 서버 아이템 목록 파일 폴더에서 읽는다
+const APP_MODELS = join(__dirname, "../../assets/models/shop");
+const SERVER_MODELS = join(__dirname, "../../../backend/src/main/resources/catalog/files");
 
 /** GLB의 JSON 조각에서 그림 참조를 빼고 다시 GLB로 묶는다. */
 function withoutImages(data: Buffer): ArrayBuffer {
@@ -84,8 +89,8 @@ function withoutImages(data: Buffer): ArrayBuffer {
   return out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
 }
 
-async function load(file: string): Promise<GLTF> {
-  return new GLTFLoader().parseAsync(withoutImages(readFileSync(join(MODELS, file))), "");
+async function load(dir: string, file: string): Promise<GLTF> {
+  return new GLTFLoader().parseAsync(withoutImages(readFileSync(join(dir, file))), "");
 }
 
 interface RawNode {
@@ -94,11 +99,11 @@ interface RawNode {
   extras?: Record<string, number>;
 }
 function rawNodes(file: string): RawNode[] {
-  const data = readFileSync(join(MODELS, file));
+  const data = readFileSync(join(APP_MODELS, file));
   const length = data.readUInt32LE(12);
   return (JSON.parse(data.subarray(20, 20 + length).toString("utf8")) as { nodes: RawNode[] }).nodes;
 }
-const rawInterior = rawNodes("shop-interior.glb");
+const rawInterior = rawNodes("furniture-shop-interior.glb");
 const rawNode = (name: string) => rawInterior.find((n) => n.name === name)!;
 /** GLB 좌표 → 앱 좌표(명세 2-2). */
 const appOf = (name: string) => {
@@ -111,9 +116,9 @@ let keeper: GLTF;
 let products: GLTF[];
 
 beforeAll(async () => {
-  interior = await load("shop-interior.glb");
-  keeper = await load("shopkeeper-beodeul.glb");
-  products = await Promise.all(["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(f)));
+  interior = await load(APP_MODELS, "furniture-shop-interior.glb");
+  keeper = await load(APP_MODELS, "beodeul.glb");
+  products = await Promise.all(["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(SERVER_MODELS, f)));
 }, 60000);
 
 const kit = () => ({ gradient: new THREE.Texture(), toonMaterials: [] as THREE.MeshToonMaterial[] });

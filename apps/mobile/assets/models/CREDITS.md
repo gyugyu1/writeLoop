@@ -12,3 +12,5 @@
 | `village-fountain.glb` | 마을 광장 분수(석재 받침·윗그릇과, 윗그릇 가장자리에서 아래 수조로 졸졸 흐르는 물. 물은 모프 타깃 셋을 움직이는 약 2초 고리 클립 `Fountain_Flow`). WriteLoop 제작 | 저장소와 같다 |
 | `village-streetlamp.glb` | 마을 광장 가로등(나무 기둥·석재 받침·네 면 유리창 등갓. 색 그림과 유리창만 빛나는 발광 그림). WriteLoop 제작 | 저장소와 같다 |
 | `trees/WriteLoop_Tree_A_LOD1.glb`, `trees/WriteLoop_Tree_A_LOD2.glb`, `trees/WriteLoop_Tree_Pine_LOD1.glb`, `trees/WriteLoop_Tree_Pine_LOD2.glb`(A·Pine × LOD1·LOD2) | 마을과 방 창밖의 나무(A 둥근 활엽수: 겨울에 잎이 져 맨가지, Pine 소나무: 겨울에도 눈 덮인 잎). WriteLoop 제작: 나무 모델링 지시서 기반으로 만들었다(잎 2×2 계절 그림 칸, 줄기 평소·눈 2칸, 잎·줄기 두 메시). 앱은 마을 안에 LOD1, 둘레 숲과 창밖에 LOD2를 쓴다 | 저장소와 같다 |
+| `shop/furniture-shop-interior.glb` | 마을 가구점 실내(오른쪽 초록 문, 크림색 통유리 틀, 원형 진열대 셋, 계산대, 오른쪽 벽 선반과 자리 노드 `PlayerSpawn`·`ExitTrigger`·`CheckoutNPC`·`CheckoutInteract`·`DisplaySlot_01~03`). WriteLoop이 Blender로 만들었다. 진열 상품은 앱에 들어 있지 않고 서버 아이템 목록에서 받는다 | 저장소와 같다 |
+| `shop/beodeul.glb` | 가구점 주인 버들(비버 목공 장인, 19개 본으로 리깅한 기본 자세, 내장 그림 1장). WriteLoop 제작 | 저장소와 같다 |

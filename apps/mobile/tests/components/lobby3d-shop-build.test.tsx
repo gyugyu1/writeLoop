@@ -26,6 +26,8 @@ jest.mock("three/examples/jsm/utils/SkeletonUtils.js", () => {
   return nodeModule.createRequire(file)(file);
 });
 jest.mock("@react-three/fiber/native", () => ({ useFrame: () => {}, useLoader: Object.assign(() => null, { clear: () => {} }), useThree: () => ({}) }));
+jest.mock("../../assets/models/shop/furniture-shop-interior.glb", () => "interior.glb");
+jest.mock("../../assets/models/shop/beodeul.glb", () => "beodeul.glb");
 jest.mock("@/components/lobby3d/lobby3d-character", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const three = require("three") as typeof import("three");
@@ -38,8 +40,9 @@ const { buildShop } = require("@/components/lobby3d/lobby3d-shop") as typeof imp
 const shop = require("@/lib/lobby3d/shop") as typeof import("@/lib/lobby3d/shop");
 /* eslint-enable @typescript-eslint/no-require-imports */
 
-// 가구점 모델은 앱에 들어 있지 않고 서버 아이템 목록 파일 폴더에 있다
-const MODELS = join(__dirname, "../../../backend/src/main/resources/catalog/files");
+// 실내·버들 모델은 앱에, 진열 상품 모델은 서버 아이템 목록 파일 폴더에 있다
+const APP_MODELS = join(__dirname, "../../assets/models/shop");
+const SERVER_FILES = join(__dirname, "../../../backend/src/main/resources/catalog/files");
 
 /** GLB의 JSON 조각에서 그림 참조를 빼고 다시 GLB로 묶는다. */
 function withoutImages(data: Buffer): ArrayBuffer {
@@ -76,8 +79,8 @@ function withoutImages(data: Buffer): ArrayBuffer {
   return out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
 }
 
-async function load(file: string): Promise<GLTF> {
-  return new GLTFLoader().parseAsync(withoutImages(readFileSync(join(MODELS, file))), "");
+async function load(dir: string, file: string): Promise<GLTF> {
+  return new GLTFLoader().parseAsync(withoutImages(readFileSync(join(dir, file))), "");
 }
 
 let interior: GLTF;
@@ -85,9 +88,9 @@ let keeper: GLTF;
 let products: GLTF[];
 
 beforeAll(async () => {
-  interior = await load("shop-interior.glb");
-  keeper = await load("shopkeeper-beodeul.glb");
-  products = await Promise.all(["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(f)));
+  interior = await load(APP_MODELS, "furniture-shop-interior.glb");
+  keeper = await load(APP_MODELS, "beodeul.glb");
+  products = await Promise.all(["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(SERVER_FILES, f)));
 }, 60000);
 
 const kit = () => ({ gradient: new THREE.Texture(), toonMaterials: [] as THREE.MeshToonMaterial[] });

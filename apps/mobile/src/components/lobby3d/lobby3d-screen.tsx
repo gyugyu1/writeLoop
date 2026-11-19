@@ -594,7 +594,7 @@ export default function Lobby3dScreen({
     setVillageBgmArea(area === "village" || area === "shop", daylight.phase);
   }, [area, daylight.phase]);
   useEffect(() => () => setVillageBgmArea(false, "day"), []);
-  // 마을에 나가면 가구점 모델 다섯을 뒤에서 미리 받기 시작한다(기기에 있으면 받지 않는다. 방에 있는 동안은 받지 않는다)
+  // 마을에 나가면 가구점 진열 상품 모델 셋을 뒤에서 미리 받기 시작한다(기기에 있으면 받지 않는다. 방에 있는 동안은 받지 않는다)
   useEffect(() => {
     if (area === "village") prefetchShopFiles();
   }, [area]);

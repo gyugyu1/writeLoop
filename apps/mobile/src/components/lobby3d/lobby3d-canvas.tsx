@@ -11,6 +11,7 @@ import {
   CHAIR,
   LobbySim,
   ROOM,
+  SHOP_MARK_IDS,
   VILLAGE_MARK_IDS,
   activeLobbyLayout,
   cameraPose,
@@ -21,18 +22,20 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_FOUNTAIN, VILLAGE_PLACES } from "@/lib/lobby3d/village";
+import { SHOP_LABEL_POINTS, type ShopPlaceId } from "@/lib/lobby3d/shop";
 import type { WearLook, WearState } from "@/lib/lobby3d/wear";
 import { layoutGeometry, layoutItem, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
 import { BASIC_ROOM, currentRoom, outsideExit } from "@/lib/lobby3d/room";
 import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit";
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { buildPlacements, furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
-import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
+import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle, type ToonKit } from "./lobby3d-character";
 import { DaylightRig, createDaylightState, type DaylightState } from "./lobby3d-daylight";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
 import { BakedRoom, BakedRoomErrorBoundary } from "./lobby3d-room";
 import { freezeMatrices } from "./static-matrices";
 import type * as VillageModule from "./lobby3d-village";
+import type * as ShopModule from "./lobby3d-shop";
 
 // 3D 로비 그리기. 동작 규칙은 LobbySim(화면이 가진다)에 있고, 여기서는 매 프레임 그 상태를 그림으로 옮긴다.
 // 테스트에서는 이 모듈을 가짜로 바꾼다(three·expo-gl은 Jest에서 돌지 않는다).
@@ -117,12 +120,16 @@ export interface Lobby3dCanvasProps {
   settleKey?: number;
   /** settleKey가 바뀐 뒤 연달아 ROOM_SMOOTH_FRAMES 프레임이 ROOM_SMOOTH_FRAME_S 안에 그려지거나 ROOM_SETTLE_LIMIT_S가 지나면 한 번. */
   onRoomSettled?: () => void;
-  /** 지금 구역(방·마을). 마을이면 방(껍데기·가구·방 조명)을 숨기고 마을을 그린다. 기본은 방. */
+  /** 지금 구역(방·마을·가구점). 마을·가구점이면 방(껍데기·가구·방 조명)을 숨기고 그 구역을 그린다. 기본은 방. */
   area?: LobbyArea;
   /** 마을 모델이 장면에 들어왔을 때(마을로 바뀔 때마다). 화면이 어두운 전환을 끝내는 때다. */
   onVillageReady?: () => void;
   /** 마을 모델을 불러오지 못했을 때. */
   onVillageFailed?: () => void;
+  /** 가구점 실내 모델(실내·버들·진열 상품)이 장면에 들어왔을 때(가구점에 들어올 때마다). */
+  onShopReady?: () => void;
+  /** 가구점 모델을 불러오지 못했을 때. */
+  onShopFailed?: () => void;
   /** 라룹이가 입은 착용 아이템(캐릭터 꾸미기 기술 시험, 개발 화면). */
   wear?: WearState;
   /** 부위 일곱마다 입은 아이템 종류(⑤). 없으면 wear의 넷을 기본 아이템으로 그린다. */
@@ -860,6 +867,8 @@ function Scene({
   area = "room",
   onVillageReady,
   onVillageFailed,
+  onShopReady,
+  onShopFailed,
   wear,
   look,
   pickRef
@@ -927,6 +936,15 @@ function Scene({
   areaRef.current = area;
   // 마을에서 누르기 판정을 받는 건물·소품(마을 모델이 채운다)
   const villagePick = useRef<THREE.Object3D[]>([]);
+  // 가구점에서 누르기 판정을 받는 실내 부품·버들·진열 상품(가구점 모델이 채운다)과 이름표 자리
+  const shopPick = useRef<THREE.Object3D[]>([]);
+  const shopLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        (Object.keys(SHOP_LABEL_POINTS) as ShopPlaceId[]).map((id) => [id, new THREE.Vector3(SHOP_LABEL_POINTS[id].x, SHOP_LABEL_POINTS[id].y, SHOP_LABEL_POINTS[id].z)])
+      ) as Record<PlaceId, THREE.Vector3>,
+    []
+  );
   // 마을 이름표 자리(문 위)
   const villageLabels = useMemo(
     () =>
@@ -995,6 +1013,23 @@ function Scene({
       // 누르고 있거나 끄는 동안(이동)은 손가락 아래 바닥 점만 본다. 끌기는 바닥 점만 쓰는데, 이동 이벤트가 초당 수십 번 와서
       // 그때마다 라룹이·건물로 광선 판정을 하면(한 번 4~6ms, 가끔 60ms) 프레임이 끊겼다. 누르는 순간·꾸미기 편집은 아래 판정 그대로다
       if (phase === "move") return { point: floorPoint(), mark: null, onCharacter: false };
+      // 가구점: 이름표를 누르면 그 장소, 버들·계산대·진열대(상품)·문을 누르면 그 장소, 그 밖의 실내 부품(벽·선반)은 맞은 자리를 누른 곳으로 본다.
+      // 걸어갈 수 없는 곳이면 sim이 가장 가까운 곳으로 간다
+      if (areaRef.current === "shop") {
+        for (const id of SHOP_MARK_IDS) {
+          const p = shopLabels[id].clone().project(camera);
+          const lx = ((p.x + 1) / 2) * size.width;
+          const ly = ((1 - p.y) / 2) * size.height;
+          if (p.z < 1 && Math.abs(x - lx) <= LABEL_HALF_WIDTH && Math.abs(y - ly) <= LABEL_HALF_HEIGHT) return { point: floorPoint(), mark: id, onCharacter: false };
+        }
+        const targets: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...shopPick.current];
+        const hit = raycaster.intersectObjects(targets, true)[0];
+        if (hit && (hit.object.userData as { isCharacter?: boolean }).isCharacter) return { point: floorPoint(), mark: null, onCharacter: true };
+        const place = (hit?.object.userData as ShopModule.ShopPickData | undefined)?.shopPlace ?? null;
+        if (place) return { point: floorPoint(), mark: place, onCharacter: false };
+        if (hit) return { point: { x: hit.point.x, z: hit.point.z }, mark: null, onCharacter: false, onScenery: true, building: null };
+        return { point: floorPoint(), mark: null, onCharacter: false };
+      }
       // 마을: 이름표를 누르면 그 장소, 라룹이 아니면 맞은 건물·소품의 그 자리(없으면 바닥)를 누른 곳으로 본다. 걸어갈 수 없는 곳이면 sim이 가장 가까운 곳으로 간다
       if (areaRef.current === "village") {
         // 이름표(화면 이름표 상자: 가운데에서 가로 ±40, 세로 ±22)는 3D 물체가 아니라 화면 자리로 본다
@@ -1030,7 +1065,7 @@ function Scene({
     return () => {
       if (pickRef.current === pick) pickRef.current = null;
     };
-  }, [camera, size, raycaster, world, pickRef, villageLabels]);
+  }, [camera, size, raycaster, world, pickRef, villageLabels, shopLabels]);
 
   // 일기 책상 의자(대체 모양과 가구 묶음). 가구 묶음은 나중에 불러와지므로 가끔 다시 찾는다.
   const chairs = useRef<{ list: THREE.Object3D[]; scannedAt: number }>({ list: [], scannedAt: -Infinity });
@@ -1265,6 +1300,8 @@ function Scene({
     const labels: Partial<Record<PlaceId, { x: number; y: number }>> = {};
     if (areaRef.current === "village") {
       for (const id of VILLAGE_MARK_IDS) labels[id] = toScreen(villageLabels[id]);
+    } else if (areaRef.current === "shop") {
+      for (const id of SHOP_MARK_IDS) labels[id] = toScreen(shopLabels[id]);
     } else {
       for (const id of roomPlaceIds()) {
         const point = world.labelPoints[id];
@@ -1335,6 +1372,9 @@ function Scene({
       </primitive>
       {area === "village" ? (
         <VillageLayer sim={sim} daylight={daylightState} pickTargets={villagePick} onReady={onVillageReady} onFailed={onVillageFailed} />
+      ) : null}
+      {area === "shop" ? (
+        <ShopLayer daylight={daylightState} kit={world.kit} outline={toon.outline} pickTargets={shopPick} onReady={onShopReady} onFailed={onShopFailed} />
       ) : null}
       <CharacterErrorBoundary onFailed={characterSettled}>
         <Suspense fallback={null}>
@@ -1412,6 +1452,37 @@ function VillageLayer({
 }
 
 const noop = () => undefined;
+
+/**
+ * 마을 가구점 실내(실내 모델·버들·진열 상품과 실내 빛). 가구점 모듈은 가구점에 처음 들어올 때 불러온다.
+ * 마을과 같이 다 읽고 장면에 들어오면 셰이더·그림을 미리 준비한 뒤 알린다(VillageWarmUp).
+ */
+function ShopLayer({
+  daylight,
+  kit,
+  outline,
+  pickTargets,
+  onReady,
+  onFailed
+}: {
+  daylight: DaylightState;
+  kit: ToonKit;
+  outline: number;
+  pickTargets: MutableRefObject<THREE.Object3D[]>;
+  onReady?: () => void;
+  onFailed?: () => void;
+}) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const shop = require("./lobby3d-shop") as typeof ShopModule;
+  return (
+    <shop.ShopModelErrorBoundary onFailed={onFailed}>
+      <Suspense fallback={null}>
+        <shop.ShopModel daylight={daylight} kit={kit} outline={outline} pickTargets={pickTargets} />
+        <VillageWarmUp onReady={onReady ?? noop} />
+      </Suspense>
+    </shop.ShopModelErrorBoundary>
+  );
+}
 
 /**
  * 마을 모델을 다 읽고(같은 Suspense) 장면에 들어오면, 화면이 검게 가려진 동안 마을의 셰이더를 미리 만들고 그림을 모두 그래픽 메모리에 올린 뒤

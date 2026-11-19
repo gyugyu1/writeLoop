@@ -170,7 +170,8 @@ class CatalogFilesSpecTest extends IntegrationTestSupport {
             assertThat(fieldNames(assets)).as("B7 assets keys of %s", id).isEqualTo(set("model", "icon"));
             assertFileEntry(assets.get("model"), MODEL_URL, "B7 model of " + id);
         }
-        assertThat(count).as("B7 furniture count").isEqualTo(15);
+        // 작업 128: 가구점 진열 상품 셋이 더해져 열다섯 + 셋
+        assertThat(count).as("B7 furniture count").isEqualTo(18);
     }
 
     @Test
@@ -184,7 +185,10 @@ class CatalogFilesSpecTest extends IntegrationTestSupport {
             JsonNode icon = item.path("assets").get("icon");
             boolean removable = item.path("draw").path("removable").asBoolean(false);
             assertThat(item.path("draw").path("removable").isBoolean()).as("B8 draw.removable of %s is a boolean: %s", id, item).isTrue();
-            if (removable) {
+            if (ItemCatalogDrawSpecTest.SHOP_PRODUCTS.contains(id)) {
+                // 작업 128 07 결정: 가구점 진열 상품은 아이콘이 없다
+                assertThat(icon != null && icon.isNull()).as("B8 icon of shop product %s is null: %s", id, item).isTrue();
+            } else if (removable) {
                 assertFileEntry(icon, ICON_URL, "B8 icon of " + id);
                 if (FOURTEEN.contains(id)) {
                     withIcon.add(id);
@@ -249,7 +253,7 @@ class CatalogFilesSpecTest extends IntegrationTestSupport {
     void b11_b13_everyListedFileIsServedWithoutLoginAtItsContentHash() throws Exception {
         List<JsonNode> entries = allFileEntries(catalog());
         // 작업 090 ③: 가구(모델 15 + 아이콘 11)에 옷 열일곱(열여섯 + 시험 옷)의 모델·아이콘 34가 더해진다(고글은 파일 없음)
-        assertThat(entries).as("B11 file entries (furniture 15 models + 11 icons, wearables 17 models + 17 icons)").hasSize(60);
+        assertThat(entries).as("B11 file entries (furniture 15 models + 11 icons, wearables 17 models + 17 icons, 작업 128 가구점 모델 다섯)").hasSize(65);
         for (JsonNode entry : entries) {
             String url = entry.path("url").asText();
             String sha = entry.path("sha256").asText();
@@ -503,7 +507,8 @@ class CatalogFilesSpecTest extends IntegrationTestSupport {
     private JsonNode testFurniture() throws Exception {
         List<JsonNode> others = new ArrayList<>();
         for (JsonNode item : catalog().get("items")) {
-            if ("furniture".equals(item.path("kind").asText()) && !FOURTEEN.contains(item.path("id").asText())) {
+            if ("furniture".equals(item.path("kind").asText()) && !FOURTEEN.contains(item.path("id").asText())
+                    && !ItemCatalogDrawSpecTest.SHOP_PRODUCTS.contains(item.path("id").asText())) {
                 others.add(item);
             }
         }

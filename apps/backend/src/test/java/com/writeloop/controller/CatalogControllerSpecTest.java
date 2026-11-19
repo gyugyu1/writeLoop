@@ -132,9 +132,11 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
         FURNITURE.forEach(furniture -> expected.add(furniture.id()));
         expected.add(TEST_FURNITURE);
         WEARABLES.forEach(wearable -> expected.add(wearable.id()));
+        // 작업 128 07 결정: 가구점 진열 상품 셋(가구)과 애셋 둘이 더해진다
+        expected.addAll(List.of("walnutBed", "grandmasFloorBedding", "cloudDesk", "shopInterior", "shopkeeperBeodeul"));
         // 작업 090 ③: 옷 열일곱 밖의 시험 옷 하나(id는 명세에 없어 보지 않는다)가 더해진다
-        assertThat(items.size()).as("C2 item count").isEqualTo(33);
-        assertThat(new LinkedHashSet<>(ids)).as("C2 ids are distinct").hasSize(33);
+        assertThat(items.size()).as("C2 item count").isEqualTo(38);
+        assertThat(new LinkedHashSet<>(ids)).as("C2 ids are distinct").hasSize(38);
         assertThat(ids).as("C2 ids contain the known items").containsAll(expected);
         List<JsonNode> others = new ArrayList<>();
         for (JsonNode item : items) {
@@ -158,6 +160,13 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
                 assertThat(fieldNames(assets.get("model"))).as("C3 model keys of %s", id)
                         .isEqualTo(new LinkedHashSet<>(List.of("url", "sha256", "bytes")));
                 assertThat(item.get("draw").isObject()).as("C3 draw of furniture %s is an object: %s", id, item).isTrue();
+            } else if ("asset".equals(item.path("kind").asText())) {
+                // 작업 128 07 결정: 애셋은 모델 파일만 있고 그리기 정보가 없다
+                JsonNode assets = item.get("assets");
+                assertThat(assets.isObject()).as("C3 assets of asset %s is an object: %s", id, item).isTrue();
+                assertThat(fieldNames(assets.get("model"))).as("C3 model keys of %s", id)
+                        .isEqualTo(new LinkedHashSet<>(List.of("url", "sha256", "bytes")));
+                assertThat(item.get("draw").isNull()).as("C3 draw of asset %s is null: %s", id, item).isTrue();
             } else if ("goggles".equals(id)) {
                 // 작업 090 ③ 결정 05 1: 고글은 파일·그리기 정보가 없다
                 assertThat(item.get("assets").isNull()).as("C3 assets of %s is null: %s", id, item).isTrue();

@@ -37,6 +37,12 @@ public class ItemCatalogDrawSpecTest {
             "desk", "bookcase", "board", "window", "wardrobe", "rug", "lamp",
             "bed", "nightstand", "floorLamp", "plant", "smallPlant", "books", "frame");
 
+    /** 작업 128 07 결정: 가구점 진열 상품 셋(팔지 않고 처음 가지지도 않는 가구). 시험 가구 하나를 찾을 때 뺀다. */
+    public static final List<String> SHOP_PRODUCTS = List.of("walnutBed", "grandmasFloorBedding", "cloudDesk");
+
+    /** 작업 128 07 결정: 가구점 애셋 둘(kind asset, 모델 파일만). */
+    public static final List<String> SHOP_ASSETS = List.of("shopInterior", "shopkeeperBeodeul");
+
     /** 결정 05의 시험 가구 id. */
     public static final String TEST_FURNITURE = "armchair";
 
@@ -162,10 +168,12 @@ public class ItemCatalogDrawSpecTest {
         }
         List<String> expected = new ArrayList<>(FOURTEEN);
         expected.add(TEST_FURNITURE);
-        assertThat(furniture).as("B1 furniture count").hasSize(15);
+        // 작업 128: 가구점 진열 상품 셋이 더해져 열다섯 + 셋
+        assertThat(furniture).as("B1 furniture count").hasSize(18);
         assertThat(furniture).as("B1 furniture = fourteen + one test furniture").containsAll(FOURTEEN);
-        assertThat(furniture.stream().filter(id -> !FOURTEEN.contains(id)).toList())
-                .as("B1 exactly one furniture outside the fourteen").hasSize(1);
+        assertThat(furniture.stream().filter(id -> !FOURTEEN.contains(id) && !SHOP_PRODUCTS.contains(id)).toList())
+                .as("B1 exactly one furniture outside the fourteen and the shop products").hasSize(1);
+        assertThat(furniture).as("B1 shop products").containsAll(SHOP_PRODUCTS);
     }
 
     @Test
@@ -345,7 +353,8 @@ public class ItemCatalogDrawSpecTest {
     private static JsonNode testFurnitureInFile() throws Exception {
         List<JsonNode> others = new ArrayList<>();
         for (JsonNode item : catalogFile().get("items")) {
-            if ("furniture".equals(item.path("kind").asText()) && !FOURTEEN.contains(item.path("id").asText())) {
+            if ("furniture".equals(item.path("kind").asText()) && !FOURTEEN.contains(item.path("id").asText())
+                    && !SHOP_PRODUCTS.contains(item.path("id").asText())) {
                 others.add(item);
             }
         }

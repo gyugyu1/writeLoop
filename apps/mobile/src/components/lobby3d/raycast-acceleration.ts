@@ -14,7 +14,7 @@ export function accelerateRaycast(mesh: THREE.Mesh): void {
   if (!geometry || !geometry.getAttribute("position")) return;
   if (geometry.morphAttributes && Object.keys(geometry.morphAttributes).length > 0) return;
   try {
-    geometry.boundsTree ??= new MeshBVH(geometry, { indirect: true, strategy: SAH, maxLeafSize: 3 });
+    geometry.boundsTree ??= new MeshBVH(geometry, { indirect: true, strategy: SAH, targetLeafSize: 3 });
     mesh.raycast = acceleratedRaycast as typeof mesh.raycast;
   } catch (error) {
     console.warn("[lobby3d] 누르기 판정 가속 구조를 만들지 못했습니다", error);

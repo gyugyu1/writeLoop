@@ -13,6 +13,7 @@ import {
   MARKS,
   MENU_FOR_MARK,
   ROOM_MARK_IDS,
+  SHOP_MARK_IDS,
   VILLAGE_MARK_IDS,
   applyArea,
   hasPlaceBubble,
@@ -34,7 +35,9 @@ import {
   type PlaceId,
   type PointerHit
 } from "@/lib/lobby3d/engine";
-import { VILLAGE_START } from "@/lib/lobby3d/village";
+import { VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
+import { SHOP_NODES, SHOP_SPAWN_HEADING, shopSlotIndex } from "@/lib/lobby3d/shop";
+import ShopDisplaySheet from "@/components/lobby3d/shop-display-sheet";
 import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type { WardrobeSlot } from "@/lib/types";
 import { daylightAt } from "@/lib/lobby3d/daylight";
@@ -67,20 +70,24 @@ export const ACTION_LABELS: Record<ActionType, string> = {
   poke: "눌렀을 때 반응"
 };
 const TEST_ACTIONS: ActionType[] = ["wave", "jump", "hop", "point", "spin", "look"];
-/** 방·마을의 장소 모두(이름표·말풍선 자리를 미리 만들어 둔다). */
-const ALL_PLACE_IDS: readonly PlaceId[] = [...ROOM_MARK_IDS, ...VILLAGE_MARK_IDS];
-/** 방↔마을 전환: 검게 어두워지는 시간과 밝아지는 시간(밀리초). */
+/** 방·마을·가구점의 장소 모두(이름표·말풍선 자리를 미리 만들어 둔다). */
+const ALL_PLACE_IDS: readonly PlaceId[] = [...ROOM_MARK_IDS, ...VILLAGE_MARK_IDS, ...SHOP_MARK_IDS];
+/** 구역 전환(방↔마을↔가구점): 검게 어두워지는 시간과 밝아지는 시간(밀리초). */
 const TRAVEL_FADE_MS = 300;
 const VILLAGE_LOADING = "마을로 나가는 중…";
-/** 마을 모델을 이만큼 넘게 기다릴 때만 "마을로 나가는 중…"을 보인다(이미 읽었으면 바로 떠서 보이지 않는다. 어두워진 뒤 0.15초라 누른 뒤 약 0.45초). */
+const SHOP_LOADING = "가구점에 들어가는 중…";
+/** 마을·가구점 모델을 이만큼 넘게 기다릴 때만 "…중"을 보인다(이미 읽었으면 바로 떠서 보이지 않는다. 어두워진 뒤 0.15초라 누른 뒤 약 0.45초). */
 const VILLAGE_LOADING_DELAY_MS = 150;
 const VILLAGE_FAILED = "마을을 불러오지 못했어요. 잠시 뒤 다시 나가 주세요";
+const SHOP_FAILED = "가구점을 불러오지 못했어요";
 
 /** 시험판의 구역 버튼. */
-const AREA_LABELS: Record<LobbyArea, string> = { room: "방", village: "마을" };
+/** 가구점은 마을 이름표 "가구점"과 헷갈리지 않게 "가구점 실내"로 쓴다. */
+const AREA_LABELS: Record<LobbyArea, string> = { room: "방", village: "마을", shop: "가구점 실내" };
 
 /** 그 구역의 장소들(방은 지금 배치의 옷장 포함). */
 function placesOf(area: LobbyArea): readonly PlaceId[] {
+  if (area === "shop") return SHOP_MARK_IDS;
   return area === "village" ? VILLAGE_MARK_IDS : roomPlaceIds();
 }
 
@@ -144,6 +151,8 @@ interface ViewState {
   bubbleButton: string | null;
   place: PlaceId | null;
   idleBubble: boolean;
+  /** 가구점 버들의 말풍선 글(없으면 빈 글). */
+  npcText: string;
 }
 
 /** 홈의 카툰 명암(3단)과 외곽선(1배). 시험판에서만 바꿀 수 있다. */
@@ -163,7 +172,8 @@ function sameView(a: ViewState, b: ViewState) {
     a.bubbleText === b.bubbleText &&
     a.bubbleButton === b.bubbleButton &&
     a.place === b.place &&
-    a.idleBubble === b.idleBubble
+    a.idleBubble === b.idleBubble &&
+    a.npcText === b.npcText
   );
 }
 
@@ -212,6 +222,8 @@ interface LobbyBubblesProps {
   applyOverlay: (snap: LobbySnapshot) => void;
   idleButton: { label: string; onPress: () => void } | null;
   onPlaceButton: (id: PlaceId) => void;
+  /** 가구점 버들 이름표 화면 자리(버들 말풍선을 그 위에 띄운다). */
+  npcAnchor: { left: Animated.Value; top: Animated.Value };
 }
 
 /**
@@ -231,12 +243,14 @@ const LobbyBubbles = memo(function LobbyBubbles({
   renderedLine,
   applyOverlay,
   idleButton,
-  onPlaceButton
+  onPlaceButton,
+  npcAnchor
 }: LobbyBubblesProps) {
   const view = useStore(viewStore);
   useStore(settleStore);
   // 말풍선 높이(재어 본 값). 꼬리 끝이 머리 위 점에 오도록 이만큼 올린다.
   const [bubbleHeight, setBubbleHeight] = useState(60);
+  const [npcHeight, setNpcHeight] = useState(48);
   // 재지 않은 장소(처음 보이는 옷장)는 80으로 본다
   const [placeHeights, setPlaceHeights] = useState<Partial<Record<PlaceId, number>>>(
     () => Object.fromEntries(ALL_PLACE_IDS.map((id) => [id, 80])) as Record<PlaceId, number>
@@ -328,6 +342,35 @@ const LobbyBubbles = memo(function LobbyBubbles({
             ) : null}
           </View>
           <View style={styles.bubbleTail} pointerEvents="none" />
+        </Animated.View>
+      ) : null}
+
+      {/* 가구점 버들의 인사 말풍선: 버들 이름표 바로 위(이름표 상자 위 끝에서 꼬리가 닿는다) */}
+      {view.npcText && !hidden ? (
+        <Animated.View
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+          onLayout={(e) => {
+            const h = Math.round(e.nativeEvent.layout.height);
+            if (h > 0 && h !== npcHeight) setNpcHeight(h);
+          }}
+          style={[
+            styles.bubbleWrap,
+            {
+              transform: [
+                { translateX: npcAnchor.left },
+                { translateY: npcAnchor.top },
+                { translateX: -BUBBLE_WIDTH / 2 },
+                { translateY: -npcHeight - 34 }
+              ]
+            }
+          ]}
+        >
+          <View style={styles.bubble}>
+            <Text style={styles.npcName}>버들</Text>
+            <Text style={styles.bubbleText}>{view.npcText}</Text>
+          </View>
+          <View style={styles.bubbleTail} />
         </Animated.View>
       ) : null}
     </>
@@ -478,7 +521,8 @@ export default function Lobby3dScreen({
     simRef.current = new LobbySim();
   }
   const sim = simRef.current;
-  // 지금 구역(방·마을). 방의 '나가기'·마을 집의 '들어가기'(검게 어두워지는 전환)와 개발 화면 시험판(바로 바뀜)에서 바꾼다
+  // 지금 구역(방·마을·가구점). 방의 '나가기'·마을 집의 '들어가기'·가구점의 '들어가기'·'나가기'(검게 어두워지는 전환)와
+  // 개발 화면 시험판(바로 바뀜)에서 바꾼다
   const [area, setArea] = useState<LobbyArea>("room");
   const areaRef = useRef<LobbyArea>("room");
   // 라룹이가 입은 것: 개발 화면 시험판은 '착용 시험' 버튼으로(서버와 상관없이), 홈은 받은 값(wear)으로
@@ -498,18 +542,25 @@ export default function Lobby3dScreen({
   const travelFade = useRef(new Animated.Value(0)).current;
   const [traveling, setTraveling] = useState(false);
   const travelingRef = useRef(false);
-  const [villageLoading, setVillageLoading] = useState(false);
-  // 마을 모델이 장면에 들어온 적이 있는지(한 번 읽으면 다시 나갈 때 바로 뜬다)와, 다 뜨면 밝아질 전환
+  // 마을·가구점 모델을 기다리는 동안 어두운 화면에 보이는 글("마을로 나가는 중…" 등). 없으면 null
+  const [loadingText, setLoadingText] = useState<string | null>(null);
+  // 마을·가구점 모델이 장면에 들어왔는지(지금 그 구역에 들어와 다 뜬 적이 있는지)와, 다 뜨면 밝아질 전환.
+  // 마을은 한 번 읽으면 다시 나갈 때 바로 뜬다. 가구점은 들어올 때마다 실내를 새로 붙이므로 들어올 때마다 기다린다
   const villageReadyRef = useRef(false);
   const waitingVillage = useRef<(() => void) | null>(null);
-  // 마을로 나가기 전에 방에서 서 있던 자리와 방향(마을을 못 읽어 방에 남을 때 되돌린다)
-  const travelFrom = useRef<{ x: number; z: number; heading: number } | null>(null);
+  const waitingShop = useRef<(() => void) | null>(null);
+  // 전환 전에 서 있던 구역·자리·방향(마을·가구점을 못 읽어 되돌아갈 때 쓴다)
+  const travelFrom = useRef<{ area: LobbyArea; x: number; z: number; heading: number } | null>(null);
   const loadingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stopLoadingText = () => {
     if (loadingTimer.current) clearTimeout(loadingTimer.current);
     loadingTimer.current = null;
-    setVillageLoading(false);
+    setLoadingText(null);
   };
+  // 가구점 진열대의 진열 목록 시트(연 진열대 번호 0~2, 닫혀 있으면 null). 연 동안 로비를 누르지 못한다
+  const [displaySlot, setDisplaySlot] = useState<number | null>(null);
+  const displayOpenRef = useRef(false);
+  displayOpenRef.current = displaySlot !== null;
   useEffect(
     () => () => {
       if (loadingTimer.current) clearTimeout(loadingTimer.current);
@@ -519,7 +570,7 @@ export default function Lobby3dScreen({
 
   // 말풍선·장소 안내·메뉴 강조의 상태. 화면 상태로 두면 바뀔 때마다 로비 화면 전체가 다시 그려져(개발 빌드에서 한 번 26~34ms) 한 프레임이 끊겼다.
   // 그래서 화면 밖 저장소에 두고, 그 상태를 쓰는 말풍선 묶음(LobbyBubbles)과 아래 메뉴(LobbyMenu)만 구독해 다시 그린다
-  const viewStore = useRef(createStore<ViewState>({ bubbleText: "", bubbleButton: null, place: null, idleBubble: false })).current;
+  const viewStore = useRef(createStore<ViewState>({ bubbleText: "", bubbleButton: null, place: null, idleBubble: false, npcText: "" })).current;
   // 초당 프레임 표시. 값이 바뀔 때만 다시 그린다(이름표·말풍선 자리는 아래 Animated 값으로 옮긴다).
   // 초당 프레임 수는 작은 표시(FpsText)만 다시 그린다(로비 화면 전체를 1초마다 다시 그리면 그때마다 프레임이 끊겼다)
   const fpsListener = useRef<((fps: number) => void) | null>(null);
@@ -537,9 +588,9 @@ export default function Lobby3dScreen({
   const clock = useLobbyClock(clockOverride);
   const clockMinute = Math.floor(clock.getTime() / 60_000);
   const daylight = useMemo(() => daylightAt(new Date(clockMinute * 60_000)), [clockMinute]);
-  // 마을 배경음악: 구역(마을인지)과 하루의 때를 알린다(같은 값이면 곡은 그대로). 로비가 닫히면 마을이 아니다
+  // 마을 배경음악: 구역(마을인지)과 하루의 때를 알린다(같은 값이면 곡은 그대로). 가구점 안에서도 이어서 나온다. 로비가 닫히면 마을이 아니다
   useEffect(() => {
-    setVillageBgmArea(area === "village", daylight.phase);
+    setVillageBgmArea(area === "village" || area === "shop", daylight.phase);
   }, [area, daylight.phase]);
   useEffect(() => () => setVillageBgmArea(false, "day"), []);
   const shownHours = clockOverride?.hours ?? Math.round((clock.getHours() + clock.getMinutes() / 60) * 4) / 4;
@@ -552,7 +603,8 @@ export default function Lobby3dScreen({
       bubbleText: snap.bubbleText,
       bubbleButton: snap.bubbleButton,
       place: snap.place,
-      idleBubble: snap.idleBubble
+      idleBubble: snap.idleBubble,
+      npcText: snap.npcText
     };
     if (!sameView(viewStore.get(), next)) viewStore.set(next);
     actionListener.current?.(snap.action?.type ?? null);
@@ -811,27 +863,46 @@ export default function Lobby3dScreen({
   enterPlaceRef.current = enterPlace;
 
   /**
-   * 구역을 바꾼다(개발 화면 시험판). 마을이면 라룹이 집 문 앞에서 카메라 쪽을 보고, 방이면 입구 발판 안쪽에서 방 안쪽을 보고 선다.
-   * 꾸미기 중에는 바꾸지 않는다.
+   * 구역을 바꾼다(개발 화면 시험판). 마을이면 라룹이 집 문 앞에서 카메라 쪽을 보고, 방이면 입구 발판 안쪽에서 방 안쪽을 보고,
+   * 가구점이면 들어서는 자리에서 매장 안쪽을 보고 선다. 꾸미기 중에는 바꾸지 않는다.
    */
   const switchArea = (next: LobbyArea) => {
     if (editorRef.current || travelingRef.current || next === areaRef.current) return;
     placeInArea(next);
   };
-  /** 구역을 바꾸고 라룹이를 그 구역의 들어서는 자리에 세운다. */
-  const placeInArea = (next: LobbyArea) => {
+  /**
+   * 구역을 바꾸고 라룹이를 그 구역의 들어서는 자리에 세운다. 가구점에서 마을로 나오면 가구점 문 앞에서 카메라 쪽을 본다
+   * (그 밖에 마을로 나오면 라룹이 집 문 앞).
+   */
+  const placeInArea = (next: LobbyArea, from: LobbyArea = areaRef.current) => {
     applyArea(next);
     areaRef.current = next;
     const nowMs = Date.now();
-    if (next === "village") sim.placeAt(VILLAGE_START, VILLAGE_START.heading, nowMs);
+    if (next === "village") {
+      const at = from === "shop" ? { ...VILLAGE_PLACES.furnitureShop.approach[0], heading: 0 } : VILLAGE_START;
+      sim.placeAt(at, at.heading, nowMs);
+    } else if (next === "shop") sim.placeAt(SHOP_NODES.playerSpawn, SHOP_SPAWN_HEADING, nowMs);
     else sim.placeAt(MARKS.door.approach[0], Math.PI, nowMs);
     setArea(next);
     syncView();
   };
+  /** 모델을 기다리는 어두운 화면에서, 조금 넘게 걸리면 글을 보인다(동작 줄이기면 어두워지는 움직임이 없으니 바로 보인다). */
+  const showLoadingLater = (text: string, waiting: MutableRefObject<(() => void) | null>) => {
+    if (loadingTimer.current) clearTimeout(loadingTimer.current);
+    if (sim.reduceMotion) {
+      setLoadingText(text);
+      return;
+    }
+    loadingTimer.current = setTimeout(() => {
+      loadingTimer.current = null;
+      if (waiting.current) setLoadingText(text);
+    }, VILLAGE_LOADING_DELAY_MS);
+  };
   /**
-   * 방↔마을 전환: 검게 어두워진 뒤(약 0.3초) 구역을 바꾸고, 밝아진다(약 0.3초). 마을로 갈 때 마을 모델을 아직 다 읽지 못했으면
-   * 어두운 채 "마을로 나가는 중…"을 보이고 다 뜨면 밝아진다. 동작 줄이기면 어두워지기·밝아지기 없이 바로 바꾼다.
-   * after는 밝아진 뒤 한다(마을에서 '바로 놓기': 방으로 와서 꾸미기를 연다).
+   * 구역 전환(방↔마을↔가구점): 검게 어두워진 뒤(약 0.3초) 구역을 바꾸고, 밝아진다(약 0.3초). 마을로 갈 때 마을 모델을 아직 다 읽지 못했으면
+   * 어두운 채 "마을로 나가는 중…"을 보이고 다 뜨면 밝아진다. 가구점은 들어올 때마다 실내를 새로 붙이므로, 다 뜰 때까지 어두운 채
+   * 기다린다(조금 넘게 걸리면 "가구점에 들어가는 중…"). 동작 줄이기면 어두워지기·밝아지기 없이 바로 바꾼다.
+   * after는 밝아진 뒤 한다(마을·가구점에서 '바로 놓기': 방으로 와서 꾸미기를 연다).
    */
   const travel = (next: LobbyArea, after?: () => void) => {
     if (travelingRef.current || editorRef.current || next === areaRef.current) return;
@@ -841,7 +912,7 @@ export default function Lobby3dScreen({
     const finish = () => {
       travelingRef.current = false;
       setTraveling(false);
-      setVillageLoading(false);
+      setLoadingText(null);
       after?.();
     };
     const reveal = () => {
@@ -853,21 +924,20 @@ export default function Lobby3dScreen({
       Animated.timing(travelFade, { toValue: 0, duration: TRAVEL_FADE_MS, useNativeDriver: true }).start(finish);
     };
     const swap = () => {
-      if (next === "village") travelFrom.current = { x: sim.x, z: sim.z, heading: sim.heading };
+      travelFrom.current = { area: areaRef.current, x: sim.x, z: sim.z, heading: sim.heading };
       placeInArea(next);
       if (next === "village" && !villageReadyRef.current) {
+        // 마을 모델이 뜰 때까지 검은 채 기다린다
         travelFade.setValue(1);
         waitingVillage.current = reveal;
-        // 마을 모델이 뜰 때까지 검은 채 기다린다. 조금 넘게 걸리면 "마을로 나가는 중…"을 보인다(동작 줄이기면 어두워지는 움직임이 없으니 바로 보인다)
-        if (loadingTimer.current) clearTimeout(loadingTimer.current);
-        if (sim.reduceMotion) {
-          setVillageLoading(true);
-          return;
-        }
-        loadingTimer.current = setTimeout(() => {
-          loadingTimer.current = null;
-          if (waitingVillage.current) setVillageLoading(true);
-        }, VILLAGE_LOADING_DELAY_MS);
+        showLoadingLater(VILLAGE_LOADING, waitingVillage);
+        return;
+      }
+      if (next === "shop") {
+        // 가구점 실내·버들·진열 상품이 뜰 때까지 검은 채 기다린다
+        travelFade.setValue(1);
+        waitingShop.current = reveal;
+        showLoadingLater(SHOP_LOADING, waitingShop);
         return;
       }
       reveal();
@@ -885,7 +955,7 @@ export default function Lobby3dScreen({
     stopLoadingText();
     waiting();
   }, []);
-  // 마을 모델을 읽지 못하면 방으로 돌아와 밝아지고 안내한다(전환 중이 아니면 안내만)
+  // 마을 모델을 읽지 못하면 떠나온 구역(방, 가구점)으로 돌아와 밝아지고 안내한다(전환 중이 아니면 안내만)
   const onVillageFailed = useCallback(() => {
     villageReadyRef.current = false;
     const waiting = waitingVillage.current;
@@ -894,15 +964,32 @@ export default function Lobby3dScreen({
       showToast(VILLAGE_FAILED);
       return;
     }
-    // 방으로 되돌리고, 나가기 전 자리·방향 그대로 세운다
-    placeInAreaRef.current("room");
+    // 떠나온 구역으로 되돌리고, 나가기 전 자리·방향 그대로 세운다
     const from = travelFrom.current;
+    placeInAreaRef.current(from?.area ?? "room");
     if (from) sim.placeAt({ x: from.x, z: from.z }, from.heading, Date.now(), true);
     syncView();
     stopLoadingText();
     waiting();
     showToast(VILLAGE_FAILED);
   }, [showToast, sim, syncView]);
+  // 가구점 실내가 장면에 들어오면 밝아진다(들어올 때마다)
+  const onShopReady = useCallback(() => {
+    const waiting = waitingShop.current;
+    waitingShop.current = null;
+    if (!waiting) return;
+    stopLoadingText();
+    waiting();
+  }, []);
+  // 가구점 모델을 읽지 못하면 마을 가구점 문 앞으로 돌아와 밝아지고 안내한다(전환 중이 아니면 마을로 돌아가 안내만)
+  const onShopFailed = useCallback(() => {
+    const waiting = waitingShop.current;
+    waitingShop.current = null;
+    placeInAreaRef.current("village", "shop");
+    stopLoadingText();
+    waiting?.();
+    showToast(SHOP_FAILED);
+  }, [showToast]);
   const placeInAreaRef = useRef(placeInArea);
   placeInAreaRef.current = placeInArea;
 
@@ -951,7 +1038,7 @@ export default function Lobby3dScreen({
       }
       // 시트를 연 동안에는 로비를 누르지 못한다. 막는 중에 누른 것이 남지 않게 지금 누르기도 거둔다.
       // 시트를 연 동안과 '들어가기' 동작을 하는 동안에는 로비를 누르지 못한다
-      if (inputBlockedRef.current || sim.scene || travelingRef.current) {
+      if (inputBlockedRef.current || sim.scene || travelingRef.current || displayOpenRef.current) {
         if (phase !== "move") sim.pointerCancel();
         return;
       }
@@ -1070,8 +1157,11 @@ export default function Lobby3dScreen({
       startEdit();
       if (editorRef.current) takeOutEdit({ id: request.itemId, type: request.type });
     };
-    // 마을에 있으면 방으로 돌아온 뒤(어두워졌다 밝아진 뒤) 꾸미기를 연다
-    if (areaRef.current === "village") travelRef.current("room", place);
+    // 마을·가구점에 있으면 방으로 돌아온 뒤(어두워졌다 밝아진 뒤) 꾸미기를 연다
+    if (areaRef.current !== "room") {
+      setDisplaySlot(null);
+      travelRef.current("room", place);
+    }
     else place();
   };
   useEffect(() => {
@@ -1125,6 +1215,28 @@ export default function Lobby3dScreen({
       travel("room");
       return;
     }
+    // 마을 가구점의 '들어가기'는 실내로, 실내 출입문의 '나가기'는 마을 가구점 문 앞으로 간다
+    if (id === "furnitureShop") {
+      travel("shop");
+      return;
+    }
+    if (id === "shopExit") {
+      travel("village");
+      return;
+    }
+    // 계산대의 '인사하기': 라룹이가 손을 흔들고 버들 머리 위에 인사 말풍선이 뜬다
+    if (id === "shopCounter") {
+      sim.greetShopkeeper(Date.now());
+      syncView();
+      return;
+    }
+    // 진열대의 '바꾸기': 그 진열대의 진열 목록 시트를 연다
+    const slot = shopSlotIndex(id);
+    if (slot >= 0) {
+      sim.pointerCancel();
+      setDisplaySlot(slot);
+      return;
+    }
     // 장소마다 동작(생각하기·의자에 앉기·책 꺼내기)을 한 뒤 들어간다. 동작이 없거나 "동작 줄이기"면 바로 들어간다
     if (sim.startScene(id, Date.now())) {
       syncView();
@@ -1164,6 +1276,8 @@ export default function Lobby3dScreen({
         area={area}
         onVillageReady={onVillageReady}
         onVillageFailed={onVillageFailed}
+        onShopReady={onShopReady}
+        onShopFailed={onShopFailed}
         wear={wear}
         look={look}
       />
@@ -1218,6 +1332,7 @@ export default function Lobby3dScreen({
         applyOverlay={applyOverlay}
         idleButton={idleButton}
         onPlaceButton={pressPlace}
+        npcAnchor={labelPos.shopCounter}
       />
 
       <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
@@ -1384,7 +1499,7 @@ export default function Lobby3dScreen({
             </View>
             <Text style={styles.panelLabel}>구역</Text>
             <View style={styles.row}>
-              {(["room", "village"] as const).map((next) => (
+              {(["room", "village", "shop"] as const).map((next) => (
                 <Pressable
                   key={next}
                   accessibilityRole="button"
@@ -1549,17 +1664,19 @@ export default function Lobby3dScreen({
       {/* 방↔마을 전환: 검게 어두워졌다 밝아진다. 로비의 맨 위에 덮여, 전환 중에는 3D·위 줄·아래 메뉴 모두 누르기가 닿지 않는다 */}
       <Animated.View
         pointerEvents={traveling ? "auto" : "none"}
-        accessibilityElementsHidden={!villageLoading}
-        importantForAccessibility={villageLoading ? "auto" : "no-hide-descendants"}
+        accessibilityElementsHidden={!loadingText}
+        importantForAccessibility={loadingText ? "auto" : "no-hide-descendants"}
         style={[styles.travelShade, { opacity: travelFade }]}
       >
-        {villageLoading ? (
+        {loadingText ? (
           <View style={styles.travelLoading} accessibilityLiveRegion="polite">
             <ActivityIndicator color="#FFFFFF" />
-            <Text style={styles.preparingText}>{VILLAGE_LOADING}</Text>
+            <Text style={styles.preparingText}>{loadingText}</Text>
           </View>
         ) : null}
       </Animated.View>
+      {/* 가구점 진열대의 진열 목록. 고르면 그 진열대만 바뀌고 닫힌다 */}
+      <ShopDisplaySheet slot={displaySlot} onClose={() => setDisplaySlot(null)} />
     </View>
   );
 }
@@ -1655,6 +1772,7 @@ const styles = StyleSheet.create({
     gap: 6
   },
   bubbleText: { fontSize: 13, lineHeight: 18, fontWeight: "500", color: "#2B1810", textAlign: "center" },
+  npcName: { fontSize: 12, lineHeight: 16, fontWeight: "800", color: ACCENT, textAlign: "center" },
   bubbleButton: { minHeight: 34, paddingHorizontal: 14, borderRadius: 17, backgroundColor: ACCENT, justifyContent: "center" },
   bubbleButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
   bubbleTail: {

@@ -1,6 +1,20 @@
 import { DEFAULT_LOBBY_LAYOUT, isClosetPlaceId, layoutGeometry, type ClosetPlaceId, type LobbyLayout, type WallSide } from "./lobby-layout";
 import { currentRoom, outsideExit, outsidePlace, setCurrentRoom, type RoomSpec } from "./room";
 import { VILLAGE, VILLAGE_BOUNDARY, VILLAGE_PLACES, VILLAGE_SOLID_TILES, type VillageBuildingId } from "./village";
+import {
+  SHOP,
+  SHOP_BOUNDS,
+  SHOP_EXIT_APPROACH,
+  SHOP_NODES,
+  SHOP_PLACE_IDS,
+  SHOP_SLOTS,
+  SHOP_SOLID_CELLS,
+  SHOPKEEPER_GREETING,
+  SHOPKEEPER_GREETING_MS,
+  shopDisplay,
+  shopProduct,
+  type ShopPlaceId
+} from "./shop";
 
 // 3D 로비(라이트루프의 방)의 동작 규칙. 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 // 좌표: 바닥 한 칸 = 1. x는 왼쪽→오른쪽(0..width), z는 뒷벽→앞(0..depth). 높이는 y.
@@ -12,11 +26,11 @@ export type MarkId = "board" | "window" | "desk" | "door" | "bookcase";
  * 방의 장소 다섯, 방에 놓인 옷장마다의 장소(ClosetPlaceId), 마을의 장소 넷(건물 문 앞).
  * 지금 구역(currentArea)의 장소만 쓴다(activePlaceIds).
  */
-export type PlaceId = MarkId | ClosetPlaceId | VillageBuildingId;
-export type { ClosetPlaceId };
+export type PlaceId = MarkId | ClosetPlaceId | VillageBuildingId | ShopPlaceId;
+export type { ClosetPlaceId, ShopPlaceId };
 export { isClosetPlaceId };
-/** 로비의 구역: 라룹이 방, 바깥 마을. */
-export type LobbyArea = "room" | "village";
+/** 로비의 구역: 라룹이 방, 바깥 마을, 마을 가구점 실내. */
+export type LobbyArea = "room" | "village" | "shop";
 export type ActionType = "wave" | "jump" | "hop" | "point" | "spin" | "look" | "poke";
 
 export interface FloorPoint {
@@ -116,10 +130,13 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   }
 };
 
-/** 마을 장소의 말풍선. 라룹이 집은 '들어가기'로 방에 돌아가고, 닫힌 건물은 버튼 없이 안내만 한다(버튼 글이 비어 있으면 버튼이 없다). */
+/**
+ * 마을 장소의 말풍선. 라룹이 집은 '들어가기'로 방에 돌아가고, 가구점은 '들어가기'로 실내에 들어간다.
+ * 닫힌 건물은 버튼 없이 안내만 한다(버튼 글이 비어 있으면 버튼이 없다).
+ */
 const VILLAGE_PROMPTS: Record<VillageBuildingId, { prompt: string; buttonLabel: string }> = {
   home: { prompt: "집으로 들어갈까?", buttonLabel: "들어가기" },
-  furnitureShop: { prompt: "가구점은 곧 열려요", buttonLabel: "" },
+  furnitureShop: { prompt: "가구점에 들어갈까?", buttonLabel: "들어가기" },
   clothingShop: { prompt: "옷집은 곧 열려요", buttonLabel: "" }
 };
 
@@ -130,6 +147,54 @@ export const VILLAGE_MARKS: Record<VillageBuildingId, MarkInfo<VillageBuildingId
     { id: place.id, label: place.label, faceTo: place.faceTo, approach: place.approach, ...VILLAGE_PROMPTS[place.id], enterMessage: "" }
   ])
 ) as Record<VillageBuildingId, MarkInfo<VillageBuildingId>>;
+
+/** 낱말 끝 글자에 받침이 있는지(한글이 아니면 없다고 본다). 이야/야를 고른다. */
+function endsWithBatchim(word: string): boolean {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  return code >= 0 && code <= 11171 && code % 28 !== 0;
+}
+
+/** 가구점 진열대 장소(index 0~2). 말풍선은 지금 진열 상품 이름으로 만든다(진열을 바꾸면 바로 바뀐다). */
+function slotMark(index: number): MarkInfo<ShopPlaceId> {
+  const slot = SHOP_SLOTS[index];
+  return {
+    id: `shopSlot${index + 1}` as ShopPlaceId,
+    label: "진열대",
+    faceTo: slot.center,
+    approach: [slot.approach],
+    get prompt() {
+      const name = shopProduct(shopDisplay()[index]).name;
+      return `${name}${endsWithBatchim(name) ? "이야" : "야"}.\n다른 가구로 바꿔 볼까?`;
+    },
+    buttonLabel: "바꾸기",
+    enterMessage: ""
+  };
+}
+
+/** 가구점 실내의 장소: 출입문, 버들(계산대), 진열대 셋. */
+export const SHOP_MARKS: Record<ShopPlaceId, MarkInfo<ShopPlaceId>> = {
+  shopExit: {
+    id: "shopExit",
+    label: "마을로",
+    faceTo: SHOP_NODES.exitTrigger,
+    approach: [SHOP_EXIT_APPROACH],
+    prompt: "마을로 나갈까?",
+    buttonLabel: "나가기",
+    enterMessage: ""
+  },
+  shopCounter: {
+    id: "shopCounter",
+    label: "버들",
+    faceTo: SHOP_NODES.checkoutNpc,
+    approach: [SHOP_NODES.checkoutInteract],
+    prompt: "버들에게 인사할까?",
+    buttonLabel: "인사하기",
+    enterMessage: ""
+  },
+  shopSlot1: slotMark(0),
+  shopSlot2: slotMark(1),
+  shopSlot3: slotMark(2)
+};
 
 /** 옷장 말풍선(로그인했는지에 따라). 로그인하면 대사 없이 '들어가기' 버튼만(2026-11-13 사용자 결정), 손님은 버튼 없이 안내만 한다. */
 export const CLOSET_PROMPT = { prompt: "", buttonLabel: "들어가기" } as const;
@@ -164,6 +229,7 @@ export function hasPlaceBubble(id: PlaceId): boolean {
 /** 장소 하나의 정보(방·마을 어느 쪽이든). */
 export function markInfo(id: PlaceId): MarkInfo<PlaceId> {
   if (isClosetPlaceId(id)) return closetMarks.get(id) ?? MISSING_CLOSET;
+  if (id in SHOP_MARKS) return SHOP_MARKS[id as ShopPlaceId];
   return id in VILLAGE_MARKS ? VILLAGE_MARKS[id as VillageBuildingId] : MARKS[id as MarkId];
 }
 
@@ -178,6 +244,8 @@ export function roomPlaceIds(): readonly PlaceId[] {
 }
 /** 마을의 장소. */
 export const VILLAGE_MARK_IDS: readonly PlaceId[] = ["home", "furnitureShop", "clothingShop"];
+/** 가구점 실내의 장소. */
+export const SHOP_MARK_IDS: readonly PlaceId[] = SHOP_PLACE_IDS;
 
 let area: LobbyArea = "room";
 
@@ -188,19 +256,25 @@ export function currentArea(): LobbyArea {
 
 /** 지금 구역의 장소들. */
 export function activePlaceIds(): readonly PlaceId[] {
+  if (area === "shop") return SHOP_MARK_IDS;
   return area === "village" ? VILLAGE_MARK_IDS : roomPlaces;
 }
 
-/** 걸어 다닐 바닥의 크기(칸). 길 찾기가 쓰는 값만 담는다. */
-export type AreaSize = Pick<RoomSpec, "width" | "depth">;
+/**
+ * 걸어 다닐 바닥의 크기(칸)와 걸을 수 있는지 보는 격자 한 칸의 크기(cell, 없으면 1칸). 길 찾기가 쓰는 값만 담는다.
+ * 막힌 칸 목록의 "열,행"은 이 격자의 번호다(방·마을은 1칸 격자, 가구점 실내는 0.25칸 격자).
+ */
+export type AreaSize = Pick<RoomSpec, "width" | "depth"> & { cell?: number };
 
-/** 지금 구역의 바닥 크기: 방이면 지금 방, 마을이면 마을. */
+/** 지금 구역의 바닥 크기: 방이면 지금 방, 마을이면 마을, 가구점이면 실내. */
 function activeSize(): AreaSize {
+  if (area === "shop") return SHOP;
   return area === "village" ? VILLAGE : currentRoom();
 }
 
-/** 지금 구역의 막힌 칸: 방이면 지금 배치의 가구, 마을이면 건물·소품·가장자리. */
+/** 지금 구역의 막힌 칸: 방이면 지금 배치의 가구, 마을이면 건물·소품·가장자리, 가구점이면 벽·계산대·선반·진열대. */
 function activeSolid(): ReadonlySet<string> {
+  if (area === "shop") return SHOP_SOLID_CELLS;
   return area === "village" ? VILLAGE_SOLID_TILES : solidTiles;
 }
 
@@ -277,16 +351,21 @@ export const SOLID_TILES: ReadonlySet<string> = solidTiles;
 
 const BODY_RADIUS = 0.32;
 const tileKey = (c: number, r: number) => `${c},${r}`;
+/** 바닥 길이를 격자 칸 수로(1칸 격자면 길이 그대로). */
+const gridSize = (length: number, cell: number) => (cell === 1 ? length : Math.round(length / cell));
 
 // 아래 길 찾기는 막힌 칸(solid)과 방(room)을 받을 수 있다. 주지 않으면 지금 배치의 막힌 칸과 지금 방이다
 // (편집 모드는 편집 중인 배치의 칸을 주고, 방에 배치 맞추기는 새 방을 준다).
 
 export function isBlocked(x: number, z: number, solid: ReadonlySet<string> = activeSolid(), room: AreaSize = activeSize()): boolean {
   if (x < 0.25 || x > room.width - 0.25 || z < 0.45 || z > room.depth) return true;
-  const c = Math.floor(x);
-  const r = Math.floor(z);
+  const cell = room.cell ?? 1;
+  const c = Math.floor(x / cell);
+  const r = Math.floor(z / cell);
+  const cols = gridSize(room.width, cell);
+  const rows = gridSize(room.depth, cell);
   // 방 안 칸은 막힌 칸 배열(캐시)로 본다(칸마다 글자 키를 만들지 않게). 방 끝(z = 깊이)처럼 배열 밖이면 목록에서 찾는다
-  if (c < room.width && r < room.depth) return blockedGrid(solid, room.width, room.depth)[r * room.width + c] === 1;
+  if (c < cols && r < rows) return blockedGrid(solid, cols, rows)[r * cols + c] === 1;
   return solid.has(tileKey(c, r));
 }
 
@@ -337,6 +416,23 @@ function blockedGrid(solid: ReadonlySet<string>, width: number, depth: number): 
   return blocked;
 }
 
+const standGrids = new WeakMap<ReadonlySet<string>, { width: number; depth: number; cell: number; blocked: Uint8Array }>();
+
+/** 잘게 나눈 격자에서 칸 가운데에 라룹이가 설 수 없는 칸마다 1인 배열(막힌 칸 목록마다 한 번 만든다. 가구점 막힌 칸은 바뀌지 않는다). */
+function standGrid(solid: ReadonlySet<string>, room: AreaSize, width: number, depth: number): Uint8Array {
+  const cell = room.cell ?? 1;
+  const cached = standGrids.get(solid);
+  if (cached && cached.width === width && cached.depth === depth && cached.cell === cell) return cached.blocked;
+  const blocked = new Uint8Array(width * depth);
+  for (let r = 0; r < depth; r += 1) {
+    for (let c = 0; c < width; c += 1) {
+      if (!isFree((c + 0.5) * cell, (r + 0.5) * cell, solid, room)) blocked[r * width + c] = 1;
+    }
+  }
+  standGrids.set(solid, { width, depth, cell, blocked });
+  return blocked;
+}
+
 /** 글자 키로 찾는 예전 방식(시작 칸이 방 밖일 때만 쓴다). goals는 설 수 있는 곳만 준다. */
 function findPathByKeys(
   from: FloorPoint,
@@ -345,12 +441,15 @@ function findPathByKeys(
   room: AreaSize = activeSize()
 ): FloorPoint[] | null {
   const reachable = goals;
-  const sc = Math.floor(from.x);
-  const sr = Math.floor(from.z);
+  const cell = room.cell ?? 1;
+  const cols = gridSize(room.width, cell);
+  const rows = gridSize(room.depth, cell);
+  const sc = Math.floor(from.x / cell);
+  const sr = Math.floor(from.z / cell);
   const start = tileKey(sc, sr);
   const goalByTile = new Map<string, FloorPoint>();
   reachable.forEach((g) => {
-    const k = tileKey(Math.floor(g.x), Math.floor(g.z));
+    const k = tileKey(Math.floor(g.x / cell), Math.floor(g.z / cell));
     if (!goalByTile.has(k)) goalByTile.set(k, g);
   });
   let end = goalByTile.has(start) ? start : "";
@@ -363,7 +462,7 @@ function findPathByKeys(
       const nc = c + dc;
       const nr = r + dr;
       const k = tileKey(nc, nr);
-      if (nc < 0 || nr < 0 || nc >= room.width || nr >= room.depth) continue;
+      if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
       if (solid.has(k) || prev.has(k)) continue;
       if (dc !== 0 && dr !== 0 && (solid.has(tileKey(c + dc, r)) || solid.has(tileKey(c, r + dr)))) continue;
       prev.set(k, tileKey(c, r));
@@ -380,7 +479,7 @@ function findPathByKeys(
   let walk = end;
   while (walk && walk !== start) {
     const [c, r] = walk.split(",").map(Number);
-    tiles.unshift({ x: c + 0.5, z: r + 0.5 });
+    tiles.unshift({ x: (c + 0.5) * cell, z: (r + 0.5) * cell });
     walk = prev.get(walk) ?? "";
   }
   tiles.push({ x: goal.x, z: goal.z });
@@ -407,19 +506,22 @@ export function findPath(
   if (reachable.length === 0) return null;
   // 칸 번호(r × 너비 + c)와 숫자 배열로 찾는다. 칸마다 글자 키를 만들고 큐 앞을 당기면(shift) 마을처럼 넓은 곳에서
   // 휴대폰(Hermes)으로 수십 ms가 걸려 걷기 시작할 때 프레임이 끊겼다. 찾는 순서와 결과는 그대로다(너비 우선, 같은 방향 순서)
-  const width = room.width;
-  const depth = room.depth;
+  const cell = room.cell ?? 1;
+  const width = gridSize(room.width, cell);
+  const depth = gridSize(room.depth, cell);
   const inRoom = (c: number, r: number) => c >= 0 && r >= 0 && c < width && r < depth;
-  const blocked = blockedGrid(solid, width, depth);
+  // 1칸 격자(방·마을)는 막힌 칸으로 찾는다(칸 가운데는 칸 끝에서 0.5라 몸 둘레가 들어간다).
+  // 잘게 나눈 격자(가구점)는 칸 가운데에 라룹이가 설 수 없는 칸을 막힌 것으로 본다(막힌 칸 바로 옆 칸 가운데는 몸 둘레보다 가까울 수 있다)
+  const blocked = cell === 1 ? blockedGrid(solid, width, depth) : standGrid(solid, room, width, depth);
   // 방 밖 칸은 막힌 칸 목록에 있을 때만 막힌 것으로 본다(대각선 모서리 검사에서 쓴다)
   const isSolid = (c: number, r: number) => (inRoom(c, r) ? blocked[r * width + c] === 1 : solid.has(tileKey(c, r)));
-  const sc = Math.floor(from.x);
-  const sr = Math.floor(from.z);
+  const sc = Math.floor(from.x / cell);
+  const sr = Math.floor(from.z / cell);
   const startIndex = inRoom(sc, sr) ? sr * width + sc : -1;
   const goalByTile = new Map<number, FloorPoint>();
   reachable.forEach((g) => {
-    const c = Math.floor(g.x);
-    const r = Math.floor(g.z);
+    const c = Math.floor(g.x / cell);
+    const r = Math.floor(g.z / cell);
     if (!inRoom(c, r)) return;
     const k = r * width + c;
     if (!goalByTile.has(k)) goalByTile.set(k, g);
@@ -444,7 +546,8 @@ export function findPath(
       const nr = r + dr;
       if (!inRoom(nc, nr)) continue;
       const k = nr * width + nc;
-      if (blocked[k] === 1 || prev[k] !== 0) continue;
+      // 설 수 있는 goal의 칸은 막혔어도 들어간다(잘게 나눈 격자에서 goal 칸 가운데가 몸 둘레에 걸릴 때. 1칸 격자에서는 그런 칸이 없다)
+      if ((blocked[k] === 1 && !goalByTile.has(k)) || prev[k] !== 0) continue;
       if (dc !== 0 && dr !== 0 && (isSolid(c + dc, r) || isSolid(c, r + dr))) continue;
       prev[k] = at + 1;
       if (goalByTile.has(k)) {
@@ -459,7 +562,7 @@ export function findPath(
   const tiles: FloorPoint[] = [];
   for (let walk = end; walk !== startIndex; walk = prev[walk] - 1) {
     const c = walk % width;
-    tiles.unshift({ x: c + 0.5, z: (walk - c) / width + 0.5 });
+    tiles.unshift({ x: (c + 0.5) * cell, z: ((walk - c) / width + 0.5) * cell });
   }
   tiles.push({ x: goal.x, z: goal.z });
   const points: FloorPoint[] = [];
@@ -479,8 +582,8 @@ export function findPath(
  * from에서 가장 가까운, 설 수 있고 입구까지 걸어갈 수 있는 칸 가운데. 입구까지 갈 수 있는 칸이 없으면 설 수 있는 가장 가까운 칸, 그것도 없으면 null.
  */
 export function nearestOpenSpot(from: FloorPoint): FloorPoint | null {
-  // 입구: 방은 밖으로 나가는 발판 안쪽, 마을은 라룹이 집 문 앞
-  const entry = area === "village" ? VILLAGE_MARKS.home.approach : MARKS.door.approach;
+  // 입구: 방은 밖으로 나가는 발판 안쪽, 마을은 라룹이 집 문 앞, 가구점은 출입문 안쪽
+  const entry = area === "village" ? VILLAGE_MARKS.home.approach : area === "shop" ? SHOP_MARKS.shopExit.approach : MARKS.door.approach;
   return firstOpenSpot(from, (spot) => findPath(spot, entry) !== null) ?? nearestFreeSpot(from);
 }
 
@@ -491,10 +594,13 @@ export function nearestOpenSpot(from: FloorPoint): FloorPoint | null {
  */
 function firstOpenSpot(from: FloorPoint, accept: (spot: FloorPoint) => boolean): FloorPoint | null {
   const size = activeSize();
+  const cell = size.cell ?? 1;
   const spots: FloorPoint[] = [];
-  for (let c = 0; c < size.width; c += 1) {
-    for (let r = 0; r < size.depth; r += 1) {
-      if (isFree(c + 0.5, r + 0.5)) spots.push({ x: c + 0.5, z: r + 0.5 });
+  for (let c = 0; c < gridSize(size.width, cell); c += 1) {
+    for (let r = 0; r < gridSize(size.depth, cell); r += 1) {
+      const x = (c + 0.5) * cell;
+      const z = (r + 0.5) * cell;
+      if (isFree(x, z)) spots.push({ x, z });
     }
   }
   const distance = spots.map((spot) => Math.hypot(spot.x - from.x, spot.z - from.z));
@@ -575,8 +681,9 @@ export const VILLAGE_BOUNDS = {
   maxZ: VILLAGE_BOUNDARY.z + VILLAGE_BOUNDARY.radius
 };
 
-/** 지금 구역의 끝 상자(카메라가 넘지 않는다). */
+/** 지금 구역의 끝 상자(카메라가 넘지 않는다). 가구점은 방과 같은 방식으로 실내 상자를 넘지 않는다. */
 export function activeBounds(): typeof ROOM_BOUNDS {
+  if (area === "shop") return SHOP_BOUNDS;
   return area === "village" ? VILLAGE_BOUNDS : ROOM_BOUNDS;
 }
 
@@ -877,6 +984,8 @@ export interface LobbySnapshot {
   bubbleButton: string | null;
   /** 말풍선이 기본 말이나 로비 인사인지(장소 안내·짧은 말이 아님). 이어 쓰기 버튼을 붙이는 곳이다. */
   idleBubble: boolean;
+  /** 가구점 버들의 말풍선 글(버들 머리 위). 없으면 빈 글. */
+  npcText: string;
 }
 
 interface PointerState {
@@ -918,6 +1027,8 @@ export class LobbySim {
   private pokeIndex = 0;
   /** 로비에 들어올 때의 인사 말. 누르기 전까지 기본 말 대신 보인다. */
   private greeting: string | null = null;
+  /** 가구점 버들의 인사 말풍선이 보이는 끝 시각(밀리초). 이때까지 라룹이의 장소 말풍선은 거둔다. */
+  private npcUntilMs = 0;
   /** 마지막으로 무언가 한 때(밀리초). 이때부터 SIT_AFTER_MS가 지나면 앉는다. null이면 다음 프레임에 지금으로 잡는다. */
   private idleSinceMs: number | null = null;
   /** 끌기를 마친 뒤 멈추면 장소 구역 안인지 본다. */
@@ -964,6 +1075,21 @@ export class LobbySim {
     this.arrived = null;
     this.goalHeading = 0;
     this.startAction(action);
+  }
+
+  /**
+   * 가구점 계산대에서 '인사하기': 라룹이가 멈춰 손을 흔들고("동작 줄이기"면 흔들지 않는다), 버들 머리 위에 인사 말풍선이 잠시 뜬다.
+   * 그동안 라룹이의 장소 말풍선은 거둔다. 몇 번이든 다시 할 수 있다(누를 때마다 처음부터 다시 보인다).
+   */
+  greetShopkeeper(nowMs: number): void {
+    this.wake(nowMs);
+    this.greeting = null;
+    this.quipUntilMs = 0;
+    this.path = [];
+    this.vx = 0;
+    this.vz = 0;
+    if (!this.reduceMotion) this.startAction("wave");
+    this.npcUntilMs = nowMs + SHOPKEEPER_GREETING_MS;
   }
 
   /** 시험판 동작 버튼: 멈춰서 앞을 보고 동작한다. */
@@ -1063,6 +1189,7 @@ export class LobbySim {
     this.vx = 0;
     this.vz = 0;
     this.idleSinceMs = nowMs;
+    this.npcUntilMs = 0;
     if (!isFree(this.x, this.z)) {
       const spot = nearestOpenSpot({ x: this.x, z: this.z });
       if (spot) {
@@ -1202,7 +1329,7 @@ export class LobbySim {
     let goals: FloorPoint[];
     if (mark) goals = markInfo(mark).approach;
     else if (point && isFree(point.x, point.z)) goals = [point];
-    else if (point && area === "village") {
+    else if (point && (area === "village" || area === "shop")) {
       const spot = nearestReachableSpot({ x: this.x, z: this.z }, point);
       if (!spot) return false;
       goals = [spot];
@@ -1401,7 +1528,9 @@ export class LobbySim {
     // 장소 구역 안에 있으면 걷거나 끌리는 중에도 그 장소 안내를 보인다. 구역 밖에서 움직이는 동안은 말풍선을 숨긴다.
     // 서 있으면 짧은 말 → 로비 인사 → 장소 안내 순서이고, 셋 다 없으면 말풍선이 없다(기본 말은 없앴다).
     // 장소에서 '들어가기'를 누른 뒤에는 말풍선을 거둔다
-    const place = this.scene ? null : this.currentPlace();
+    // 버들이 인사하는 동안은 라룹이의 장소 말풍선을 거둔다
+    const npcText = nowMs < this.npcUntilMs ? SHOPKEEPER_GREETING : "";
+    const place = this.scene || npcText ? null : this.currentPlace();
     if (this.scene) bubbleText = "";
     else if (moving && !place) bubbleText = "";
     else if (nowMs < this.quipUntilMs) bubbleText = this.quip;
@@ -1430,7 +1559,8 @@ export class LobbySim {
       scene: this.scene ? { ...this.scene } : null,
       bubbleText,
       bubbleButton,
-      idleBubble
+      idleBubble,
+      npcText
     };
   }
 

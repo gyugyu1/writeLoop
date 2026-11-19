@@ -40,9 +40,6 @@ public class ItemCatalogDrawSpecTest {
     /** 작업 128 07 결정: 가구점 진열 상품 셋(팔지 않고 처음 가지지도 않는 가구). 시험 가구 하나를 찾을 때 뺀다. */
     public static final List<String> SHOP_PRODUCTS = List.of("walnutBed", "grandmasFloorBedding", "cloudDesk");
 
-    /** 작업 128 07 결정: 가구점 애셋 둘(kind asset, 모델 파일만). */
-    public static final List<String> SHOP_ASSETS = List.of("shopInterior", "shopkeeperBeodeul");
-
     /** 결정 05의 시험 가구 id. */
     public static final String TEST_FURNITURE = "armchair";
 

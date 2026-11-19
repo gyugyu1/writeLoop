@@ -28,7 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * [spec] 작업 128 가구점 실내, 백엔드 시나리오 B1~B9(08-qa-scenarios.md: 가구점 모델 다섯을 서버 목록에서 받기).
+ * [spec] 작업 128 가구점 실내, 백엔드 시나리오 B1~B9(08-qa-scenarios.md: 가구점 모델을 서버 목록에서 받기). 14 결정으로 실내·버들은 앱 자산이라
+ * 서버 목록에는 진열 상품 셋만 남고(B2는 "실내·버들·asset 종류가 서버에 없다"로 바뀜), B1·B6·B7·B8·B9는 상품 셋 기준으로 고쳤다.
  * B10(개수를 고정한 기존 테스트 고치기)은 CatalogControllerSpecTest·CatalogFilesSpecTest·ItemCatalogDrawSpecTest에서 했다.
  * B5(파일 없는 asset 항목은 검사 실패)는 목록을 다른 파일로 읽는 진입점이 없어 옮기지 못했다.
  */
@@ -41,10 +42,6 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
     private static final Map<String, String[]> FILES = new LinkedHashMap<>();
 
     static {
-        FILES.put("shopInterior", new String[] {"shop-interior.glb", "1984396",
-                "C:/WriteLoop-asset/마을건물/가구점/내부/furniture-shop-interior.glb"});
-        FILES.put("shopkeeperBeodeul", new String[] {"shopkeeper-beodeul.glb", "1612812",
-                "C:/WriteLoop-asset/이웃/버들-가구점_주인/3d/WriteLoop_Beodeul.glb"});
         FILES.put("walnutBed", new String[] {"walnut-bed.glb", "263104",
                 "C:/WriteLoop-asset/가구/가구점/침대/호두침대/walnut-bed.glb"});
         FILES.put("grandmasFloorBedding", new String[] {"grandmas-floor-bedding.glb", "1579488",
@@ -53,7 +50,9 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
                 "C:/WriteLoop-asset/가구/가구점/책상/구름책상/cloud-desk.glb"});
     }
 
-    private static final List<String> ASSETS = List.of("shopInterior", "shopkeeperBeodeul");
+    /** 14 결정: 실내·버들은 앱 자산이라 서버에 없다. */
+    private static final List<String> MOVED_TO_APP = List.of("shopInterior", "shopkeeperBeodeul");
+    private static final List<String> MOVED_FILES = List.of("shop-interior.glb", "shopkeeper-beodeul.glb");
     private static final List<String> PRODUCTS = List.of("walnutBed", "grandmasFloorBedding", "cloudDesk");
 
     @Autowired
@@ -62,7 +61,11 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
     private final HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
 
     @Test
-    void b1_fiveFilesExistWithTheOriginalSizeAndBytes() throws Exception {
+    void b1_threeProductFilesExistWithTheOriginalSizeAndBytesAndTheTwoMovedFilesAreGone() throws Exception {
+        for (String name : MOVED_FILES) {
+            assertThat(FILES_DIR.resolve(name)).as("B1 %s is not on the server (14 decision)", name).doesNotExist();
+        }
+        assertThat(FILES).as("B1 three product files").hasSize(3);
         for (Map.Entry<String, String[]> entry : FILES.entrySet()) {
             Path file = FILES_DIR.resolve(entry.getValue()[0]);
             assertThat(file).as("B1 %s exists", file).exists();
@@ -76,16 +79,14 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
     }
 
     @Test
-    void b2_interiorAndBeodeulAreAssetsWithModelOnly() throws Exception {
+    void b2_interiorAndBeodeulAreNotOnTheServerAndNoAssetKindExists() throws Exception {
         Map<String, JsonNode> items = itemsInFile();
-        for (String id : ASSETS) {
-            JsonNode item = items.get(id);
-            assertThat(item).as("B2 %s in items.json", id).isNotNull();
-            assertThat(item.path("kind").asText()).as("B2 kind of %s", id).isEqualTo("asset");
-            assertThat(item.path("files").path("model").asText()).as("B2 model file of %s", id).isEqualTo(FILES.get(id)[0]);
-            for (String absent : List.of("draw", "price", "slot", "category", "starter")) {
-                assertThat(item.hasNonNull(absent)).as("B2 %s has no %s: %s", id, absent, item).isFalse();
-            }
+        for (String id : MOVED_TO_APP) {
+            assertThat(items).as("B2 %s is not in items.json", id).doesNotContainKey(id);
+        }
+        for (JsonNode item : items.values()) {
+            assertThat(item.path("kind").asText()).as("B2 kind of %s", item.path("id").asText())
+                    .isIn("furniture", "wearable");
         }
     }
 
@@ -137,16 +138,10 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
     }
 
     @Test
-    void b6_responseHasAllFiveAndAssetsHaveNoDrawOrPrice() throws Exception {
+    void b6_responseHasTheThreeProductsAndNoAssetKind() throws Exception {
         Map<String, JsonNode> byId = byId(catalog());
-        for (String id : ASSETS) {
-            JsonNode item = byId.get(id);
-            assertThat(item).as("B6 %s in response", id).isNotNull();
-            assertThat(item.path("kind").asText()).as("B6 kind of %s", id).isEqualTo("asset");
-            assertThat(item.get("draw").isNull()).as("B6 draw of %s is null: %s", id, item).isTrue();
-            assertThat(item.get("price").isNull()).as("B6 price of %s is null: %s", id, item).isTrue();
-            assertThat(item.path("assets").path("model").path("url").asText()).as("B6 url of %s", id)
-                    .matches("/api/catalog/files/[0-9a-f]{64}\\.glb");
+        for (String id : MOVED_TO_APP) {
+            assertThat(byId).as("B6 %s not in response", id).doesNotContainKey(id);
         }
         for (String id : PRODUCTS) {
             JsonNode item = byId.get(id);
@@ -154,6 +149,10 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
             assertThat(item.path("kind").asText()).as("B6 kind of %s", id).isEqualTo("furniture");
             assertThat(item.path("assets").path("model").path("url").asText()).as("B6 url of %s", id)
                     .matches("/api/catalog/files/[0-9a-f]{64}\\.glb");
+        }
+        for (JsonNode item : byId.values()) {
+            assertThat(item.path("kind").asText()).as("B6 kind of %s", item.path("id").asText())
+                    .isIn("furniture", "wearable");
         }
     }
 
@@ -173,7 +172,7 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
     }
 
     @Test
-    void b8_productsAreNotSoldNotOwnedNotPlaceableAndAssetsAreInNoList() throws Exception {
+    void b8_productsAreNotSoldNotOwnedNotPlaceableAndMovedModelsAreInNoList() throws Exception {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
         String email = "qa-128-" + suffix + "@example.com";
         String password = "qa-pass-" + suffix;
@@ -216,7 +215,7 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
     }
 
     @Test
-    void b9_existingItemsKeepTheTenFieldsAndOnlyTheAssetKindIsNew() throws Exception {
+    void b9_existingItemsKeepTheTenFieldsAndNoNewKind() throws Exception {
         Set<String> expectedKeys = new LinkedHashSet<>(
                 List.of("id", "kind", "name", "shopName", "description", "category", "slot", "price", "assets", "draw"));
         Set<String> kinds = new LinkedHashSet<>();
@@ -227,7 +226,7 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
             assertThat(keys).as("B9 keys of %s", item.path("id").asText()).isEqualTo(expectedKeys);
             kinds.add(item.path("kind").asText());
         }
-        assertThat(kinds).as("B9 kinds").containsExactlyInAnyOrder("furniture", "wearable", "asset");
+        assertThat(kinds).as("B9 kinds").containsExactlyInAnyOrder("furniture", "wearable");
         Map<String, JsonNode> byId = byId(body);
         assertThat(byId.get("lamp").path("kind").asText()).isEqualTo("furniture");
         assertThat(byId.get("capOrange").path("kind").asText()).isEqualTo("wearable");

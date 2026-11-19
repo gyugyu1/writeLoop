@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import type { ItemFileRef } from "./item-files";
 
-// 라이트루프 아이템 목록(가구·옷)의 지금 값: 서버 GET /api/catalog가 주는 이름·홈쇼핑 이름·설명·분류·부위·정가.
+// 라이트루프 아이템 목록(가구·옷·애셋)의 지금 값: 서버 GET /api/catalog가 주는 이름·홈쇼핑 이름·설명·분류·부위·정가.
 // 받기·기기 저장은 item-catalog.ts가 한다. 여기는 지금 목록을 들고 있다가 이름을 찾아 주고, 바뀌면 화면에 알린다.
 // 목록이 없거나 목록에 없는 아이템은 undefined를 돌려주고, 부르는 쪽이 앱에 든 기본값(furniture-catalog·home-shopping-catalog·wear)을 쓴다.
 
@@ -9,7 +9,8 @@ export type ItemCategory = "furniture" | "lighting" | "decor" | "plants" | "clot
 
 export interface CatalogItem {
   id: string;
-  kind: "furniture" | "wearable";
+  /** 가구, 옷, 애셋(팔지도 놓지도 않는 모델 파일만: 마을 가구점 실내·주인 버들). */
+  kind: "furniture" | "wearable" | "asset";
   /** 꾸미기 보관함·옷장의 이름. */
   name: string;
   /** 홈쇼핑 이름. */
@@ -70,7 +71,7 @@ export function parseItemCatalog(value: unknown): ItemCatalogData | null {
 function parseItem(value: unknown): CatalogItem | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   const { id, kind, name, shopName, description, category, slot, price, draw, assets } = value as Record<string, unknown>;
-  if (typeof id !== "string" || id === "" || (kind !== "furniture" && kind !== "wearable")) return null;
+  if (typeof id !== "string" || id === "" || (kind !== "furniture" && kind !== "wearable" && kind !== "asset")) return null;
   if (typeof name !== "string" || typeof shopName !== "string" || typeof description !== "string") return null;
   if (category !== null && (typeof category !== "string" || !CATEGORIES.includes(category))) return null;
   if (slot !== null && typeof slot !== "string") return null;

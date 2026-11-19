@@ -20,26 +20,15 @@ import type { DaylightState } from "./lobby3d-daylight";
 import { OUTLINE_THICKNESS, characterOutlineMaterial, type CharacterOutlineUniforms, type ToonKit } from "./lobby3d-character";
 
 // 마을 가구점 실내(구역 shop): 실내 모델, 계산대 뒤 버들, 진열대 셋의 상품.
+// 모델 파일은 앱에 들어 있지 않고 서버 아이템 목록에서 받아 기기에 둔 것을 읽는다(shop-files). 3D 화면이 다 받은 뒤에 이것을 그린다.
 // 실내에 있는 동안만 장면에 있고, 나가면 빠진다(다시 들어오면 새로 붙인다. 모델 파일은 useLoader가 한 번만 읽어 둔다).
 // 실내 모델 좌표에 SHOP_OFFSET을 더한 자리에 놓는다(앱 좌표 = 모델 좌표 + (4.5, 0, 4.5)).
 
-/* eslint-disable @typescript-eslint/no-require-imports */
-const INTERIOR_ASSET = require("../../../assets/models/shop/furniture-shop-interior.glb");
-const SHOPKEEPER_ASSET = require("../../../assets/models/shop/beodeul.glb");
-const PRODUCT_ASSETS: Record<ShopProductId, number> = {
-  walnutBed: require("../../../assets/models/shop/products/walnut-bed.glb"),
-  grandmasFloorBedding: require("../../../assets/models/shop/products/grandmas-floor-bedding.glb"),
-  cloudDesk: require("../../../assets/models/shop/products/cloud-desk.glb")
-};
-/* eslint-enable @typescript-eslint/no-require-imports */
-
-/** 가구점이 읽는 모델 파일(실내, 버들, 상품 셋 — SHOP_PRODUCTS 순서). */
-export function shopModelAssets(): { interior: string; shopkeeper: string; products: string[] } {
-  return {
-    interior: INTERIOR_ASSET as string,
-    shopkeeper: SHOPKEEPER_ASSET as string,
-    products: SHOP_PRODUCTS.map((p) => PRODUCT_ASSETS[p.id] as unknown as string)
-  };
+/** 가구점이 읽는 모델 파일의 기기 주소(실내, 버들, 상품 셋 — SHOP_PRODUCTS 순서). */
+export interface ShopModelFiles {
+  interior: string;
+  shopkeeper: string;
+  products: string[];
 }
 
 /** 유리 너머(실내 바깥)의 낮 바깥색. */
@@ -293,6 +282,8 @@ export function buildShop(interiorGltf: GLTF, shopkeeperGltf: GLTF, productGltfs
 }
 
 export interface ShopModelProps {
+  /** 받아 둔 모델 파일(기기 주소). */
+  files: ShopModelFiles;
   daylight: DaylightState;
   kit: ToonKit;
   outline: number;
@@ -301,11 +292,10 @@ export interface ShopModelProps {
 }
 
 /** 가구점 실내를 읽어 장면에 붙인다(다 읽을 때까지는 아무것도 그리지 않는다: Suspense). */
-export function ShopModel({ daylight, kit, outline, pickTargets }: ShopModelProps) {
-  const assets = shopModelAssets();
-  const interiorGltf = useLoader(GLTFLoader, assets.interior) as GLTF;
-  const shopkeeperGltf = useLoader(GLTFLoader, assets.shopkeeper) as GLTF;
-  const productGltfs = useLoader(GLTFLoader, assets.products) as GLTF[];
+export function ShopModel({ files, daylight, kit, outline, pickTargets }: ShopModelProps) {
+  const interiorGltf = useLoader(GLTFLoader, files.interior) as GLTF;
+  const shopkeeperGltf = useLoader(GLTFLoader, files.shopkeeper) as GLTF;
+  const productGltfs = useLoader(GLTFLoader, files.products) as GLTF[];
   const built = useMemo(() => buildShop(interiorGltf, shopkeeperGltf, productGltfs, kit), [interiorGltf, shopkeeperGltf, productGltfs, kit]);
   useEffect(() => () => built.dispose(), [built]);
   const stock = useSyncExternalStore(subscribeShopDisplay, shopDisplay, shopDisplay);
@@ -362,7 +352,7 @@ export function ShopModel({ daylight, kit, outline, pickTargets }: ShopModelProp
 }
 
 /** 가구점 모델을 읽지 못하면 아무것도 그리지 않고 알린다(로비 화면이 마을로 되돌린다). 다음에 다시 읽게 캐시를 비운다. */
-export class ShopModelErrorBoundary extends Component<{ children: ReactNode; onFailed?: () => void }, { failed: boolean }> {
+export class ShopModelErrorBoundary extends Component<{ children: ReactNode; files: ShopModelFiles; onFailed?: () => void }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -371,10 +361,10 @@ export class ShopModelErrorBoundary extends Component<{ children: ReactNode; onF
 
   componentDidCatch(error: unknown) {
     console.warn("[lobby3d] 가구점 모델을 불러오지 못했습니다", error);
-    const assets = shopModelAssets();
-    useLoader.clear(GLTFLoader, assets.interior);
-    useLoader.clear(GLTFLoader, assets.shopkeeper);
-    useLoader.clear(GLTFLoader, assets.products);
+    const { files } = this.props;
+    useLoader.clear(GLTFLoader, files.interior);
+    useLoader.clear(GLTFLoader, files.shopkeeper);
+    useLoader.clear(GLTFLoader, files.products);
     this.props.onFailed?.();
   }
 

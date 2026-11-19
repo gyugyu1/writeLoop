@@ -23,6 +23,9 @@ import {
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_FOUNTAIN, VILLAGE_PLACES } from "@/lib/lobby3d/village";
 import { SHOP_LABEL_POINTS, type ShopPlaceId } from "@/lib/lobby3d/shop";
+import { prefetchShopFiles, shopFilesStatus } from "@/lib/lobby3d/shop-files";
+import { useItemCatalog } from "@/lib/item-catalog-store";
+import { useItemFiles } from "@/lib/item-files";
 import type { WearLook, WearState } from "@/lib/lobby3d/wear";
 import { layoutGeometry, layoutItem, type LobbyLayout, type WallSide } from "@/lib/lobby3d/lobby-layout";
 import { BASIC_ROOM, currentRoom, outsideExit } from "@/lib/lobby3d/room";
@@ -1455,7 +1458,8 @@ const noop = () => undefined;
 
 /**
  * 마을 가구점 실내(실내 모델·버들·진열 상품과 실내 빛). 가구점 모듈은 가구점에 처음 들어올 때 불러온다.
- * 마을과 같이 다 읽고 장면에 들어오면 셰이더·그림을 미리 준비한 뒤 알린다(VillageWarmUp).
+ * 모델 파일 다섯은 서버에서 받는다(shop-files): 다 받을 때까지 아무것도 그리지 않고, 목록에 없거나 받지 못하면 onFailed로 알린다.
+ * 다 받으면 마을과 같이 읽고 장면에 들어온 뒤 셰이더·그림을 미리 준비하고 알린다(VillageWarmUp).
  */
 function ShopLayer({
   daylight,
@@ -1472,12 +1476,24 @@ function ShopLayer({
   onReady?: () => void;
   onFailed?: () => void;
 }) {
+  // 목록·받은 파일이 바뀌면 다시 본다
+  useItemCatalog();
+  useItemFiles();
+  const files = shopFilesStatus();
+  useEffect(() => {
+    prefetchShopFiles();
+  }, []);
+  const failed = files.status === "failed";
+  useEffect(() => {
+    if (failed) onFailed?.();
+  }, [failed, onFailed]);
+  if (files.status !== "ready") return null;
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const shop = require("./lobby3d-shop") as typeof ShopModule;
   return (
-    <shop.ShopModelErrorBoundary onFailed={onFailed}>
+    <shop.ShopModelErrorBoundary files={files} onFailed={onFailed}>
       <Suspense fallback={null}>
-        <shop.ShopModel daylight={daylight} kit={kit} outline={outline} pickTargets={pickTargets} />
+        <shop.ShopModel files={files} daylight={daylight} kit={kit} outline={outline} pickTargets={pickTargets} />
         <VillageWarmUp onReady={onReady ?? noop} />
       </Suspense>
     </shop.ShopModelErrorBoundary>

@@ -31,11 +31,6 @@ jest.mock("@/components/lobby3d/lobby3d-character", () => {
   const three = require("three") as typeof import("three");
   return { OUTLINE_THICKNESS: 0.012, characterOutlineMaterial: () => new three.MeshBasicMaterial({ side: three.BackSide }) };
 });
-jest.mock("../../assets/models/shop/furniture-shop-interior.glb", () => "interior.glb");
-jest.mock("../../assets/models/shop/beodeul.glb", () => "beodeul.glb");
-jest.mock("../../assets/models/shop/products/walnut-bed.glb", () => "walnut.glb");
-jest.mock("../../assets/models/shop/products/grandmas-floor-bedding.glb", () => "bedding.glb");
-jest.mock("../../assets/models/shop/products/cloud-desk.glb", () => "cloud.glb");
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { GLTFLoader } = require("three/examples/jsm/loaders/GLTFLoader.js") as typeof import("three/examples/jsm/loaders/GLTFLoader.js");
@@ -43,7 +38,8 @@ const { buildShop } = require("@/components/lobby3d/lobby3d-shop") as typeof imp
 const shop = require("@/lib/lobby3d/shop") as typeof import("@/lib/lobby3d/shop");
 /* eslint-enable @typescript-eslint/no-require-imports */
 
-const MODELS = join(__dirname, "../../assets/models/shop");
+// 가구점 모델은 앱에 들어 있지 않고 서버 아이템 목록 파일 폴더에 있다
+const MODELS = join(__dirname, "../../../backend/src/main/resources/catalog/files");
 
 /** GLB의 JSON 조각에서 그림 참조를 빼고 다시 GLB로 묶는다. */
 function withoutImages(data: Buffer): ArrayBuffer {
@@ -89,9 +85,9 @@ let keeper: GLTF;
 let products: GLTF[];
 
 beforeAll(async () => {
-  interior = await load("furniture-shop-interior.glb");
-  keeper = await load("beodeul.glb");
-  products = await Promise.all(["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(`products/${f}`)));
+  interior = await load("shop-interior.glb");
+  keeper = await load("shopkeeper-beodeul.glb");
+  products = await Promise.all(["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(f)));
 }, 60000);
 
 const kit = () => ({ gradient: new THREE.Texture(), toonMaterials: [] as THREE.MeshToonMaterial[] });

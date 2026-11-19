@@ -37,6 +37,7 @@ import {
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
 import { SHOP_NODES, SHOP_SPAWN_HEADING, shopSlotIndex } from "@/lib/lobby3d/shop";
+import { prefetchShopFiles, retryShopFiles } from "@/lib/lobby3d/shop-files";
 import ShopDisplaySheet from "@/components/lobby3d/shop-display-sheet";
 import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type { WardrobeSlot } from "@/lib/types";
@@ -593,6 +594,10 @@ export default function Lobby3dScreen({
     setVillageBgmArea(area === "village" || area === "shop", daylight.phase);
   }, [area, daylight.phase]);
   useEffect(() => () => setVillageBgmArea(false, "day"), []);
+  // 마을에 나가면 가구점 모델 다섯을 뒤에서 미리 받기 시작한다(기기에 있으면 받지 않는다. 방에 있는 동안은 받지 않는다)
+  useEffect(() => {
+    if (area === "village") prefetchShopFiles();
+  }, [area]);
   const shownHours = clockOverride?.hours ?? Math.round((clock.getHours() + clock.getMinutes() / 60) * 4) / 4;
   const shownMonth = clockOverride?.month ?? clock.getMonth() + 1;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1217,6 +1222,8 @@ export default function Lobby3dScreen({
     }
     // 마을 가구점의 '들어가기'는 실내로, 실내 출입문의 '나가기'는 마을 가구점 문 앞으로 간다
     if (id === "furnitureShop") {
+      // 전에 받지 못했으면 다시 받아 본다(다 받을 때까지 어두운 채 기다린다)
+      retryShopFiles();
       travel("shop");
       return;
     }

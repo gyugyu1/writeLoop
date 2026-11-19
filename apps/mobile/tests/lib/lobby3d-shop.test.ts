@@ -15,7 +15,8 @@ import {
   shopSolidAt
 } from "@/lib/lobby3d/shop";
 
-const MODELS = join(__dirname, "../../assets/models/shop");
+// 가구점 모델은 앱에 들어 있지 않고 서버 아이템 목록 파일 폴더에 있다
+const MODELS = join(__dirname, "../../../backend/src/main/resources/catalog/files");
 
 interface GltfNode {
   name: string;
@@ -35,7 +36,7 @@ function gltfJson(file: string): Gltf {
   return JSON.parse(data.subarray(20, 20 + length).toString("utf8")) as Gltf;
 }
 
-const interior = gltfJson("furniture-shop-interior.glb");
+const interior = gltfJson("shop-interior.glb");
 const node = (name: string) => {
   const found = interior.nodes.find((n) => n.name === name);
   if (!found) throw new Error(`no node ${name}`);

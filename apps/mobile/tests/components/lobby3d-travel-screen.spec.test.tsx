@@ -66,9 +66,10 @@ const NOW = new Date(2026, 5, 21, 12, 30);
 const DOOR_PROMPT = "밖으로 나가 볼까?";
 const OLD_DOOR_MESSAGE = "마을은 다음 업데이트에서 열려요";
 const HOME_PROMPT = "집으로 들어갈까?";
-const CLOSED: Record<string, { label: string; prompt: string }> = {
-  furnitureShop: { label: "가구점", prompt: "가구점은 곧 열려요" },
-  [clothingId()]: { label: "옷집", prompt: "옷집은 곧 열려요" }
+// 작업 128(가구점 실내) 명세 3-1·03 결정 1: 가구점은 "가구점에 들어갈까?"와 버튼 '들어가기'로 바뀌었다(옷집은 그대로 버튼 없음).
+const CLOSED: Record<string, { label: string; prompt: string; button: string | null }> = {
+  furnitureShop: { label: "가구점", prompt: "가구점에 들어갈까?", button: "들어가기" },
+  [clothingId()]: { label: "옷집", prompt: "옷집은 곧 열려요", button: null }
 };
 /** 마을 장소(없으면 그 테스트가 실패한다). */
 function placeOf(id: string) {
@@ -488,26 +489,32 @@ describe("[spec] 마을 → 방(N)", () => {
 // ---------- C. 닫힌 건물 ----------
 
 describe("[spec] 닫힌 건물(C1~C4)", () => {
-  it.each(Object.entries(CLOSED))("C1~C3 화면: %s 문 앞에 도착하면 그 말풍선 글이 보이고, 그 말풍선에 버튼이 없다", async (id, { prompt }) => {
+  it.each(Object.entries(CLOSED))("C1~C3 화면: %s 문 앞에 도착하면 그 말풍선 글이 보이고, 버튼은 표의 버튼(없으면 없다)이다", async (id, { prompt, button }) => {
     await renderDev();
     await goOut();
     await walkTo(placeOf(id).approach[0], id as VillageBuildingId);
     expect(screen.getByText(prompt)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "들어가기" })).toBeNull();
     expect(screen.queryByRole("button", { name: "나가기" })).toBeNull();
-    // 그 글을 품은 말풍선(누르기를 받지 않는 감싸개를 건너 올라간 판) 안에 버튼이 없다
+    // 그 글을 품은 말풍선(누르기를 받지 않는 감싸개를 건너 올라간 판)의 버튼
     let bubble = screen.getByText(prompt).parent!;
     while (bubble.props.pointerEvents === "none") bubble = bubble.parent!;
-    expect(bubble.queryAll((node) => (node.props as { accessibilityRole?: string }).accessibilityRole === "button")).toHaveLength(0);
+    const buttons = bubble.queryAll((node) => (node.props as { accessibilityRole?: string }).accessibilityRole === "button");
+    if (button === null) {
+      expect(screen.queryByRole("button", { name: "들어가기" })).toBeNull();
+      expect(buttons).toHaveLength(0);
+    } else {
+      expect(screen.getByRole("button", { name: button })).toBeTruthy();
+      expect(buttons.length).toBeGreaterThan(0);
+    }
   });
 
-  it.each(Object.entries(CLOSED))("C1~C3 상태: %s 문 앞에 도착하면 말풍선 글이 정확히 그 안내이고 버튼 값은 null이다", async (id, { prompt }) => {
+  it.each(Object.entries(CLOSED))("C1~C3 상태: %s 문 앞에 도착하면 말풍선 글이 정확히 그 안내이고 버튼 값은 표의 값이다", async (id, { prompt, button }) => {
     await renderDev();
     await goOut();
     await walkTo(placeOf(id).approach[0], id as VillageBuildingId);
     const snap = sim().snapshot(Date.now());
     expect(snap.bubbleText).toBe(prompt);
-    expect(snap.bubbleButton).toBeNull();
+    expect(snap.bubbleButton).toBe(button);
   });
 
   it.each(Object.entries(CLOSED))("C4: %s 문 앞에 도착한 뒤 2초가 지나도 마을 그대로이고 라룹이는 그 서는 자리에 그대로다", async (id) => {

@@ -829,9 +829,27 @@ describe("[spec] 095 바뀔 동작 3: 고글 만드는 스크립트, 고글 아�
 // ---------- 그대로 둘 동작: 서버 파일 ----------
 
 describe("[spec] 095 그대로: 옷 내려받기·서버 아이템 목록 파일", () => {
-  it("R1 서버 아이템 목록 폴더(apps/backend/src/main/resources/catalog)가 기준 커밋과 같다(다른 착용 옷 11개와 목록 파일 포함)", () => {
+  // 작업 128(가구점 실내) 10 결정(사용자 "qa가 고침"): 07 결정으로 서버 목록에 가구점 항목 다섯(shopInterior·shopkeeperBeodeul·walnutBed·grandmasFloorBedding·cloudDesk)과
+  // 그 모델 파일 다섯, 머리 설명(_comment)의 애셋 문장이 더해졌다. 그것들만 빼고 견주고, 다른 옷·가구 항목과 파일이 그대로인 단언은 그대로다.
+  const SHOP_IDS = ["shopInterior", "shopkeeperBeodeul", "walnutBed", "grandmasFloorBedding", "cloudDesk"];
+  const SHOP_FILES = ["shop-interior.glb", "shopkeeper-beodeul.glb", "walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map(
+    (name) => `apps/backend/src/main/resources/catalog/files/${name}`
+  );
+  const ITEMS = "apps/backend/src/main/resources/catalog/items.json";
+
+  it("R1 서버 아이템 목록 폴더(apps/backend/src/main/resources/catalog)가 기준 커밋과 같다(다른 착용 옷 11개와 목록 파일 포함. 가구점 항목·파일·머리 설명의 애셋 문장은 뺀다)", () => {
     const diff = spawnSync("git", ["diff", "--name-only", BASE, "--", "apps/backend/src/main/resources/catalog"], { cwd: REPO, encoding: "utf8" });
     expect(diff.status).toBe(0);
-    expect(diff.stdout.trim()).toBe("");
+    const changed = diff.stdout.split(/\r?\n/).filter(Boolean).filter((f) => !SHOP_FILES.includes(f));
+    // 가구점 파일 말고는 목록 파일(items.json)만 바뀔 수 있다(다른 모델·그림 파일은 그대로)
+    expect(changed).toEqual([ITEMS]);
+    const base = JSON.parse(baseFile(ITEMS).toString("utf8")) as { _comment: string; items: { id: string }[] };
+    const now = JSON.parse(readFileSync(join(REPO, ITEMS), "utf8")) as { _comment: string; items: { id: string }[] };
+    // 가구점 항목을 빼면 기준 커밋의 항목과 차례·내용이 같다
+    expect(now.items.filter((item) => !SHOP_IDS.includes(item.id))).toEqual(base.items);
+    expect(now.items.filter((item) => SHOP_IDS.includes(item.id)).map((item) => item.id).sort()).toEqual([...SHOP_IDS].sort());
+    // 머리 설명은 애셋 문장(과 "(가구·옷·애셋)" 표기)을 빼면 같다
+    const strip = (text: string) => text.replace("(가구·옷·애셋)", "(가구·옷)").replace(/애셋\(kind asset\)은[\s\S]*?받는다\. /, "");
+    expect(strip(now._comment)).toBe(base._comment);
   });
 });

@@ -37,6 +37,15 @@ import type * as VillageModule from "./lobby3d-village";
 // 3D 로비 그리기. 동작 규칙은 LobbySim(화면이 가진다)에 있고, 여기서는 매 프레임 그 상태를 그림으로 옮긴다.
 // 테스트에서는 이 모듈을 가짜로 바꾼다(three·expo-gl은 Jest에서 돌지 않는다).
 
+/** 마을 모델의 메시가 장소가 있는 건물(묶음 이름 bld-<id>, 합친 메시는 bld-<id>-mesh)에 속하면 그 장소. 아니면 null. */
+function villageBuildingMark(object: THREE.Object3D): PlaceId | null {
+  for (let n: THREE.Object3D | null = object; n; n = n.parent) {
+    const id = /^bld-([A-Za-z]+)/.exec(n.name)?.[1];
+    if (id) return VILLAGE_MARK_IDS.includes(id as PlaceId) ? (id as PlaceId) : null;
+  }
+  return null;
+}
+
 export interface ToonSettings {
   /** 명암 단계. 2면 거의 평평한 색면, 3이면 웹 시험본과 같다. */
   steps: 2 | 3;
@@ -998,7 +1007,8 @@ function Scene({
         const targets: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...villagePick.current];
         const hit = raycaster.intersectObjects(targets, true)[0];
         if (hit && (hit.object.userData as { isCharacter?: boolean }).isCharacter) return { point: floorPoint(), mark: null, onCharacter: true };
-        if (hit) return { point: { x: hit.point.x, z: hit.point.z }, mark: null, onCharacter: false };
+        // 건물·소품: 장소가 있는 건물(bld-<id>)이면 그 장소(문 앞으로 간다), 아니면 맞은 자리
+        if (hit) return { point: { x: hit.point.x, z: hit.point.z }, mark: null, onCharacter: false, onScenery: true, building: villageBuildingMark(hit.object) };
         return { point: floorPoint(), mark: null, onCharacter: false };
       }
       // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).

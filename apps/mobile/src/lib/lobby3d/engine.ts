@@ -31,6 +31,10 @@ export interface PointerHit {
   mark: PlaceId | null;
   /** 라이트루프를 눌렀는지. */
   onCharacter: boolean;
+  /** 마을에서 건물·소품(걸을 수 없는 물체)을 눌렀는지. 그 위에서 누르기 시작하면 누르고 있어도 끌기가 되지 않는다. */
+  onScenery?: boolean;
+  /** 마을에서 누른 건물이 장소가 있는 건물이면 그 장소. 톡하면 그 장소의 문 앞으로 간다(이름표를 누른 것과 같다). */
+  building?: PlaceId | null;
   /** 누른 곳에 있는 가구(배치한 가구의 id, 딸린 의자는 그 책상). 편집 모드에서 쓴다. */
   piece?: string | null;
   /** 누른 곳이 벽 위면 그 벽과 벽을 따라간 자리. 편집 모드에서 벽 가구를 끌 때 쓴다(없으면 바닥 점에서 가장 가까운 벽으로 본다). */
@@ -1235,7 +1239,8 @@ export class LobbySim {
     if (!this.down) return "none";
     const { hit } = this.down;
     // 프레임이 끊겨 꾹으로 바뀌지 못했어도, 누른 시간이 길면 톡이 아니다.
-    const wasDrag = this.dragging || nowMs - this.down.t >= HOLD_MS;
+    // 다만 마을의 건물·소품 위에서 누르기 시작했으면 누른 시간으로는 끌기가 되지 않으니, 끌지 않았으면 톡이다
+    const wasDrag = this.dragging || (!this.down.hit.onScenery && nowMs - this.down.t >= HOLD_MS);
     this.down = null;
     this.dragging = false;
     this.dragPoint = null;
@@ -1249,7 +1254,7 @@ export class LobbySim {
       this.pokeIndex += 1;
       return "poke";
     }
-    return this.goTo(hit.point, hit.mark) ? "walk" : "none";
+    return this.goTo(hit.point, hit.mark ?? hit.building ?? null) ? "walk" : "none";
   }
 
   pointerCancel(): void {
@@ -1283,7 +1288,9 @@ export class LobbySim {
   /** 한 프레임 진행. dt는 초. */
   update(dt: number, nowMs: number): void {
     const step = Math.min(0.05, Math.max(0, dt));
-    if (this.down && !this.dragging && nowMs - this.down.t >= HOLD_MS) this.startDrag();
+    // 누르고 있으면 끌기가 된다. 마을의 건물·소품 위에서 누르기 시작했으면 시간으로는 끌기가 되지 않는다
+    // (건물 안쪽을 향해 끌며 벽에 막혀 붙기보다, 손을 떼면 그 건물 문 앞이나 가장 가까운 걸을 수 있는 곳으로 간다. 손가락을 크게 움직이면 끌기가 된다)
+    if (this.down && !this.dragging && !this.down.hit.onScenery && nowMs - this.down.t >= HOLD_MS) this.startDrag();
     // 처음 프레임이거나, 다른 화면·배경에 가 있다 돌아와 프레임 사이가 길면 앉기까지의 시간을 처음부터 잰다(홈을 보는 동안만 센다).
     // 그리기 쪽이 dt를 짧게 잘라 넘기므로 공백은 시각으로 본다.
     const gap = this.lastUpdateMs === null ? 0 : nowMs - this.lastUpdateMs;

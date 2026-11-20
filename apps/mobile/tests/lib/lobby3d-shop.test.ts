@@ -117,7 +117,7 @@ describe("실내 걷기", () => {
     for (const slot of SHOP_SLOTS) expect(isFree(slot.center.x, slot.center.z)).toBe(false);
     // 오른쪽 벽 선반(wallShelf)과 명패(nameplate01)
     expect(isFree(6.3 + SHOP_OFFSET.x, -6.85 + SHOP_OFFSET.z)).toBe(false);
-    expect(shopSolidAt(-4.06 + SHOP_OFFSET.x, 3.0 + SHOP_OFFSET.z)).toBe(true);
+    expect(shopSolidAt(-5.94 + SHOP_OFFSET.x, 4.875 + SHOP_OFFSET.z)).toBe(true);
   });
 
   it("걸어가는 동안 계산대·진열대를 뚫지 않는다(지나는 모든 프레임이 설 수 있는 자리)", () => {

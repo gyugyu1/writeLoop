@@ -67,8 +67,11 @@ public class ItemCatalog {
         }
     }
 
-    /** 목록 파일 옆 폴더 안의 파일 이름(아이콘은 없을 수 있다). */
-    public record Files(String model, String icon) {
+    /**
+     * 목록 파일 옆 폴더 안의 파일 이름(아이콘은 없을 수 있다). nameplate는 가구점 진열 상품의 명패 글자 그림이다
+     * (scripts/lobby3d/make-shop-nameplates.py가 이름으로 만든다. 진열 상품이 아니면 없다).
+     */
+    public record Files(String model, String icon, String nameplate) {
     }
 
     /**
@@ -82,8 +85,8 @@ public class ItemCatalog {
     public record Asset(String url, String sha256, long bytes) {
     }
 
-    /** 아이템의 모델·아이콘 파일(아이콘은 없을 수 있다). */
-    public record Assets(Asset model, Asset icon) {
+    /** 아이템의 모델·아이콘·명패 그림 파일(아이콘·명패 그림은 없을 수 있다). */
+    public record Assets(Asset model, Asset icon, Asset nameplate) {
     }
 
     /** 파일 API가 주는 파일 하나. */
@@ -139,7 +142,8 @@ public class ItemCatalog {
             }
             Asset model = asset(item.id(), item.files().model(), files, versionDigest);
             Asset icon = item.files().icon() == null ? null : asset(item.id(), item.files().icon(), files, versionDigest);
-            assets.put(item.id(), new Assets(model, icon));
+            Asset nameplate = item.files().nameplate() == null ? null : asset(item.id(), item.files().nameplate(), files, versionDigest);
+            assets.put(item.id(), new Assets(model, icon, nameplate));
         }
         String version = HexFormat.of().formatHex(versionDigest.digest()).substring(0, 16);
         return new ItemCatalog(document.items(), assets, files, version);

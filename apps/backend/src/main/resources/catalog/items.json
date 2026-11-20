@@ -1071,10 +1071,132 @@
       "alwaysOwned": true
     },
     {
+      "id": "catPostDesk",
+      "kind": "furniture",
+      "name": "고양이 편지 책상",
+      "shopName": "고양이 편지 책상",
+      "description": "고양이 귀 실루엣, 편지 표식과 선반",
+      "category": null,
+      "price": null,
+      "draw": {
+        "mount": "floor",
+        "size": {
+          "width": 3,
+          "depth": 2
+        },
+        "height": {
+          "bottom": 0,
+          "top": 2.017
+        },
+        "blocksWalk": true,
+        "removable": true,
+        "model": {
+          "piece": "catPostDesk",
+          "box": {
+            "width": 2.5,
+            "height": 2.017,
+            "depth": 1.38
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              2.6,
+              1.48,
+              0.32
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "cat-post-desk.glb",
+        "icon": null,
+        "nameplate": "cat-post-desk-nameplate.png"
+      }
+    },
+    {
+      "id": "stargazerBed",
+      "kind": "furniture",
+      "name": "별지기 침대",
+      "shopName": "별지기 침대",
+      "description": "푸른 반쪽 천막과 초승달 모빌",
+      "category": null,
+      "price": null,
+      "draw": {
+        "mount": "floor",
+        "size": {
+          "width": 2,
+          "depth": 3
+        },
+        "height": {
+          "bottom": 0,
+          "top": 1.895
+        },
+        "blocksWalk": true,
+        "removable": true,
+        "model": {
+          "piece": "stargazerBed",
+          "box": {
+            "width": 1.687,
+            "height": 1.895,
+            "depth": 3.05
+          },
+          "y": 0,
+          "shadow": {
+            "floor": [
+              1.787,
+              3.15,
+              0.32
+            ]
+          }
+        }
+      },
+      "files": {
+        "model": "stargazer-bed.glb",
+        "icon": null,
+        "nameplate": "stargazer-bed-nameplate.png"
+      }
+    },
+    {
+      "id": "rainbootPlanter",
+      "kind": "furniture",
+      "name": "장화 화분",
+      "shopName": "장화 화분",
+      "description": "장화 화분과 작은 종 모양 꽃",
+      "category": null,
+      "price": null,
+      "draw": {
+        "mount": "tabletop",
+        "size": {
+          "width": 1,
+          "depth": 1
+        },
+        "height": {
+          "bottom": 0,
+          "top": 0.719
+        },
+        "blocksWalk": false,
+        "removable": true,
+        "model": {
+          "piece": "rainbootPlanter",
+          "box": {
+            "width": 0.568,
+            "height": 0.719,
+            "depth": 0.262
+          },
+          "y": 0
+        }
+      },
+      "files": {
+        "model": "rainboot-planter.glb",
+        "icon": null,
+        "nameplate": "rainboot-planter-nameplate.png"
+      }
+    },
+    {
       "id": "walnutBed",
       "kind": "furniture",
-      "name": "호두껍질 침대",
-      "shopName": "호두껍질 침대",
+      "name": "호두 침대",
+      "shopName": "호두 침대",
       "description": "갈라진 호두껍질 굴곡에 파스텔 녹색 이불을 덮었어요.",
       "category": null,
       "price": null,
@@ -1109,14 +1231,15 @@
       },
       "files": {
         "model": "walnut-bed.glb",
-        "icon": null
+        "icon": null,
+        "nameplate": "walnut-bed-nameplate.png"
       }
     },
     {
       "id": "grandmasFloorBedding",
       "kind": "furniture",
-      "name": "할머니 댁 이부자리",
-      "shopName": "할머니 댁 이부자리",
+      "name": "이부자리",
+      "shopName": "이부자리",
       "description": "방바닥에 포근한 요를 펴고 솜이불과 베개를 놓았어요.",
       "category": null,
       "price": null,
@@ -1151,7 +1274,8 @@
       },
       "files": {
         "model": "grandmas-floor-bedding.glb",
-        "icon": null
+        "icon": null,
+        "nameplate": "grandmas-floor-bedding-nameplate.png"
       }
     },
     {
@@ -1193,7 +1317,8 @@
       },
       "files": {
         "model": "cloud-desk.glb",
-        "icon": null
+        "icon": null,
+        "nameplate": "cloud-desk-nameplate.png"
       }
     }
   ]

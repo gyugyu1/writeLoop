@@ -36,7 +36,17 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
-import { SHOP_NODES, SHOP_SPAWN_HEADING, SHOP_SWAP_FAILED, onShopSwapFailed, shopSlotIndex } from "@/lib/lobby3d/shop";
+import {
+  SHOP_NODES,
+  SHOP_SLOTS,
+  SHOP_SPAWN_HEADING,
+  SHOP_SWAP_FAILED,
+  onShopSwapFailed,
+  setShopSlotVacant,
+  shopSlotIndex,
+  shopVacancy,
+  subscribeShopVacancy
+} from "@/lib/lobby3d/shop";
 import { retryShopFiles } from "@/lib/lobby3d/shop-files";
 import ShopDisplaySheet from "@/components/lobby3d/shop-display-sheet";
 import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
@@ -529,6 +539,8 @@ export default function Lobby3dScreen({
   // 라룹이가 입은 것: 개발 화면 시험판은 '착용 시험' 버튼으로(서버와 상관없이), 홈은 받은 값(wear)으로
   // 시험판은 부위 일곱마다 아이템을 고른다(①의 넷 버튼은 켜면 그 부위의 첫 아이템, ⑤의 '바꾸기'는 그 부위 아이템을 차례로)
   const [testLook, setTestLook] = useState<WearLook>(DEFAULT_LOOK);
+  // 가구점 진열대별 빈 상태(시험판 '품절' 버튼이 바꾼다. 재고가 생기면 재고가 채운다)
+  const shopVacant = useSyncExternalStore(subscribeShopVacancy, shopVacancy, shopVacancy);
   const wear = devPanel ? wearOfLook(testLook) : wearProp ?? NO_WEAR;
   const look = devPanel ? testLook : lookProp;
   const toggleTestSlot = (slot: WardrobeSlot) =>
@@ -1518,6 +1530,21 @@ export default function Lobby3dScreen({
                   onPress={() => switchArea(next)}
                 >
                   <Text style={[styles.stepText, area === next && styles.stepTextOn]}>{AREA_LABELS[next]}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.panelLabel}>가구점 품절 시험</Text>
+            <View style={[styles.row, styles.rowWrap]}>
+              {SHOP_SLOTS.map((_, i) => (
+                <Pressable
+                  key={i}
+                  accessibilityRole="button"
+                  accessibilityLabel={`진열대 ${i + 1} 품절`}
+                  accessibilityState={{ selected: shopVacant[i] === true }}
+                  style={[styles.stepButton, shopVacant[i] && styles.stepButtonOn]}
+                  onPress={() => setShopSlotVacant(i, !shopVacant[i])}
+                >
+                  <Text style={[styles.stepText, shopVacant[i] && styles.stepTextOn]}>{i + 1} 품절</Text>
                 </Pressable>
               ))}
             </View>

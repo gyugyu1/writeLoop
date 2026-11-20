@@ -132,11 +132,11 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
         FURNITURE.forEach(furniture -> expected.add(furniture.id()));
         expected.add(TEST_FURNITURE);
         WEARABLES.forEach(wearable -> expected.add(wearable.id()));
-        // 작업 128 14 결정: 가구점 진열 상품 셋(가구)이 더해진다(실내·버들은 앱 자산이라 목록에 없다)
-        expected.addAll(List.of("walnutBed", "grandmasFloorBedding", "cloudDesk"));
+        // 작업 130: 가구점 진열 상품 여섯(가구, 새 셋 포함)이 더해진다(실내·버들은 앱 자산이라 목록에 없다)
+        expected.addAll(List.of("rainbootPlanter", "catPostDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk"));
         // 작업 090 ③: 옷 열일곱 밖의 시험 옷 하나(id는 명세에 없어 보지 않는다)가 더해진다
-        assertThat(items.size()).as("C2 item count").isEqualTo(36);
-        assertThat(new LinkedHashSet<>(ids)).as("C2 ids are distinct").hasSize(36);
+        assertThat(items.size()).as("C2 item count").isEqualTo(39);
+        assertThat(new LinkedHashSet<>(ids)).as("C2 ids are distinct").hasSize(39);
         assertThat(ids).as("C2 ids contain the known items").containsAll(expected);
         List<JsonNode> others = new ArrayList<>();
         for (JsonNode item : items) {
@@ -156,7 +156,7 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
             if ("furniture".equals(item.path("kind").asText())) {
                 JsonNode assets = item.get("assets");
                 assertThat(assets.isObject()).as("C3 assets of furniture %s is an object: %s", id, item).isTrue();
-                assertThat(fieldNames(assets)).as("C3 assets keys of %s", id).isEqualTo(new LinkedHashSet<>(List.of("model", "icon")));
+                assertThat(fieldNames(assets)).as("C3 assets keys of %s", id).isEqualTo(new LinkedHashSet<>(List.of("model", "icon", "nameplate")));
                 assertThat(fieldNames(assets.get("model"))).as("C3 model keys of %s", id)
                         .isEqualTo(new LinkedHashSet<>(List.of("url", "sha256", "bytes")));
                 assertThat(item.get("draw").isObject()).as("C3 draw of furniture %s is an object: %s", id, item).isTrue();
@@ -168,7 +168,7 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
                 // 작업 090 ③: 고글 밖의 옷은 가구와 같은 모양의 assets와 draw가 있다
                 JsonNode assets = item.get("assets");
                 assertThat(assets.isObject()).as("C3 assets of wearable %s is an object: %s", id, item).isTrue();
-                assertThat(fieldNames(assets)).as("C3 assets keys of %s", id).isEqualTo(new LinkedHashSet<>(List.of("model", "icon")));
+                assertThat(fieldNames(assets)).as("C3 assets keys of %s", id).isEqualTo(new LinkedHashSet<>(List.of("model", "icon", "nameplate")));
                 assertThat(fieldNames(assets.get("model"))).as("C3 model keys of %s", id)
                         .isEqualTo(new LinkedHashSet<>(List.of("url", "sha256", "bytes")));
                 assertThat(item.get("draw").isObject()).as("C3 draw of wearable %s is an object: %s", id, item).isTrue();

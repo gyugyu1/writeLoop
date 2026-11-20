@@ -81,7 +81,7 @@ class CatalogNameplateSpecTest extends IntegrationTestSupport {
         }
         // 기존 셋의 설명은 지금 그대로
         assertThat(inApi.get("walnutBed").path("description").asText()).isEqualTo("갈라진 호두껍질 굴곡에 파스텔 녹색 이불을 덮었어요.");
-        assertThat(inApi.get("grandmasFloorBedding").path("description").asText()).isEqualTo("방바닥에 포근한 요를 펴고 꽃이불과 베개를 놓았어요.");
+        assertThat(inApi.get("grandmasFloorBedding").path("description").asText()).isEqualTo("방바닥에 포근한 요를 펴고 솜이불과 베개를 놓았어요.");
         assertThat(inApi.get("cloudDesk").path("description").asText()).isEqualTo("구름 모양 상판에 하늘색으로 포인트를 줬어요.");
     }
 

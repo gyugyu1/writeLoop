@@ -42,6 +42,12 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
     private static final Map<String, String[]> FILES = new LinkedHashMap<>();
 
     static {
+        FILES.put("rainbootPlanter", new String[] {"rainboot-planter.glb", "265740",
+                "C:/WriteLoop-asset/가구/가구점/화분/장화화분/rainboot-planter.glb"});
+        FILES.put("catPostDesk", new String[] {"cat-post-desk.glb", "697104",
+                "C:/WriteLoop-asset/가구/가구점/책상/고양이편지책상/cat-post-desk.glb"});
+        FILES.put("stargazerBed", new String[] {"stargazer-bed.glb", "295452",
+                "C:/WriteLoop-asset/가구/가구점/침대/별지기침대/stargazer-bed.glb"});
         FILES.put("walnutBed", new String[] {"walnut-bed.glb", "263104",
                 "C:/WriteLoop-asset/가구/가구점/침대/호두침대/walnut-bed.glb"});
         FILES.put("grandmasFloorBedding", new String[] {"grandmas-floor-bedding.glb", "1579488",
@@ -53,7 +59,10 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
     /** 14 결정: 실내·버들은 앱 자산이라 서버에 없다. */
     private static final List<String> MOVED_TO_APP = List.of("shopInterior", "shopkeeperBeodeul");
     private static final List<String> MOVED_FILES = List.of("shop-interior.glb", "shopkeeper-beodeul.glb");
-    private static final List<String> PRODUCTS = List.of("walnutBed", "grandmasFloorBedding", "cloudDesk");
+    private static final List<String> PRODUCTS = List.of(
+            "rainbootPlanter", "catPostDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk");
+    /** 작업 128의 상품 셋(배치 값 그대로. 새 셋의 draw는 CatalogNameplateSpecTest가 본다). */
+    private static final List<String> OLD_THREE = List.of("walnutBed", "grandmasFloorBedding", "cloudDesk");
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -65,7 +74,7 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
         for (String name : MOVED_FILES) {
             assertThat(FILES_DIR.resolve(name)).as("B1 %s is not on the server (14 decision)", name).doesNotExist();
         }
-        assertThat(FILES).as("B1 three product files").hasSize(3);
+        assertThat(FILES).as("B1 six product files").hasSize(6);
         for (Map.Entry<String, String[]> entry : FILES.entrySet()) {
             Path file = FILES_DIR.resolve(entry.getValue()[0]);
             assertThat(file).as("B1 %s exists", file).exists();
@@ -93,7 +102,8 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
     @Test
     void b3_productsAreFurnitureNotSoldNotStarterWithoutIcon() throws Exception {
         Map<String, JsonNode> items = itemsInFile();
-        Map<String, String> names = Map.of("walnutBed", "호두껍질 침대", "grandmasFloorBedding", "할머니 댁 이부자리", "cloudDesk", "구름 책상");
+        Map<String, String> names = Map.of("rainbootPlanter", "장화 화분", "catPostDesk", "고양이 편지 책상", "stargazerBed", "별지기 침대",
+                "walnutBed", "호두 침대", "grandmasFloorBedding", "이부자리", "cloudDesk", "구름 책상");
         for (String id : PRODUCTS) {
             JsonNode item = items.get(id);
             assertThat(item).as("B3 %s in items.json", id).isNotNull();
@@ -115,7 +125,7 @@ class CatalogShopModelsSpecTest extends IntegrationTestSupport {
                 "walnutBed", new double[] {2, 3, 1.610, 1.296, 2.972},
                 "grandmasFloorBedding", new double[] {2, 3, 1.879, 0.477, 2.935},
                 "cloudDesk", new double[] {3, 2, 2.511, 1.292, 1.385});
-        for (String id : PRODUCTS) {
+        for (String id : OLD_THREE) {
             JsonNode draw = items.get(id).path("draw");
             double[] e = expected.get(id);
             assertThat(draw.path("size").path("width").asDouble()).as("B4 floor width of %s", id).isEqualTo(e[0]);

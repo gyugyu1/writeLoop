@@ -175,7 +175,7 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
             assertThat(item).as("W7 %s in the response", id).isNotNull();
             JsonNode assets = item.get("assets");
             assertThat(assets != null && assets.isObject()).as("W7 assets of %s is an object: %s", id, item).isTrue();
-            assertThat(fieldNames(assets)).as("W7 assets keys of %s", id).isEqualTo(set("model", "icon"));
+            assertThat(fieldNames(assets)).as("W7 assets keys of %s", id).isEqualTo(set("model", "icon", "nameplate"));
             assertFileEntry(assets.get("model"), MODEL_URL, "W7 model of " + id);
             assertFileEntry(assets.get("icon"), ICON_URL, "W7 icon of " + id);
         }

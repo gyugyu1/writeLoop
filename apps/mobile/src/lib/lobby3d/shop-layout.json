@@ -1,0 +1,439 @@
+{
+  "coordinateSpace": "GLB metres, +Y up, +Z entrance; appX=x+9, appZ=z+8",
+  "grid": {
+    "width": 18,
+    "depth": 16,
+    "cell": 0.25,
+    "offsetXZ": [
+      9,
+      8
+    ]
+  },
+  "boundsModelXYZ": [
+    [
+      -8.645,
+      -0.332,
+      -7.545
+    ],
+    [
+      8.645,
+      3.878,
+      7.545
+    ]
+  ],
+  "insideXZ": [
+    -8.33,
+    -7.21,
+    8.33,
+    7.21
+  ],
+  "blockedRectsXZ": {
+    "checkout": [
+      0.68,
+      5.21,
+      3.0,
+      7.21
+    ],
+    "wallShelf": [
+      5.24,
+      -7.21,
+      7.36,
+      -6.49
+    ],
+    "openDoor": [
+      7.75,
+      5.45,
+      8.33,
+      7.21
+    ],
+    "signPosts": [
+      -2.6,
+      -7.21,
+      2.6,
+      -6.94
+    ],
+    "studyBacking": [
+      -8.33,
+      -3.8,
+      -7.83,
+      5.45
+    ],
+    "sleepBacking": [
+      -5.08,
+      -7.21,
+      4.14,
+      -6.93
+    ],
+    "bedsideCabinet": [
+      -0.68,
+      -6.43,
+      -0.05,
+      -5.88
+    ],
+    "dayBacking": [
+      7.85,
+      -4.86,
+      8.33,
+      4.65
+    ],
+    "nameplate01": [
+      -4.15,
+      2.44,
+      -3.98,
+      3.56
+    ],
+    "nameplate02": [
+      -4.15,
+      -1.94,
+      -3.98,
+      -0.82
+    ],
+    "nameplate03": [
+      -3.08,
+      -3.19,
+      -1.96,
+      -3.02
+    ],
+    "nameplate04": [
+      1.39,
+      -3.19,
+      2.51,
+      -3.02
+    ],
+    "nameplate05": [
+      4.12,
+      -2.9,
+      4.29,
+      -1.78
+    ],
+    "nameplate06": [
+      4.12,
+      1.5,
+      4.29,
+      2.62
+    ]
+  },
+  "rooms": [
+    {
+      "name": "식물 서재",
+      "stations": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "침실",
+      "stations": [
+        3,
+        4
+      ]
+    },
+    {
+      "name": "낮과 밤의 방",
+      "stations": [
+        5,
+        6
+      ]
+    }
+  ],
+  "entryToDisplaysToCheckoutToExitXZ": [
+    [
+      7.01,
+      6.65
+    ],
+    [
+      5.76,
+      5.77
+    ],
+    [
+      4.18,
+      4.83
+    ],
+    [
+      3.53,
+      2.4
+    ],
+    [
+      3.53,
+      -2.13
+    ],
+    [
+      1.95,
+      -2.2
+    ],
+    [
+      -2.52,
+      -2.2
+    ],
+    [
+      -3.59,
+      -1.38
+    ],
+    [
+      -3.59,
+      3.0
+    ],
+    [
+      -2.98,
+      4.47
+    ],
+    [
+      1.75,
+      4.47
+    ],
+    [
+      3.5,
+      4.57
+    ],
+    [
+      4.78,
+      5.72
+    ],
+    [
+      7.11,
+      6.81
+    ]
+  ],
+  "entryToCheckoutShortcutXZ": [
+    [
+      7.01,
+      6.65
+    ],
+    [
+      4.78,
+      5.72
+    ],
+    [
+      3.5,
+      4.57
+    ],
+    [
+      1.75,
+      4.47
+    ]
+  ],
+  "nodesXYZ": {
+    "PlayerSpawn": [
+      7.01,
+      0.032,
+      6.65
+    ],
+    "ExitTrigger": [
+      7.17,
+      0.003,
+      7.33
+    ],
+    "CheckoutNPC": [
+      1.53,
+      0,
+      6.56
+    ],
+    "CheckoutInteract": [
+      1.75,
+      0,
+      4.47
+    ]
+  },
+  "browseCircuitXZ": [
+    [
+      3.53,
+      2.4
+    ],
+    [
+      3.53,
+      -2.13
+    ],
+    [
+      1.95,
+      -2.2
+    ],
+    [
+      -2.52,
+      -2.2
+    ],
+    [
+      -3.59,
+      -1.38
+    ],
+    [
+      -3.59,
+      3.0
+    ],
+    [
+      3.53,
+      2.4
+    ]
+  ],
+  "emptyCenterRectXZ": [
+    -3.95,
+    -2.99,
+    4.09,
+    4.01
+  ],
+  "productPolicy": {
+    "mountScale": [
+      1,
+      1,
+      1
+    ],
+    "oversize": "reject_before_replacing_current_product",
+    "orientation": "inherit_slot_quaternion"
+  },
+  "exitApproachXZ": [
+    7.11,
+    6.81
+  ],
+  "hiddenFrontNodes": [
+    "ShopFront_Frame",
+    "ShopFront_Glass",
+    "ShopFront_EntryCasing"
+  ],
+  "slots": [
+    {
+      "node": "DisplaySlot_01",
+      "pedestal": "Station_01_Pedestal",
+      "centerXZ": [
+        -5.94,
+        3.0
+      ],
+      "topY": 0.25,
+      "pedestalRadius": 1.87,
+      "safeRadius": 1.79,
+      "maxHeight": 2.55,
+      "approachXZ": [
+        -3.59,
+        3.0
+      ],
+      "frontYawDegrees": 90,
+      "sampleFile": "moon-rabbit-planter.glb"
+    },
+    {
+      "node": "DisplaySlot_02",
+      "pedestal": "Station_02_Pedestal",
+      "centerXZ": [
+        -5.94,
+        -1.38
+      ],
+      "topY": 0.25,
+      "pedestalRadius": 1.87,
+      "safeRadius": 1.79,
+      "maxHeight": 2.55,
+      "approachXZ": [
+        -3.59,
+        -1.38
+      ],
+      "frontYawDegrees": 90,
+      "sampleFile": "cat-post-desk.glb"
+    },
+    {
+      "node": "DisplaySlot_03",
+      "pedestal": "Station_03_Pedestal",
+      "centerXZ": [
+        -2.52,
+        -4.98
+      ],
+      "topY": 0.25,
+      "pedestalRadius": 1.87,
+      "safeRadius": 1.79,
+      "maxHeight": 2.55,
+      "approachXZ": [
+        -2.52,
+        -2.2
+      ],
+      "frontYawDegrees": 0,
+      "sampleFile": "stargazer-bed.glb"
+    },
+    {
+      "node": "DisplaySlot_04",
+      "pedestal": "Station_04_Pedestal",
+      "centerXZ": [
+        1.95,
+        -4.98
+      ],
+      "topY": 0.25,
+      "pedestalRadius": 1.87,
+      "safeRadius": 1.79,
+      "maxHeight": 2.55,
+      "approachXZ": [
+        1.95,
+        -2.2
+      ],
+      "frontYawDegrees": 0,
+      "sampleFile": "walnut-bed.glb"
+    },
+    {
+      "node": "DisplaySlot_05",
+      "pedestal": "Station_05_Pedestal",
+      "centerXZ": [
+        6.08,
+        -2.34
+      ],
+      "topY": 0.25,
+      "pedestalRadius": 1.87,
+      "safeRadius": 1.79,
+      "maxHeight": 2.55,
+      "approachXZ": [
+        3.53,
+        -2.13
+      ],
+      "frontYawDegrees": -90,
+      "sampleFile": "grandmas-floor-bedding.glb"
+    },
+    {
+      "node": "DisplaySlot_06",
+      "pedestal": "Station_06_Pedestal",
+      "centerXZ": [
+        6.08,
+        2.06
+      ],
+      "topY": 0.25,
+      "pedestalRadius": 1.87,
+      "safeRadius": 1.79,
+      "maxHeight": 2.55,
+      "approachXZ": [
+        3.53,
+        2.4
+      ],
+      "frontYawDegrees": -90,
+      "sampleFile": "cloud-desk.glb"
+    }
+  ],
+  "nameplates": [
+    {
+      "holder": "Station_01_Nameplate",
+      "glyph": "Station_01_Nameplate_Default",
+      "sampleFile": "moon-rabbit-planter.glb",
+      "sampleDisplayNameKo": "달토끼 화분"
+    },
+    {
+      "holder": "Station_02_Nameplate",
+      "glyph": "Station_02_Nameplate_Default",
+      "sampleFile": "cat-post-desk.glb",
+      "sampleDisplayNameKo": "고양이 편지 책상"
+    },
+    {
+      "holder": "Station_03_Nameplate",
+      "glyph": "Station_03_Nameplate_Default",
+      "sampleFile": "stargazer-bed.glb",
+      "sampleDisplayNameKo": "별지기 천막 침대"
+    },
+    {
+      "holder": "Station_04_Nameplate",
+      "glyph": "Station_04_Nameplate_Default",
+      "sampleFile": "walnut-bed.glb",
+      "sampleDisplayNameKo": "호두껍질 침대"
+    },
+    {
+      "holder": "Station_05_Nameplate",
+      "glyph": "Station_05_Nameplate_Default",
+      "sampleFile": "grandmas-floor-bedding.glb",
+      "sampleDisplayNameKo": "할머니 댁 이부자리"
+    },
+    {
+      "holder": "Station_06_Nameplate",
+      "glyph": "Station_06_Nameplate_Default",
+      "sampleFile": "cloud-desk.glb",
+      "sampleDisplayNameKo": "구름 책상"
+    }
+  ]
+}

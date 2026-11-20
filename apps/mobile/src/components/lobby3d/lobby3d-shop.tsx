@@ -1,5 +1,5 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber/native";
-import { Component, useEffect, useMemo, useSyncExternalStore, type MutableRefObject, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
@@ -11,27 +11,59 @@ import {
   SHOP_SLOTS,
   SHOPKEEPER_HEADING,
   SHOPKEEPER_SCALE,
-  displayScale,
+  fitsShopSlot,
+  notifyShopSwapFailed,
+  setShopDisplay,
   shopDisplay,
+  shopProduct,
   subscribeShopDisplay,
   type ShopProductId
 } from "@/lib/lobby3d/shop";
+import type { ShopProductFiles } from "@/lib/lobby3d/shop-files";
 import type { DaylightState } from "./lobby3d-daylight";
 import { OUTLINE_THICKNESS, characterOutlineMaterial, type CharacterOutlineUniforms, type ToonKit } from "./lobby3d-character";
 
-// 마을 가구점 실내(구역 shop): 실내 모델, 계산대 뒤 버들, 진열대 셋의 상품.
-// 실내·버들 모델은 앱에 들어 있고, 진열 상품 셋은 서버 아이템 목록에서 받아 기기에 둔 것을 읽는다(shop-files).
-// 상품은 기다리지 않는다: 슬롯마다 받은 상품 파일을 읽는 대로 붙이고, 없거나 읽지 못하면 그 슬롯을 비워 둔다.
+// 마을 가구점 실내(구역 shop, 생활 쇼룸): 실내 모델, 계산대 뒤 버들, 진열대 여섯의 상품과 그 앞 명패.
+// 실내·버들 모델은 앱에 들어 있고, 진열 상품의 모델·명패 그림은 서버 아이템 목록에서 받아 기기에 둔 것을 읽는다(shop-files).
+// 상품은 기다리지 않는다: 슬롯마다 받은 상품을 읽고 크기 검사(원본 배율)를 통과하면 그때 이전 상품과 명패를 함께 바꾼다.
+// 교체에 실패하면(목록에 없음·받기/읽기 실패·크기 초과) 이전 상품과 명패를 그대로 두고 진열 상태를 되돌린다.
 // 실내에 있는 동안만 장면에 있고, 나가면 빠진다(다시 들어오면 새로 붙인다. 모델 파일은 useLoader가 한 번만 읽어 둔다).
-// 실내 모델 좌표에 SHOP_OFFSET을 더한 자리에 놓는다(앱 좌표 = 모델 좌표 + (4.5, 0, 4.5)).
+// 실내 모델 좌표에 SHOP_OFFSET을 더한 자리에 놓는다(오프셋은 shop.ts의 한 값이다).
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const INTERIOR_ASSET = require("../../../assets/models/shop/furniture-shop-interior.glb");
 const SHOPKEEPER_ASSET = require("../../../assets/models/shop/beodeul.glb");
 /* eslint-enable @typescript-eslint/no-require-imports */
 
-/** 진열 상품마다 받아 둔 모델의 기기 주소(없으면 null: 목록에 없음·받는 중·받기 실패). */
-export type ShopProductUris = Record<ShopProductId, string | null>;
+/** 진열 상품마다 모델·명패 그림의 지금 상태(기기 주소 / loading / missing). */
+export type ShopProductFileMap = Record<ShopProductId, ShopProductFiles>;
+
+/** 받은 명패 그림을 읽은 결과(주소마다 한 번만 읽는다). 읽지 못하면 null이고, 다음에 다시 읽게 지운다. */
+const nameplateLoads = new Map<string, Promise<THREE.Texture | null>>();
+
+function loadNameplateTexture(uri: string): Promise<THREE.Texture | null> {
+  let job = nameplateLoads.get(uri);
+  if (!job) {
+    job = new THREE.TextureLoader()
+      .loadAsync(uri)
+      .then((texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        return texture;
+      })
+      .catch((error: unknown) => {
+        console.warn("[lobby3d] 가구점 명패 그림을 읽지 못했습니다", error);
+        nameplateLoads.delete(uri);
+        return null;
+      });
+    nameplateLoads.set(uri, job);
+  }
+  return job;
+}
+
+/** 명패 그림을 붙이는 판의 크기(받침 윗면, 새겨진 글자 메시 자리. 가로 5 : 세로 1). */
+const NAMEPLATE_SIZE = { width: 1.0, height: 0.2 } as const;
+/** 명패 판을 받침 윗면에서 띄우는 높이(받침 면과 겹쳐 깜빡이지 않게). */
+const NAMEPLATE_LIFT = 0.003;
 
 /** 받은 상품 파일을 읽은 결과(주소마다 한 번만 읽는다). 읽지 못하면 null이고, 다음에 다시 읽게 지운다. */
 const productLoads = new Map<string, Promise<GLTF | null>>();
@@ -114,17 +146,25 @@ export interface BuiltShop {
   slotNodes: THREE.Object3D[];
   /** 지금 슬롯마다 붙은 진열 인스턴스(없으면 null). */
   slotItems: (THREE.Object3D | null)[];
-  /** 지금 슬롯마다 붙은 상품. */
+  /** 지금 슬롯마다 붙은 상품(붙이지 못했으면 null). */
   slotProducts: (ShopProductId | null)[];
+  /** 슬롯마다 명패 받침(Station_NN_Nameplate)·새겨진 글자(…_Default)·명패 그림 판. */
+  nameplates: { holder: THREE.Object3D | null; glyph: THREE.Mesh | null; glyphName: string | null; plate: THREE.Mesh }[];
   /**
-   * 진열을 맞춘다: 바뀐 슬롯만 붙인 상품을 떼고 새 상품을 붙인다. 상품 모델이 아직 없으면 그 슬롯은 비워 두고,
-   * 나중에 모델이 들어오면(addProduct 뒤 다시 부르면) 그 슬롯에 붙인다. 바뀐 슬롯 번호를 돌려준다.
+   * 진열을 맞춘다: 바뀐 슬롯마다 새 상품을 붙일 수 있으면(진열용 원본이 있고 크기 검사를 통과) 이전 상품을 떼고 새 상품과 명패를 붙인다.
+   * 붙일 수 없으면 그 슬롯은 그대로다(이전 상품·명패 유지, 비어 있었으면 빈 채). 바뀐 슬롯 번호를 돌려준다.
    */
   setStock(stock: readonly ShopProductId[]): number[];
-  /** 상품 모델이 들어왔을 때(받아서 읽음): 진열용 원본을 만든다. 이미 있으면 아무것도 하지 않는다. */
+  /** 그 슬롯에 그 상품을 붙일 수 있는지: ready(붙일 수 있음), no-model(진열용 원본이 아직 없음), too-big(크기 검사 실패). */
+  canPlace(slot: number, id: ShopProductId): "ready" | "no-model" | "too-big";
+  /** 상품 모델이 들어왔을 때(받아서 읽음): 진열용 원본을 만든다(이미 있으면 새 모델로 바꾼다. 붙어 있는 인스턴스는 그대로). */
   addProduct(id: ShopProductId, gltf: GLTF): void;
   /** 그 상품의 진열용 원본이 있는지. */
   hasProduct(id: ShopProductId): boolean;
+  /** 상품의 명패 그림이 들어왔을 때: 그 상품을 진열한 슬롯의 명패를 맞춘다. */
+  addNameplate(id: ShopProductId, texture: THREE.Texture): void;
+  /** 그 상품의 명패 그림이 있는지. */
+  hasNameplateTexture(id: ShopProductId): boolean;
   /** 외곽선 굵기(배율). */
   setOutline(outline: number): void;
   /** 만든 재질을 버린다(모양은 useLoader의 원본과 함께 쓰므로 버리지 않는다). */
@@ -241,7 +281,6 @@ export function buildShop(
   // 상품 원본: 재질을 한 번 바꾸고 크기를 잰다(지금 있는 상품만. 나머지는 들어오는 대로 addProduct가 만든다)
   const templates = new Map<ShopProductId, ProductTemplate>();
   const addTemplate = (id: ShopProductId, gltf: GLTF) => {
-    if (templates.has(id)) return;
     const object = gltf.scene.clone(true);
     convertMaterials(object, owned);
     object.updateMatrixWorld(true);
@@ -262,6 +301,62 @@ export function buildShop(
   const slotProducts: (ShopProductId | null)[] = SHOP_SLOTS.map(() => null);
   const pickIndex = (o: THREE.Object3D | null) => (o ? pickTargets.indexOf(o) : -1);
 
+  // 명패: 진열대마다 모델에 새겨진 글자(그 진열대의 이름)와, 명패 그림 판을 받침 윗면(새겨진 글자 자리)에 하나씩 둔다.
+  // 처음에는 받침을 모두 숨긴다
+  const nameplateTextures = new Map<ShopProductId, THREE.Texture>();
+  const plateGeometry = new THREE.PlaneGeometry(NAMEPLATE_SIZE.width, NAMEPLATE_SIZE.height);
+  // 판의 +Y(그림 위쪽)가 받침의 −Z(글자 위쪽)를 보고, 판의 앞면이 받침 윗면(+Y)을 보게 눕힌다
+  plateGeometry.rotateX(-Math.PI / 2);
+  const nameplates = SHOP_SLOTS.map((slot, i) => {
+    const holder = interior.getObjectByName(slot.nameplate) ?? null;
+    const glyph = (interior.getObjectByName(slot.glyph) as THREE.Mesh | undefined) ?? null;
+    const glyphName = glyph ? (glyph.userData as { display_name_ko?: string }).display_name_ko ?? null : null;
+    const material = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false });
+    owned.push(material);
+    const plate = new THREE.Mesh(plateGeometry, material);
+    plate.name = `shop-nameplate-${i + 1}`;
+    plate.position.y = NAMEPLATE_LIFT;
+    plate.visible = false;
+    // 명패를 누르면 그 진열대로 간다(받침·새겨진 글자도 진열대 받침 아래라 같은 장소다)
+    (plate.userData as ShopPickData).shopPlace = `shopSlot${i + 1}` as PlaceId;
+    holder?.add(plate);
+    if (holder) holder.visible = false;
+    return { holder, glyph, glyphName, plate };
+  });
+
+  /** 슬롯 i의 명패를 지금 상품에 맞춘다: 그 진열대에 새겨진 글자가 이름과 같으면 그 글자, 아니면 명패 그림, 그림도 없으면 받침을 숨긴다. */
+  const refreshNameplate = (i: number) => {
+    const { holder, glyph, glyphName, plate } = nameplates[i];
+    if (!holder) return;
+    const id = slotProducts[i];
+    if (!id) {
+      holder.visible = false;
+      return;
+    }
+    if (glyph && glyphName === shopProduct(id).name) {
+      glyph.visible = true;
+      plate.visible = false;
+      holder.visible = true;
+      return;
+    }
+    const texture = nameplateTextures.get(id);
+    if (glyph) glyph.visible = false;
+    if (!texture) {
+      holder.visible = false;
+      return;
+    }
+    (plate.material as THREE.MeshBasicMaterial).map = texture;
+    (plate.material as THREE.MeshBasicMaterial).needsUpdate = true;
+    plate.visible = true;
+    holder.visible = true;
+  };
+
+  const canPlace = (i: number, id: ShopProductId): "ready" | "no-model" | "too-big" => {
+    const template = templates.get(id);
+    if (!template) return "no-model";
+    return fitsShopSlot(template.box, SHOP_SLOTS[i]) ? "ready" : "too-big";
+  };
+
   const built: BuiltShop = {
     root,
     shopkeeper,
@@ -269,12 +364,15 @@ export function buildShop(
     slotNodes,
     slotItems,
     slotProducts,
+    nameplates,
     setStock(stock) {
       const changed: number[] = [];
-      SHOP_SLOTS.forEach((slot, i) => {
+      SHOP_SLOTS.forEach((_, i) => {
         const want = stock[i] ?? null;
-        // 같은 상품이면 그대로(다만 비어 있던 슬롯에 그 상품 모델이 들어왔으면 붙인다)
-        if (want === slotProducts[i] && (slotItems[i] !== null || !want || !templates.has(want))) return;
+        if (!want || want === slotProducts[i]) return;
+        // 붙일 수 없으면(원본이 아직 없거나 크기 초과) 그대로 둔다: 이전 상품과 명패를 유지한다
+        if (canPlace(i, want) !== "ready") return;
+        const template = templates.get(want)!;
         // 이 슬롯에 붙인 이전 상품만 뗀다(모양·재질은 원본과 함께 쓰므로 버리지 않는다)
         const old = slotItems[i];
         if (old) {
@@ -282,23 +380,31 @@ export function buildShop(
           const at = pickIndex(old);
           if (at >= 0) pickTargets.splice(at, 1);
         }
-        slotItems[i] = null;
-        slotProducts[i] = want;
-        changed.push(i);
-        const template = want ? templates.get(want) : undefined;
-        if (!template) return;
+        // 원본 배율 그대로, 슬롯 노드의 자리·회전으로 붙인다(자동 축소 없음)
         const item = template.object.clone(true);
         item.name = `shop-display-${i + 1}`;
-        // 큰 상품은 이 진열 인스턴스만 슬롯 반경·높이 안에 들게 균일 축소한다
-        item.scale.setScalar(displayScale(template.box, slot));
+        item.scale.setScalar(1);
         item.traverse((o) => {
           (o.userData as ShopPickData).shopPlace = `shopSlot${i + 1}` as PlaceId;
         });
         slotNodes[i].add(item);
         slotItems[i] = item;
+        slotProducts[i] = want;
         pickTargets.push(item);
+        refreshNameplate(i);
+        changed.push(i);
       });
       return changed;
+    },
+    canPlace,
+    addNameplate(id, texture) {
+      nameplateTextures.set(id, texture);
+      slotProducts.forEach((product, i) => {
+        if (product === id) refreshNameplate(i);
+      });
+    },
+    hasNameplateTexture(id) {
+      return nameplateTextures.has(id);
     },
     addProduct(id, gltf) {
       addTemplate(id, gltf);
@@ -315,6 +421,7 @@ export function buildShop(
         if (at >= 0) kit.toonMaterials.splice(at, 1);
       }
       hitGeometry.dispose();
+      plateGeometry.dispose();
       for (const m of owned) m.dispose();
     }
   };
@@ -322,8 +429,8 @@ export function buildShop(
 }
 
 export interface ShopModelProps {
-  /** 진열 상품마다 받아 둔 모델의 기기 주소(없으면 null). 바뀌면(새로 받음) 그 상품을 읽어 붙인다. */
-  products: ShopProductUris;
+  /** 진열 상품마다 모델·명패 그림의 지금 상태. 바뀌면(새로 받음·실패) 슬롯을 다시 맞춘다. */
+  products: ShopProductFileMap;
   daylight: DaylightState;
   kit: ToonKit;
   outline: number;
@@ -333,7 +440,8 @@ export interface ShopModelProps {
 
 /**
  * 가구점 실내를 읽어 장면에 붙인다. 실내·버들(앱 자산)을 다 읽을 때까지는 아무것도 그리지 않는다(Suspense).
- * 진열 상품은 기다리지 않는다: 받아 둔 상품 파일을 읽는 대로 그 상품이 진열된 슬롯에 붙인다.
+ * 진열 상품은 기다리지 않는다: 받아 둔 상품 모델·명패 그림을 읽는 대로 슬롯을 맞춘다.
+ * 진열 목록에서 바꾼 슬롯의 새 상품을 붙일 수 없으면(목록에 없음·받기/읽기 실패·크기 초과) 진열을 이전 상품으로 되돌리고 알린다.
  */
 export function ShopModel({ products, daylight, kit, outline, pickTargets }: ShopModelProps) {
   const interiorGltf = useLoader(GLTFLoader, INTERIOR_ASSET as string) as GLTF;
@@ -341,31 +449,68 @@ export function ShopModel({ products, daylight, kit, outline, pickTargets }: Sho
   const built = useMemo(() => buildShop(interiorGltf, shopkeeperGltf, [], kit), [interiorGltf, shopkeeperGltf, kit]);
   useEffect(() => () => built.dispose(), [built]);
   const stock = useSyncExternalStore(subscribeShopDisplay, shopDisplay, shopDisplay);
-  // 진열 목록에서 바꾸면 그 슬롯만 바뀐다(누르기 판정 목록도 함께 맞춘다)
-  useEffect(() => {
-    built.setStock(stock);
-    pickTargets.current = [...built.pickTargets];
-  }, [built, stock, pickTargets]);
-  // 받아 둔 상품 파일을 읽어 원본을 만들고, 그 상품이 진열된 비어 있던 슬롯에 붙인다
-  const productKey = SHOP_PRODUCTS.map((p) => products[p.id] ?? "").join("|");
+  // 상품 모델·명패 그림을 다 읽거나 읽지 못하면 슬롯을 다시 맞추게 하는 수
+  const [loadTick, setLoadTick] = useState(0);
+  // 읽지 못한 상품 모델(받은 파일이 깨졌을 때). 이번에 들어와 있는 동안 그 상품은 진열할 수 없는 것으로 본다
+  const failedModels = useRef(new Set<ShopProductId>());
+  // 진열 목록에서 사용자가 바꾼 슬롯(교체에 실패하면 되돌리고 알린다). 처음 진열은 사용자가 바꾼 것이 아니다
+  const lastStock = useRef(stock);
+  const userSwaps = useRef(new Set<number>());
+  if (lastStock.current !== stock) {
+    stock.forEach((id, i) => {
+      if (id !== lastStock.current[i] && id !== built.slotProducts[i]) userSwaps.current.add(i);
+    });
+    lastStock.current = stock;
+  }
+  // 받아 둔 상품 모델·명패 그림을 읽는다(주소마다 한 번)
+  const fileKey = SHOP_PRODUCTS.map((p) => `${products[p.id].model}|${products[p.id].nameplate}`).join(";");
   useEffect(() => {
     let alive = true;
     for (const product of SHOP_PRODUCTS) {
-      const uri = products[product.id];
-      if (!uri || built.hasProduct(product.id)) continue;
-      void loadProductModel(uri).then((gltf) => {
-        if (!alive || !gltf) return;
-        built.addProduct(product.id, gltf);
-        built.setStock(shopDisplay());
-        pickTargets.current = [...built.pickTargets];
-      });
+      const files = products[product.id];
+      const isUri = (v: string) => v !== "loading" && v !== "missing";
+      if (isUri(files.model) && !built.hasProduct(product.id) && !failedModels.current.has(product.id)) {
+        void loadProductModel(files.model).then((gltf) => {
+          if (!alive) return;
+          if (gltf) built.addProduct(product.id, gltf);
+          else failedModels.current.add(product.id);
+          setLoadTick((t) => t + 1);
+        });
+      }
+      if (isUri(files.nameplate) && !built.hasNameplateTexture(product.id)) {
+        void loadNameplateTexture(files.nameplate).then((texture) => {
+          if (!alive || !texture) return;
+          built.addNameplate(product.id, texture);
+        });
+      }
     }
     return () => {
       alive = false;
     };
-    // 주소가 바뀔 때만 다시 본다(products 객체는 그릴 때마다 새로 만들어진다)
+    // 파일 상태가 바뀔 때만 다시 본다(products 객체는 그릴 때마다 새로 만들어진다)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [built, productKey, pickTargets]);
+  }, [built, fileKey]);
+  // 진열을 맞춘다: 붙일 수 있는 슬롯은 붙이고, 사용자가 바꾼 슬롯의 새 상품을 붙일 수 없으면(목록에 없음·받기/읽기 실패·크기 초과)
+  // 이전 상품으로 되돌리고 알린다. 아직 받는 중이면 기다린다(이전 상품·명패가 그대로 보인다)
+  useEffect(() => {
+    built.setStock(stock);
+    pickTargets.current = [...built.pickTargets];
+    stock.forEach((id, i) => {
+      if (id === built.slotProducts[i]) {
+        userSwaps.current.delete(i);
+        return;
+      }
+      const placeable = built.canPlace(i, id);
+      const missing = products[id].model === "missing" || failedModels.current.has(id);
+      const failed = placeable === "too-big" || (placeable === "no-model" && missing);
+      if (!failed || !userSwaps.current.has(i)) return;
+      userSwaps.current.delete(i);
+      notifyShopSwapFailed(i);
+      const shown = built.slotProducts[i];
+      if (shown) setShopDisplay(i, shown);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [built, stock, fileKey, loadTick, pickTargets]);
   useEffect(
     () => () => {
       pickTargets.current = [];

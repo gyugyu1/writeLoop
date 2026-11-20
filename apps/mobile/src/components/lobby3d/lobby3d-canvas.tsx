@@ -23,7 +23,7 @@ import {
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_FOUNTAIN, VILLAGE_PLACES } from "@/lib/lobby3d/village";
 import { SHOP_LABEL_POINTS, type ShopPlaceId } from "@/lib/lobby3d/shop";
-import { prefetchShopFiles, shopProductUris } from "@/lib/lobby3d/shop-files";
+import { prefetchShopFiles, shopProductFiles } from "@/lib/lobby3d/shop-files";
 import { useItemCatalog } from "@/lib/item-catalog-store";
 import { useItemFiles } from "@/lib/item-files";
 import type { WearLook, WearState } from "@/lib/lobby3d/wear";
@@ -1480,7 +1480,7 @@ function ShopLayer({
   // 목록·받은 파일이 바뀌면 다시 본다(받은 상품이 생기면 그 슬롯에 붙는다)
   useItemCatalog();
   useItemFiles();
-  const products = shopProductUris();
+  const products = shopProductFiles();
   useEffect(() => {
     prefetchShopFiles();
   }, []);

@@ -21,8 +21,8 @@ export interface CatalogItem {
   price: number | null;
   /** 가구의 그리기 정보(앱 furniture-catalog의 FurnitureType에서 id·name을 뺀 모양). 없거나 읽을 수 없으면 null. 검사는 furniture-catalog가 한다. */
   draw: Record<string, unknown> | null;
-  /** 내려받을 모델·아이콘 파일. 없거나 모양이 틀리면 null. */
-  assets: { model: ItemFileRef; icon: ItemFileRef | null } | null;
+  /** 내려받을 모델·아이콘·명패 그림(가구점 진열 상품) 파일. 없거나 모양이 틀리면 null(아이콘·명패 그림은 그 칸만 null). */
+  assets: { model: ItemFileRef; icon: ItemFileRef | null; nameplate?: ItemFileRef | null } | null;
 }
 
 export interface ItemCatalogData {
@@ -106,7 +106,7 @@ function parseAssets(value: unknown): CatalogItem["assets"] {
   if (!isRecord(value)) return null;
   const model = parseFileRef(value.model);
   if (!model) return null;
-  return { model, icon: parseFileRef(value.icon) };
+  return { model, icon: parseFileRef(value.icon), nameplate: parseFileRef(value.nameplate) };
 }
 
 /** 지금 목록의 그 아이템. 목록이 없거나 그 아이템이 없으면 undefined(부르는 쪽이 앱 기본값을 쓴다). */

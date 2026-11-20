@@ -1,4 +1,4 @@
-// 메인 세션 테스트(작업 128 가구점 실내): 실제 모델 파일(실내·버들·상품 셋)을 GLTFLoader로 풀어 buildShop으로 지은 장면을 본다.
+// 메인 세션 테스트(작업 128 가구점 실내, 130 새 매장·명패): 실제 모델 파일(실내·버들·상품 여섯)을 GLTFLoader로 풀어 buildShop으로 지은 장면을 본다.
 // 앞 창틀 숨김, 버들 자리·방향·배율, 슬롯별 진열·축소, 한 슬롯만 바꾸기, 다시 지어도(재입장) 버들 1명·슬롯마다 상품 1개.
 // 버들 그림(PNG)은 Jest에서 풀 수 없어(그림 해석기가 없다) 모델의 그림 참조만 빼고 푼다.
 import { readFileSync } from "fs";
@@ -87,10 +87,13 @@ let interior: GLTF;
 let keeper: GLTF;
 let products: GLTF[];
 
+/** 상품 여섯의 서버 파일(SHOP_PRODUCTS 순서). */
+const PRODUCT_FILES = ["rainboot-planter.glb", "cat-post-desk.glb", "stargazer-bed.glb", "walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"];
+
 beforeAll(async () => {
   interior = await load(APP_MODELS, "furniture-shop-interior.glb");
   keeper = await load(APP_MODELS, "beodeul.glb");
-  products = await Promise.all(["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(SERVER_FILES, f)));
+  products = await Promise.all(PRODUCT_FILES.map((f) => load(SERVER_FILES, f)));
 }, 60000);
 
 const kit = () => ({ gradient: new THREE.Texture(), toonMaterials: [] as THREE.MeshToonMaterial[] });
@@ -103,13 +106,19 @@ function count(root: THREE.Object3D, test: (o: THREE.Object3D) => boolean): numb
   return n;
 }
 
+/** 상품 여섯의 명패 그림을 모두 넣은 장면. */
+function withTextures(built: ReturnType<typeof buildShop>) {
+  for (const product of shop.SHOP_PRODUCTS) built.addNameplate(product.id, new THREE.Texture());
+  return built;
+}
+
 afterEach(() => shop.resetShopDisplay());
 
 describe("가구점 장면 짓기", () => {
-  it("앞쪽 창틀·유리·입구 틀은 숨기고, 왼쪽 창틀·문짝은 보인다", () => {
+  it("앞쪽 창틀·유리·입구 틀은 숨기고, 문짝은 보인다", () => {
     const built = buildShop(interior, keeper, products, kit());
     for (const name of shop.SHOP_HIDDEN_NODES) expect(built.root.getObjectByName(name)?.visible).toBe(false);
-    for (const name of ["ShopLeft_Frame", "ShopLeft_Glass", "ShopDoor"]) expect(built.root.getObjectByName(name)?.visible).toBe(true);
+    expect(built.root.getObjectByName("ShopDoor")?.visible).toBe(true);
   });
 
   it("버들은 CheckoutNPC 자리에 계산대 앞 손님 쪽을 보고, 배율 2.27로 선다(뼈대 있는 기본 자세)", () => {
@@ -124,49 +133,93 @@ describe("가구점 장면 짓기", () => {
     expect(forward.dot(toGuest)).toBeGreaterThan(0.999);
     const box = new THREE.Box3().setFromObject(built.shopkeeper.children[0]);
     expect(box.max.y - box.min.y).toBeCloseTo(2.27, 1);
-    // 뼈대로 휘는 몸과 외곽선 껍질(같은 수), 몸은 카툰 재질
     const bodies = count(built.shopkeeper, (o) => (o as THREE.SkinnedMesh).isSkinnedMesh && (o as THREE.Mesh).material instanceof THREE.MeshToonMaterial);
     const shells = count(built.shopkeeper, (o) => (o as THREE.SkinnedMesh).isSkinnedMesh && (o as THREE.Mesh).material instanceof THREE.MeshBasicMaterial);
     expect(bodies).toBeGreaterThan(0);
     expect(shells).toBe(bodies);
   });
 
-  it("처음 진열을 붙이면 슬롯마다 상품 하나이고, 큰 상품은 그 인스턴스만 슬롯 반경·높이 안으로 줄인다", () => {
-    const built = buildShop(interior, keeper, products, kit());
-    expect(built.setStock(shop.shopDisplay())).toEqual([0, 1, 2]);
+  it("(130) 지은 직후 명패 받침은 모두 숨어 있고, 처음 진열 여섯을 붙이면 슬롯마다 원본 배율 상품 하나가 슬롯 회전으로 놓인다", () => {
+    const built = withTextures(buildShop(interior, keeper, products, kit()));
+    expect(built.nameplates.map((n) => n.holder?.visible)).toEqual([false, false, false, false, false, false]);
+    expect(built.setStock(shop.shopDisplay())).toEqual([0, 1, 2, 3, 4, 5]);
     built.root.updateMatrixWorld(true);
     shop.SHOP_SLOTS.forEach((slot, i) => {
       expect(built.slotNodes[i].children.filter((c) => c.name.startsWith("shop-display-"))).toHaveLength(1);
       const item = built.slotItems[i]!;
+      // 원본 배율, 자리·회전은 슬롯 노드에서(인스턴스는 항등)
+      expect(item.scale.toArray()).toEqual([1, 1, 1]);
+      expect(item.quaternion.toArray()).toEqual([0, 0, 0, 1]);
       const box = new THREE.Box3().setFromObject(item);
       const center = built.slotNodes[i].getWorldPosition(new THREE.Vector3());
-      const radius = Math.max(
-        ...[box.min.x, box.max.x].flatMap((x) => [box.min.z, box.max.z].map((z) => Math.hypot(x - center.x, z - center.z)))
-      );
-      expect(radius).toBeLessThanOrEqual(slot.safeRadius + 1e-3);
-      expect(box.max.y - box.min.y).toBeLessThanOrEqual(slot.maxHeight + 1e-3);
-      // 바닥 중앙이 슬롯 원점에 놓인다
       expect(box.min.y).toBeCloseTo(center.y, 2);
+      // 원본 크기 그대로(템플릿과 같은 높이)
+      const original = new THREE.Box3().setFromObject(products[i].scene);
+      expect(box.max.y - box.min.y).toBeCloseTo(original.max.y - original.min.y, 3);
     });
-    // 원본(템플릿)은 줄이지 않는다
-    expect(products[0].scene.scale.x).toBe(1);
+    expect(built.slotProducts).toEqual(shop.DEFAULT_SHOP_DISPLAY);
   });
 
-  it("한 슬롯을 바꾸면 그 슬롯의 인스턴스만 바뀌고 다른 슬롯의 인스턴스는 그대로다", () => {
+  it("(130) 명패: 새겨진 글자와 이름이 같은 고양이 편지 책상(02)·구름 책상(06)은 새겨진 글자, 나머지 넷은 명패 그림 판을 보인다", () => {
+    const built = withTextures(buildShop(interior, keeper, products, kit()));
+    built.setStock(shop.shopDisplay());
+    built.nameplates.forEach(({ holder, glyph, plate }, i) => {
+      expect(holder?.visible).toBe(true);
+      const usesGlyph = i === 1 || i === 5;
+      expect({ slot: i + 1, glyph: glyph?.visible, plate: plate.visible }).toEqual({ slot: i + 1, glyph: usesGlyph, plate: !usesGlyph });
+    });
+  });
+
+  it("(130) 명패 그림이 아직 없으면 상품은 붙고 명패 받침만 숨고, 그림이 들어오면 보인다", () => {
     const built = buildShop(interior, keeper, products, kit());
     built.setStock(shop.shopDisplay());
+    expect(built.slotItems[3]).not.toBeNull();
+    expect(built.nameplates[3].holder?.visible).toBe(false);
+    // 새겨진 글자를 쓰는 진열대는 그림 없이도 보인다
+    expect(built.nameplates[5].holder?.visible).toBe(true);
+    built.addNameplate("walnutBed", new THREE.Texture());
+    expect(built.nameplates[3].holder?.visible).toBe(true);
+    expect(built.nameplates[3].plate.visible).toBe(true);
+  });
+
+  it("(130) 한 슬롯을 바꾸면 그 슬롯의 상품과 명패만 바뀌고, 다른 진열대에 새겨진 글자는 빌리지 않고 명패 그림을 쓴다", () => {
+    const built = withTextures(buildShop(interior, keeper, products, kit()));
+    built.setStock(shop.shopDisplay());
     const before = [...built.slotItems];
-    shop.setShopDisplay(1, "cloudDesk");
-    expect(built.setStock(shop.shopDisplay())).toEqual([1]);
-    expect(built.slotItems[0]).toBe(before[0]);
-    expect(built.slotItems[2]).toBe(before[2]);
-    expect(built.slotItems[1]).not.toBe(before[1]);
-    expect(before[1]!.parent).toBeNull();
-    expect(built.slotNodes[1].children.filter((c) => c.name.startsWith("shop-display-"))).toHaveLength(1);
-    // 같은 상품을 두 슬롯에 놓아도 서로 다른 인스턴스이고, 각 슬롯 크기에 맞춘다
-    expect(built.slotItems[1]).not.toBe(built.slotItems[2]);
-    expect(built.slotProducts).toEqual(["walnutBed", "cloudDesk", "cloudDesk"]);
-    expect(built.pickTargets.filter((o) => o.name.startsWith("shop-display-"))).toHaveLength(3);
+    shop.setShopDisplay(3, "catPostDesk");
+    expect(built.setStock(shop.shopDisplay())).toEqual([3]);
+    before.forEach((item, i) => {
+      if (i !== 3) expect(built.slotItems[i]).toBe(item);
+    });
+    expect(before[3]!.parent).toBeNull();
+    expect(built.slotProducts[3]).toBe("catPostDesk");
+    // 04 진열대에 새겨진 글자는 "호두껍질 침대"라 숨기고, 고양이 편지 책상의 명패 그림을 쓴다
+    expect(built.nameplates[3].glyph?.visible).toBe(false);
+    expect(built.nameplates[3].plate.visible).toBe(true);
+    expect(built.pickTargets.filter((o) => o.name.startsWith("shop-display-"))).toHaveLength(6);
+  });
+
+  it("(130) 새 상품 모델이 아직 없거나 크기 검사를 통과하지 못하면 이전 상품과 명패를 그대로 둔다", () => {
+    const built = withTextures(buildShop(interior, keeper, [products[0], null, null, products[3], null, null], kit()));
+    built.setStock(shop.shopDisplay());
+    // 모델이 없는 슬롯은 비고 명패도 숨는다
+    expect(built.slotItems[1]).toBeNull();
+    expect(built.nameplates[1].holder?.visible).toBe(false);
+    expect(built.canPlace(1, "catPostDesk")).toBe("no-model");
+    // 01(장화 화분) 자리에 아직 받지 않은 구름 책상으로 바꾸면 그대로 둔다
+    const planter = built.slotItems[0];
+    shop.setShopDisplay(0, "cloudDesk");
+    expect(built.setStock(shop.shopDisplay())).toEqual([]);
+    expect(built.slotItems[0]).toBe(planter);
+    expect(built.slotProducts[0]).toBe("rainbootPlanter");
+    expect(built.nameplates[0].holder?.visible).toBe(true);
+    // 크기 검사에 걸리는 모델(반경 2m 상자)은 붙이지 않는다
+    const big = new THREE.Group();
+    big.add(new THREE.Mesh(new THREE.BoxGeometry(4, 1, 4), new THREE.MeshBasicMaterial()));
+    built.addProduct("cloudDesk", { scene: big } as unknown as GLTF);
+    expect(built.canPlace(0, "cloudDesk")).toBe("too-big");
+    expect(built.setStock(shop.shopDisplay())).toEqual([]);
+    expect(built.slotItems[0]).toBe(planter);
   });
 
   it("다시 지어도(나갔다 다시 들어옴) 버들은 1명, 슬롯마다 상품 1개이고 지금 진열을 따른다", () => {
@@ -180,46 +233,21 @@ describe("가구점 장면 짓기", () => {
     const second = buildShop(interior, keeper, products, k);
     second.setStock(shop.shopDisplay());
     expect(count(second.root, (o) => o.name === "shopkeeper")).toBe(1);
-    expect(count(second.root, (o) => o.name.startsWith("shop-display-"))).toBe(3);
-    expect(second.slotProducts).toEqual(["grandmasFloorBedding", "grandmasFloorBedding", "cloudDesk"]);
-    // 원본 실내 장면에는 상품이 붙지 않는다(복제본에만 붙는다)
+    expect(count(second.root, (o) => o.name.startsWith("shop-display-"))).toBe(6);
+    expect(second.slotProducts[0]).toBe("grandmasFloorBedding");
     expect(count(interior.scene, (o) => o.name.startsWith("shop-display-"))).toBe(0);
   });
 
-  it("(129) 상품 없이 지으면 진열대가 비고, 상품 모델이 들어오는 대로 그 상품의 슬롯에만 붙는다", () => {
-    const built = buildShop(interior, keeper, [], kit());
-    expect(built.setStock(shop.shopDisplay())).toEqual([0, 1, 2]);
-    expect(built.slotItems).toEqual([null, null, null]);
-    expect(built.slotProducts).toEqual(["walnutBed", "grandmasFloorBedding", "cloudDesk"]);
-    // 받은 상품 하나(구름 책상)만 들어오면 그 슬롯(3)에만 붙고 나머지는 빈 채다
-    built.addProduct("cloudDesk", products[2]);
-    expect(built.hasProduct("cloudDesk")).toBe(true);
-    expect(built.setStock(shop.shopDisplay())).toEqual([2]);
-    expect(built.slotItems[0]).toBeNull();
-    expect(built.slotItems[1]).toBeNull();
-    expect(built.slotItems[2]?.name).toBe("shop-display-3");
-    const desk = built.slotItems[2];
-    // 다시 맞춰도 붙은 상품은 그대로(새로 만들지 않는다)
-    expect(built.setStock(shop.shopDisplay())).toEqual([]);
-    expect(built.slotItems[2]).toBe(desk);
-    // 비어 있는 슬롯에서 상품을 바꾸면 진열 상태는 바뀌고, 모델이 있는 상품이면 붙는다
-    shop.setShopDisplay(0, "cloudDesk");
-    expect(built.setStock(shop.shopDisplay())).toEqual([0]);
-    expect(built.slotItems[0]?.name).toBe("shop-display-1");
-    expect(built.pickTargets.filter((o) => o.name.startsWith("shop-display-"))).toHaveLength(2);
-  });
-
-  it("누르기 대상: 버들·계산대는 계산대 장소, 진열대·상품은 그 진열대, 문은 출입문", () => {
+  it("누르기 대상: 버들·계산대는 계산대 장소, 진열대·명패·상품은 그 진열대, 문은 출입문", () => {
     const built = buildShop(interior, keeper, products, kit());
     built.setStock(shop.shopDisplay());
     const placeOf = (o: THREE.Object3D) => (o.userData as { shopPlace?: string | null }).shopPlace ?? null;
     const byName = (prefix: string) => built.pickTargets.find((o) => o.name.startsWith(prefix));
     expect(placeOf(byName("Checkout")!)).toBe("shopCounter");
-    expect(placeOf(byName("Station_02_Pedestal")!)).toBe("shopSlot2");
+    expect(placeOf(byName("Station_05_Pedestal")!)).toBe("shopSlot5");
+    expect(placeOf(built.root.getObjectByName("Station_05_Nameplate")!)).toBe("shopSlot5");
     expect(placeOf(byName("ShopDoor")!)).toBe("shopExit");
-    expect(placeOf(byName("shop-display-3")!)).toBe("shopSlot3");
-    expect(built.pickTargets.some((o) => placeOf(o) === "shopCounter" && !o.visible)).toBe(true);
-    // 숨긴 앞 창틀은 누르기 대상이 아니다
+    expect(placeOf(byName("shop-display-6")!)).toBe("shopSlot6");
     expect(built.pickTargets.some((o) => shop.SHOP_HIDDEN_NODES.includes(o.name))).toBe(false);
   });
 });

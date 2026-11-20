@@ -1,4 +1,4 @@
-// 메인 세션 테스트(작업 128 14 결정, 129): 가구점 진열 상품 셋을 서버 목록(팔지 않는 가구)에서 받는 상품마다의 상태(있음·받는 중·없음)와 미리 받기·다시 받기.
+// 메인 세션 테스트(작업 128 14 결정, 129, 130 명패 그림): 가구점 진열 상품 셋을 서버 목록(팔지 않는 가구)에서 받는 상품마다의 상태(있음·받는 중·없음)와 미리 받기·다시 받기.
 // 실내·주인 버들은 앱에 들어 있어 받지 않는다. 가구점은 상품을 기다리지 않고 들어가고, 없는 상품의 진열대만 빈다(129).
 import { setItemCatalog, parseItemCatalog } from "@/lib/item-catalog-store";
 
@@ -12,7 +12,9 @@ const mockFiles = {
 jest.mock("@/lib/item-files", () => ({
   cachedItemFile: (ref: { sha256: string } | null) => (ref ? mockFiles.cached.get(ref.sha256) ?? null : null),
   itemFileFailed: (ref: { sha256: string } | null) => Boolean(ref && mockFiles.failed.has(ref.sha256)),
+  // 기기에 이미 있으면 받지 않는다(item-files와 같다)
   fetchItemFile: (ref: { sha256: string }) => {
+    if (mockFiles.cached.has(ref.sha256)) return Promise.resolve(mockFiles.cached.get(ref.sha256));
     mockFiles.fetched.push(ref.sha256);
     return Promise.resolve(null);
   },
@@ -23,7 +25,7 @@ jest.mock("@/lib/item-files", () => ({
 }));
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { SHOP_FILE_ITEMS, prefetchShopFiles, retryShopFiles, shopProductFile, shopProductUris } = require("@/lib/lobby3d/shop-files") as typeof import("@/lib/lobby3d/shop-files");
+const { SHOP_FILE_ITEMS, prefetchShopFiles, retryShopFiles, shopNameplateFile, shopProductFile, shopProductFiles, shopProductUris } = require("@/lib/lobby3d/shop-files") as typeof import("@/lib/lobby3d/shop-files");
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 const sha = (i: number) => String(i).repeat(64).slice(0, 64);
@@ -57,8 +59,33 @@ beforeEach(() => {
   mockFiles.retried = 0;
 });
 
-it("받는 것은 진열 상품 셋(서버 가구 id)뿐이다", () => {
-  expect(SHOP_FILE_ITEMS).toEqual(["walnutBed", "grandmasFloorBedding", "cloudDesk"]);
+it("받는 것은 진열 상품 여섯(서버 가구 id)뿐이다(130)", () => {
+  expect(SHOP_FILE_ITEMS).toEqual(["rainbootPlanter", "catPostDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk"]);
+});
+
+it("(130) 명패 그림도 상품마다 받고, 상태를 모델과 따로 본다", () => {
+  const data = parseItemCatalog({
+    version: "v1",
+    items: [
+      {
+        id: "walnutBed", kind: "furniture", name: "호두 침대", shopName: "호두 침대", description: "", category: null, slot: null, price: null,
+        draw: { mount: "floor" },
+        assets: {
+          model: { url: `/api/catalog/files/${sha(4)}.glb`, sha256: sha(4), bytes: 10 },
+          icon: null,
+          nameplate: { url: `/api/catalog/files/${sha(7)}.png`, sha256: sha(7), bytes: 5 }
+        }
+      }
+    ]
+  });
+  setItemCatalog(data!);
+  mockFiles.cached.set(sha(4), "file:///4.glb");
+  expect(shopProductFile("walnutBed")).toBe("file:///4.glb");
+  expect(shopNameplateFile("walnutBed")).toBe("loading");
+  expect(shopNameplateFile("cloudDesk")).toBe("missing");
+  expect(shopProductFiles().walnutBed).toEqual({ model: "file:///4.glb", nameplate: "loading" });
+  prefetchShopFiles();
+  expect(mockFiles.fetched).toEqual([sha(7)]);
 });
 
 it("목록에 없는 상품은 없음이고 받지 않지만, 있는 상품은 받기 시작한다(129: 하나가 없어도 나머지는 받는다)", () => {
@@ -66,26 +93,33 @@ it("목록에 없는 상품은 없음이고 받지 않지만, 있는 상품은 �
   expect(shopProductFile("grandmasFloorBedding")).toBe("missing");
   expect(shopProductFile("walnutBed")).toBe("loading");
   prefetchShopFiles();
-  expect(mockFiles.fetched).toEqual([sha(1), sha(3)]);
+  expect(mockFiles.fetched).toEqual([sha(4), sha(6)]);
 });
 
 it("받는 동안은 받는 중, 기기에 있으면 그 주소이고, 주소 표는 없는 상품을 null로 둔다", () => {
   catalogWith(SHOP_FILE_ITEMS);
-  mockFiles.cached.set(sha(3), "file:///3.glb");
-  expect(shopProductFile("cloudDesk")).toBe("file:///3.glb");
+  mockFiles.cached.set(sha(6), "file:///6.glb");
+  expect(shopProductFile("cloudDesk")).toBe("file:///6.glb");
   expect(shopProductFile("walnutBed")).toBe("loading");
-  expect(shopProductUris()).toEqual({ walnutBed: null, grandmasFloorBedding: null, cloudDesk: "file:///3.glb" });
+  expect(shopProductUris()).toEqual({
+    rainbootPlanter: null,
+    catPostDesk: null,
+    stargazerBed: null,
+    walnutBed: null,
+    grandmasFloorBedding: null,
+    cloudDesk: "file:///6.glb"
+  });
 });
 
 it("받기에 실패한 상품은 없음이고 미리 받기가 건너뛰며, 다시 받기(들어가기·마을에 나가기)는 실패 기록을 지우고 다시 받는다", () => {
   catalogWith(SHOP_FILE_ITEMS);
-  mockFiles.failed.add(sha(2));
+  mockFiles.failed.add(sha(5));
   expect(shopProductFile("grandmasFloorBedding")).toBe("missing");
   prefetchShopFiles();
-  expect(mockFiles.fetched).toEqual([sha(1), sha(3)]);
+  expect(mockFiles.fetched).toEqual([1, 2, 3, 4, 6].map(sha));
   mockFiles.fetched = [];
   retryShopFiles();
   expect(mockFiles.retried).toBe(1);
-  expect(mockFiles.fetched).toEqual([1, 2, 3].map(sha));
+  expect(mockFiles.fetched).toEqual([1, 2, 3, 4, 5, 6].map(sha));
   expect(shopProductFile("grandmasFloorBedding")).toBe("loading");
 });

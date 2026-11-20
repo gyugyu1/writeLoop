@@ -1,4 +1,4 @@
-// 메인 세션 테스트(작업 128 가구점 실내): 실내 데이터가 모델 파일과 맞는지, 실내에서 걷기·장소·버들 인사·진열 바꾸기.
+// 메인 세션 테스트(작업 128 가구점 실내, 130 새 매장): 실내 데이터가 모델 파일·shop-layout.json과 맞는지, 실내에서 걷기·장소·버들 인사·진열 바꾸기·크기 검사.
 import { readFileSync } from "fs";
 import { join } from "path";
 import { LobbySim, SHOP_MARKS, applyArea, findPath, isFree, markInfo, type FloorPoint } from "@/lib/lobby3d/engine";
@@ -8,7 +8,7 @@ import {
   SHOP_OFFSET,
   SHOP_SLOTS,
   SHOPKEEPER_GREETING,
-  displayScale,
+  fitsShopSlot,
   resetShopDisplay,
   setShopDisplay,
   shopDisplay,
@@ -76,6 +76,19 @@ describe("실내 데이터와 모델 파일", () => {
       expect(slot.center.z).toBeCloseTo(p.z, 3);
       expect(slot.safeRadius).toBe(n.extras?.safe_radius_m);
       expect(slot.maxHeight).toBe(n.extras?.max_height_m);
+      expect(slot.pedestalRadius).toBe(n.extras?.pedestal_radius_m);
+      const approach = n.extras?.approach_xz_m as number[];
+      expect(slot.approach.x).toBeCloseTo(approach[0] + SHOP_OFFSET.x, 3);
+      expect(slot.approach.z).toBeCloseTo(approach[1] + SHOP_OFFSET.z, 3);
+    }
+  });
+
+  it("(130) 진열대는 여섯이고, 명패 받침·새겨진 글자 노드가 모델에 있으며 오프셋은 (9, 8)이다", () => {
+    expect(SHOP_SLOTS.map((s) => s.node)).toEqual([1, 2, 3, 4, 5, 6].map((n) => `DisplaySlot_0${n}`));
+    expect(SHOP_OFFSET).toEqual({ x: 9, z: 8 });
+    for (const slot of SHOP_SLOTS) {
+      expect(interior.nodes.some((n) => n.name === slot.nameplate)).toBe(true);
+      expect(node(slot.glyph).extras?.display_name_ko).toEqual(expect.any(String));
     }
   });
 
@@ -102,16 +115,18 @@ describe("실내 걷기", () => {
   it("계산대·진열대·선반은 걸을 수 없는 곳이다", () => {
     expect(shopSolidAt(SHOP_NODES.checkoutNpc.x, SHOP_NODES.checkoutNpc.z)).toBe(true);
     for (const slot of SHOP_SLOTS) expect(isFree(slot.center.x, slot.center.z)).toBe(false);
-    expect(isFree(3.5 + SHOP_OFFSET.x, -0.1 + SHOP_OFFSET.z)).toBe(false);
+    // 오른쪽 벽 선반(wallShelf)과 명패(nameplate01)
+    expect(isFree(6.3 + SHOP_OFFSET.x, -6.85 + SHOP_OFFSET.z)).toBe(false);
+    expect(shopSolidAt(-4.06 + SHOP_OFFSET.x, 3.0 + SHOP_OFFSET.z)).toBe(true);
   });
 
   it("걸어가는 동안 계산대·진열대를 뚫지 않는다(지나는 모든 프레임이 설 수 있는 자리)", () => {
     const spawn = SHOP_NODES.playerSpawn;
     const sim = new LobbySim({ x: spawn.x, z: spawn.z, random: () => 0.5 });
-    for (const id of ["shopCounter", "shopSlot1", "shopSlot3", "shopSlot2", "shopExit"] as const) {
+    for (const id of ["shopSlot6", "shopSlot5", "shopSlot4", "shopSlot3", "shopSlot2", "shopSlot1", "shopCounter", "shopExit"] as const) {
       sim.pointerDown({ point: null, mark: id, onCharacter: false }, 0, 0, now);
       sim.pointerUp(now + 10);
-      for (let i = 0; i < 400; i += 1) {
+      for (let i = 0; i < 600; i += 1) {
         now += 50;
         sim.update(0.05, now);
         expect(isFree(sim.x, sim.z)).toBe(true);
@@ -165,22 +180,22 @@ describe("실내 장소와 버들 인사", () => {
 });
 
 describe("진열", () => {
-  it("처음 진열은 호두껍질 침대·이부자리·구름 책상이고, 한 슬롯을 바꾸면 그 슬롯만 바뀐다", () => {
-    expect(shopDisplay()).toEqual(["walnutBed", "grandmasFloorBedding", "cloudDesk"]);
+  it("(130) 처음 진열은 장화 화분·고양이 편지 책상·별지기 침대·호두 침대·이부자리·구름 책상이고, 한 슬롯을 바꾸면 그 슬롯만 바뀐다", () => {
+    expect(shopDisplay()).toEqual(["rainbootPlanter", "catPostDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk"]);
     expect(shopDisplay()).toEqual(DEFAULT_SHOP_DISPLAY);
+    expect(markInfo("shopSlot1").prompt).toBe("장화 화분이야.\n다른 가구로 바꿔 볼까?");
+    expect(markInfo("shopSlot4").prompt).toBe("호두 침대야.\n다른 가구로 바꿔 볼까?");
     setShopDisplay(1, "cloudDesk");
-    expect(shopDisplay()).toEqual(["walnutBed", "cloudDesk", "cloudDesk"]);
+    expect(shopDisplay()).toEqual(["rainbootPlanter", "cloudDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk"]);
     expect(markInfo("shopSlot2").prompt).toBe("구름 책상이야.\n다른 가구로 바꿔 볼까?");
-    expect(markInfo("shopSlot1").prompt).toBe("호두껍질 침대야.\n다른 가구로 바꿔 볼까?");
     setShopDisplay(0, "grandmasFloorBedding");
-    expect(markInfo("shopSlot1").prompt).toBe("할머니 댁 이부자리야.\n다른 가구로 바꿔 볼까?");
+    expect(markInfo("shopSlot1").prompt).toBe("이부자리야.\n다른 가구로 바꿔 볼까?");
   });
 
-  it("큰 상품은 슬롯 반경·높이에 들게 균일 축소하고, 작은 상품은 키우지 않는다", () => {
-    const bed = { minX: -0.805, maxX: 0.805, minZ: -1.486, maxZ: 1.486, height: 1.296 };
-    const scale = displayScale(bed, SHOP_SLOTS[0]);
-    expect(Math.hypot(0.805, 1.486) * scale).toBeCloseTo(0.9, 5);
-    expect(displayScale({ minX: -0.1, maxX: 0.1, minZ: -0.1, maxZ: 0.1, height: 0.2 }, SHOP_SLOTS[0])).toBe(1);
-    expect(displayScale({ minX: -0.1, maxX: 0.1, minZ: -0.1, maxZ: 0.1, height: 3.6 }, SHOP_SLOTS[2])).toBeCloseTo(0.5, 5);
+  it("(130) 크기 검사: 가장 먼 바닥 모서리가 1.79 안이고 높이가 2.55 안이면 원본 배율로 진열할 수 있다", () => {
+    const stargazer = { minX: -0.843, maxX: 0.843, minZ: -1.525, maxZ: 1.525, height: 1.895 };
+    expect(fitsShopSlot(stargazer, SHOP_SLOTS[2])).toBe(true);
+    expect(fitsShopSlot({ minX: -1.3, maxX: 1.3, minZ: -1.3, maxZ: 1.3, height: 1 }, SHOP_SLOTS[0])).toBe(false);
+    expect(fitsShopSlot({ minX: -0.2, maxX: 0.2, minZ: -0.2, maxZ: 0.2, height: 2.6 }, SHOP_SLOTS[0])).toBe(false);
   });
 });

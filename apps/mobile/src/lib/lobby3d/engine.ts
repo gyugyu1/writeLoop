@@ -154,7 +154,7 @@ function endsWithBatchim(word: string): boolean {
   return code >= 0 && code <= 11171 && code % 28 !== 0;
 }
 
-/** 가구점 진열대 장소(index 0~2). 말풍선은 지금 진열 상품 이름으로 만든다(진열을 바꾸면 바로 바뀐다). */
+/** 가구점 진열대 장소(index 0~5). 말풍선은 지금 진열 상품 이름으로 만든다(진열을 바꾸면 바로 바뀐다). */
 function slotMark(index: number): MarkInfo<ShopPlaceId> {
   const slot = SHOP_SLOTS[index];
   return {
@@ -171,7 +171,7 @@ function slotMark(index: number): MarkInfo<ShopPlaceId> {
   };
 }
 
-/** 가구점 실내의 장소: 출입문, 버들(계산대), 진열대 셋. */
+/** 가구점 실내의 장소: 출입문, 버들(계산대), 진열대 여섯. */
 export const SHOP_MARKS: Record<ShopPlaceId, MarkInfo<ShopPlaceId>> = {
   shopExit: {
     id: "shopExit",
@@ -191,9 +191,10 @@ export const SHOP_MARKS: Record<ShopPlaceId, MarkInfo<ShopPlaceId>> = {
     buttonLabel: "인사하기",
     enterMessage: ""
   },
-  shopSlot1: slotMark(0),
-  shopSlot2: slotMark(1),
-  shopSlot3: slotMark(2)
+  ...(Object.fromEntries(SHOP_SLOTS.map((_, i) => [`shopSlot${i + 1}`, slotMark(i)])) as Record<
+    Exclude<ShopPlaceId, "shopExit" | "shopCounter">,
+    MarkInfo<ShopPlaceId>
+  >)
 };
 
 /** 옷장 말풍선(로그인했는지에 따라). 로그인하면 대사 없이 '들어가기' 버튼만(2026-11-13 사용자 결정), 손님은 버튼 없이 안내만 한다. */

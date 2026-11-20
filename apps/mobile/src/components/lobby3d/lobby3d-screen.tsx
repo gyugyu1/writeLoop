@@ -36,7 +36,7 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
-import { SHOP_NODES, SHOP_SPAWN_HEADING, shopSlotIndex } from "@/lib/lobby3d/shop";
+import { SHOP_NODES, SHOP_SPAWN_HEADING, SHOP_SWAP_FAILED, onShopSwapFailed, shopSlotIndex } from "@/lib/lobby3d/shop";
 import { retryShopFiles } from "@/lib/lobby3d/shop-files";
 import ShopDisplaySheet from "@/components/lobby3d/shop-display-sheet";
 import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
@@ -730,6 +730,9 @@ export default function Lobby3dScreen({
   useEffect(() => () => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
   }, []);
+
+  // 가구점 진열 교체에 실패하면(목록에 없음·받기/읽기 실패·크기 초과) 안내한다(3D 그리기가 진열을 이전 상품으로 되돌린다)
+  useEffect(() => onShopSwapFailed(() => showToast(SHOP_SWAP_FAILED)), [showToast]);
 
   // 화면에 들어오면 손을 한 번 흔든다. "동작 줄이기"는 큰 동작만 막는다.
   useEffect(() => {

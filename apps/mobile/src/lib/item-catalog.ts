@@ -12,12 +12,13 @@ export { useItemCatalog } from "./item-catalog-store";
 const STORAGE_KEY = "writeloop.item-catalog.v1";
 const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
 
-/** 목록이 가리키는 모델·아이콘 파일의 해시. */
+/** 목록이 가리키는 모델·아이콘·명패 그림 파일의 해시. */
 function catalogFileHashes(data: ItemCatalogData): Set<string> {
   const keep = new Set<string>();
   for (const item of data.items) {
     if (item.assets?.model) keep.add(item.assets.model.sha256);
     if (item.assets?.icon) keep.add(item.assets.icon.sha256);
+    if (item.assets?.nameplate) keep.add(item.assets.nameplate.sha256);
   }
   return keep;
 }

@@ -229,6 +229,44 @@ export function resetShopDisplay(): void {
   for (const listener of [...displayListeners]) listener();
 }
 
+/**
+ * 슬롯별 '빈 상태 확정'(SHOP_SLOTS 순서, 앱을 켜 둔 동안). 확정된 슬롯은 상품을 비우고 가운데 '품절' 안내판을 보인다.
+ * 받는 중·파일 없음·읽기 실패·크기 초과는 빈 상태가 아니다(이전 상품·명찰을 둔다). 재고(이번 주 0개)가 채우고, 그 전에는 개발 화면 시험판이 바꾼다.
+ */
+const NO_VACANCY: readonly boolean[] = SHOP_SLOTS.map(() => false);
+let vacancy: readonly boolean[] = NO_VACANCY;
+const vacancyListeners = new Set<() => void>();
+
+export function shopVacancy(): readonly boolean[] {
+  return vacancy;
+}
+
+/** 그 슬롯이 빈 상태로 확정됐는지(빈 슬롯은 살 수 없다). */
+export function isShopSlotVacant(slot: number): boolean {
+  return vacancy[slot] === true;
+}
+
+export function setShopSlotVacant(slot: number, vacant: boolean): void {
+  if (slot < 0 || slot >= SHOP_SLOTS.length || vacancy[slot] === vacant) return;
+  const next = [...vacancy];
+  next[slot] = vacant;
+  vacancy = next;
+  for (const listener of [...vacancyListeners]) listener();
+}
+
+export function subscribeShopVacancy(listener: () => void): () => void {
+  vacancyListeners.add(listener);
+  return () => {
+    vacancyListeners.delete(listener);
+  };
+}
+
+/** 빈 상태를 모두 푼다(시험용). */
+export function resetShopVacancy(): void {
+  vacancy = NO_VACANCY;
+  for (const listener of [...vacancyListeners]) listener();
+}
+
 /** 진열 교체에 실패했을 때 알림(3D 그리기가 보내고 로비 화면이 안내를 띄운다). */
 const swapFailedListeners = new Set<(slot: number) => void>();
 

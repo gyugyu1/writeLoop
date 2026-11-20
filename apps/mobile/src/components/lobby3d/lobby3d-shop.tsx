@@ -17,6 +17,8 @@ import {
   shopDisplay,
   shopProduct,
   subscribeShopDisplay,
+  shopVacancy,
+  subscribeShopVacancy,
   type ShopProductId
 } from "@/lib/lobby3d/shop";
 import type { ShopProductFiles } from "@/lib/lobby3d/shop-files";
@@ -59,6 +61,11 @@ function loadNameplateTexture(uri: string): Promise<THREE.Texture | null> {
   }
   return job;
 }
+
+/** '품절' 안내판: 실내 모델에서 원본이 든 장면·노드 이름, 진열대 받침 기준 자리. */
+const SOLD_OUT_SCENE = "ShopNameplateTemplates";
+const SOLD_OUT_BOARD = "ShopDisplay_SoldOutBoard";
+const SOLD_OUT_POSITION = { x: 0, y: 0.25, z: 0 };
 
 /** 명패 그림을 붙이는 판의 크기(받침 윗면, 새겨진 글자 메시 자리. 가로 5 : 세로 1). */
 const NAMEPLATE_SIZE = { width: 1.0, height: 0.2 } as const;
@@ -150,11 +157,15 @@ export interface BuiltShop {
   slotProducts: (ShopProductId | null)[];
   /** 슬롯마다 명패 받침(Station_NN_Nameplate)·새겨진 글자(…_Default)·명패 그림 판. */
   nameplates: { holder: THREE.Object3D | null; glyph: THREE.Mesh | null; glyphName: string | null; plate: THREE.Mesh }[];
+  /** 슬롯마다 진열대 받침(Station_NN_Pedestal) 가운데에 붙인 '품절' 안내판(모델에 안내판 원본이 없으면 null). 처음에는 숨긴다. */
+  soldOutBoards: (THREE.Object3D | null)[];
   /**
    * 진열을 맞춘다: 바뀐 슬롯마다 새 상품을 붙일 수 있으면(진열용 원본이 있고 크기 검사를 통과) 이전 상품을 떼고 새 상품과 명패를 붙인다.
    * 붙일 수 없으면 그 슬롯은 그대로다(이전 상품·명패 유지, 비어 있었으면 빈 채). 바뀐 슬롯 번호를 돌려준다.
+   * vacancy[i]가 true(빈 상태 확정)면 그 슬롯의 상품을 떼고 명패를 숨기고 '품절' 안내판을 보인다. 빈 상태가 풀린 슬롯은 상품을 붙인 때에 안내판을 내린다
+   * (붙이기 전에는 안내판을 그대로 둔다).
    */
-  setStock(stock: readonly ShopProductId[]): number[];
+  setStock(stock: readonly ShopProductId[], vacancy?: readonly boolean[]): number[];
   /** 그 슬롯에 그 상품을 붙일 수 있는지: ready(붙일 수 있음), no-model(진열용 원본이 아직 없음), too-big(크기 검사 실패). */
   canPlace(slot: number, id: ShopProductId): "ready" | "no-model" | "too-big";
   /** 상품 모델이 들어왔을 때(받아서 읽음): 진열용 원본을 만든다(이미 있으면 새 모델로 바꾼다. 붙어 있는 인스턴스는 그대로). */
@@ -324,6 +335,49 @@ export function buildShop(
     return { holder, glyph, glyphName, plate };
   });
 
+  // '품절' 안내판: 실내 모델의 다른 장면(ShopNameplateTemplates)에 든 원본을 진열대마다 복제해 받침 가운데에 붙인다.
+  // 받침 기준 (0, 0.25, 0)·회전 없음이라 진열대 한가운데에서 +Z(카메라 쪽)를 본다. 진열 슬롯 노드는 좌우 회전이 있어 쓰지 않는다
+  const boardSource =
+    interiorGltf.scenes?.find((scene) => scene.name === SOLD_OUT_SCENE)?.getObjectByName(SOLD_OUT_BOARD) ?? null;
+  const boardTemplate = boardSource ? boardSource.clone(true) : null;
+  if (boardTemplate) {
+    boardTemplate.position.set(0, 0, 0);
+    boardTemplate.quaternion.identity();
+    convertMaterials(boardTemplate, owned);
+  }
+  const soldOutBoards = SHOP_SLOTS.map((slot, i) => {
+    const pedestal = interior.getObjectByName(slot.pedestal);
+    if (!boardTemplate || !pedestal) return null;
+    const board = boardTemplate.clone(true);
+    board.name = `shop-soldout-${i + 1}`;
+    board.position.set(SOLD_OUT_POSITION.x, SOLD_OUT_POSITION.y, SOLD_OUT_POSITION.z);
+    board.quaternion.identity();
+    board.visible = false;
+    // 안내판을 누르면 그 진열대로 간다
+    board.traverse((o) => {
+      (o.userData as ShopPickData).shopPlace = `shopSlot${i + 1}` as PlaceId;
+    });
+    pedestal.add(board);
+    return board;
+  });
+  const vacantShown: boolean[] = SHOP_SLOTS.map(() => false);
+  /** 슬롯 i를 비운다: 붙은 상품을 떼고(누르기 대상에서도 뺀다) 명패를 숨기고 안내판을 보인다. */
+  const showVacant = (i: number) => {
+    const old = slotItems[i];
+    if (old) {
+      old.removeFromParent();
+      const at = pickIndex(old);
+      if (at >= 0) pickTargets.splice(at, 1);
+    }
+    slotItems[i] = null;
+    slotProducts[i] = null;
+    vacantShown[i] = true;
+    const holder = nameplates[i].holder;
+    if (holder) holder.visible = false;
+    const board = soldOutBoards[i];
+    if (board) board.visible = true;
+  };
+
   /** 슬롯 i의 명패를 지금 상품에 맞춘다: 그 진열대에 새겨진 글자가 이름과 같으면 그 글자, 아니면 명패 그림, 그림도 없으면 받침을 숨긴다. */
   const refreshNameplate = (i: number) => {
     const { holder, glyph, glyphName, plate } = nameplates[i];
@@ -365,9 +419,17 @@ export function buildShop(
     slotItems,
     slotProducts,
     nameplates,
-    setStock(stock) {
+    soldOutBoards,
+    setStock(stock, vacancy) {
       const changed: number[] = [];
       SHOP_SLOTS.forEach((_, i) => {
+        if (vacancy?.[i]) {
+          if (!vacantShown[i]) {
+            showVacant(i);
+            changed.push(i);
+          }
+          return;
+        }
         const want = stock[i] ?? null;
         if (!want || want === slotProducts[i]) return;
         // 붙일 수 없으면(원본이 아직 없거나 크기 초과) 그대로 둔다: 이전 상품과 명패를 유지한다
@@ -391,6 +453,10 @@ export function buildShop(
         slotItems[i] = item;
         slotProducts[i] = want;
         pickTargets.push(item);
+        // 상품을 붙였으니 안내판을 내린다(빈 상태에서 돌아온 슬롯)
+        vacantShown[i] = false;
+        const board = soldOutBoards[i];
+        if (board) board.visible = false;
         refreshNameplate(i);
         changed.push(i);
       });
@@ -449,6 +515,7 @@ export function ShopModel({ products, daylight, kit, outline, pickTargets }: Sho
   const built = useMemo(() => buildShop(interiorGltf, shopkeeperGltf, [], kit), [interiorGltf, shopkeeperGltf, kit]);
   useEffect(() => () => built.dispose(), [built]);
   const stock = useSyncExternalStore(subscribeShopDisplay, shopDisplay, shopDisplay);
+  const vacancy = useSyncExternalStore(subscribeShopVacancy, shopVacancy, shopVacancy);
   // 상품 모델·명패 그림을 다 읽거나 읽지 못하면 슬롯을 다시 맞추게 하는 수
   const [loadTick, setLoadTick] = useState(0);
   // 읽지 못한 상품 모델(받은 파일이 깨졌을 때). 이번에 들어와 있는 동안 그 상품은 진열할 수 없는 것으로 본다
@@ -493,10 +560,11 @@ export function ShopModel({ products, daylight, kit, outline, pickTargets }: Sho
   // 진열을 맞춘다: 붙일 수 있는 슬롯은 붙이고, 사용자가 바꾼 슬롯의 새 상품을 붙일 수 없으면(목록에 없음·받기/읽기 실패·크기 초과)
   // 이전 상품으로 되돌리고 알린다. 아직 받는 중이면 기다린다(이전 상품·명패가 그대로 보인다)
   useEffect(() => {
-    built.setStock(stock);
+    built.setStock(stock, vacancy);
     pickTargets.current = [...built.pickTargets];
     stock.forEach((id, i) => {
-      if (id === built.slotProducts[i]) {
+      // 빈 상태인 슬롯은 붙이지 않으므로 교체 실패도 아니다(진열 상태는 그대로 둔다)
+      if (vacancy[i] || id === built.slotProducts[i]) {
         userSwaps.current.delete(i);
         return;
       }
@@ -510,7 +578,7 @@ export function ShopModel({ products, daylight, kit, outline, pickTargets }: Sho
       if (shown) setShopDisplay(i, shown);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [built, stock, fileKey, loadTick, pickTargets]);
+  }, [built, stock, vacancy, fileKey, loadTick, pickTargets]);
   useEffect(
     () => () => {
       pickTargets.current = [];

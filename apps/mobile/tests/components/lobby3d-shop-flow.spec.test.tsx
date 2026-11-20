@@ -1,4 +1,5 @@
 // [spec] qa 테스트(작업 128 가구점 실내, 새 기능, 모바일): 로비 화면(Lobby3dScreen) 흐름.
+// 작업 130(새 매장 스폰 (16.01, 14.65), 진열대 여섯, 새 상품 이름)에 맞게 고쳤다(06 결정 1).
 // 기대값은 private 작업 폴더 128-2026-11-19-가구점-실내/01-main-spec.md와 02-qa-scenarios.md에서만 가져온다(S번호는 시나리오 번호).
 // 3D 그리기는 Jest에서 돌지 않으므로 가짜로 바꾼다. 가짜는 구역이 마을이면 onVillageReady, 가구점이면 mockShop.mode에 따라
 // onShopReady("ready")·onShopFailed("failed")를 부르고 "pending"이면 부르지 않는다(테스트가 나중에 부른다).
@@ -57,7 +58,7 @@ jest.mock("@react-native-async-storage/async-storage", () =>
 );
 
 const ALL = { includeHiddenElements: true } as const;
-const SPAWN: FloorPoint = { x: 7.15, z: 7.89 };
+const SPAWN: FloorPoint = { x: 16.01, z: 14.65 };
 
 const canvas = () => mockCanvas.props!;
 const sim = () => canvas().sim;
@@ -122,7 +123,7 @@ async function enterShop() {
 }
 
 /** 가구점 안 장소의 서는 자리 좌표(엔진이 아니라 말풍선으로 장소를 찾는다: 서는 자리는 장소를 누를 때 sim이 안다). */
-async function goToPlace(id: "shopExit" | "shopCounter" | "shopSlot1" | "shopSlot2" | "shopSlot3") {
+async function goToPlace(id: "shopExit" | "shopCounter" | "shopSlot1" | "shopSlot2" | "shopSlot3" | "shopSlot4" | "shopSlot5" | "shopSlot6") {
   // 장소 이름표를 누른 것과 같다: 점은 주지 않고 장소만 준다
   await act(async () => {
     canvas().onPointer("down", { point: null, mark: id, onCharacter: false }, 100, 100);
@@ -203,7 +204,7 @@ describe("[spec] 입장(S10~S16)", () => {
     expect(area()).toBe("shop");
   });
 
-  it("S13: 입장 후 라룹이는 (7.15, 7.89)에서 −Z(heading π)를 본다", async () => {
+  it("S13: 입장 후 라룹이는 (16.01, 14.65)에서 −Z(heading π)를 본다", async () => {
     await renderLobby();
     await enterShop();
     expect(dist(pos(), SPAWN)).toBeLessThan(0.01);
@@ -262,7 +263,7 @@ describe("[spec] 실내 장소와 화면(S24·S25·S27·S28)", () => {
     expect(screen.getByRole("button", { name: "나가기" })).toBeTruthy();
     expect(textCount("마을로")).toBeGreaterThan(0);
     expect(textCount("버들")).toBeGreaterThan(0);
-    expect(textCount("진열대")).toBeGreaterThanOrEqual(3);
+    expect(textCount("진열대")).toBeGreaterThanOrEqual(6);
   });
 
   it("S24: 이름표를 눌러 버들에게 가면 '버들에게 인사할까?'와 '인사하기'가 뜬다. 진열대에 가면 그 상품 이름 말풍선과 '바꾸기'가 뜬다", async () => {
@@ -271,8 +272,10 @@ describe("[spec] 실내 장소와 화면(S24·S25·S27·S28)", () => {
     await goToPlace("shopCounter");
     expect(bubble()).toBe("버들에게 인사할까?");
     expect(screen.getByRole("button", { name: "인사하기" })).toBeTruthy();
-    await goToPlace("shopSlot3");
+    await goToPlace("shopSlot6");
     expect(bubble()).toBe("구름 책상이야.\n다른 가구로 바꿔 볼까?");
+    await goToPlace("shopSlot2");
+    expect(bubble()).toBe("고양이 편지 책상이야.\n다른 가구로 바꿔 볼까?");
     expect(screen.getByRole("button", { name: "바꾸기" })).toBeTruthy();
   });
 
@@ -327,18 +330,18 @@ describe("[spec] 버들 인사(S37·S38)", () => {
 });
 
 describe("[spec] 진열 바꾸기(S44~S48)", () => {
-  it("S44: '바꾸기'를 누르면 목록이 열리고 세 상품의 이름·설명이 있으며, 이 진열대의 지금 상품에만 '진열 중' 표시가 있다", async () => {
+  it("S44: '바꾸기'를 누르면 목록이 열리고 여섯 상품의 이름·설명이 있으며, 이 진열대의 지금 상품에만 '진열 중' 표시가 있다", async () => {
     await renderLobby();
     await enterShop();
     await goToPlace("shopSlot2");
     await press("바꾸기");
-    for (const id of ["walnutBed", "grandmasFloorBedding", "cloudDesk"] as const) {
+    for (const id of ["rainbootPlanter", "catPostDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk"] as const) {
       const product = shopProduct(id);
       expect(textCount(product.name)).toBeGreaterThan(0);
       expect(textCount(product.description)).toBeGreaterThan(0);
     }
     expect(textCount("진열 중")).toBe(1);
-    expect(screen.getByRole("button", { name: /할머니 댁 이부자리.*진열 중/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /고양이 편지 책상.*진열 중/ })).toBeTruthy();
   });
 
   it("S45: 다른 상품을 고르면 목록이 닫히고 그 진열대만 바뀐다", async () => {
@@ -347,21 +350,21 @@ describe("[spec] 진열 바꾸기(S44~S48)", () => {
     await goToPlace("shopSlot2");
     await press("바꾸기");
     await press("구름 책상");
-    expect(shopDisplay().map((id) => shopProduct(id).name)).toEqual(["호두껍질 침대", "구름 책상", "구름 책상"]);
+    expect(shopDisplay().map((id) => shopProduct(id).name)).toEqual(["장화 화분", "구름 책상", "별지기 침대", "호두 침대", "이부자리", "구름 책상"]);
     expect(textCount("진열 중")).toBe(0);
-    expect(textCount(shopProduct("walnutBed").description)).toBe(0);
+    expect(textCount(shopProduct("catPostDesk").description)).toBe(0);
   });
 
-  it("S46: 같은 상품을 여러 진열대에 놓을 수 있다(세 진열대 모두 구름 책상)", async () => {
+  it("S46: 같은 상품을 여러 진열대에 놓을 수 있다(여섯 진열대 모두 구름 책상)", async () => {
     await renderLobby();
     await enterShop();
-    for (const slot of ["shopSlot1", "shopSlot2", "shopSlot3"] as const) {
+    for (const slot of ["shopSlot1", "shopSlot2", "shopSlot3", "shopSlot4", "shopSlot5", "shopSlot6"] as const) {
       await goToPlace(slot);
       await press("바꾸기");
       // 이미 구름 책상인 진열대는 '진열 중' 표시가 붙은 이름이다
       await fireEvent.press(screen.getByRole("button", { name: /^구름 책상/ }));
     }
-    expect(shopDisplay().map((id) => shopProduct(id).name)).toEqual(["구름 책상", "구름 책상", "구름 책상"]);
+    expect(shopDisplay().map((id) => shopProduct(id).name)).toEqual(Array(6).fill("구름 책상"));
   });
 
   it("S47: 닫기로 닫으면 진열이 바뀌지 않는다", async () => {
@@ -389,7 +392,7 @@ describe("[spec] 진열 바꾸기(S44~S48)", () => {
     await press("들어가기");
     await frames(1.2);
     expect(area()).toBe("shop");
-    expect(shopDisplay().map((id) => shopProduct(id).name)).toEqual(["구름 책상", "할머니 댁 이부자리", "구름 책상"]);
+    expect(shopDisplay().map((id) => shopProduct(id).name)).toEqual(["구름 책상", "고양이 편지 책상", "별지기 침대", "호두 침대", "이부자리", "구름 책상"]);
   });
 });
 
@@ -433,14 +436,14 @@ describe("[spec] 퇴장(S29·S30·S32)", () => {
       expect(area()).toBe("shop");
       expect(dist(pos(), SPAWN)).toBeLessThan(0.01);
       expect(angleGap(sim().heading, Math.PI)).toBeLessThan(1e-3);
-      expect(shopDisplay()).toHaveLength(3);
+      expect(shopDisplay()).toHaveLength(6);
       expect(textCount("버들")).toBeGreaterThan(0);
     }
   });
 });
 
 describe("[spec] 개발 화면(S50)", () => {
-  it("S50: 시험판 구역 버튼이 방·마을·가구점 셋이고, 가구점 버튼을 누르면 바로 실내로 들어간다(스폰 (7.15, 7.89), heading π)", async () => {
+  it("S50: 시험판 구역 버튼이 방·마을·가구점 셋이고, 가구점 버튼을 누르면 바로 실내로 들어간다(스폰 (16.01, 14.65), heading π)", async () => {
     const devGlobal = globalThis as unknown as { __DEV__: boolean };
     const original = devGlobal.__DEV__;
     devGlobal.__DEV__ = true;

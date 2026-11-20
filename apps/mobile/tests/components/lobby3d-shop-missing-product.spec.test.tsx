@@ -1,3 +1,5 @@
+// 작업 130(상품 여섯, 교체 실패 때 이전 상품·명패 유지)에 맞게 고쳤다(06 결정 1): 상품 배열은 SHOP_PRODUCTS 순서 여섯이고,
+// 129의 M5(파일 없는 상품으로 바꾸면 그 슬롯이 빔)는 130 명세 3-4대로 '이전 상품·명패 유지'로 바꿨다.
 // [spec] qa 테스트(작업 129 가구점 상품 없이 입장, 기능 변경, 모바일): 01-main-spec.md 명세 2(슬롯마다 따로 붙음, 파일 없는 상품의 슬롯은 비어 있음)와
 // "그대로여야 할 동작"(비어 있는 슬롯에서 상품을 바꿔도 진열 상태는 바뀜)을 3D 장면 짓기(buildShop)로 본다.
 // 기대값은 private 작업 폴더 129-2026-11-20-가구점-상품-없이-입장/01-main-spec.md에서만 가져온다.
@@ -113,7 +115,7 @@ let products: GLTF[];
 beforeAll(async () => {
   interior = await load(APP_MODELS, "furniture-shop-interior.glb");
   keeper = await load(APP_MODELS, "beodeul.glb");
-  products = await Promise.all(["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(SERVER_MODELS, f)));
+  products = await Promise.all(["rainboot-planter.glb", "cat-post-desk.glb", "stargazer-bed.glb", "walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(SERVER_MODELS, f)));
 }, 60000);
 
 const kit = () => ({ gradient: new THREE.Texture(), toonMaterials: [] as THREE.MeshToonMaterial[] });
@@ -133,59 +135,76 @@ afterEach(() => {
   mockOutline.mockClear();
 });
 
-/** 상품 셋 중 파일이 없는 것(번호)은 빈 칸으로 둔다. */
+/** 상품 여섯 중 파일이 없는 것(번호)은 빈 칸으로 둔다. */
 const without = (...missing: number[]) => products.map((gltf, i) => (missing.includes(i) ? undefined : gltf)) as unknown as GLTF[];
 
-describe("[spec] 파일 없는 상품의 슬롯(명세 2)", () => {
-  it("M1: 둘째 상품 파일이 없으면 슬롯 2만 비어 있고(받침만) 슬롯 1·3의 상품은 붙는다", () => {
+const NAMES = ["장화 화분", "고양이 편지 책상", "별지기 침대", "호두 침대", "이부자리", "구름 책상"];
+
+describe("[spec] 파일 없는 상품의 슬롯(129 명세 2, 130 여섯)", () => {
+  it("M1: 둘째 상품 파일이 없으면 슬롯 2만 비어 있고(받침만) 나머지 다섯 슬롯의 상품은 붙는다", () => {
     const built = buildShop(interior, keeper, without(1), kit());
     built.setStock(shop.shopDisplay());
-    expect(built.slotItems[0]).not.toBeNull();
     expect(built.slotItems[1]).toBeNull();
-    expect(built.slotItems[2]).not.toBeNull();
+    for (const i of [0, 2, 3, 4, 5]) expect(built.slotItems[i]).not.toBeNull();
     expect(built.slotNodes[1].children.filter(isDisplay)).toHaveLength(0);
-    expect(count(built.root, isDisplay)).toBe(2);
+    expect(count(built.root, isDisplay)).toBe(5);
   });
 
-  it("M2: 상품 파일이 셋 다 없어도 장면이 지어지고(오류 없음) 진열 상품은 하나도 붙지 않지만 실내·버들은 있다", () => {
-    const built = buildShop(interior, keeper, without(0, 1, 2), kit());
+  it("M2: 상품 파일이 여섯 다 없어도 장면이 지어지고(오류 없음) 진열 상품은 하나도 붙지 않지만 실내·버들은 있다", () => {
+    const built = buildShop(interior, keeper, without(0, 1, 2, 3, 4, 5), kit());
     built.setStock(shop.shopDisplay());
     expect(count(built.root, isDisplay)).toBe(0);
     expect(built.root.getObjectByName("shop-interior")).toBeTruthy();
     expect(built.shopkeeper.parent).toBe(built.root);
   });
 
-  it("M3: 비어 있는 슬롯의 진열 상태는 그대로다(슬롯 2는 여전히 할머니 댁 이부자리)", () => {
+  it("M3: 비어 있는 슬롯의 진열 상태는 그대로다(슬롯 2는 여전히 고양이 편지 책상)", () => {
     const built = buildShop(interior, keeper, without(1), kit());
     built.setStock(shop.shopDisplay());
-    expect(built.slotProducts.map((id) => shop.shopProduct(id!).name)).toEqual(["호두껍질 침대", "할머니 댁 이부자리", "구름 책상"]);
+    expect(shop.shopDisplay().map((id) => shop.shopProduct(id).name)).toEqual(NAMES);
   });
 });
 
-describe("[spec] 비어 있는 슬롯에서 바꾸기(명세 그대로 둘 동작)", () => {
+describe("[spec] 비어 있는 슬롯에서 바꾸기(129 명세 그대로 둘 동작)", () => {
   it("M4: 비어 있는 슬롯 2의 진열을 파일이 있는 상품(구름 책상)으로 바꾸면 진열 상태가 바뀌고 그 슬롯에 구름 책상이 붙는다. 다른 슬롯은 그대로다", () => {
     const built = buildShop(interior, keeper, without(1), kit());
     built.setStock(shop.shopDisplay());
-    const first = built.slotItems[0];
-    const third = built.slotItems[2];
+    const others = [0, 2, 3, 4, 5].map((i) => built.slotItems[i]);
     shop.setShopDisplay(1, "cloudDesk");
     built.setStock(shop.shopDisplay());
     expect(built.slotProducts[1]).toBe("cloudDesk");
     expect(built.slotItems[1]).not.toBeNull();
     expect(built.slotItems[1]!.parent).toBe(built.slotNodes[1]);
-    expect(built.slotItems[0]).toBe(first);
-    expect(built.slotItems[2]).toBe(third);
+    [0, 2, 3, 4, 5].forEach((i, k) => expect(built.slotItems[i]).toBe(others[k]));
   });
+});
 
-  it("M5: 파일이 있는 슬롯 1을 파일 없는 상품(둘째)으로 바꾸면 진열 상태는 바뀌고 그 슬롯은 비며, 다른 슬롯은 그대로다", () => {
+describe("[spec] 130 명세 3-4: 파일 없는 상품으로 바꾸면 이전 상품·명패 유지(129 M5를 바꿈)", () => {
+  it("M5: 파일이 있는 슬롯 1을 파일 없는 상품(고양이 편지 책상)으로 바꾸려 해도 그 슬롯의 이전 상품(장화 화분)이 그대로 붙어 있고, 다른 슬롯도 그대로다", () => {
     const built = buildShop(interior, keeper, without(1), kit());
     built.setStock(shop.shopDisplay());
-    const third = built.slotItems[2];
-    shop.setShopDisplay(0, "grandmasFloorBedding");
+    const before = [...built.slotItems];
+    shop.setShopDisplay(0, "catPostDesk" as never);
     built.setStock(shop.shopDisplay());
-    expect(built.slotProducts[0]).toBe("grandmasFloorBedding");
-    expect(built.slotItems[0]).toBeNull();
-    expect(count(built.root, isDisplay)).toBe(1);
-    expect(built.slotItems[2]).toBe(third);
+    expect(built.slotProducts[0]).toBe("rainbootPlanter");
+    expect(built.slotItems[0]).toBe(before[0]);
+    expect(built.slotItems[0]!.parent).toBe(built.slotNodes[0]);
+    expect(built.slotNodes[0].children.filter(isDisplay)).toHaveLength(1);
+    for (const i of [1, 2, 3, 4, 5]) expect(built.slotItems[i]).toBe(before[i]);
+    expect(count(built.root, isDisplay)).toBe(5);
+  });
+
+  it("M5: 이전 명패도 그대로다(받침이 보이고 이전 상품의 그림이 보임)", () => {
+    const built = buildShop(interior, keeper, without(1), kit());
+    const texture = new THREE.Texture();
+    built.addNameplate("rainbootPlanter", texture);
+    built.setStock(shop.shopDisplay());
+    const holder = built.root.getObjectByName("Station_01_Nameplate")!;
+    expect(holder.visible).toBe(true);
+    shop.setShopDisplay(0, "catPostDesk" as never);
+    built.setStock(shop.shopDisplay());
+    expect(holder.visible).toBe(true);
+    expect(built.root.getObjectByName("Station_01_Nameplate_Default")!.visible).toBe(false);
+    expect(built.slotProducts[0]).toBe("rainbootPlanter");
   });
 });

@@ -1,4 +1,5 @@
 // [spec] qa 테스트(작업 128 가구점 실내, 새 기능, 모바일): 3D 장면 짓기(buildShop)를 실제 모델 파일로 본다.
+// 작업 130(새 매장, 진열대 여섯, 상품 여섯, 원본 배율)에 맞게 고쳤다(06 결정 1). 좌표는 GLB 좌표 + (9, 8)이고 상품 배열은 SHOP_PRODUCTS 순서(여섯)다.
 // 기대값은 private 작업 폴더 128-2026-11-19-가구점-실내/01-main-spec.md와 02-qa-scenarios.md에서만 가져온다(S번호는 시나리오 번호).
 // 구현에서 읽은 것은 부르는 방법뿐이다: buildShop(실내, 버들, 상품 셋, kit)이 돌려주는 root·shopkeeper·slotNodes·slotItems·setStock.
 // 모델 그림(PNG)은 Jest에서 풀 수 없어 모델의 그림 참조만 빼고 푼다(tests/components/lobby3d-shop-build.test.tsx와 같은 방식).
@@ -105,10 +106,10 @@ function rawNodes(file: string): RawNode[] {
 }
 const rawInterior = rawNodes("furniture-shop-interior.glb");
 const rawNode = (name: string) => rawInterior.find((n) => n.name === name)!;
-/** GLB 좌표 → 앱 좌표(명세 2-2). */
+/** GLB 좌표 → 앱 좌표(130 명세 2-2). */
 const appOf = (name: string) => {
   const t = rawNode(name).translation ?? [0, 0, 0];
-  return new THREE.Vector3(t[0] + 4.5, t[1], t[2] + 4.5);
+  return new THREE.Vector3(t[0] + 9, t[1], t[2] + 8);
 };
 
 let interior: GLTF;
@@ -118,7 +119,7 @@ let products: GLTF[];
 beforeAll(async () => {
   interior = await load(APP_MODELS, "furniture-shop-interior.glb");
   keeper = await load(APP_MODELS, "beodeul.glb");
-  products = await Promise.all(["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(SERVER_MODELS, f)));
+  products = await Promise.all(["rainboot-planter.glb", "cat-post-desk.glb", "stargazer-bed.glb", "walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((f) => load(SERVER_MODELS, f)));
 }, 60000);
 
 const kit = () => ({ gradient: new THREE.Texture(), toonMaterials: [] as THREE.MeshToonMaterial[] });
@@ -131,7 +132,7 @@ function count(root: THREE.Object3D, test: (o: THREE.Object3D) => boolean): numb
   return n;
 }
 
-const PRODUCT_NAMES = ["호두껍질 침대", "할머니 댁 이부자리", "구름 책상"];
+const PRODUCT_NAMES = ["장화 화분", "고양이 편지 책상", "별지기 침대", "호두 침대", "이부자리", "구름 책상"];
 const idOf = (name: string) => shop.SHOP_PRODUCTS.find((p) => p.name === name)!.id;
 const isDisplay = (o: THREE.Object3D) => o.name.startsWith("shop-display-");
 
@@ -155,15 +156,15 @@ describe("[spec] 창틀 숨김(S19)", () => {
 });
 
 describe("[spec] 버들(S33~S36)", () => {
-  it("S33: 버들 발바닥 중앙이 앱 (2.08, 1.54)이고 바닥(y 0)에 서며 CheckoutInteract (1.90, 3.25) 쪽을 본다", () => {
+  it("S33: 버들 발바닥 중앙이 앱 (10.53, 14.56)이고 바닥(y 0)에 서며 CheckoutInteract (10.75, 12.47) 쪽을 본다", () => {
     const built = buildShop(interior, keeper, products, kit());
     built.root.updateMatrixWorld(true);
     const at = built.shopkeeper.getWorldPosition(new THREE.Vector3());
-    expect(at.x).toBeCloseTo(2.08, 2);
-    expect(at.z).toBeCloseTo(1.54, 2);
+    expect(at.x).toBeCloseTo(10.53, 2);
+    expect(at.z).toBeCloseTo(14.56, 2);
     expect(at.y).toBeCloseTo(0, 3);
     const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(built.shopkeeper.getWorldQuaternion(new THREE.Quaternion()));
-    const toGuest = new THREE.Vector3(1.9 - at.x, 0, 3.25 - at.z).normalize();
+    const toGuest = new THREE.Vector3(10.75 - at.x, 0, 12.47 - at.z).normalize();
     expect(forward.dot(toGuest)).toBeGreaterThan(0.999);
   });
 
@@ -216,21 +217,21 @@ describe("[spec] 버들(S33~S36)", () => {
 });
 
 describe("[spec] 진열 붙이기(S32·S40~S43)", () => {
-  it("S40: 처음 진열은 01 호두껍질 침대, 02 할머니 댁 이부자리, 03 구름 책상이고 슬롯마다 하나다", () => {
+  it("S40: 처음 진열은 01 장화 화분, 02 고양이 편지 책상, 03 별지기 침대, 04 호두 침대, 05 이부자리, 06 구름 책상이고 슬롯마다 하나다", () => {
     const built = buildShop(interior, keeper, products, kit());
     built.setStock(shop.shopDisplay());
     expect(built.slotProducts.map((id) => shop.shopProduct(id!).name)).toEqual(PRODUCT_NAMES);
     built.slotNodes.forEach((node, i) => {
       expect({ slot: i + 1, count: node.children.filter(isDisplay).length }).toEqual({ slot: i + 1, count: 1 });
     });
-    expect(count(built.root, isDisplay)).toBe(3);
+    expect(count(built.root, isDisplay)).toBe(6);
   });
 
-  it("S41: 상품은 슬롯 노드의 변환을 따른다: 슬롯 노드 자리(GLB 슬롯 + 4.5)에 놓이고 방향은 슬롯과 같다", () => {
+  it("S41: 상품은 슬롯 노드의 변환을 따른다: 슬롯 노드 자리(GLB 슬롯 + (9, 8))에 놓이고 방향은 슬롯과 같다", () => {
     const built = buildShop(interior, keeper, products, kit());
     built.setStock(shop.shopDisplay());
     built.root.updateMatrixWorld(true);
-    ["DisplaySlot_01", "DisplaySlot_02", "DisplaySlot_03"].forEach((name, i) => {
+    ["DisplaySlot_01", "DisplaySlot_02", "DisplaySlot_03", "DisplaySlot_04", "DisplaySlot_05", "DisplaySlot_06"].forEach((name, i) => {
       const item = built.slotItems[i]!;
       expect(item.parent).toBe(built.slotNodes[i]);
       const want = appOf(name);
@@ -242,11 +243,11 @@ describe("[spec] 진열 붙이기(S32·S40~S43)", () => {
     });
   });
 
-  it("S42: 진열 인스턴스는 슬롯의 safe_radius_m·max_height_m 안에 들고, 균일 배율이며 1을 넘지 않는다. 침대·이부자리는 줄어든다", () => {
+  it("S42(130): 진열 인스턴스는 줄이지 않는다(배율 (1, 1, 1)). 상품 여섯은 슬롯의 safe_radius_m·max_height_m 안에 든다", () => {
     const built = buildShop(interior, keeper, products, kit());
     built.setStock(shop.shopDisplay());
     built.root.updateMatrixWorld(true);
-    ["DisplaySlot_01", "DisplaySlot_02", "DisplaySlot_03"].forEach((name, i) => {
+    ["DisplaySlot_01", "DisplaySlot_02", "DisplaySlot_03", "DisplaySlot_04", "DisplaySlot_05", "DisplaySlot_06"].forEach((name, i) => {
       const extras = rawNode(name).extras!;
       const item = built.slotItems[i]!;
       const box = new THREE.Box3().setFromObject(item);
@@ -254,45 +255,40 @@ describe("[spec] 진열 붙이기(S32·S40~S43)", () => {
       const radius = Math.max(...[box.min.x, box.max.x].flatMap((x) => [box.min.z, box.max.z].map((z) => Math.hypot(x - c.x, z - c.z))));
       expect({ name, radiusOk: radius <= extras.safe_radius_m + 1e-3 }).toEqual({ name, radiusOk: true });
       expect({ name, heightOk: box.max.y - box.min.y <= extras.max_height_m + 1e-3 }).toEqual({ name, heightOk: true });
-      expect(item.scale.x).toBeCloseTo(item.scale.y, 9);
-      expect(item.scale.x).toBeCloseTo(item.scale.z, 9);
-      expect(item.scale.x).toBeLessThanOrEqual(1);
+      expect(item.scale.toArray()).toEqual([1, 1, 1]);
     });
-    expect(built.slotItems[0]!.scale.x).toBeLessThan(1);
-    expect(built.slotItems[1]!.scale.x).toBeLessThan(1);
   });
 
-  it("S43: 한 인스턴스를 줄여도 원본 모델과 같은 상품의 다른 슬롯 인스턴스는 바뀌지 않는다", () => {
+  it("S43: 한 인스턴스의 배율을 바꿔도 원본 모델과 같은 상품의 다른 슬롯 인스턴스는 바뀌지 않는다", () => {
     const built = buildShop(interior, keeper, products, kit());
     built.setStock(shop.shopDisplay());
     const originalScales = products.map((p) => p.scene.scale.x);
-    expect(originalScales).toEqual([1, 1, 1]);
+    expect(originalScales).toEqual([1, 1, 1, 1, 1, 1]);
     // 같은 상품을 두 슬롯에 놓으면 서로 다른 인스턴스이고, 한쪽 배율이 다른 쪽을 바꾸지 않는다
-    shop.setShopDisplay(1, idOf("호두껍질 침대"));
+    shop.setShopDisplay(1, idOf("구름 책상"));
     built.setStock(shop.shopDisplay());
-    expect(built.slotItems[0]).not.toBe(built.slotItems[1]);
-    const first = built.slotItems[0]!.scale.x;
+    expect(built.slotItems[1]).not.toBe(built.slotItems[5]);
+    const first = built.slotItems[5]!.scale.x;
     built.slotItems[1]!.scale.setScalar(0.123);
-    expect(built.slotItems[0]!.scale.x).toBe(first);
-    expect(products[0].scene.scale.x).toBe(1);
+    expect(built.slotItems[5]!.scale.x).toBe(first);
+    expect(products[5].scene.scale.x).toBe(1);
     // 원본 모델에 진열 인스턴스가 붙지 않는다
     for (const p of products) expect(count(p.scene, isDisplay)).toBe(0);
   });
 
-  it("S45: 한 진열대의 상품을 바꾸면 그 슬롯의 모델만 바뀐다(나머지 두 슬롯의 인스턴스는 같은 객체)", () => {
+  it("S45: 한 진열대의 상품을 바꾸면 그 슬롯의 모델만 바뀐다(나머지 다섯 슬롯의 인스턴스는 같은 객체)", () => {
     const built = buildShop(interior, keeper, products, kit());
     built.setStock(shop.shopDisplay());
     const before = [...built.slotItems];
     shop.setShopDisplay(1, idOf("구름 책상"));
     built.setStock(shop.shopDisplay());
-    expect(built.slotItems[0]).toBe(before[0]);
-    expect(built.slotItems[2]).toBe(before[2]);
+    for (const i of [0, 2, 3, 4, 5]) expect(built.slotItems[i]).toBe(before[i]);
     expect(built.slotItems[1]).not.toBe(before[1]);
-    expect(built.slotProducts.map((id) => shop.shopProduct(id!).name)).toEqual(["호두껍질 침대", "구름 책상", "구름 책상"]);
-    expect(count(built.root, isDisplay)).toBe(3);
+    expect(built.slotProducts.map((id) => shop.shopProduct(id!).name)).toEqual(["장화 화분", "구름 책상", "별지기 침대", "호두 침대", "이부자리", "구름 책상"]);
+    expect(count(built.root, isDisplay)).toBe(6);
   });
 
-  it("S32: 다시 들어와 새로 지어도(퇴장 뒤 재입장) 버들은 1명, 진열 상품은 슬롯마다 1개(3개)이고 반복해도 늘지 않으며 원본 실내에는 아무것도 붙지 않는다", () => {
+  it("S32: 다시 들어와 새로 지어도(퇴장 뒤 재입장) 버들은 1명, 진열 상품은 슬롯마다 1개(6개)이고 반복해도 늘지 않으며 원본 실내에는 아무것도 붙지 않는다", () => {
     const k = kit();
     const interiorChildren = interior.scene.children.length;
     let previous: ReturnType<typeof buildShop> | null = null;
@@ -301,7 +297,7 @@ describe("[spec] 진열 붙이기(S32·S40~S43)", () => {
       const built = buildShop(interior, keeper, products, k);
       built.setStock(shop.shopDisplay());
       expect(count(built.root, (o) => o.name === "shopkeeper")).toBe(1);
-      expect(count(built.root, isDisplay)).toBe(3);
+      expect(count(built.root, isDisplay)).toBe(6);
       expect(built.slotNodes.every((node) => node.children.filter(isDisplay).length === 1)).toBe(true);
       expect(interior.scene.children.length).toBe(interiorChildren);
       expect(count(interior.scene, (o) => o.name === "shopkeeper" || isDisplay(o))).toBe(0);
@@ -318,6 +314,6 @@ describe("[spec] 진열 붙이기(S32·S40~S43)", () => {
     first.dispose();
     const second = buildShop(interior, keeper, products, k);
     second.setStock(shop.shopDisplay());
-    expect(second.slotProducts.map((id) => shop.shopProduct(id!).name)).toEqual(["구름 책상", "할머니 댁 이부자리", "구름 책상"]);
+    expect(second.slotProducts.map((id) => shop.shopProduct(id!).name)).toEqual(["구름 책상", "고양이 편지 책상", "별지기 침대", "호두 침대", "이부자리", "구름 책상"]);
   });
 });

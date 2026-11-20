@@ -830,9 +830,12 @@ describe("[spec] 095 바뀔 동작 3: 고글 만드는 스크립트, 고글 아�
 
 describe("[spec] 095 그대로: 옷 내려받기·서버 아이템 목록 파일", () => {
   // 작업 128(가구점 실내) 10 결정(사용자 "qa가 고침")을 14 결정으로 줄인 것: 서버 목록에 가구점 진열 상품 항목 셋(walnutBed·grandmasFloorBedding·cloudDesk)과
-  // 그 모델 파일 셋이 더해졌다(실내·버들 애셋 항목과 목록 머리 설명 변경은 14 결정으로 없어졌다). 그것들만 빼고 견주고, 다른 옷·가구 항목과 파일이 그대로인 단언은 그대로다.
-  const SHOP_IDS = ["walnutBed", "grandmasFloorBedding", "cloudDesk"];
-  const SHOP_FILES = ["walnut-bed.glb", "grandmas-floor-bedding.glb", "cloud-desk.glb"].map((name) => `apps/backend/src/main/resources/catalog/files/${name}`);
+  // 그 모델 파일 셋이 더해졌다(130에서 여섯으로)(실내·버들 애셋 항목과 목록 머리 설명 변경은 14 결정으로 없어졌다). 그것들만 빼고 견주고, 다른 옷·가구 항목과 파일이 그대로인 단언은 그대로다.
+  // 작업 130(12 결정, 사용자 "qa가 고침"): 가구점 진열 상품이 여섯이 되고 상품마다 명패 그림이 더해졌다. 여섯 항목과 그 모델·명패 그림 파일을 뺀다.
+  const SHOP_IDS = ["rainbootPlanter", "catPostDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk"];
+  const SHOP_FILES = ["rainboot-planter", "cat-post-desk", "stargazer-bed", "walnut-bed", "grandmas-floor-bedding", "cloud-desk"]
+    .flatMap((name) => [`${name}.glb`, `${name}-nameplate.png`])
+    .map((name) => `apps/backend/src/main/resources/catalog/files/${name}`);
   const ITEMS = "apps/backend/src/main/resources/catalog/items.json";
 
   it("R1 서버 아이템 목록 폴더(apps/backend/src/main/resources/catalog)가 기준 커밋과 같다(다른 착용 옷 11개와 목록 파일 포함. 가구점 진열 상품 항목·파일은 뺀다)", () => {

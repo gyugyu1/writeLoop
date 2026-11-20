@@ -1,3 +1,4 @@
+// 작업 130(진열 상품 여섯)에 맞게 고쳤다(06 결정 1): 서버 목록 상품이 여섯이라 서버·기기에 있는 상품 번호를 [0, 1, 2, 3, 4, 5]로 넓혔다. 단언의 뜻은 그대로다.
 // [spec] qa 테스트(작업 129 가구점 상품 없이 입장, 기능 변경, 모바일): 01-main-spec.md 명세 4(다시 받기)와 "그대로여야 할 동작"을 본다.
 // 기대값은 private 작업 폴더 129-2026-11-20-가구점-상품-없이-입장/01-main-spec.md에서만 가져온다.
 // 기기 파일은 expo-file-system 가짜(주소 → 크기 표, 받기는 테스트가 답을 정한다)로, 3D 그리기는 가짜로 대신한다.
@@ -223,7 +224,7 @@ afterEach(() => {
 describe("[spec] 다시 받기(명세 4)", () => {
   it("R1(바뀔 동작): 마을에서 받기에 실패한 상품은, 방에 들어갔다 다시 마을에 나갈 때 실패 기록을 지우고 다시 받아 본다", async () => {
     const p = putCatalog();
-    serverHas(p, [0, 2]); // 둘째 상품은 서버가 처음엔 못 준다
+    serverHas(p, [0, 2, 3, 4, 5]); // 둘째 상품은 서버가 처음엔 못 준다
     await render(<Lobby3dScreen devPanel={false} />);
     await settle();
     await goOut();
@@ -242,7 +243,7 @@ describe("[spec] 다시 받기(명세 4)", () => {
 
   it("R2(바뀔 동작): 가구점 안에서 받기에 실패한 상품은, 출입문 '나가기'로 마을에 나올 때 다시 받아 본다", async () => {
     const p = putCatalog();
-    serverHas(p, [0, 2]);
+    serverHas(p, [0, 2, 3, 4, 5]);
     await render(<Lobby3dScreen devPanel={false} />);
     await settle();
     await goOut();
@@ -266,7 +267,7 @@ describe("[spec] 다시 받기(명세 4)", () => {
 
   it("R3(그대로 둘 동작): 마을에서 받기에 실패한 상품은 가구점 '들어가기'를 누르면 다시 받아 본다", async () => {
     const p = putCatalog();
-    serverHas(p, [0, 2]);
+    serverHas(p, [0, 2, 3, 4, 5]);
     await render(<Lobby3dScreen devPanel={false} />);
     await settle();
     await goOut();
@@ -281,7 +282,7 @@ describe("[spec] 다시 받기(명세 4)", () => {
 
   it("R4(그대로 둘 동작): 이미 기기에 있는 상품은 다시 받지 않는다(마을에 나갈 때·들어가기를 눌러도 없는 것만 한 번씩)", async () => {
     const p = putCatalog();
-    putOnDevice(p, [0, 2]);
+    putOnDevice(p, [0, 2, 3, 4, 5]);
     serverHas(p, [1]);
     await render(<Lobby3dScreen devPanel={false} />);
     await settle();

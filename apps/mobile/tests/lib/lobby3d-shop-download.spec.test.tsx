@@ -1,3 +1,4 @@
+// 작업 130(진열 상품 여섯)에 맞게 고쳤다(06 결정 1): 서버 목록 상품이 여섯이라 서버·기기에 있는 상품 번호를 [0, 1, 2, 3, 4, 5]로 넓혔다. 단언의 뜻은 그대로다.
 // [spec] qa 테스트(작업 128 가구점 실내, 07·14 결정: 진열 상품 셋을 서버에서 받기, 모바일): 08-qa-scenarios.md의 C1~C6, D1~D6을 14 결정으로 바꾼 것.
 // 기대값은 private 작업 폴더 128-2026-11-19-가구점-실내/07-main-decision.md "바뀐 명세 1"과 14-main-decision.md(실내·버들은 앱 자산, 애셋 종류 없음, 서버에서 받는 것은 상품 셋뿐)에서만 가져온다.
 // 구현에서 읽은 것은 부르는 방법뿐이다: item-catalog-store(parseItemCatalog·setItemCatalog), item-files(받기·기기 파일), shop-files(prefetchShopFiles·
@@ -199,7 +200,7 @@ describe("[spec] 목록 읽기(C1·C6)", () => {
 
   it("C6·D3(129): 목록에 없는 상품만 빠지고 목록에 있는 상품은 받기를 시작한다(오류 없이). 없는 상품은 missing이다", async () => {
     const five = putCatalog(SHOP_FILE_ITEMS.slice(0, 2));
-    serverHas(five, [0, 1, 2]);
+    serverHas(five, [0, 1, 2, 3, 4, 5]);
     expect(() => prefetchShopFiles()).not.toThrow();
     await settle();
     expect(downloadedPaths().sort()).toEqual([five.paths[0], five.paths[1]].sort());
@@ -217,18 +218,18 @@ describe("[spec] 목록 읽기(C1·C6)", () => {
 });
 
 describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
-  it("C2: 미리 받기가 상품 셋 파일을 /api/catalog/files/<sha256>.glb 주소로 받아 기기 item-files 폴더에 둔다", async () => {
+  it("C2: 미리 받기가 상품 여섯 파일을 /api/catalog/files/<sha256>.glb 주소로 받아 기기 item-files 폴더에 둔다", async () => {
     const five = putCatalog();
-    serverHas(five, [0, 1, 2]);
+    serverHas(five, [0, 1, 2, 3, 4, 5]);
     prefetchShopFiles();
     await settle();
     expect(downloadedPaths().sort()).toEqual([...five.paths].sort());
     for (const sha of five.sha) expect(mockDevice.files.get(uriOf(sha))).toBe(BYTES);
   });
 
-  it("C3: 기기에 이미 셋 모두 있으면 받기 요청이 0건이고 바로 ready다", () => {
+  it("C3: 기기에 이미 여섯 모두 있으면 받기 요청이 0건이고 바로 ready다", () => {
     const five = putCatalog();
-    putOnDevice(five, [0, 1, 2]);
+    putOnDevice(five, [0, 1, 2, 3, 4, 5]);
     prefetchShopFiles();
     expect(mockDevice.downloads).toEqual([]);
     SHOP_FILE_ITEMS.forEach((id, i) => expect(shopProductFile(id as never)).toBe(uriOf(five.sha[i])));
@@ -237,15 +238,15 @@ describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
   it("C3: 일부만 있으면 없는 것만 받는다", async () => {
     const five = putCatalog();
     putOnDevice(five, [0]);
-    serverHas(five, [1, 2]);
+    serverHas(five, [1, 2, 3, 4, 5]);
     prefetchShopFiles();
     await settle();
-    expect(downloadedPaths().sort()).toEqual([five.paths[1], five.paths[2]].sort());
+    expect(downloadedPaths().sort()).toEqual([1, 2, 3, 4, 5].map((i) => five.paths[i]).sort());
   });
 
   it("D1·D2(129): 받기 전 상품은 loading, 받으면 상품마다 그 기기 주소가 된다", async () => {
     const five = putCatalog();
-    serverHas(five, [0, 1, 2]);
+    serverHas(five, [0, 1, 2, 3, 4, 5]);
     for (const id of SHOP_FILE_ITEMS) expect(shopProductFile(id as never)).toBe("loading");
     prefetchShopFiles();
     await settle();
@@ -265,7 +266,7 @@ describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
 
   it("D4: 받은 크기가 목록과 다르면(깨진 파일) 지우고 실패 상태가 된다", async () => {
     const five = putCatalog();
-    serverHas(five, [0, 2]);
+    serverHas(five, [0, 2, 3, 4, 5]);
     mockDevice.replies.set(five.paths[1], { bytes: BYTES - 1 });
     prefetchShopFiles();
     await settle();
@@ -277,7 +278,7 @@ describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
 
   it("D5(129): 실패한 뒤 다시 들어가기(retry)를 하면 다시 받아 보고, 서버가 돌아왔으면 그 상품에 기기 주소가 생긴다", async () => {
     const five = putCatalog();
-    serverHas(five, [0, 2]);
+    serverHas(five, [0, 2, 3, 4, 5]);
     prefetchShopFiles();
     await settle();
     expect(shopProductFile(SHOP_FILE_ITEMS[1] as never)).toBe("missing");
@@ -291,7 +292,7 @@ describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
 
   it("D6: 같은 파일을 동시에 두 번 받지 않는다(미리 받기와 다시 받기가 겹쳐도 파일마다 한 번)", async () => {
     const five = putCatalog();
-    serverHas(five, [0, 1, 2]);
+    serverHas(five, [0, 1, 2, 3, 4, 5]);
     prefetchShopFiles();
     prefetchShopFiles();
     retryShopFiles();
@@ -301,7 +302,7 @@ describe("[spec] 받기(C2~C4, D1·D2·D4~D6)", () => {
 
   it("C4: 목록을 새로 받아도(목록 밖 파일 정리) 받아 둔 상품 파일은 지워지지 않고, 목록에서 빠진 옛 파일은 지워진다", async () => {
     const five = putCatalog();
-    putOnDevice(five, [0, 1, 2]);
+    putOnDevice(five, [0, 1, 2, 3, 4, 5]);
     const oldUri = uriOf(hex(999_999));
     mockDevice.files.set(oldUri, 5);
     mockApi.getItemCatalog = async () => ({
@@ -364,7 +365,7 @@ describe("[spec] 화면: 마을에 나가면 미리 받기, 들어가기에서 �
 
   it("C2: 방에 있는 동안은 받지 않고, 마을에 나가면 상품 셋 파일을 받기 시작한다. 받는 동안에도 마을에서 걸을 수 있다(C5)", async () => {
     const five = putCatalog();
-    serverHas(five, [0, 1, 2]);
+    serverHas(five, [0, 1, 2, 3, 4, 5]);
     await render(<Lobby3dScreen devPanel={false} />);
     await settle();
     await frames(1);
@@ -379,9 +380,9 @@ describe("[spec] 화면: 마을에 나가면 미리 받기, 들어가기에서 �
     await walkTo(VILLAGE_PLACES.furnitureShop.approach[0], "furnitureShop");
   });
 
-  it("C3: 마을에 나가도 셋이 이미 기기에 있으면 받지 않는다", async () => {
+  it("C3: 마을에 나가도 여섯이 이미 기기에 있으면 받지 않는다", async () => {
     const five = putCatalog();
-    putOnDevice(five, [0, 1, 2]);
+    putOnDevice(five, [0, 1, 2, 3, 4, 5]);
     await render(<Lobby3dScreen devPanel={false} />);
     await settle();
     await walkTo(MARKS.door.approach[0], "door");
@@ -404,7 +405,7 @@ describe("[spec] 화면: 마을에 나가면 미리 받기, 들어가기에서 �
 
   it("D5: 받기에 실패한 뒤 가구점 '들어가기'를 다시 누르면 다시 받아 본다", async () => {
     const five = putCatalog();
-    serverHas(five, [0, 2]); // 둘째는 처음에 못 받는다
+    serverHas(five, [0, 2, 3, 4, 5]); // 둘째는 처음에 못 받는다
     await render(<Lobby3dScreen devPanel={false} />);
     await settle();
     await walkTo(MARKS.door.approach[0], "door");

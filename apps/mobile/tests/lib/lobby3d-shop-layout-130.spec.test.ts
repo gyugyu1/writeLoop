@@ -30,12 +30,12 @@ const BLOCKED: Record<string, [number, number, number, number]> = {
   sleepBacking: [-5.08, -7.21, 4.14, -6.93],
   bedsideCabinet: [-0.68, -6.43, -0.05, -5.88],
   dayBacking: [7.85, -4.86, 8.33, 4.65],
-  nameplate01: [-4.15, 2.44, -3.98, 3.56],
-  nameplate02: [-4.15, -1.94, -3.98, -0.82],
+  nameplate01: [-6.5, 4.79, -5.38, 4.96],
+  nameplate02: [-6.5, 0.41, -5.38, 0.58],
   nameplate03: [-3.08, -3.19, -1.96, -3.02],
   nameplate04: [1.39, -3.19, 2.51, -3.02],
-  nameplate05: [4.12, -2.9, 4.29, -1.78],
-  nameplate06: [4.12, 1.5, 4.29, 2.62]
+  nameplate05: [5.52, -0.55, 6.64, -0.38],
+  nameplate06: [5.52, 3.85, 6.64, 4.02]
 };
 
 /** shop-layout.json의 slots(모델 좌표). */

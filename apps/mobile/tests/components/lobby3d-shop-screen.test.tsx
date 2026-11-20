@@ -1,4 +1,4 @@
-// 메인 세션 테스트(작업 128 가구점 실내): 로비 화면에서 마을 → 가구점 입장 → 실내 이동 → 버들 인사 → 진열 교체 → 퇴장 → 재입장.
+// 메인 세션 테스트(작업 128 가구점 실내, 130 진열 여섯): 로비 화면에서 마을 → 가구점 입장 → 실내 이동 → 버들 인사 → 진열 교체 → 퇴장 → 재입장.
 // 3D 그리기는 Jest에서 돌지 않으므로 가짜로 바꾼다. 가짜는 구역이 마을이면 onVillageReady, 가구점이면 mockShop.mode에 따라
 // onShopReady(ready)·onShopFailed(failed)를 부르고, pending이면 부르지 않는다(테스트가 나중에 부른다).
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -136,12 +136,12 @@ it("마을 → 가구점 입장 → 버들 인사 → 진열 교체 → 퇴장 �
 
   // 진열대 2를 구름 책상으로
   await walkTo(SHOP_MARKS.shopSlot2.approach[0], "shopSlot2");
-  expect(sim().snapshot(Date.now()).bubbleText).toBe("할머니 댁 이부자리야.\n다른 가구로 바꿔 볼까?");
+  expect(sim().snapshot(Date.now()).bubbleText).toBe("고양이 편지 책상이야.\n다른 가구로 바꿔 볼까?");
   await press("바꾸기");
   expect(screen.getByText("진열대 2 바꾸기")).toBeTruthy();
-  expect(screen.getByRole("button", { name: "할머니 댁 이부자리, 진열 중" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "고양이 편지 책상, 진열 중" })).toBeTruthy();
   await press("구름 책상");
-  expect(shopDisplay()).toEqual(["walnutBed", "cloudDesk", "cloudDesk"]);
+  expect(shopDisplay()).toEqual(["rainbootPlanter", "cloudDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk"]);
   expect(screen.queryByText("진열대 2 바꾸기")).toBeNull();
   await frames(0.1);
   expect(sim().snapshot(Date.now()).bubbleText).toBe("구름 책상이야.\n다른 가구로 바꿔 볼까?");
@@ -158,7 +158,7 @@ it("마을 → 가구점 입장 → 버들 인사 → 진열 교체 → 퇴장 �
   await press("들어가기");
   await frames(1.2);
   expect(area()).toBe("shop");
-  expect(shopDisplay()).toEqual(["walnutBed", "cloudDesk", "cloudDesk"]);
+  expect(shopDisplay()).toEqual(["rainbootPlanter", "cloudDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk"]);
 });
 
 it("가구점 모델을 기다리면 어두운 채 '가구점에 들어가는 중…'을 보이고, 다 뜨면 밝아진다", async () => {

@@ -618,3 +618,87 @@ describe("옷집 피팅 회전판", () => {
     expect(screen.getByRole("button", { name: "취소" })).toBeTruthy();
   });
 });
+
+// 입고 있는 옷 바로 사기: 진열대에서 입어 본 옷이 계산 창 '지금 입고 있는 옷'에 체크된 채 보이고, 사면 입은 그대로 실제 착장으로 저장한다
+describe("옷집 입고 있는 옷 바로 사기", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const stock = require("@/lib/lobby3d/clothing-stock") as typeof import("@/lib/lobby3d/clothing-stock");
+  const store = require("@/lib/item-catalog-store") as typeof import("@/lib/item-catalog-store");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  const file = (n: string) => ({ url: `/api/catalog/files/${n}.glb`, sha256: n.padEnd(64, "0").slice(0, 64), bytes: 1 });
+  beforeEach(() => {
+    store.setItemCatalog({
+      version: "test-worn-buy",
+      items: [
+        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 1 }, assets: { model: file("capOrange"), icon: null } },
+        { id: "mufflerRed", kind: "wearable", name: "빨강 머플러", shopName: "빨강 머플러", description: "", category: "clothes", slot: "accessory", price: 90, draw: { attach: "bone", bone: "spine", body: 1 }, assets: { model: file("mufflerRed"), icon: null } }
+      ]
+    });
+  });
+  afterEach(() => stock.resetClothingShop());
+
+  async function tryOn(id: string) {
+    const product = stock.clothingProduct(id)!;
+    await act(async () => {
+      canvas().onPointer("down", { point: product.approach, mark: null, onCharacter: false, onScenery: true, building: null, product: id }, 100, 100);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(30);
+      canvas().onPointer("up", null, 100, 100);
+    });
+    await frames(20);
+    await press("입어보기");
+  }
+
+  it("입어 본 옷은 체크된 채 함께 사고, 산 뒤 입은 그대로 착장을 저장한다(장바구니 옷은 입지 않았으니 착장에 넣지 않는다)", async () => {
+    const order = jest.fn(async () => {});
+    const onSaveLook = jest.fn(async () => {});
+    await screen.unmount();
+    mockCanvas.props = null;
+    await render(<Lobby3dScreen devPanel={false} shopBalance={500} onClothingOrder={order} onSaveLook={onSaveLook} />);
+    await flushAsync();
+    await toClothingDoor();
+    await press("들어가기");
+    await frames(1.2);
+    await tryOn("capOrange");
+    stock.addToClothingCart("mufflerRed");
+    await walkTo(CLOTHING_MARKS.clothingCheckout.approach[0], "clothingCheckout");
+    await press("계산하기");
+    expect(screen.queryAllByText("지금 입고 있는 옷", ALL)).toHaveLength(1);
+    expect(screen.getByRole("checkbox", { name: "주황 야구모자 60룹" }).props.accessibilityState.checked).toBe(true);
+    expect(screen.queryAllByText("합계 150룹", ALL)).toHaveLength(1);
+    await press("구매");
+    await flushAsync();
+    expect(order).toHaveBeenCalledWith([
+      { type: "capOrange", price: 60 },
+      { type: "mufflerRed", price: 90 }
+    ]);
+    expect(onSaveLook).toHaveBeenCalledTimes(1);
+    const saved = (onSaveLook.mock.calls[0] as unknown as [Record<string, string | null>])[0];
+    expect(saved.hat).toBe("capOrange");
+    expect(saved.accessory ?? null).not.toBe("mufflerRed");
+  });
+
+  it("체크를 풀고 사면 그 옷은 사지도 저장하지도 않고, 주문이 실패하면 저장하지 않는다", async () => {
+    const order = jest.fn(async () => {
+      throw new Error("룹이 모자라요.");
+    });
+    const onSaveLook = jest.fn(async () => {});
+    await screen.unmount();
+    mockCanvas.props = null;
+    await render(<Lobby3dScreen devPanel={false} shopBalance={500} onClothingOrder={order} onSaveLook={onSaveLook} />);
+    await flushAsync();
+    await toClothingDoor();
+    await press("들어가기");
+    await frames(1.2);
+    await tryOn("capOrange");
+    stock.addToClothingCart("mufflerRed");
+    await walkTo(CLOTHING_MARKS.clothingCheckout.approach[0], "clothingCheckout");
+    await press("계산하기");
+    await act(async () => fireEvent.press(screen.getByRole("checkbox", { name: "주황 야구모자 60룹" })));
+    await press("구매");
+    await flushAsync();
+    expect(order).toHaveBeenCalledWith([{ type: "mufflerRed", price: 90 }]);
+    expect(onSaveLook).not.toHaveBeenCalled();
+  });
+});

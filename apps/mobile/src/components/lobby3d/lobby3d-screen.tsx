@@ -1470,8 +1470,11 @@ export default function Lobby3dScreen({
   );
   const shownToon = devPanel ? toon : HOME_TOON;
   // 장소 안내 말풍선의 버튼과 아래 메뉴 버튼. 말풍선 묶음·메뉴가 다시 그려지지 않게 늘 같은 함수를 넘기고, 하는 일은 지금 그린 화면의 것을 부른다
-  /** 계산대 '구매': 홈이 서버에 주문한다. 성공하면 장바구니를 비우고 창을 닫고 안내, 실패하면 서버 안내를 보이고 장바구니·창은 둔다. */
-  const buyClothing = (items: { type: string; price: number }[]) => {
+  /**
+   * 계산대 '구매': 홈이 서버에 주문한다. 성공하면 장바구니를 비우고 창을 닫고 안내, 실패하면 서버 안내를 보이고 장바구니·창은 둔다.
+   * 산 옷 중 옷집에서 입고 있던 옷은 입은 그대로 실제 착장으로 저장한다(개발 화면은 시험 착장만). 저장만 실패하면 옷은 산 채로 두고 안내한다.
+   */
+  const buyClothing = (items: { type: string; price: number }[], productIds: string[] = []) => {
     if (buying || items.length === 0) return;
     if (!onClothingOrder) {
       showToast("홈 화면에서 살 수 있어요");
@@ -1483,6 +1486,25 @@ export default function Lobby3dScreen({
         clearClothingCart();
         setCartOpen(false);
         showToast(`옷 ${items.length}개를 샀어요`);
+        const look = shopLook;
+        if (!look) return;
+        const real = shownLook(baseWear, baseLook);
+        const saved: WearLook = { ...real };
+        let changed = false;
+        for (const id of productIds) {
+          const product = clothingProduct(id);
+          if (!product) continue;
+          const itemId = fittingItemId(product);
+          const slot = (Object.keys(look) as WardrobeSlot[]).find((s) => look[s] === itemId);
+          if (!slot || saved[slot] === itemId) continue;
+          saved[slot] = itemId;
+          changed = true;
+          // 옷집 안에서 '벗기'·진열 해제로 돌아갈 옷도 산 옷으로
+          if (shopBaseRef.current) shopBaseRef.current = { ...shopBaseRef.current, [slot]: itemId };
+        }
+        if (!changed) return;
+        if (devPanel || !onSaveLook) setTestLook(saved);
+        else void onSaveLook(saved).catch(() => showToast("산 옷을 입혀 두지 못했어요. 옷장에서 입어 주세요"));
       })
       .catch((error: unknown) => showToast(error instanceof Error && error.message ? error.message : "사지 못했어요. 다시 시도해 주세요"))
       .finally(() => setBuying(false));
@@ -1625,6 +1647,21 @@ export default function Lobby3dScreen({
   const pressMenu = useCallback((item: (typeof MENU)[number]) => pressMenuRef.current(item), []);
   // 옷집 피팅 창이 떠 있는 동안
   const fittingShown = fittingLook !== null && clothingFloorOf(area) !== null;
+  // 계산 창의 '지금 입고 있는 옷': 옷집 임시 착장 중 가지지 않았고 장바구니에 없는 진열 상품(같은 옷은 한 번)
+  const wornToBuy = useMemo(() => {
+    const ids: string[] = [];
+    if (!shopLook) return ids;
+    const wornItems = new Set(Object.values(shopLook).filter((id): id is string => id !== null));
+    const seen = new Set<string>();
+    for (const product of CLOTHING_PRODUCTS) {
+      const itemId = fittingItemId(product);
+      if (!wornItems.has(itemId) || seen.has(itemId) || ownsWearable(itemId, ownedSet)) continue;
+      if (!clothingDisplayedNow[product.id] || clothingCartNow.includes(product.id)) continue;
+      seen.add(itemId);
+      ids.push(product.id);
+    }
+    return ids;
+  }, [shopLook, ownedSet, clothingDisplayedNow, clothingCartNow]);
   // 진열대 앞 상호작용 칸의 상품(피팅·계산대 창 중에는 없다)
   const productPanelId = clothingFloorOf(area) && fittingLook === null && !cartOpen ? clothingSelected : null;
 
@@ -2121,6 +2158,7 @@ export default function Lobby3dScreen({
       <ShopDisplaySheet slot={displaySlot} onClose={() => setDisplaySlot(null)} />
       <ClothingCartSheet
         visible={cartOpen && clothingFloorOf(area) !== null}
+        worn={wornToBuy}
         balance={shopBalance}
         buying={buying}
         onClose={() => setCartOpen(false)}

@@ -16,3 +16,4 @@
 | `shop/beodeul.glb` | 가구점 주인 버들(비버 목공 장인, 19개 본으로 리깅한 기본 자세, 내장 그림 1장). WriteLoop 제작 | 저장소와 같다 |
 | `clothing-shop/clothing-shop-interior-1f.glb` | 마을 옷집 실내 1층(16.9 × 14.7m: 오른쪽 출입문, 출입문 왼쪽 계산대, 오른쪽 벽을 따라 2층으로 오르는 계단, 피팅룸과 커튼, 진열대·마네킹·뒷벽 옷걸이와 빈 예비 자리, 자리 노드 `F1_EntranceSpawn`·`F1_ExitApproach`·`F1_ExitTrigger`·`F1_StairsUp`·`F1_FromUpper` 등). 배치 값은 함께 나온 `src/lib/lobby3d/clothing-shop-layout.json`에 있다. WriteLoop이 Blender로 만들었다 | 저장소와 같다 |
 | `clothing-shop/clothing-shop-interior-2f.glb` | 마을 옷집 실내 2층(1층과 같은 크기: 계단 개구부, 진열대·마네킹·뒷벽 옷걸이와 빈 예비 자리, 자리 노드 `F2_StairsDown`·`F2_FromLower` 등). 배치 값은 1층과 같은 JSON에 있다. WriteLoop이 Blender로 만들었다 | 저장소와 같다 |
+| `clothing-shop/clothing-display-samples.glb` | 마을 옷집 진열 상품 22종의 정적 진열 메시(`Stock_<상품 ID>`, 뿌리 `ClothingDisplaySamples`). 꾸미기 옷 원본의 메시와 재질로 만들었다. 상품 목록은 함께 나온 `src/lib/lobby3d/clothing-shop-stock.json`에 있다. WriteLoop이 Blender로 만들었다 | 저장소와 같다 |

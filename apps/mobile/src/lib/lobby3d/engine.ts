@@ -1,4 +1,5 @@
 import { DEFAULT_LOBBY_LAYOUT, isClosetPlaceId, layoutGeometry, type ClosetPlaceId, type LobbyLayout, type WallSide } from "./lobby-layout";
+import { PLAYER_RATIO } from "./player";
 import { currentRoom, outsideExit, outsidePlace, setCurrentRoom, type RoomSpec } from "./room";
 import { VILLAGE, VILLAGE_BOUNDARY, VILLAGE_PLACES, VILLAGE_SOLID_TILES, type VillageBuildingId } from "./village";
 import {
@@ -894,7 +895,15 @@ export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number
  * near는 라룹이 앞 1.2m까지로 둬서(라룹이 머리가 커서 더 가까우면 얼굴 앞이 잘린다), 카메라와 피팅룸 사이의 진열대가 가리지 않게 잘라 낸다.
  * 피팅룸 앞면·커튼·표지는 층 모델의 잘라 보기 면이 지운다.
  */
-export const FITTING_VIEW = { fovDeg: 45, cameraHeight: 1.3, bodyHeight: 2.55, bodyHalfWidth: 0.75, margin: 0.06, nearAhead: 1.2 } as const;
+export const FITTING_VIEW = {
+  fovDeg: 45,
+  // 라룹이 때 값(키 2.27: 카메라 1.3, 몸 2.55, 어깨 0.75, near 1.2)을 플레이어 키 비율로 옮긴다
+  cameraHeight: 1.3 * PLAYER_RATIO,
+  bodyHeight: 2.55 * PLAYER_RATIO,
+  bodyHalfWidth: 0.75 * PLAYER_RATIO,
+  margin: 0.06,
+  nearAhead: 1.2 * PLAYER_RATIO
+} as const;
 
 export function fittingCameraPose(focus: FloorPoint, aspect: number, cover: number): CameraPose & { near: number } {
   const v = FITTING_VIEW;

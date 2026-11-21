@@ -4,6 +4,7 @@ import { PanResponder, StyleSheet, View } from "react-native";
 import * as THREE from "three";
 import { Character, CharacterErrorBoundary, MODEL_SCALE, type CharacterHandle, type ToonKit } from "@/components/lobby3d/lobby3d-character";
 import { LobbySim } from "@/lib/lobby3d/engine";
+import { LAROOP_HEIGHT } from "@/lib/lobby3d/player";
 import type { WearLook, WearState } from "@/lib/lobby3d/wear";
 
 // 옷장 화면 위쪽의 라룹이 미리보기: 따로 그리는 작은 3D 장면에 라룹이만 크게, 정면으로 세운다.
@@ -97,7 +98,11 @@ export default function ClosetPreview({ wear, look, reduceMotion }: ClosetPrevie
   );
   return (
     <View style={styles.fill} {...pan.panHandlers} accessibilityLabel="라룹이 미리보기. 좌우로 끌면 돌아요">
-      <Canvas style={styles.fill} camera={{ position: [0, MODEL_SCALE * 0.62, 7.2], fov: 30, near: 0.5, far: 50 }} gl={{ antialias: true }}>
+      <Canvas
+        style={styles.fill}
+        camera={{ position: [0, MODEL_SCALE * 0.62, 7.2 * (MODEL_SCALE / LAROOP_HEIGHT)], fov: 30, near: 0.3, far: 50 }}
+        gl={{ antialias: true }}
+      >
         <PreviewScene wear={wear} look={look} reduceMotion={reduceMotion} heading={heading} />
       </Canvas>
     </View>

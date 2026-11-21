@@ -37,6 +37,7 @@ import type { EditMark, EditWallMark, EditZone } from "@/lib/lobby3d/lobby-edit"
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { buildPlacements, furniturePlacements, placementKey, type FurniturePlacement } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle, type ToonKit } from "./lobby3d-character";
+import { PLAYER_RATIO } from "@/lib/lobby3d/player";
 import { DaylightRig, createDaylightState, type DaylightState } from "./lobby3d-daylight";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
 import { BakedRoom, BakedRoomErrorBoundary } from "./lobby3d-room";
@@ -1336,9 +1337,10 @@ function Scene({
       chair.position.z = base.z + CHAIR.pullDir.z * pull;
     }
     // 도형 캐릭터 때와 같이, 몸이 들리면 그림자가 작아진다(들린 높이를 그때 단위 1.25로 나눠 같은 비율로).
-    const shrink = 1 - (lift / 1.25) * 0.35;
+    // 크기·들린 높이 단위는 라룹이 때 값을 플레이어 키 비율로 옮긴다
+    const shrink = 1 - (lift / (1.25 * PLAYER_RATIO)) * 0.35;
     world.shadow.position.set(sim.x, 0.01, sim.z);
-    world.shadow.scale.set(1.15 * shrink, 0.8 * shrink, 1);
+    world.shadow.scale.set(1.15 * PLAYER_RATIO * shrink, 0.8 * PLAYER_RATIO * shrink, 1);
 
     // 카메라: 따라갈 점(라룹이 자리)을 부드럽게 옮기고, 그 점으로 cameraPose가 정한 원근 카메라 자리를 그대로 쓴다.
     // 매 프레임 자리를 cameraPose가 정하므로 따라가는 도중에도 방 끝 너머는 보이지 않는다.

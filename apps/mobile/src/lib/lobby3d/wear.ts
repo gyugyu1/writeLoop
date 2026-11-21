@@ -39,8 +39,8 @@ export const NO_WEAR: WearState = { hat: false, top: false, bottom: false, shoes
 /** 아무것도 입지 않은 일곱 부위(맨얼굴). */
 export const NO_LOOK: WearLook = { hat: null, top: null, bottom: null, shoes: null, face: null, back: null, accessory: null };
 
-/** 라룹이 기본 모습: 고글만 쓴 상태(개발 화면 시험판이 이 모습으로 시작한다). */
-export const DEFAULT_LOOK: WearLook = { ...NO_LOOK, face: "goggles" };
+/** 플레이어 기본 모습: 모델에 든 기본 착장만(아무 착용 아이템도 없음). 개발 화면 시험판이 이 모습으로 시작한다. 고글을 기본으로 씌우지 않는다. */
+export const DEFAULT_LOOK: WearLook = { ...NO_LOOK };
 
 const LOOK_SLOTS: readonly WardrobeSlot[] = ["hat", "top", "bottom", "shoes", "face", "back", "accessory"];
 
@@ -75,8 +75,8 @@ export const WEARABLE_ITEMS: Readonly<Record<string, WearableItemInfo>> = {
   necklaceGold: { slot: "accessory", label: "금 목걸이" }
 };
 
-/** 이 앱의 라룹이 몸 판. 옷 그리기 정보의 body가 이 값과 같아야 그린다(라룹이 몸 모델을 바꾸면 올린다). */
-export const WEAR_BODY = 1;
+/** 이 앱의 플레이어 몸 판. 옷 그리기 정보의 body가 이 값과 같아야 그린다(1: 라룹이, 2: 사람형 플레이어). */
+export const WEAR_BODY = 2;
 
 /** 받은 목록에서 읽은 옷 그리기 정보. bone은 붙일 뼈(뼈에 붙일 때), mirror는 좌우로 뒤집어 하나 더 붙일 뼈, color는 모델 색 대신 칠할 색. */
 export interface WearDraw {
@@ -127,8 +127,8 @@ export function wearDraw(type: string | null | undefined): WearDraw | null {
   return draw;
 }
 
-/** 앱에 든 옷(라룹이 고글). 받은 목록의 그리기 정보·모델 파일 없이 앱에 든 모델(assets/models/wear-goggles.glb)로 그린다. */
-export const BODY_WEARABLES: ReadonlySet<string> = new Set(["goggles"]);
+/** 앱에 든 옷. 받은 목록의 그리기 정보·모델 파일 없이 앱에 든 모델로 그린다. 라룹이 고글(wear-goggles.glb)은 라룹이 몸이라 사람형 플레이어에게 그리지 않는다(지금은 없다). */
+export const BODY_WEARABLES: ReadonlySet<string> = new Set<string>();
 
 /** 라룹이에 입힐 수 있는 옷인지: 받은 목록으로 그릴 수 있는 옷(wearDraw)이거나 몸에 그려진 옷. 옷장 칸은 이런 옷에만 만든다. */
 export function isWearableDrawable(type: string | null | undefined): boolean {
@@ -158,7 +158,8 @@ export function itemsInSlot(slot: WardrobeSlot): string[] {
     const ids = catalog.items.filter((item) => item.kind === "wearable" && item.slot === slot && isWearableDrawable(item.id)).map((item) => item.id);
     return [...ids.filter((id) => BODY_WEARABLES.has(id)), ...ids.filter((id) => !BODY_WEARABLES.has(id))];
   }
-  return Object.keys(WEARABLE_ITEMS).filter((type) => WEARABLE_ITEMS[type].slot === slot);
+  // 라룹이 고글은 앱에 든 모델이 있을 때만(지금 사람형 플레이어에게는 없다)
+  return Object.keys(WEARABLE_ITEMS).filter((type) => WEARABLE_ITEMS[type].slot === slot && (type !== "goggles" || BODY_WEARABLES.has(type)));
 }
 
 const WEAR_OF: Partial<Record<WardrobeSlot, WearSlot>> = { hat: "hat", top: "top", bottom: "bottom", shoes: "shoes" };
@@ -198,17 +199,13 @@ export function lookOfWear(wear: WearState): WearLook {
   return look;
 }
 
-/**
- * 착용 모델로 그릴 것이 하나라도 있는지(라룹이 고글 포함). 그릴 아이템(look)을 주면 일곱 부위를 보고,
- * 주지 않으면(입은 것을 모름) 라룹이 기본 모습대로 고글을 쓴 것이라 늘 참이다.
- */
+/** 착용 모델로 그릴 것이 하나라도 있는지. 그릴 아이템(look)을 주면 일곱 부위를, 주지 않으면(입은 것을 모름) ①의 넷을 본다. */
 export function wearsAnything(wear: WearState, look?: WearLook | null): boolean {
-  void wear;
-  if (look) return LOOK_SLOTS.some((slot) => look[slot] !== null);
-  return true;
+  const shown = shownLook(wear, look);
+  return LOOK_SLOTS.some((slot) => shown[slot] !== null);
 }
 
-/** 착용 모듈이 그릴 일곱 부위: look이 있으면 그대로, 없으면(입은 것을 모름) ①의 넷에 라룹이 고글을 쓴 모습. */
+/** 착용 모듈이 그릴 일곱 부위: look이 있으면 그대로, 없으면(입은 것을 모름) ①의 넷(고글은 씌우지 않는다). */
 export function shownLook(wear: WearState, look?: WearLook | null): WearLook {
-  return look ?? { ...lookOfWear(wear), face: "goggles" };
+  return look ?? lookOfWear(wear);
 }

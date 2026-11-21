@@ -10,16 +10,15 @@ import { treeModelAssets } from "./tree-models";
 import { villageFountainAsset } from "./village-fountain";
 import { villageStreetlampAsset } from "./village-streetlamp";
 
-// 로비의 3D 모델(방 껍데기, 라이트루프, 앱에 든 처음 방 가구 일곱)을 앱이 시작되면 미리 읽어 둔다. 읽어 푸는 데 몇 초가 걸린다.
+// 로비의 3D 모델(방 껍데기, 메인 플레이어, 앱에 든 처음 방 가구 일곱)을 앱이 시작되면 미리 읽어 둔다. 읽어 푸는 데 몇 초가 걸린다.
 // 이 파일들은 계정·배치와 상관없이 같다(서버에서 받는 가구는 로비가 필요할 때 읽는다). 방을 짓고 그리는 것은 로비가 배치를 정한 뒤에 한다.
 // 로비의 각 부분(lobby3d-room, lobby3d-character, lobby3d-furniture)이 useLoader로 읽는 파일과 같아야 같은 것을 함께 쓴다.
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const LOBBY_MODEL_ASSETS = [
   require("../../../assets/models/lobby-room.glb"),
-  require("../../../assets/models/writeloop.glb"),
-  // 라룹이 고글(착용 모듈이 같은 파일을 useLoader로 읽는다. 입은 것을 모르거나 고글을 쓰면 처음부터 그린다)
-  require("../../../assets/models/wear-goggles.glb")
+  // 메인 플레이어(사람형). 라룹이 writeloop.glb와 라룹이 고글은 플레이어가 쓰지 않아 미리 읽지 않는다
+  require("../../../assets/models/player-human.glb")
 ] as string[];
 // 바깥 마을 모델. 방에서 '나가기'를 누르기 전에 읽어 두어 마을이 바로 뜨게 한다(lobby3d-village가 같은 파일을 읽는다)
 const VILLAGE_MODEL_ASSET = require("../../../assets/models/lobby-village.glb") as string;

@@ -6,23 +6,24 @@ import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js
 import { characterClipState } from "@/lib/lobby3d/character-clips";
 import { outlineAttributes, type OutlineAttributeChoice } from "@/lib/lobby3d/outline-attributes";
 import type { LobbySim } from "@/lib/lobby3d/engine";
+import { PLAYER_RATIO, PLAYER_SCALE } from "@/lib/lobby3d/player";
 import { NO_WEAR, wearsAnything, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type * as WearablesModule from "./lobby3d-wearables";
 
-// 로비의 라이트루프 3D 모델(규격: docs/guides/character-3d-model-spec.ko.md).
-// 모델은 키 1, 앞쪽 +Z이고 동작 클립을 담고 있다. 어떤 클립을 얼마나 섞을지는 character-clips가 정하고, 여기서는 그대로 재생한다.
+// 로비의 메인 플레이어 3D 모델(사람형. 라룹이 writeloop.glb는 영어 조언 캐릭터용으로 남겨 둔다).
+// 모델은 키 1, 발바닥 원점, 앞쪽 +Z이고 동작 클립(라룹이와 같은 이름)을 담고 있다. 어떤 클립을 얼마나 섞을지는 character-clips가 정하고, 여기서는 그대로 재생한다.
+// 메시는 몸·머리·눈·눈썹·입·머리카락과 기본 착장(흰 티셔츠·차콜 반바지·양말·운동화 두 짝)으로 나뉘어 있고 뼈대 하나를 함께 쓴다.
 
-/** 키 1인 모델을 키우는 배율. 도형 캐릭터 때 키(약 2.27 × 1.25)의 0.8이다(가구와 어울리게 줄임). */
-const SIZE = 0.8;
-export const MODEL_SCALE = 2.27 * 1.25 * SIZE;
+/** 키 1인 모델을 키우는 배율(월드 키). */
+export const MODEL_SCALE = PLAYER_SCALE;
 const LINE = 0x3d1b0f;
 /** 외곽선 껍질을 부풀리는 거리(키 1 기준). 설정의 외곽선 굵기 배율을 곱한다. */
 export const OUTLINE_THICKNESS = 0.012;
-/** 말풍선 꼬리가 닿을 높이(바닥에서). 모델 키에 맞춰 도형 캐릭터 때(3.2)에 SIZE를 곱한다. 몸이 들리면 머리를 따라 올라간다. */
-export const BUBBLE_HEIGHT = 3.2 * SIZE;
+/** 말풍선 꼬리가 닿을 높이(바닥에서): 서 있을 때 머리 꼭대기 바로 위(키의 1.13배, 라룹이 때와 같은 비율). 몸이 들리면 머리를 따라 올라간다. */
+export const BUBBLE_HEIGHT = MODEL_SCALE * 1.13;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const MODEL_ASSET = require("../../../assets/models/writeloop.glb");
+const MODEL_ASSET = require("../../../assets/models/player-human.glb");
 
 export interface CharacterHandle {
   /** 누르기 판정과 위치·방향을 맡는 묶음. */
@@ -33,8 +34,8 @@ export interface CharacterHandle {
   bubblePoint(): THREE.Vector3;
 }
 
-/** 책장에서 꺼내 펼치는 책(칸). 덮은 책 폭·높이·두께. */
-const BOOK = { width: 0.52, height: 0.62, thickness: 0.08 };
+/** 책장에서 꺼내 펼치는 책(칸). 덮은 책 폭·높이·두께(라룹이 때 크기를 키 비율로 줄인다). */
+const BOOK = { width: 0.52 * PLAYER_RATIO, height: 0.62 * PLAYER_RATIO, thickness: 0.08 * PLAYER_RATIO };
 
 /**
  * 손에 드는 책. 책등(세로축)을 가운데로 두 쪽이 펼쳐진다. 반환한 open(0 덮음 ~ 1 펼침)으로 두 쪽을 돌린다.
@@ -162,7 +163,7 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
     // 몸의 외곽선 껍질
     for (const mesh of skinned) {
       const source = mesh.material as THREE.MeshStandardMaterial;
-      // 꼬리 뿌리처럼 면이 접혀 겹친 자리에서 몇 장이 뒤를 보여 틈이 생긴다. 닫힌 몸이라 양면으로 그려도 뒷면은 가려진다.
+      // 면이 접혀 겹친 자리(소매·옷깃)에서 몇 장이 뒤를 보여 틈이 생긴다. 닫힌 몸이라 양면으로 그려도 뒷면은 가려진다.
       // 원래 재질은 다른 복제본과 함께 쓰므로 지우지 않는다.
       const toon = new THREE.MeshToonMaterial({ map: source.map, side: THREE.DoubleSide });
       mesh.material = toon;
@@ -185,11 +186,13 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
       shell.raycast = () => {};
       mesh.parent?.add(shell);
     }
-    // 누르기 판정용 보이지 않는 통. 라룹이와 함께 움직이고 돈다. 점프로 몸이 들려도 귀 끝까지 들게 키보다 조금 높다.
-    // (Raycaster는 보이지 않는 물체도 맞힌다.)
-    const hit = new THREE.Mesh(new THREE.CapsuleGeometry(0.75 * SIZE, 1.9 * SIZE, 4, 12), new THREE.MeshBasicMaterial());
+    // 누르기 판정용 보이지 않는 통. 플레이어와 함께 움직이고 돈다. 폭은 머리 폭(귀 포함 키의 약 62%),
+    // 높이는 점프로 몸이 들려도 머리까지 들게 키의 1.2배다. (Raycaster는 보이지 않는 물체도 맞힌다.)
+    const hitRadius = MODEL_SCALE * 0.31;
+    const hitHeight = MODEL_SCALE * 1.2;
+    const hit = new THREE.Mesh(new THREE.CapsuleGeometry(hitRadius, hitHeight - hitRadius * 2, 4, 12), new THREE.MeshBasicMaterial());
     hit.visible = false;
-    hit.position.y = (0.75 + 1.9 / 2) * SIZE;
+    hit.position.y = hitHeight / 2;
     hit.userData.isCharacter = true;
     group.add(hit);
     const mixer = new THREE.AnimationMixer(model);
@@ -200,6 +203,9 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
       action.setEffectiveWeight(0);
       actions.set(clip.name, action);
     }
+    // 처음 그리는 프레임부터 팔을 내린 idle이다(모델의 쉬는 자세는 T포즈라, 클립을 섞기 전에 그리면 팔을 벌린 모습이 한 번 보인다)
+    actions.get("idle")?.setEffectiveWeight(1);
+    mixer.update(0);
     const head = model.getObjectByName("head") ?? null;
     const hips = model.getObjectByName("hips") ?? null;
     const handR = model.getObjectByName("hand_r") ?? null;
@@ -304,8 +310,12 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
           built.group.worldToLocal(built.handR.getWorldPosition(handRLocal));
           built.group.worldToLocal(built.handL.getWorldPosition(handLLocal));
           bookAt.copy(handRLocal).lerp(handMid.copy(handRLocal).add(handLLocal).multiplyScalar(0.5), book.hold);
-          // 머리가 커서 위에서 보는 카메라에 가리지 않게 배 앞으로 내밀고, 펼친 면이 위(카메라 쪽)를 보게 뒤로 눕힌다
-          built.book.group.position.set(bookAt.x, bookAt.y + 0.3 * book.hold, bookAt.z + 0.55 * book.hold + 0.08);
+          // 머리가 커서 위에서 보는 카메라에 가리지 않게 배 앞으로 내밀고, 펼친 면이 위(카메라 쪽)를 보게 뒤로 눕힌다(라룹이 때 거리를 키 비율로)
+          built.book.group.position.set(
+            bookAt.x,
+            bookAt.y + 0.3 * PLAYER_RATIO * book.hold,
+            bookAt.z + (0.55 * book.hold + 0.08) * PLAYER_RATIO
+          );
           built.book.group.rotation.set(-1.15 * book.hold, 0, 0);
           built.book.setOpen(book.open);
         }
@@ -380,7 +390,7 @@ export class CharacterErrorBoundary extends Component<{ children: ReactNode; onF
   }
 
   componentDidCatch(error: unknown) {
-    console.warn("[lobby3d] 라이트루프 모델을 불러오지 못했습니다", error);
+    console.warn("[lobby3d] 플레이어 모델을 불러오지 못했습니다", error);
     this.props.onFailed?.();
   }
 

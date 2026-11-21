@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { useItemCatalog } from "@/lib/item-catalog-store";
 import { cachedItemFile, fetchItemFile, itemFileFailed, useItemFiles } from "@/lib/item-files";
-import { shownLook, wearDraw, type WearDraw, type WearLook, type WearState } from "@/lib/lobby3d/wear";
+import { BODY_WEARABLES, shownLook, wearDraw, type WearDraw, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type { WardrobeSlot } from "@/lib/types";
 import { characterOutlineMaterial, type CharacterOutlineUniforms, type ToonKit } from "./lobby3d-character";
 
@@ -104,7 +104,7 @@ export function Wearables({ host, wear, look }: { host: WearHost; wear: WearStat
 
   return (
     <>
-      {shown.face === "goggles" ? (
+      {shown.face === "goggles" && BODY_WEARABLES.has("goggles") ? (
         // 고글은 따로 기다리고 따로 실패한다(읽는 동안이나 읽지 못해도 다른 옷은 그대로 붙는다)
         <WearablesErrorBoundary>
           <Suspense fallback={null}>

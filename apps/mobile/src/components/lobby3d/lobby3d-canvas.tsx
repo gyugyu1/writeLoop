@@ -12,6 +12,7 @@ import {
   LobbySim,
   ROOM,
   SHOP_MARK_IDS,
+  clothingFloorOf,
   VILLAGE_MARK_IDS,
   activeLobbyLayout,
   cameraPose,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_FOUNTAIN, VILLAGE_PLACES } from "@/lib/lobby3d/village";
 import { SHOP_LABEL_POINTS, type ShopPlaceId } from "@/lib/lobby3d/shop";
+import { CLOTHING_LABEL_POINTS, CLOTHING_PLACE_IDS, type ClothingFloor, type ClothingPlaceId } from "@/lib/lobby3d/clothing-shop";
 import { prefetchShopFiles, shopProductFiles } from "@/lib/lobby3d/shop-files";
 import { useItemCatalog } from "@/lib/item-catalog-store";
 import { useItemFiles } from "@/lib/item-files";
@@ -39,6 +41,7 @@ import { BakedRoom, BakedRoomErrorBoundary } from "./lobby3d-room";
 import { freezeMatrices } from "./static-matrices";
 import type * as VillageModule from "./lobby3d-village";
 import type * as ShopModule from "./lobby3d-shop";
+import type * as ClothingModule from "./lobby3d-clothing-shop";
 
 // 3D 로비 그리기. 동작 규칙은 LobbySim(화면이 가진다)에 있고, 여기서는 매 프레임 그 상태를 그림으로 옮긴다.
 // 테스트에서는 이 모듈을 가짜로 바꾼다(three·expo-gl은 Jest에서 돌지 않는다).
@@ -133,6 +136,10 @@ export interface Lobby3dCanvasProps {
   onShopReady?: () => void;
   /** 가구점 모델을 불러오지 못했을 때. */
   onShopFailed?: () => void;
+  /** 옷집 지금 층의 실내 모델이 장면에 들어왔을 때(옷집에 들어올 때·층을 옮길 때마다). */
+  onClothingReady?: () => void;
+  /** 옷집 층 모델을 불러오지 못했을 때. */
+  onClothingFailed?: () => void;
   /** 라룹이가 입은 착용 아이템(캐릭터 꾸미기 기술 시험, 개발 화면). */
   wear?: WearState;
   /** 부위 일곱마다 입은 아이템 종류(⑤). 없으면 wear의 넷을 기본 아이템으로 그린다. */
@@ -872,6 +879,8 @@ function Scene({
   onVillageFailed,
   onShopReady,
   onShopFailed,
+  onClothingReady,
+  onClothingFailed,
   wear,
   look,
   pickRef
@@ -941,6 +950,18 @@ function Scene({
   const villagePick = useRef<THREE.Object3D[]>([]);
   // 가구점에서 누르기 판정을 받는 실내 부품·버들·진열 상품(가구점 모델이 채운다)과 이름표 자리
   const shopPick = useRef<THREE.Object3D[]>([]);
+  // 옷집 지금 층의 누르기 대상과 장소 이름표 자리
+  const clothingPick = useRef<THREE.Object3D[]>([]);
+  const clothingLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        (Object.keys(CLOTHING_LABEL_POINTS) as ClothingPlaceId[]).map((id) => [
+          id,
+          new THREE.Vector3(CLOTHING_LABEL_POINTS[id].x, CLOTHING_LABEL_POINTS[id].y, CLOTHING_LABEL_POINTS[id].z)
+        ])
+      ) as Record<ClothingPlaceId, THREE.Vector3>,
+    []
+  );
   const shopLabels = useMemo(
     () =>
       Object.fromEntries(
@@ -1033,6 +1054,23 @@ function Scene({
         if (hit) return { point: { x: hit.point.x, z: hit.point.z }, mark: null, onCharacter: false, onScenery: true, building: null };
         return { point: floorPoint(), mark: null, onCharacter: false };
       }
+      // 옷집: 이름표를 누르면 그 장소, 라룹이면 라룹이, 실내 부품이면 맞은 자리(걸어갈 수 없으면 sim이 가장 가까운 곳으로), 아니면 바닥
+      const clothingFloor = clothingFloorOf(areaRef.current);
+      if (clothingFloor) {
+        for (const id of CLOTHING_PLACE_IDS[clothingFloor]) {
+          const p = clothingLabels[id].clone().project(camera);
+          const lx = ((p.x + 1) / 2) * size.width;
+          const ly = ((1 - p.y) / 2) * size.height;
+          if (p.z < 1 && Math.abs(x - lx) <= LABEL_HALF_WIDTH && Math.abs(y - ly) <= LABEL_HALF_HEIGHT) return { point: floorPoint(), mark: id, onCharacter: false };
+        }
+        const targets: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...clothingPick.current];
+        const hit = raycaster.intersectObjects(targets, true)[0];
+        if (hit && (hit.object.userData as { isCharacter?: boolean }).isCharacter) return { point: floorPoint(), mark: null, onCharacter: true };
+        const place = (hit?.object.userData as ShopModule.ShopPickData | undefined)?.shopPlace ?? null;
+        if (place) return { point: floorPoint(), mark: place, onCharacter: false };
+        if (hit) return { point: { x: hit.point.x, z: hit.point.z }, mark: null, onCharacter: false, onScenery: true, building: null };
+        return { point: floorPoint(), mark: null, onCharacter: false };
+      }
       // 마을: 이름표를 누르면 그 장소, 라룹이 아니면 맞은 건물·소품의 그 자리(없으면 바닥)를 누른 곳으로 본다. 걸어갈 수 없는 곳이면 sim이 가장 가까운 곳으로 간다
       if (areaRef.current === "village") {
         // 이름표(화면 이름표 상자: 가운데에서 가로 ±40, 세로 ±22)는 3D 물체가 아니라 화면 자리로 본다
@@ -1068,7 +1106,7 @@ function Scene({
     return () => {
       if (pickRef.current === pick) pickRef.current = null;
     };
-  }, [camera, size, raycaster, world, pickRef, villageLabels, shopLabels]);
+  }, [camera, size, raycaster, world, pickRef, villageLabels, shopLabels, clothingLabels]);
 
   // 일기 책상 의자(대체 모양과 가구 묶음). 가구 묶음은 나중에 불러와지므로 가끔 다시 찾는다.
   const chairs = useRef<{ list: THREE.Object3D[]; scannedAt: number }>({ list: [], scannedAt: -Infinity });
@@ -1305,6 +1343,8 @@ function Scene({
       for (const id of VILLAGE_MARK_IDS) labels[id] = toScreen(villageLabels[id]);
     } else if (areaRef.current === "shop") {
       for (const id of SHOP_MARK_IDS) labels[id] = toScreen(shopLabels[id]);
+    } else if (clothingFloorOf(areaRef.current)) {
+      for (const id of CLOTHING_PLACE_IDS[clothingFloorOf(areaRef.current)!]) labels[id] = toScreen(clothingLabels[id]);
     } else {
       for (const id of roomPlaceIds()) {
         const point = world.labelPoints[id];
@@ -1378,6 +1418,16 @@ function Scene({
       ) : null}
       {area === "shop" ? (
         <ShopLayer daylight={daylightState} kit={world.kit} outline={toon.outline} pickTargets={shopPick} onReady={onShopReady} onFailed={onShopFailed} />
+      ) : null}
+      {clothingFloorOf(area) ? (
+        <ClothingLayer
+          key={area}
+          floor={clothingFloorOf(area)!}
+          daylight={daylightState}
+          pickTargets={clothingPick}
+          onReady={onClothingReady}
+          onFailed={onClothingFailed}
+        />
       ) : null}
       <CharacterErrorBoundary onFailed={characterSettled}>
         <Suspense fallback={null}>
@@ -1493,6 +1543,32 @@ function ShopLayer({
         <VillageWarmUp onReady={onReady ?? noop} />
       </Suspense>
     </shop.ShopModelErrorBoundary>
+  );
+}
+
+/** 옷집 지금 층(층을 옮기면 key가 바뀌어 새로 붙는다). 다 뜨면 가구점처럼 미리 준비한 뒤 알린다. */
+function ClothingLayer({
+  floor,
+  daylight,
+  pickTargets,
+  onReady,
+  onFailed
+}: {
+  floor: ClothingFloor;
+  daylight: DaylightState;
+  pickTargets: MutableRefObject<THREE.Object3D[]>;
+  onReady?: () => void;
+  onFailed?: () => void;
+}) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const clothing = require("./lobby3d-clothing-shop") as typeof ClothingModule;
+  return (
+    <clothing.ClothingFloorErrorBoundary floor={floor} onFailed={onFailed}>
+      <Suspense fallback={null}>
+        <clothing.ClothingFloorModel floor={floor} daylight={daylight} pickTargets={pickTargets} />
+        <VillageWarmUp onReady={onReady ?? noop} />
+      </Suspense>
+    </clothing.ClothingFloorErrorBoundary>
   );
 }
 

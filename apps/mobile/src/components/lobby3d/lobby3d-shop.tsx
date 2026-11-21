@@ -114,7 +114,7 @@ function lambertOf(source: THREE.MeshStandardMaterial, vertexColors: boolean): T
 }
 
 /** 묶음 안 메시의 재질을 모두 가벼운 재질로 바꾸고, 만든 재질을 owned에 모은다(같은 원본 재질은 하나를 함께 쓴다). */
-function convertMaterials(root: THREE.Object3D, owned: THREE.Material[]): void {
+export function convertMaterials(root: THREE.Object3D, owned: THREE.Material[]): void {
   const made = new Map<string, THREE.MeshLambertMaterial>();
   root.traverse((o) => {
     const mesh = o as THREE.Mesh;

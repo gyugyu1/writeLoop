@@ -16,6 +16,7 @@ import {
   SHOP_MARK_IDS,
   VILLAGE_MARK_IDS,
   applyArea,
+  clothingFloorOf,
   hasPlaceBubble,
   isClosetPlaceId,
   roomPlaceIds,
@@ -36,6 +37,7 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
+import { CLOTHING_NODES, CLOTHING_PLACE_IDS, type ClothingFloor } from "@/lib/lobby3d/clothing-shop";
 import {
   SHOP_NODES,
   SHOP_SLOTS,
@@ -81,8 +83,8 @@ export const ACTION_LABELS: Record<ActionType, string> = {
   poke: "눌렀을 때 반응"
 };
 const TEST_ACTIONS: ActionType[] = ["wave", "jump", "hop", "point", "spin", "look"];
-/** 방·마을·가구점의 장소 모두(이름표·말풍선 자리를 미리 만들어 둔다). */
-const ALL_PLACE_IDS: readonly PlaceId[] = [...ROOM_MARK_IDS, ...VILLAGE_MARK_IDS, ...SHOP_MARK_IDS];
+/** 방·마을·가구점·옷집의 장소 모두(이름표·말풍선 자리를 미리 만들어 둔다). */
+const ALL_PLACE_IDS: readonly PlaceId[] = [...ROOM_MARK_IDS, ...VILLAGE_MARK_IDS, ...SHOP_MARK_IDS, ...CLOTHING_PLACE_IDS[1], ...CLOTHING_PLACE_IDS[2]];
 /** 구역 전환(방↔마을↔가구점): 검게 어두워지는 시간과 밝아지는 시간(밀리초). */
 const TRAVEL_FADE_MS = 300;
 const VILLAGE_LOADING = "마을로 나가는 중…";
@@ -91,14 +93,22 @@ const SHOP_LOADING = "가구점에 들어가는 중…";
 const VILLAGE_LOADING_DELAY_MS = 150;
 const VILLAGE_FAILED = "마을을 불러오지 못했어요. 잠시 뒤 다시 나가 주세요";
 const SHOP_FAILED = "가구점을 불러오지 못했어요";
+const CLOTHING_LOADING = "옷집에 들어가는 중…";
+const CLOTHING_FAILED = "옷집에 들어가지 못했어요";
+/** 옷집 층을 옮기지 못했을 때(가려던 층마다). */
+const CLOTHING_FLOOR_FAILED: Record<ClothingFloor, string> = { 1: "1층으로 가지 못했어요", 2: "2층으로 가지 못했어요" };
 
 /** 시험판의 구역 버튼. */
 /** 가구점은 마을 이름표 "가구점"과 헷갈리지 않게 "가구점 실내"로 쓴다. */
-const AREA_LABELS: Record<LobbyArea, string> = { room: "방", village: "마을", shop: "가구점 실내" };
+const AREA_LABELS: Record<LobbyArea, string> = { room: "방", village: "마을", shop: "가구점 실내", clothing1: "옷집 실내", clothing2: "옷집 실내 2층" };
+/** 시험판 구역 버튼(옷집은 1층으로 들어간다. 마을 이름표 "옷집"과 헷갈리지 않게 "옷집 실내"로 쓴다). */
+const DEV_AREAS: readonly LobbyArea[] = ["room", "village", "shop", "clothing1"];
 
 /** 그 구역의 장소들(방은 지금 배치의 옷장 포함). */
 function placesOf(area: LobbyArea): readonly PlaceId[] {
   if (area === "shop") return SHOP_MARK_IDS;
+  const floor = clothingFloorOf(area);
+  if (floor) return CLOTHING_PLACE_IDS[floor];
   return area === "village" ? VILLAGE_MARK_IDS : roomPlaceIds();
 }
 
@@ -562,6 +572,8 @@ export default function Lobby3dScreen({
   const villageReadyRef = useRef(false);
   const waitingVillage = useRef<(() => void) | null>(null);
   const waitingShop = useRef<(() => void) | null>(null);
+  // 옷집 층 모델이 뜰 때까지 기다리는 전환(들어갈 때·층을 옮길 때)
+  const waitingClothing = useRef<(() => void) | null>(null);
   // 전환 전에 서 있던 구역·자리·방향(마을·가구점을 못 읽어 되돌아갈 때 쓴다)
   const travelFrom = useRef<{ area: LobbyArea; x: number; z: number; heading: number } | null>(null);
   const loadingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -603,7 +615,7 @@ export default function Lobby3dScreen({
   const daylight = useMemo(() => daylightAt(new Date(clockMinute * 60_000)), [clockMinute]);
   // 마을 배경음악: 구역(마을인지)과 하루의 때를 알린다(같은 값이면 곡은 그대로). 가구점 안에서도 이어서 나온다. 로비가 닫히면 마을이 아니다
   useEffect(() => {
-    setVillageBgmArea(area === "village" || area === "shop", daylight.phase);
+    setVillageBgmArea(area === "village" || area === "shop" || clothingFloorOf(area) !== null, daylight.phase);
   }, [area, daylight.phase]);
   useEffect(() => () => setVillageBgmArea(false, "day"), []);
   // 마을에 나가면 가구점 진열 상품 모델 셋을 뒤에서 미리 받기 시작한다(기기에 있으면 받지 않고, 이번 실행에서 실패한 것은 다시 받아 본다. 방에 있는 동안은 받지 않는다)
@@ -899,9 +911,19 @@ export default function Lobby3dScreen({
     areaRef.current = next;
     const nowMs = Date.now();
     if (next === "village") {
-      const at = from === "shop" ? { ...VILLAGE_PLACES.furnitureShop.approach[0], heading: 0 } : VILLAGE_START;
+      const at =
+        from === "shop"
+          ? { ...VILLAGE_PLACES.furnitureShop.approach[0], heading: 0 }
+          : clothingFloorOf(from)
+            ? { ...VILLAGE_PLACES.clothingShop.approach[0], heading: 0 }
+            : VILLAGE_START;
       sim.placeAt(at, at.heading, nowMs);
     } else if (next === "shop") sim.placeAt(SHOP_NODES.playerSpawn, SHOP_SPAWN_HEADING, nowMs);
+    else if (next === "clothing1") {
+      // 2층에서 내려오면 계단 아래, 그 밖(마을·시험판)은 출입문 안쪽 입장 자리
+      const at = from === "clothing2" ? CLOTHING_NODES.fromUpper : CLOTHING_NODES.entranceSpawn;
+      sim.placeAt(at, at.heading, nowMs);
+    } else if (next === "clothing2") sim.placeAt(CLOTHING_NODES.fromLower, CLOTHING_NODES.fromLower.heading, nowMs);
     else sim.placeAt(MARKS.door.approach[0], Math.PI, nowMs);
     setArea(next);
     syncView();
@@ -960,6 +982,13 @@ export default function Lobby3dScreen({
         showLoadingLater(SHOP_LOADING, waitingShop);
         return;
       }
+      if (clothingFloorOf(next)) {
+        // 옷집 층 모델이 뜰 때까지 검은 채 기다린다(마을에서 들어올 때만 "옷집에 들어가는 중…")
+        travelFade.setValue(1);
+        waitingClothing.current = reveal;
+        if (!clothingFloorOf(travelFrom.current?.area ?? "room")) showLoadingLater(CLOTHING_LOADING, waitingClothing);
+        return;
+      }
       reveal();
     };
     if (sim.reduceMotion) swap();
@@ -1010,6 +1039,34 @@ export default function Lobby3dScreen({
     waiting?.();
     showToast(SHOP_FAILED);
   }, [showToast]);
+  // 옷집 층 모델이 장면에 들어오면 밝아진다(들어올 때·층을 옮길 때마다)
+  const onClothingReady = useCallback(() => {
+    const waiting = waitingClothing.current;
+    waitingClothing.current = null;
+    if (!waiting) return;
+    stopLoadingText();
+    waiting();
+  }, []);
+  // 옷집 층 모델을 읽지 못하면: 마을에서 들어오던 중이면 마을 옷집 문 앞으로, 층을 옮기던 중이면 떠나온 층의 그 자리로 돌아와 밝아지고 안내한다
+  const onClothingFailed = useCallback(() => {
+    const waiting = waitingClothing.current;
+    waitingClothing.current = null;
+    const from = travelFrom.current;
+    const failedFloor = clothingFloorOf(areaRef.current);
+    if (from && clothingFloorOf(from.area) && failedFloor) {
+      placeInAreaRef.current(from.area, areaRef.current);
+      sim.placeAt({ x: from.x, z: from.z }, from.heading, Date.now(), true);
+      syncView();
+      stopLoadingText();
+      waiting?.();
+      showToast(CLOTHING_FLOOR_FAILED[failedFloor]);
+      return;
+    }
+    placeInAreaRef.current("village", areaRef.current);
+    stopLoadingText();
+    waiting?.();
+    showToast(CLOTHING_FAILED);
+  }, [showToast, sim, syncView]);
   const placeInAreaRef = useRef(placeInArea);
   placeInAreaRef.current = placeInArea;
 
@@ -1246,6 +1303,23 @@ export default function Lobby3dScreen({
       travel("village");
       return;
     }
+    // 마을 옷집의 '들어가기'는 1층으로, 1층 출입문의 '나가기'는 마을 옷집 문 앞으로, 계단은 다른 층으로
+    if (id === "clothingShop") {
+      travel("clothing1");
+      return;
+    }
+    if (id === "clothingExit") {
+      travel("village");
+      return;
+    }
+    if (id === "clothingUp") {
+      travel("clothing2");
+      return;
+    }
+    if (id === "clothingDown") {
+      travel("clothing1");
+      return;
+    }
     // 계산대의 '인사하기': 라룹이가 손을 흔들고 버들 머리 위에 인사 말풍선이 뜬다
     if (id === "shopCounter") {
       sim.greetShopkeeper(Date.now());
@@ -1300,6 +1374,8 @@ export default function Lobby3dScreen({
         onVillageFailed={onVillageFailed}
         onShopReady={onShopReady}
         onShopFailed={onShopFailed}
+        onClothingReady={onClothingReady}
+        onClothingFailed={onClothingFailed}
         wear={wear}
         look={look}
       />
@@ -1521,7 +1597,7 @@ export default function Lobby3dScreen({
             </View>
             <Text style={styles.panelLabel}>구역</Text>
             <View style={styles.row}>
-              {(["room", "village", "shop"] as const).map((next) => (
+              {DEV_AREAS.map((next) => (
                 <Pressable
                   key={next}
                   accessibilityRole="button"

@@ -56,12 +56,12 @@ describe("[spec] 앱 자산(S1~S3)", () => {
 });
 
 describe("[spec] 층 장소(S11·S14·S16)", () => {
-  it("S11: 1층 장소는 '마을로'·'2층'·'피팅룸' 셋이고, 서는 자리는 F1_ExitApproach·F1_StairsUp이다", () => {
+  it("S11: 1층 장소는 '마을로'·'2층'·'피팅룸'·'계산대' 넷이고, 서는 자리는 F1_ExitApproach·F1_StairsUp이다", () => {
     applyArea("clothing1");
     const ids = [...activePlaceIds()];
-    expect(ids).toHaveLength(3);
+    expect(ids).toHaveLength(4);
     const byLabel = Object.fromEntries(ids.map((id) => [markInfo(id).label, markInfo(id)]));
-    expect(Object.keys(byLabel).sort()).toEqual(["2층", "마을로", "피팅룸"]);
+    expect(Object.keys(byLabel).sort()).toEqual(["2층", "계산대", "마을로", "피팅룸"]);
     const exit = anchor(1, "ExitApproach").positionXYZ;
     const up = anchor(1, "StairsUp").positionXYZ;
     expect(byLabel["마을로"].approach[0]).toEqual(app(exit[0], exit[2]));

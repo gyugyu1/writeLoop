@@ -37,6 +37,28 @@ public class ItemCatalogDrawSpecTest {
             "desk", "bookcase", "board", "window", "wardrobe", "rug", "lamp",
             "bed", "nightstand", "floorLamp", "plant", "smallPlant", "books", "frame");
 
+    /**
+     * 작업 133 ③ 결정(사용자 "qa가 옷집 13종을 빼고 견주게 고침"): 서버 목록에 더해진 옷집 미등록 옷 13종(stock.json catalogId null)은
+     * 아이템·파일 셈과 비교에서 뺀다. 모델 파일 이름은 id + ".glb"다.
+     */
+    public static final List<String> CLOTHING_UNREGISTERED = List.of(
+            "wear-top-kiln-jacket", "wear-bottom-sage-cargo", "wear-hat-breakwater-bucket", "wear-top-tide-sailor",
+            "wear-bottom-jetty-denim", "wear-face-honey-panto", "wear-hat-field-cap", "wear-top-field-blouse",
+            "wear-bottom-field-trousers", "wear-shoe-combat-boot", "wear-top-quilted-liner", "wear-hat-peddler-straw",
+            "wear-hat-bramble-beret");
+
+    /** 목록(응답 또는 파일)에서 옷집 미등록 13종 항목을 뺀 사본. */
+    public static JsonNode withoutClothingUnregistered(JsonNode catalog) {
+        com.fasterxml.jackson.databind.node.ObjectNode copy = ((com.fasterxml.jackson.databind.node.ObjectNode) catalog).deepCopy();
+        com.fasterxml.jackson.databind.node.ArrayNode items = copy.putArray("items");
+        for (JsonNode item : catalog.get("items")) {
+            if (!CLOTHING_UNREGISTERED.contains(item.path("id").asText())) {
+                items.add(item);
+            }
+        }
+        return copy;
+    }
+
     /** 작업 128 07 결정: 가구점 진열 상품 셋(팔지 않고 처음 가지지도 않는 가구). 시험 가구 하나를 찾을 때 뺀다. */
     public static final List<String> SHOP_PRODUCTS = List.of(
             "rainbootPlanter", "catPostDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk");
@@ -335,7 +357,7 @@ public class ItemCatalogDrawSpecTest {
     private static JsonNode catalogFile() throws Exception {
         try (InputStream in = ItemCatalogDrawSpecTest.class.getClassLoader().getResourceAsStream("catalog/items.json")) {
             assertThat(in).as("catalog/items.json on the classpath").isNotNull();
-            return JSON.readTree(in);
+            return withoutClothingUnregistered(JSON.readTree(in));
         }
     }
 

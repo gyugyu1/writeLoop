@@ -173,7 +173,10 @@ public class ItemCatalogWearablesSpecTest {
         SIXTEEN.forEach(wear -> expected.put(wear.id(), wear.slot()));
         expected.put(GOGGLES, "face");
         expected.put(testClothInFile().path("id").asText(), "top");
-        assertThat(new HashMap<>(ItemCatalog.DEFAULT.wearableSlots())).as("W5 wearable slots").isEqualTo(expected);
+        // 작업 133 ③ 결정: 옷집 미등록 13종은 빼고 견준다
+        Map<String, String> actual = new HashMap<>(ItemCatalog.DEFAULT.wearableSlots());
+        ItemCatalogDrawSpecTest.CLOTHING_UNREGISTERED.forEach(actual::remove);
+        assertThat(actual).as("W5 wearable slots").isEqualTo(expected);
     }
 
     // =====================================================================
@@ -225,7 +228,7 @@ public class ItemCatalogWearablesSpecTest {
     static JsonNode catalogFile() throws Exception {
         try (InputStream in = ItemCatalogWearablesSpecTest.class.getClassLoader().getResourceAsStream("catalog/items.json")) {
             assertThat(in).as("catalog/items.json on the classpath").isNotNull();
-            return JSON.readTree(in);
+            return ItemCatalogDrawSpecTest.withoutClothingUnregistered(JSON.readTree(in));
         }
     }
 

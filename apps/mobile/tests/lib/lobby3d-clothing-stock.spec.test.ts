@@ -203,8 +203,8 @@ describe("[spec] 예비 진열 자리(S31, S33)", () => {
 
   it("S33: 1·2층 장소 목록에 예비 자리로 가는 장소가 없다", () => {
     applyArea("clothing1");
-    expect([...activePlaceIds()].sort()).toEqual(["clothingExit", "clothingUp"]);
+    expect([...activePlaceIds()].sort()).toEqual(["clothingExit", "clothingFitting1", "clothingUp"]);
     applyArea("clothing2");
-    expect([...activePlaceIds()]).toEqual(["clothingDown"]);
+    expect([...activePlaceIds()]).toEqual(["clothingDown", "clothingFitting2"]);
   });
 });

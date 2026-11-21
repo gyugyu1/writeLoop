@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.writeloop.service.ItemCatalogDrawSpecTest;
 import com.writeloop.support.IntegrationTestSupport;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -247,7 +248,7 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = get(token);
 
         assertThat(response.statusCode()).as("C7 GET %s with login, body %s", PATH, response.body()).isEqualTo(200);
-        JsonNode withLogin = JSON.readTree(response.body());
+        JsonNode withLogin = ItemCatalogDrawSpecTest.withoutClothingUnregistered(JSON.readTree(response.body()));
         JsonNode withoutLogin = catalog();
         assertThat(withLogin.get("version").asText()).as("C7 version").isEqualTo(withoutLogin.get("version").asText());
         assertThat(byId(withLogin)).as("C7 items").isEqualTo(byId(withoutLogin));
@@ -285,7 +286,7 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
     private JsonNode catalog() throws Exception {
         HttpResponse<String> response = get(null);
         assertThat(response.statusCode()).as("GET %s, body %s", PATH, response.body()).isEqualTo(200);
-        return JSON.readTree(response.body());
+        return ItemCatalogDrawSpecTest.withoutClothingUnregistered(JSON.readTree(response.body()));
     }
 
     private static Map<String, JsonNode> byId(JsonNode body) {

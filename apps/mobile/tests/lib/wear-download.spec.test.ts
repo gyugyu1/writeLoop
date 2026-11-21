@@ -33,6 +33,10 @@ import {
   serverWearCatalog
 } from "../__fixtures__/wear-files-090";
 
+// 작업 133 ③ 결정(사용자 "qa가 옷집 13종을 빼고 견주게 고침"): 서버 목록에 더해진 옷집 미등록 13종(stock.json catalogId null)은 셈·비교에서 뺀다
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const CLOTHING_UNREGISTERED: string[] = (require("../../src/lib/lobby3d/clothing-shop-stock.json").products as { id: string; catalogId: string | null }[]).filter((p) => p.catalogId === null).map((p) => p.id);
+
 jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 
 const SIXTEEN = [
@@ -464,7 +468,7 @@ describe("[spec] 090-③ Z: 실제 서버 목록 파일·모델·그림을 앱�
   });
 
   test("Z5 조끼는 목록에 옷·상의·price null·draw skin 몸 판 1로 있고, 모델의 skin 뼈 이름이 모두 라룹이 뼈대에 있으며, 앱이 읽으면 그릴 수 있는 옷이다", () => {
-    const vest = rawServerItems().filter((item) => item.kind === "wearable" && item.slot === "top" && item.price === null && (item.draw as { attach?: string } | undefined)?.attach === "skin");
+    const vest = rawServerItems().filter((item) => item.kind === "wearable" && item.slot === "top" && item.price === null && !CLOTHING_UNREGISTERED.includes(item.id) && (item.draw as { attach?: string } | undefined)?.attach === "skin");
     expect(vest.length).toBe(1);
     const item = vest[0];
     expect({ kind: item.kind, slot: item.slot, price: item.price, draw: item.draw }).toEqual({ kind: "wearable", slot: "top", price: null, draw: { attach: "skin", body: 1 } });

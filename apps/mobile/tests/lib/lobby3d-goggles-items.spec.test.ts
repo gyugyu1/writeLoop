@@ -6,7 +6,12 @@
 // "받은 목록 없음"은 모듈을 새로 불러와(jest.isolateModules) 앱을 켜고 아직 목록을 받지 못한 상태를 흉내 낸다.
 import { parseItemCatalog, setItemCatalog } from "@/lib/item-catalog-store";
 import { WEARABLE_ITEMS, WEAR_BODY, itemsInSlot, lookFromEquipped, wearDraw } from "@/lib/lobby3d/wear";
+// 작업 133 ③ 결정(사용자 "qa가 옷집 13종을 빼고 견주게 고침"): 서버 목록에 더해진 옷집 미등록 13종(stock.json catalogId null)은 셈·비교에서 뺀다
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const CLOTHING_UNREGISTERED: string[] = (require("../../src/lib/lobby3d/clothing-shop-stock.json").products as { id: string; catalogId: string | null }[]).filter((p) => p.catalogId === null).map((p) => p.id);
 import { serverWearCatalog } from "../__fixtures__/wear-files-090";
+
+const withoutShopWear = (catalog: { version: string; items: Record<string, unknown>[] }) => ({ ...catalog, items: catalog.items.filter((item) => !CLOTHING_UNREGISTERED.includes(item.id as string)) });
 
 jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 
@@ -36,7 +41,7 @@ describe("[spec] 089-⑤ 10 GC1~GC4: 앱 목록과 그릴 값", () => {
   });
 
   it("GC2 서버 목록 파일의 옷을 받은 뒤에도 얼굴장식 아이템 순서가 [goggles, sunglassesBlack]이다(고글이 얼굴장식의 첫 아이템)", () => {
-    setItemCatalog(parseItemCatalog(serverWearCatalog("qa-089-gc2"))!);
+    setItemCatalog(parseItemCatalog(withoutShopWear(serverWearCatalog("qa-089-gc2")))!);
     expect(itemsInSlot("face")).toEqual(["goggles", "sunglassesBlack"]);
   });
 

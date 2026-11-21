@@ -837,17 +837,21 @@ describe("[spec] 095 그대로: 옷 내려받기·서버 아이템 목록 파일
     .flatMap((name) => [`${name}.glb`, `${name}-nameplate.png`])
     .map((name) => `apps/backend/src/main/resources/catalog/files/${name}`);
   const ITEMS = "apps/backend/src/main/resources/catalog/items.json";
+  // 작업 133 ③ 결정(사용자 "qa가 옷집 13종을 빼고 견주게 고침"): 서버 목록에 더해진 옷집 미등록 13종(stock.json catalogId null)과 그 모델 파일은 뺀다
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const CLOTHING_UNREGISTERED: string[] = (require("../../src/lib/lobby3d/clothing-shop-stock.json").products as { id: string; catalogId: string | null }[]).filter((p) => p.catalogId === null).map((p) => p.id);
+  const CLOTHING_FILES = CLOTHING_UNREGISTERED.map((id) => `apps/backend/src/main/resources/catalog/files/${id}.glb`);
 
   it("R1 서버 아이템 목록 폴더(apps/backend/src/main/resources/catalog)가 기준 커밋과 같다(다른 착용 옷 11개와 목록 파일 포함. 가구점 진열 상품 항목·파일은 뺀다)", () => {
     const diff = spawnSync("git", ["diff", "--name-only", BASE, "--", "apps/backend/src/main/resources/catalog"], { cwd: REPO, encoding: "utf8" });
     expect(diff.status).toBe(0);
-    const changed = diff.stdout.split(/\r?\n/).filter(Boolean).filter((f) => !SHOP_FILES.includes(f));
+    const changed = diff.stdout.split(/\r?\n/).filter(Boolean).filter((f) => !SHOP_FILES.includes(f) && !CLOTHING_FILES.includes(f));
     // 가구점 파일 말고는 목록 파일(items.json)만 바뀔 수 있다(다른 모델·그림 파일은 그대로)
     expect(changed).toEqual([ITEMS]);
     const base = JSON.parse(baseFile(ITEMS).toString("utf8")) as { _comment: string; items: { id: string }[] };
     const now = JSON.parse(readFileSync(join(REPO, ITEMS), "utf8")) as { _comment: string; items: { id: string }[] };
     // 가구점 항목을 빼면 기준 커밋의 항목과 차례·내용이 같다
-    expect(now.items.filter((item) => !SHOP_IDS.includes(item.id))).toEqual(base.items);
+    expect(now.items.filter((item) => !SHOP_IDS.includes(item.id) && !CLOTHING_UNREGISTERED.includes(item.id))).toEqual(base.items);
     expect(now.items.filter((item) => SHOP_IDS.includes(item.id)).map((item) => item.id).sort()).toEqual([...SHOP_IDS].sort());
     // 머리 설명(_comment)은 그대로다
     expect(now._comment).toBe(base._comment);

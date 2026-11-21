@@ -56,12 +56,12 @@ describe("[spec] 앱 자산(S1~S3)", () => {
 });
 
 describe("[spec] 층 장소(S11·S14·S16)", () => {
-  it("S11: 1층 장소는 '마을로'와 '2층' 둘이고, 서는 자리는 F1_ExitApproach·F1_StairsUp이다", () => {
+  it("S11: 1층 장소는 '마을로'·'2층'·'피팅룸' 셋이고, 서는 자리는 F1_ExitApproach·F1_StairsUp이다", () => {
     applyArea("clothing1");
     const ids = [...activePlaceIds()];
-    expect(ids).toHaveLength(2);
+    expect(ids).toHaveLength(3);
     const byLabel = Object.fromEntries(ids.map((id) => [markInfo(id).label, markInfo(id)]));
-    expect(Object.keys(byLabel).sort()).toEqual(["2층", "마을로"]);
+    expect(Object.keys(byLabel).sort()).toEqual(["2층", "마을로", "피팅룸"]);
     const exit = anchor(1, "ExitApproach").positionXYZ;
     const up = anchor(1, "StairsUp").positionXYZ;
     expect(byLabel["마을로"].approach[0]).toEqual(app(exit[0], exit[2]));
@@ -70,11 +70,12 @@ describe("[spec] 층 장소(S11·S14·S16)", () => {
     expect({ prompt: byLabel["2층"].prompt, button: byLabel["2층"].buttonLabel }).toEqual({ prompt: "2층으로 올라갈까?", button: "올라가기" });
   });
 
-  it("S16: 2층 장소는 '1층' 하나이고 서는 자리는 F2_StairsDown, 말풍선은 '1층으로 내려갈까?'/'내려가기'다", () => {
+  it("S16: 2층 장소는 '1층'·'피팅룸' 둘이고 서는 자리는 F2_StairsDown, 말풍선은 '1층으로 내려갈까?'/'내려가기'다", () => {
     applyArea("clothing2");
     const ids = [...activePlaceIds()];
-    expect(ids).toHaveLength(1);
-    const info = markInfo(ids[0]);
+    expect(ids).toHaveLength(2);
+    expect(ids.map((id) => markInfo(id).label).sort()).toEqual(["1층", "피팅룸"]);
+    const info = markInfo(ids.find((id) => markInfo(id).label === "1층")!);
     const down = anchor(2, "StairsDown").positionXYZ;
     expect(info.label).toBe("1층");
     expect(info.approach[0]).toEqual(app(down[0], down[2]));

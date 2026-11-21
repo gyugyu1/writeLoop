@@ -196,7 +196,11 @@ describe("[spec] 089-⑤ 10 GP: 개발 화면 '착용 시험'(받은 목록 없�
 
 describe("[spec] 089-⑤ 10 GP: 개발 화면 '착용 시험'(서버 목록 파일의 옷을 받음)", () => {
   beforeAll(() => {
-    setItemCatalog(parseItemCatalog(serverWearCatalog("qa-089-gp"))!);
+    // 작업 133 ③ 결정(사용자 "qa가 옷집 13종을 빼고 견주게 고침"): 서버 목록에 더해진 옷집 미등록 13종(stock.json catalogId null)은 빼고 견준다
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const unregistered = (require("../../src/lib/lobby3d/clothing-shop-stock.json").products as { id: string; catalogId: string | null }[]).filter((p) => p.catalogId === null).map((p) => p.id);
+    const catalog = serverWearCatalog("qa-089-gp");
+    setItemCatalog(parseItemCatalog({ ...catalog, items: catalog.items.filter((item) => !unregistered.includes(item.id as string)) })!);
   });
   gpTests("서버 목록");
 });

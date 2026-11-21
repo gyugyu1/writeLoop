@@ -500,7 +500,7 @@ class CatalogFilesSpecTest extends IntegrationTestSupport {
     private JsonNode catalog() throws Exception {
         HttpResponse<String> response = getString(null, "/api/catalog");
         assertThat(response.statusCode()).as("GET /api/catalog, body %s", response.body()).isEqualTo(200);
-        return JSON.readTree(response.body());
+        return ItemCatalogDrawSpecTest.withoutClothingUnregistered(JSON.readTree(response.body()));
     }
 
     /** 응답의 가구 열넷 밖의 가구 하나(시험 가구). */

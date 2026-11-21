@@ -22,6 +22,9 @@ const GOGGLES_ICON_DIR = join(MOBILE, "assets", "icons", "wearables");
 const SERVER_CATALOG = join(REPO, "apps", "backend", "src", "main", "resources", "catalog");
 const SERVER_FILES = join(SERVER_CATALOG, "files");
 const SCRIPTS = join(REPO, "scripts", "lobby3d");
+// 작업 133 ③ 결정(사용자 "qa가 옷집 13종을 빼고 견주게 고침"): 서버 목록에 더해진 옷집 미등록 13종(stock.json catalogId null)은 셈·비교에서 뺀다
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const CLOTHING_UNREGISTERED: string[] = (require("../../src/lib/lobby3d/clothing-shop-stock.json").products as { id: string; catalogId: string | null }[]).filter((p) => p.catalogId === null).map((p) => p.id);
 const B = "7f74c06";
 const rel = (...parts: string[]) => parts.join("/");
 const BODY_PATH = rel("apps", "mobile", "assets", "models", "writeloop.glb");
@@ -298,7 +301,7 @@ describe("[spec] 089-⑤ 23 NF1~NF5: 서버 옷 모델 파일 교체", () => {
       expect({ file, exists: existsSync(join(SERVER_FILES, file)) }).toEqual({ file, exists: true });
       expect({ file, same: now(file).equals(before(file)) }).toEqual({ file, same: false });
     }
-    expect(readdirSync(SERVER_FILES).filter((f) => /^wear-.*\.glb$/.test(f)).sort()).toEqual(ELEVEN.slice().sort());
+    expect(readdirSync(SERVER_FILES).filter((f) => /^wear-.*\.glb$/.test(f) && !CLOTHING_UNREGISTERED.includes(f.replace(/\.glb$/, ""))).sort()).toEqual(ELEVEN.slice().sort());
   });
 
   it("NF2 목록 파일의 옷 열일곱은 slot·draw(attach·bone·mirror·color·body)·files.model·files.icon이 B와 같고, 모든 옷의 draw.body가 1이다", () => {
@@ -306,7 +309,7 @@ describe("[spec] 089-⑤ 23 NF1~NF5: 서버 옷 모델 파일 교체", () => {
     const pick = (items: Item[]) =>
       Object.fromEntries(
         items
-          .filter((item) => item.kind === "wearable" && item.id !== "goggles")
+          .filter((item) => item.kind === "wearable" && item.id !== "goggles" && !CLOTHING_UNREGISTERED.includes(item.id))
           .map((item) => [
             item.id,
             {

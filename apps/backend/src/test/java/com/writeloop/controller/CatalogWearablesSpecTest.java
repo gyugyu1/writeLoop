@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.writeloop.service.ItemCatalogDrawSpecTest;
 import com.writeloop.service.ItemCatalogWearablesSpecTest;
 import com.writeloop.service.ItemCatalogWearablesSpecTest.Wear;
 import com.writeloop.support.IntegrationTestSupport;
@@ -509,7 +510,7 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
     private JsonNode catalog() throws Exception {
         HttpResponse<String> response = getString(null, "/api/catalog");
         assertThat(response.statusCode()).as("GET /api/catalog, body %s", response.body()).isEqualTo(200);
-        return JSON.readTree(response.body());
+        return ItemCatalogDrawSpecTest.withoutClothingUnregistered(JSON.readTree(response.body()));
     }
 
     private static List<String> sixteenIds() {

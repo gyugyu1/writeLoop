@@ -191,7 +191,7 @@ describe("옷집 피팅룸 커튼", () => {
 // 작업 133 피팅 카메라: 피팅룸 앞면 잘라 보기(피팅룸·커튼 재질에만 자르는 면)
 describe("옷집 피팅룸 잘라 보기", () => {
   for (const floor of [1, 2] as const) {
-    it(`${floor}층: 켜면 피팅룸·커튼 메시 재질에만 라룹이 자리 앞을 자르는 면이 생기고, 끄면 없어진다`, async () => {
+    it(`${floor}층: 켜면 피팅룸·커튼·표지 메시 재질에만 라룹이 자리 앞을 자르는 면이 생기고, 끄면 없어진다`, async () => {
       const built = buildClothingFloor(floor, await load(APP_MODELS, FILES[floor]));
       const room = clothing.CLOTHING_FITTING_ROOMS[floor];
       const materialsOf = (name: string) => {
@@ -203,19 +203,20 @@ describe("옷집 피팅룸 잘라 보기", () => {
         return out;
       };
       const booth = room.curtain.replace(/Curtain\d+$/, "Room");
+      const sign = room.curtain.replace(/Curtain\d+$/, "SignText");
       expect(built.fittingCut()).toBe(false);
       built.setFittingCut(true);
       expect(built.fittingCut()).toBe(true);
-      for (const name of [room.curtain, booth]) {
+      for (const name of [room.curtain, booth, sign]) {
         const mats = materialsOf(name);
         expect({ name, n: mats.length > 0 }).toEqual({ name, n: true });
         for (const m of mats) expect(Array.isArray(m.clippingPlanes) && (m.clippingPlanes as unknown[]).length === 1).toBe(true);
       }
       // 다른 부품(바닥 등)은 자르지 않는다
       const others = materialsOf(clothing.CLOTHING_FLOOR_ROOTS[floor]).filter((m) => Array.isArray(m.clippingPlanes) && (m.clippingPlanes as unknown[]).length > 0);
-      expect(others.length).toBe(materialsOf(room.curtain).length + materialsOf(booth).length);
+      expect(others.length).toBe(materialsOf(room.curtain).length + materialsOf(booth).length + materialsOf(sign).length);
       built.setFittingCut(false);
-      for (const m of [...materialsOf(room.curtain), ...materialsOf(booth)]) expect(m.clippingPlanes).toBeNull();
+      for (const m of [...materialsOf(room.curtain), ...materialsOf(booth), ...materialsOf(sign)]) expect(m.clippingPlanes).toBeNull();
       built.dispose();
     }, 60000);
   }

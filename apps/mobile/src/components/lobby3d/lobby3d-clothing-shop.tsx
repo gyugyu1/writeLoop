@@ -115,7 +115,8 @@ export function buildClothingFloor(floor: ClothingFloor, gltf: GLTF): BuiltCloth
   const cutZ = room.inside.z - CLOTHING_OFFSET.z + FITTING_CUT_AHEAD;
   const cutPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), cutZ + CLOTHING_OFFSET.z);
   const cutMaterials: THREE.Material[] = [];
-  for (const name of [room.curtain, room.curtain.replace(/Curtain\d+$/, "Room")]) {
+  // 피팅룸 위 '피팅룸' 표지도 앞쪽이라 함께 자른다(카메라가 라룹이를 비출 때 머리 위를 가리지 않게)
+  for (const name of [room.curtain, room.curtain.replace(/Curtain\d+$/, "Room"), room.curtain.replace(/Curtain\d+$/, "SignText")]) {
     interior.getObjectByName(name)?.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;

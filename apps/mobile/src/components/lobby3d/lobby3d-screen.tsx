@@ -1622,6 +1622,8 @@ export default function Lobby3dScreen({
     else showToast(`${item.label} 화면으로 가요`);
   };
   const pressMenu = useCallback((item: (typeof MENU)[number]) => pressMenuRef.current(item), []);
+  // 옷집 피팅 창이 떠 있는 동안
+  const fittingShown = fittingLook !== null && clothingFloorOf(area) !== null;
 
   return (
     <View style={styles.root}>
@@ -1727,7 +1729,9 @@ export default function Lobby3dScreen({
         npcAnchor={labelPos.shopCounter}
       />
 
-      <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
+      {/* 옷집 피팅 중에는 위쪽 버튼·표시를 숨겨 라룹이 머리를 가리지 않게 한다 */}
+      {fittingShown ? null : (
+        <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
         {editing ? (
           // 편집 모드의 위 여백: 왼쪽에 취소·처음 배치로, 오른쪽에 완료·카메라(안내 문구는 이 줄 바로 밑)
           <View style={styles.headerLeft}>
@@ -1813,7 +1817,8 @@ export default function Lobby3dScreen({
             <Text style={styles.iconText}>⌕</Text>
           </Pressable>
         </View>
-      </View>
+        </View>
+      )}
 
       {/* 안내 문구는 같은 높이의 알림(토스트)이나 카메라 거리 판이 떠 있는 동안 숨긴다 */}
       {editing && !toast && !cameraOpen ? (
@@ -1824,7 +1829,7 @@ export default function Lobby3dScreen({
         </View>
       ) : null}
 
-      {cameraOpen ? (
+      {cameraOpen && !fittingShown ? (
         <View accessibilityLabel="카메라 거리" style={[styles.popover, { top: insets.top + 62 }]}>
           <View style={styles.rowBetween}>
             <Text style={styles.popTitle}>카메라 거리</Text>
@@ -1864,7 +1869,7 @@ export default function Lobby3dScreen({
         </View>
       ) : null}
 
-      {showFps ? (
+      {showFps && !fittingShown ? (
         <View pointerEvents="none" style={[styles.fps, { top: insets.top + 60 }]}>
           <FpsText fpsListener={fpsListener} actionListener={actionListener} sim={sim} />
         </View>
@@ -2118,7 +2123,7 @@ export default function Lobby3dScreen({
         onBuy={buyClothing}
       />
       <ClothingFittingSheet
-        visible={fittingLook !== null && clothingFloorOf(area) !== null}
+        visible={fittingShown}
         look={fittingLook ?? NO_LOOK}
         owned={ownedSet}
         onWear={(slot, id) => setFittingLook((current) => (current ? { ...current, [slot]: id } : current))}

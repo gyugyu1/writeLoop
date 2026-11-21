@@ -24,6 +24,9 @@ export const CLOTHING_FLOOR_ASSETS: Record<ClothingFloor, number> = {
 export const CLOTHING_STOCK_ASSET: number = require("../../../assets/models/clothing-shop/clothing-display-samples.glb");
 /* eslint-enable @typescript-eslint/no-require-imports */
 
+/** 피팅룸 앞면을 잘라 내는 자리: 라룹이(피팅룸 안 자리)보다 이만큼 앞(+z, m). */
+const FITTING_CUT_AHEAD = 0.35;
+
 /** 누르기 판정에 쓰는 진열 상품 메시의 표시. */
 export interface ClothingPickData {
   clothingProduct?: string;
@@ -51,6 +54,10 @@ export interface BuiltClothingFloor {
   setCurtainClosed(closed: boolean): void;
   /** 지금 커튼 닫힘 모프 값(커튼 메시가 없으면 null). */
   curtainWeight(): number | null;
+  /** 피팅 중 이 층 피팅룸의 앞쪽 절반(커튼·입구 벽)을 잘라 낸다(true)·되돌린다(false). */
+  setFittingCut(cut: boolean): void;
+  /** 피팅룸 앞면을 잘라 내고 있는지. */
+  fittingCut(): boolean;
   /** 만든 재질을 버린다(모양은 useLoader의 원본과 함께 쓰므로 버리지 않는다). */
   dispose(): void;
 }
@@ -103,6 +110,25 @@ export function buildClothingFloor(floor: ClothingFloor, gltf: GLTF): BuiltCloth
   }
   // 피팅룸 커튼: 커튼 노드 아래 메시들의 닫힘 모프(처음에는 열림)
   const room = CLOTHING_FITTING_ROOMS[floor];
+  // 피팅룸 앞면 잘라 보기: 피팅룸(방 모델은 한 덩어리)과 커튼 메시의 재질을 따로 복제해, 라룹이 자리보다 앞(+z)을 잘라 내는 면을 켜고 끈다.
+  // 앞 절반만 잘리고 뒤(거울 쪽)는 남는다. 다른 메시와 함께 쓰던 재질은 건드리지 않는다
+  const cutZ = room.inside.z - CLOTHING_OFFSET.z + FITTING_CUT_AHEAD;
+  const cutPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), cutZ + CLOTHING_OFFSET.z);
+  const cutMaterials: THREE.Material[] = [];
+  for (const name of [room.curtain, room.curtain.replace(/Curtain\d+$/, "Room")]) {
+    interior.getObjectByName(name)?.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const own = (m: THREE.Material) => {
+        const copy = m.clone();
+        owned.push(copy);
+        cutMaterials.push(copy);
+        return copy;
+      };
+      mesh.material = Array.isArray(mesh.material) ? mesh.material.map(own) : own(mesh.material);
+    });
+  }
+  let cutting = false;
   const curtains: { mesh: THREE.Mesh; index: number }[] = [];
   interior.getObjectByName(room.curtain)?.traverse((o) => {
     const mesh = o as THREE.Mesh;
@@ -172,6 +198,16 @@ export function buildClothingFloor(floor: ClothingFloor, gltf: GLTF): BuiltCloth
     setCurtainClosed(closed) {
       for (const { mesh, index } of curtains) mesh.morphTargetInfluences![index] = closed ? 1 : 0;
     },
+    setFittingCut(cut) {
+      cutting = cut;
+      for (const m of cutMaterials) {
+        m.clippingPlanes = cut ? [cutPlane] : null;
+        m.needsUpdate = true;
+      }
+    },
+    fittingCut() {
+      return cutting;
+    },
     curtainWeight() {
       const first = curtains[0];
       return first ? first.mesh.morphTargetInfluences![first.index] : null;
@@ -202,9 +238,11 @@ export interface ClothingFloorModelProps {
   builtRef?: MutableRefObject<BuiltClothingFloor | null>;
   /** 이 층 피팅룸 커튼이 닫혀 있는지(피팅 중). */
   curtainClosed?: boolean;
+  /** 피팅 중 카메라가 라룹이 앞을 비추는 동안 피팅룸 앞면을 잘라 낼지. */
+  fittingCut?: boolean;
 }
 
-export function ClothingFloorModel({ floor, daylight, pickTargets, selected, builtRef, curtainClosed = false }: ClothingFloorModelProps) {
+export function ClothingFloorModel({ floor, daylight, pickTargets, selected, builtRef, curtainClosed = false, fittingCut = false }: ClothingFloorModelProps) {
   const gltf = useLoader(GLTFLoader, CLOTHING_FLOOR_ASSETS[floor] as unknown as string) as GLTF;
   const built = useMemo(() => buildClothingFloor(floor, gltf), [floor, gltf]);
   useEffect(() => () => built.dispose(), [built]);
@@ -215,6 +253,12 @@ export function ClothingFloorModel({ floor, daylight, pickTargets, selected, bui
     pickTargets.current = [...built.productTargets(), ...built.pickTargets];
   }, [built, displayed, selected, pickTargets]);
   useEffect(() => built.setCurtainClosed(curtainClosed), [built, curtainClosed]);
+  // 잘라 보기는 재질의 자르는 면을 쓰므로 그리기 쪽에서 켠다
+  const { gl } = useThree();
+  useEffect(() => {
+    gl.localClippingEnabled = true;
+    built.setFittingCut(fittingCut);
+  }, [built, fittingCut, gl]);
   useEffect(() => {
     if (builtRef) builtRef.current = built;
     return () => {

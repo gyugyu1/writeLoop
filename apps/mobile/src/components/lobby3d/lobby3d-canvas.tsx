@@ -150,6 +150,8 @@ export interface Lobby3dCanvasProps {
   clothingSelected?: string | null;
   /** 커튼이 닫힌 옷집 피팅룸의 층(피팅 중). null이면 열려 있다. */
   clothingCurtainClosed?: ClothingFloor | null;
+  /** 피팅 중 카메라가 비출 라룹이 자리(피팅룸 안). 있으면 카메라가 그 앞에서 전신을 크게 비추고 그 피팅룸 앞면을 잘라 낸다. */
+  clothingFittingFocus?: { x: number; z: number } | null;
   /** 라룹이가 입은 착용 아이템(캐릭터 꾸미기 기술 시험, 개발 화면). */
   wear?: WearState;
   /** 부위 일곱마다 입은 아이템 종류(⑤). 없으면 wear의 넷을 기본 아이템으로 그린다. */
@@ -893,6 +895,7 @@ function Scene({
   onClothingFailed,
   clothingSelected = null,
   clothingCurtainClosed = null,
+  clothingFittingFocus = null,
   wear,
   look,
   pickRef
@@ -966,6 +969,8 @@ function Scene({
   const clothingPick = useRef<THREE.Object3D[]>([]);
   const clothingBuilt = useRef<ClothingModule.BuiltClothingFloor | null>(null);
   const clothingSelectedRef = useRef<string | null>(clothingSelected);
+  const fittingFocusRef = useRef(clothingFittingFocus);
+  fittingFocusRef.current = clothingFittingFocus;
   clothingSelectedRef.current = clothingSelected;
   const clothingLabels = useMemo(
     () =>
@@ -1342,7 +1347,15 @@ function Scene({
     const follow = editing ? editing.focus ?? target.current : sim;
     target.current.x += (follow.x - target.current.x) * k;
     target.current.z += (follow.z - target.current.z) * k;
-    const pose = cameraPose(target.current, viewWidth, aspect);
+    // 피팅 중에는 라룹이 앞(매장 앞쪽)에서 전신을 크게 비춘다(피팅 창이 화면 아래쪽을 덮어 라룹이가 화면 위쪽에 오게 아래를 본다)
+    const focus = fittingFocusRef.current;
+    const pose = focus
+      ? {
+          position: { x: focus.x, y: FITTING_CAMERA.height, z: focus.z + FITTING_CAMERA.distance },
+          lookAt: { x: focus.x, y: FITTING_CAMERA.lookHeight, z: focus.z },
+          fovDeg: FITTING_CAMERA.fovDeg
+        }
+      : cameraPose(target.current, viewWidth, aspect);
     if (Math.abs(persp.fov - pose.fovDeg) > 0.01 || Math.abs(persp.aspect - aspect) > 0.001) {
       persp.fov = pose.fovDeg;
       persp.aspect = aspect;
@@ -1454,6 +1467,7 @@ function Scene({
           builtRef={clothingBuilt}
           selected={clothingSelected}
           curtainClosed={clothingCurtainClosed === clothingFloorOf(area)}
+          fittingCut={clothingFittingFocus !== null}
           onReady={onClothingReady}
           onFailed={onClothingFailed}
         />
@@ -1467,6 +1481,9 @@ function Scene({
     </>
   );
 }
+
+/** 피팅 중 카메라: 라룹이 앞 거리·높이, 보는 높이, 세로 시야각(도). 피팅룸 안이 좁아 가까이서 넓게 본다. */
+const FITTING_CAMERA = { distance: 2.6, height: 1.55, lookHeight: 0.75, fovDeg: 60 } as const;
 
 /** 화면 이름표 상자의 반 크기(px). 화면(lobby3d-screen)의 이름표가 가운데에서 (-40, -22)만큼 옮겨 그려진다. */
 const LABEL_HALF_WIDTH = 40;
@@ -1583,6 +1600,7 @@ function ClothingLayer({
   builtRef,
   selected,
   curtainClosed,
+  fittingCut,
   onReady,
   onFailed
 }: {
@@ -1592,6 +1610,7 @@ function ClothingLayer({
   builtRef: MutableRefObject<ClothingModule.BuiltClothingFloor | null>;
   selected: string | null;
   curtainClosed: boolean;
+  fittingCut: boolean;
   onReady?: () => void;
   onFailed?: () => void;
 }) {
@@ -1600,7 +1619,7 @@ function ClothingLayer({
   return (
     <clothing.ClothingFloorErrorBoundary floor={floor} onFailed={onFailed}>
       <Suspense fallback={null}>
-        <clothing.ClothingFloorModel floor={floor} daylight={daylight} pickTargets={pickTargets} selected={selected} builtRef={builtRef} curtainClosed={curtainClosed} />
+        <clothing.ClothingFloorModel floor={floor} daylight={daylight} pickTargets={pickTargets} selected={selected} builtRef={builtRef} curtainClosed={curtainClosed} fittingCut={fittingCut} />
         <VillageWarmUp onReady={onReady ?? noop} />
       </Suspense>
     </clothing.ClothingFloorErrorBoundary>

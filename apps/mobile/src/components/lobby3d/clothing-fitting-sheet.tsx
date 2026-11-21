@@ -9,7 +9,8 @@ import type { WardrobeSlot } from "@/lib/types";
 // 옷집 피팅 창(아래에서 올라오는 판). 피팅룸에 들어가 커튼이 닫히면 연다. 두 층 피팅룸이 같은 목록을 쓴다.
 // 목록: 양 층에서 지금 진열 중인 상품 + 가진 옷(같은 옷이면 한 번), 부위별. 그릴 줄 모르는 옷은 뺀다.
 // 줄을 누르면 그 부위에 입고, 입은 줄을 다시 누르면 벗는다. 세트는 구성품을 각 부위에 입힌다(진열 해제된 구성품은 건너뛴다).
-// 착장은 로비 화면이 임시로 들고 있다(이 창은 바꾸자고 알리기만 한다). '취소'는 들어오기 전으로, '끝내기'는 장바구니·옷장으로.
+// 착장은 로비 화면이 임시로 들고 있다(이 창은 바꾸자고 알리기만 한다). '취소'는 들어오기 전으로, '장바구니에 넣기'는 장바구니·옷장으로.
+// 창은 화면 아래쪽만 덮고 바깥 판을 어둡게 하지 않는다(위쪽에 라룹이가 입은 모습이 보인다).
 
 const ACCENT = "#E36A00";
 
@@ -100,7 +101,7 @@ export default function ClothingFittingSheet({ visible, look, owned, onWear, onO
   const displayed = useSyncExternalStore(subscribeClothingDisplay, clothingDisplayed, clothingDisplayed);
   const items = fittingItems(displayed, owned);
   return (
-    <LobbySheet visible={visible} title="피팅룸" onClose={onCancel}>
+    <LobbySheet visible={visible} title="피팅룸" onClose={onCancel} maxHeight="46%" dimBackdrop={false}>
       <View style={styles.outfits}>
         {CLOTHING_OUTFITS.map((outfit) => (
           <Pressable key={outfit.id} accessibilityRole="button" style={styles.outfit} onPress={() => onOutfit(outfit.id)}>
@@ -140,7 +141,7 @@ export default function ClothingFittingSheet({ visible, look, owned, onWear, onO
           <Text style={styles.secondaryText}>취소</Text>
         </Pressable>
         <Pressable accessibilityRole="button" style={styles.primary} onPress={onFinish}>
-          <Text style={styles.primaryText}>끝내기</Text>
+          <Text style={styles.primaryText}>장바구니에 넣기</Text>
         </Pressable>
       </View>
     </LobbySheet>
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
     color: "#3B2A1E"
   },
   list: {
-    maxHeight: 360,
+    maxHeight: 200,
     paddingHorizontal: 16
   },
   slotLabel: {

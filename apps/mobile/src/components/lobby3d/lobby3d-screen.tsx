@@ -59,7 +59,7 @@ import {
 import { retryShopFiles } from "@/lib/lobby3d/shop-files";
 import ShopDisplaySheet from "@/components/lobby3d/shop-display-sheet";
 import ClothingProductSheet, { clothingCatalogPrice } from "@/components/lobby3d/clothing-product-sheet";
-import ClothingFittingSheet, { outfitPieces, ownsWearable } from "@/components/lobby3d/clothing-fitting-sheet";
+import ClothingFittingSheet, { fittingItemId, outfitPieces, ownsWearable } from "@/components/lobby3d/clothing-fitting-sheet";
 import ClothingCartSheet from "@/components/lobby3d/clothing-cart-sheet";
 import {
   CLOTHING_PRODUCTS,
@@ -73,7 +73,7 @@ import {
   subscribeClothingCart,
   subscribeClothingDisplay
 } from "@/lib/lobby3d/clothing-stock";
-import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_LOOK, NO_WEAR, WEAR_SLOTS, itemsInSlot, shownLook, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
+import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_LOOK, NO_WEAR, WEAR_SLOTS, itemsInSlot, shownLook, wearOfLook, wearableSlotOf, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type { WardrobeSlot } from "@/lib/types";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
@@ -596,11 +596,17 @@ export default function Lobby3dScreen({
   const shopVacant = useSyncExternalStore(subscribeShopVacancy, shopVacancy, shopVacancy);
   // 옷집 피팅 중 임시 착장(피팅 창이 바꾼다)
   const [fittingLook, setFittingLook] = useState<WearLook | null>(null);
+  // 옷집 임시 착장(진열 상품 '입어보기'): 옷집에 들어올 때의 착장에서 시작하고, 옷집을 나가면 버린다(저장하지 않는다)
+  const [shopLook, setShopLook] = useState<WearLook | null>(null);
+  const shopBaseRef = useRef<WearLook | null>(null);
+  // 피팅 중 카메라가 라룹이 앞을 비추고 피팅룸 앞면을 잘라 낼 때 그 자리(커튼이 닫힌 뒤)
+  const [fittingFocus, setFittingFocus] = useState<{ x: number; z: number } | null>(null);
   const baseWear = devPanel ? wearOfLook(testLook) : wearProp ?? NO_WEAR;
   const baseLook = devPanel ? testLook : lookProp;
-  // 피팅 중에는 임시 착장을 그린다
-  const wear = fittingLook ? wearOfLook(fittingLook) : baseWear;
-  const look = fittingLook ?? baseLook;
+  // 피팅 중에는 피팅 착장, 옷집 안에서는 옷집 임시 착장을 그린다
+  const drawnLook = fittingLook ?? shopLook;
+  const wear = drawnLook ? wearOfLook(drawnLook) : baseWear;
+  const look = drawnLook ?? baseLook;
   const toggleTestSlot = (slot: WardrobeSlot) =>
     setTestLook((current) => ({ ...current, [slot]: current[slot] ? null : itemsInSlot(slot)[0] ?? null }));
   const cycleTestSlot = (slot: WardrobeSlot) =>
@@ -691,6 +697,21 @@ export default function Lobby3dScreen({
     setCartOpen(false);
     pendingProductRef.current = null;
   }, [area]);
+  // 옷집 임시 착장: 옷집(어느 층이든)에 처음 들어오면 그때 착장으로 시작하고, 옷집 밖으로 나가면 버린다. 층을 옮겨도 그대로다
+  const inClothingShop = clothingFloorOf(area) !== null;
+  useEffect(() => {
+    if (!inClothingShop) {
+      shopBaseRef.current = null;
+      setShopLook(null);
+      return;
+    }
+    if (shopBaseRef.current) return;
+    const start = shownLook(baseWear, baseLook);
+    shopBaseRef.current = start;
+    setShopLook(start);
+    // 들어올 때 한 번만 정한다(그 뒤 홈 착장이 바뀌어도 옷집 안 착장은 그대로)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inClothingShop]);
   // 피팅 중에 로비 화면이 사라지면 커튼 닫힘(그 방 입구를 막는 임시 충돌)을 풀어 둔다. 다음에 들어와도 방이 막혀 있지 않게
   useEffect(() => () => setClothingCurtainClosed(null), []);
   // 진열을 해제한 상품이면 선택과 상품 창을 거둔다
@@ -698,6 +719,19 @@ export default function Lobby3dScreen({
     if (clothingSelected && !clothingDisplayedNow[clothingSelected]) setClothingSelected(null);
     if (clothingSheet && !clothingDisplayedNow[clothingSheet]) setClothingSheet(null);
     if (pendingProductRef.current && !clothingDisplayedNow[pendingProductRef.current]) pendingProductRef.current = null;
+    // 진열을 해제한 상품을 옷집 임시 착장에 입고 있었으면 그 부위는 옷집에 들어오기 전 옷으로
+    setShopLook((current) => {
+      const base = shopBaseRef.current;
+      if (!current || !base) return current;
+      let next = current;
+      for (const product of CLOTHING_PRODUCTS) {
+        if (clothingDisplayedNow[product.id]) continue;
+        const id = fittingItemId(product);
+        const slot = (Object.keys(current) as WardrobeSlot[]).find((s) => current[s] === id);
+        if (slot) next = { ...next, [slot]: base[slot] };
+      }
+      return next;
+    });
   }, [clothingDisplayedNow, clothingSelected, clothingSheet]);
   // 마을에 나가면 가구점 진열 상품 모델 셋을 뒤에서 미리 받기 시작한다(기기에 있으면 받지 않고, 이번 실행에서 실패한 것은 다시 받아 본다. 방에 있는 동안은 받지 않는다)
   useEffect(() => {
@@ -1172,9 +1206,11 @@ export default function Lobby3dScreen({
         if (fitting.phase === "walk-in") {
           if (Math.hypot(snap.x - room.inside.x, snap.z - room.inside.z) <= 0.1) {
             fitting.phase = "inside";
-            sim.placeAt(room.inside, room.inside.heading, Date.now(), true);
+            // 커튼을 닫고, 라룹이가 카메라 쪽(매장 앞쪽 +z)으로 돌아서고, 카메라가 라룹이 앞을 비춘다(피팅룸 앞면은 잘라 낸다)
+            sim.placeAt(room.inside, 0, Date.now(), true);
             setClothingCurtainClosed(fitting.floor);
             setCurtainFloor(fitting.floor);
+            setFittingFocus({ x: room.inside.x, z: room.inside.z });
             setFittingLook(fitting.base);
           } else fittingRef.current = null;
         } else if (fitting.phase === "walk-out") fittingRef.current = null;
@@ -1426,26 +1462,33 @@ export default function Lobby3dScreen({
     if (!fitting) return;
     const base = fitting.base;
     if (finished) {
-      const kept: WearLook = { ...base };
+      // 실제 착장(옷장·시험 착장)과, 나온 뒤의 옷집 임시 착장(가지지 않은 옷은 들어오기 전 옷으로)
+      const real = shownLook(baseWear, baseLook);
+      const saved: WearLook = { ...real };
+      const afterShop: WearLook = { ...base };
       let added = 0;
       for (const slot of Object.keys(finished) as WardrobeSlot[]) {
         const id = finished[slot];
-        if (id === base[slot]) continue;
         if (id === null || ownsWearable(id, ownedSet)) {
-          kept[slot] = id;
+          saved[slot] = id;
+          afterShop[slot] = id;
           continue;
         }
+        if (id === base[slot]) continue;
         // 가지지 않은 옷: 등록된 상품이면 장바구니에 담는다(미등록은 담지 않는다). 이 부위는 들어오기 전 옷으로
         const product = CLOTHING_PRODUCTS.find((p) => p.catalogId === id);
         if (product && clothingCatalogPrice(product.id) !== null && addToClothingCart(product.id)) added += 1;
       }
-      const changed = (Object.keys(kept) as WardrobeSlot[]).some((slot) => kept[slot] !== base[slot]);
+      // 가진 옷으로 바꾼 착장은 입은 채 옷장에 저장한다(실제 착장과 다를 때만)
+      const changed = (Object.keys(saved) as WardrobeSlot[]).some((slot) => saved[slot] !== real[slot]);
       if (changed) {
-        if (devPanel || !onSaveLook) setTestLook(kept);
-        else void onSaveLook(kept).catch(() => showToast("옷을 저장하지 못했어요"));
+        if (devPanel || !onSaveLook) setTestLook(saved);
+        else void onSaveLook(saved).catch(() => showToast("옷을 저장하지 못했어요"));
       }
+      setShopLook(afterShop);
       if (added > 0) showToast(`장바구니에 ${added}개 담았어요`);
     }
+    setFittingFocus(null);
     setFittingLook(null);
     setClothingCurtainClosed(null);
     setCurtainFloor(null);
@@ -1507,7 +1550,7 @@ export default function Lobby3dScreen({
       const inside = CLOTHING_FITTING_ROOMS[fittingFloor].inside;
       sim.pointerCancel();
       if (sim.goTo({ x: inside.x, z: inside.z }, null)) {
-        fittingRef.current = { floor: fittingFloor, phase: "walk-in", base: shownLook(baseWear, baseLook) };
+        fittingRef.current = { floor: fittingFloor, phase: "walk-in", base: shopLook ?? shownLook(baseWear, baseLook) };
         syncView();
       }
       return;
@@ -1570,6 +1613,7 @@ export default function Lobby3dScreen({
         onClothingFailed={onClothingFailed}
         clothingSelected={clothingSelected}
         clothingCurtainClosed={curtainFloor}
+        clothingFittingFocus={fittingFocus}
         wear={wear}
         look={look}
       />
@@ -2047,6 +2091,31 @@ export default function Lobby3dScreen({
       <ClothingProductSheet
         productId={clothingFloorOf(area) ? clothingSheet : null}
         owned={ownedSet}
+        worn={(() => {
+          const product = clothingSheet ? clothingProduct(clothingSheet) : undefined;
+          if (!product || !shopLook) return false;
+          return Object.values(shopLook).includes(fittingItemId(product));
+        })()}
+        onTry={(id) => {
+          const product = clothingProduct(id);
+          if (!product) return;
+          const itemId = fittingItemId(product);
+          const slot = wearableSlotOf(itemId) ?? product.slot;
+          setShopLook((current) => ({ ...(current ?? shownLook(baseWear, baseLook)), [slot]: itemId }));
+          setClothingSheet(null);
+        }}
+        onUntry={(id) => {
+          const product = clothingProduct(id);
+          const base = shopBaseRef.current;
+          if (!product || !base) return;
+          const itemId = fittingItemId(product);
+          setShopLook((current) => {
+            if (!current) return current;
+            const slot = (Object.keys(current) as WardrobeSlot[]).find((s) => current[s] === itemId);
+            return slot ? { ...current, [slot]: base[slot] } : current;
+          });
+          setClothingSheet(null);
+        }}
         onClose={() => setClothingSheet(null)}
         onAdded={() => {
           setClothingSheet(null);

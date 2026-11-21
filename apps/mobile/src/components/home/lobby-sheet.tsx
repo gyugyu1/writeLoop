@@ -10,15 +10,24 @@ interface LobbySheetProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** 판의 최대 높이(기본 화면의 88%). 옷집 피팅 창처럼 위쪽 로비를 보여야 하면 줄인다. */
+  maxHeight?: `${number}%` | number;
+  /** 바깥 판을 어둡게 할지(기본 어둡게). 로비를 그대로 보여야 하면 false. */
+  dimBackdrop?: boolean;
 }
 
-export default function LobbySheet({ visible, title, onClose, children }: LobbySheetProps) {
+export default function LobbySheet({ visible, title, onClose, children, maxHeight, dimBackdrop = true }: LobbySheetProps) {
   const insets = useSafeAreaInsets();
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.root}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${title} 닫기`} style={styles.backdrop} onPress={onClose} />
-        <View accessibilityViewIsModal style={[styles.panel, { paddingBottom: insets.bottom + 12 }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${title} 닫기`}
+          style={[styles.backdrop, !dimBackdrop && styles.backdropClear]}
+          onPress={onClose}
+        />
+        <View accessibilityViewIsModal style={[styles.panel, { paddingBottom: insets.bottom + 12 }, maxHeight !== undefined && { maxHeight }]}>
           <View style={styles.header}>
             <Text accessibilityRole="header" style={styles.title}>
               {title}
@@ -37,6 +46,7 @@ export default function LobbySheet({ visible, title, onClose, children }: LobbyS
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(43, 24, 16, 0.35)" },
+  backdropClear: { backgroundColor: "transparent" },
   panel: {
     maxHeight: "88%",
     backgroundColor: "#FFFDF8",

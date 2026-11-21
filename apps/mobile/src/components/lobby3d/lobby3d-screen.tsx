@@ -66,6 +66,7 @@ import {
   clothingCart,
   clothingDisplayed,
   clothingPriceText,
+  clothingInteractDistance,
   clothingProduct,
   addToClothingCart,
   clearClothingCart,
@@ -1232,12 +1233,12 @@ export default function Lobby3dScreen({
         const product = clothingProduct(pending);
         if (product && Math.hypot(snap.x - product.approach.x, snap.z - product.approach.z) <= 0.1) pinnedProductRef.current = pending;
       }
-      // 진열대 앞 상호작용 칸: 멈춰 서 있으면 붙든 상품(가까이 있는 동안), 아니면 서는 자리가 가장 가까운 진열 상품(0.9m 안).
+      // 진열대 앞 상호작용 칸: 멈춰 서 있으면 붙든 상품(가까이 있는 동안), 아니면 가장 가까운 진열 상품(상품~서는 자리 선분에서 0.9m 안).
       // 걷는 중·피팅 중·계산대 창·전환 중에는 없다
       const floorNow = clothingFloorOf(areaRef.current);
       let interact: string | null = null;
       const pinned = pinnedProductRef.current ? clothingProduct(pinnedProductRef.current) : undefined;
-      if (pinned && Math.hypot(snap.x - pinned.approach.x, snap.z - pinned.approach.z) > INTERACT_RADIUS) pinnedProductRef.current = null;
+      if (pinned && clothingInteractDistance(pinned, snap) > INTERACT_RADIUS) pinnedProductRef.current = null;
       if (floorNow && !snap.moving && !sim.walking && !fittingRef.current && !cartOpenRef.current && !travelingRef.current) {
         const displayed = clothingDisplayed();
         if (pinnedProductRef.current && displayed[pinnedProductRef.current]) interact = pinnedProductRef.current;
@@ -1245,7 +1246,7 @@ export default function Lobby3dScreen({
           let best = Infinity;
           for (const product of CLOTHING_PRODUCTS) {
             if (product.floor !== floorNow || !displayed[product.id]) continue;
-            const d = Math.hypot(snap.x - product.approach.x, snap.z - product.approach.z);
+            const d = clothingInteractDistance(product, snap);
             // 같은 거리면 stock.json 순서로 앞의 것(마네킹 네 벌)
             if (d <= INTERACT_RADIUS && d < best - 1e-6) {
               best = d;
@@ -1624,6 +1625,8 @@ export default function Lobby3dScreen({
   const pressMenu = useCallback((item: (typeof MENU)[number]) => pressMenuRef.current(item), []);
   // 옷집 피팅 창이 떠 있는 동안
   const fittingShown = fittingLook !== null && clothingFloorOf(area) !== null;
+  // 진열대 앞 상호작용 칸의 상품(피팅·계산대 창 중에는 없다)
+  const productPanelId = clothingFloorOf(area) && fittingLook === null && !cartOpen ? clothingSelected : null;
 
   return (
     <View style={styles.root}>
@@ -2095,7 +2098,8 @@ export default function Lobby3dScreen({
             )}
           </View>
         ) : null}
-        {editing ? null : (
+        {/* 진열대 앞 상호작용 칸이 떠 있으면 작문 메뉴를 숨기고 그 자리에 칸을 둔다 */}
+        {editing || productPanelId !== null ? null : (
         <LobbyMenu viewStore={viewStore} menuLitOpacity={menuLitOpacity} onPress={pressMenu} />
         )}
       </View>
@@ -2140,9 +2144,9 @@ export default function Lobby3dScreen({
         }}
       />
       <ClothingProductSheet
-        productId={clothingFloorOf(area) && fittingLook === null && !cartOpen ? clothingSelected : null}
+        productId={productPanelId}
         owned={ownedSet}
-        bottom={bottomPad + 76}
+        bottom={bottomPad + 12}
         worn={(() => {
           const product = clothingSelected ? clothingProduct(clothingSelected) : undefined;
           if (!product || !shopLook) return false;

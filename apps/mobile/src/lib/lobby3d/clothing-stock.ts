@@ -18,6 +18,7 @@ interface StockRow {
   pickNode: string;
   displayAnchor: string;
   playerApproachXZ: number[];
+  positionXYZ: number[];
   outfitIds: string[];
 }
 
@@ -44,6 +45,8 @@ export interface ClothingProduct {
   displayAnchor: string;
   /** 상품을 누르면 걸어가 서는 자리(앱 좌표). */
   approach: ClothingPoint;
+  /** 진열된 상품의 자리(앱 좌표, 바닥 평면). */
+  item: ClothingPoint;
   /** 그 진열대의 명패 노드와 이름표 자리 노드(층 모델). */
   nameplate: string;
   textAnchor: string;
@@ -79,10 +82,25 @@ function productOf(row: StockRow): ClothingProduct {
     pickNode: row.pickNode,
     displayAnchor: row.displayAnchor,
     approach: { x: row.playerApproachXZ[0] + CLOTHING_OFFSET.x, z: row.playerApproachXZ[1] + CLOTHING_OFFSET.z },
+    item: { x: row.positionXYZ[0] + CLOTHING_OFFSET.x, z: row.positionXYZ[2] + CLOTHING_OFFSET.z },
     nameplate: station.nameplate,
     textAnchor: station.textAnchor,
     outfitIds: row.outfitIds
   };
+}
+
+/**
+ * 진열대 앞 상호작용 칸의 거리: 상품 자리와 서는 자리를 잇는 선분에서 이 점까지(m).
+ * 벽에 걸린 옷은 서는 자리가 벽에서 1.45m 앞이라, 서는 자리만 재면 옷 바로 밑에 붙어 서도 멀다고 나왔다.
+ */
+export function clothingInteractDistance(product: ClothingProduct, point: ClothingPoint): number {
+  const ax = product.item.x;
+  const az = product.item.z;
+  const dx = product.approach.x - ax;
+  const dz = product.approach.z - az;
+  const len2 = dx * dx + dz * dz;
+  const t = len2 > 0 ? Math.max(0, Math.min(1, ((point.x - ax) * dx + (point.z - az) * dz) / len2)) : 0;
+  return Math.hypot(point.x - (ax + dx * t), point.z - (az + dz * t));
 }
 
 /** 진열 상품 22종(stock.json 순서). */

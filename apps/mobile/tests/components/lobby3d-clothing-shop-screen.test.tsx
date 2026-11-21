@@ -268,7 +268,7 @@ describe("옷집 피팅룸", () => {
   const store = require("@/lib/item-catalog-store") as typeof import("@/lib/item-catalog-store");
   const shopData = require("@/lib/lobby3d/clothing-shop") as typeof import("@/lib/lobby3d/clothing-shop");
   /* eslint-enable @typescript-eslint/no-require-imports */
-  const file = (n: string) => ({ url: `/api/catalog/files/${n}.glb`, sha256: n.padEnd(64, "0").slice(0, 64), size: 1 });
+  const file = (n: string) => ({ url: `/api/catalog/files/${n}.glb`, sha256: n.padEnd(64, "0").slice(0, 64), bytes: 1 });
   const wearable = (id: string, slot: string, price: number | null, draw: Record<string, unknown>) => ({
     id, kind: "wearable" as const, name: id, shopName: id, description: "", category: price === null ? null : ("clothes" as const), slot, price, draw, assets: { model: file(id), icon: null }
   });

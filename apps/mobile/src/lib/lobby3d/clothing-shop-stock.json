@@ -1,0 +1,911 @@
+{
+  "version": 2,
+  "displayFile": "clothing-display-samples.glb",
+  "defaultRoster": "products",
+  "products": [
+    {
+      "id": "wear-top-kiln-jacket",
+      "nameKO": "코랄 워크 재킷",
+      "category": "top",
+      "wearableSource": "꾸미기/옷가게/세트/항구-산책/코랄-워크-재킷/wear-top-kiln-jacket.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 1,
+      "station": "F1_Slot_WallWest",
+      "pickNode": "Stock_wear-top-kiln-jacket",
+      "displayAnchor": "F1_Item_wear-top-kiln-jacket",
+      "playerApproach": "F1_Visit_wear-top-kiln-jacket",
+      "npcApproach": "F1_Staff_wear-top-kiln-jacket",
+      "mount": "suspended",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "d9ad79aa428c0a22e36ca450fe9b066d597ded24ef4b6dc7641bf97d46180a24",
+      "positionXYZ": [
+        -6.58,
+        1.99,
+        -6.68
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -6.58,
+        -5.23
+      ],
+      "npcApproachXZ": [
+        -6.28,
+        -4.85
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/항구-산책/코랄-워크-재킷/wear-top-kiln-jacket.glb",
+      "wear": {
+        "body": 1,
+        "attach": "skin"
+      }
+    },
+    {
+      "id": "tshirtOrange",
+      "nameKO": "주황 티셔츠",
+      "category": "top",
+      "wearableSource": "꾸미기/기본/라룹이-착장/상의/wear-top.glb",
+      "catalogId": "tshirtOrange",
+      "registration": "registered",
+      "floor": 1,
+      "station": "F1_Slot_WallWest",
+      "pickNode": "Stock_tshirtOrange",
+      "displayAnchor": "F1_Item_tshirtOrange",
+      "playerApproach": "F1_Visit_tshirtOrange",
+      "npcApproach": "F1_Staff_tshirtOrange",
+      "mount": "suspended",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "edce75d73de5c47b20d1c3d242e68a2d1e6c69a59411b286b029eff40e61b277",
+      "positionXYZ": [
+        -5.06,
+        1.99,
+        -6.68
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -5.06,
+        -5.23
+      ],
+      "npcApproachXZ": [
+        -4.76,
+        -4.85
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/기본/라룹이-착장/상의/wear-top.glb",
+      "wear": {
+        "body": 1,
+        "attach": "skin"
+      }
+    },
+    {
+      "id": "wear-bottom-sage-cargo",
+      "nameKO": "세이지 카고 쇼츠",
+      "category": "bottom",
+      "wearableSource": "꾸미기/옷가게/세트/항구-산책/세이지-카고-쇼츠/wear-bottom-sage-cargo.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 1,
+      "station": "F1_Slot_WallEast",
+      "pickNode": "Stock_wear-bottom-sage-cargo",
+      "displayAnchor": "F1_Item_wear-bottom-sage-cargo",
+      "playerApproach": "F1_Visit_wear-bottom-sage-cargo",
+      "npcApproach": "F1_Staff_wear-bottom-sage-cargo",
+      "mount": "suspended",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "ab2c8a841a963e7900395387da3c60411e3122ba2ae220429de8350b50fc540e",
+      "positionXYZ": [
+        0.22,
+        1.99,
+        -6.68
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        0.22,
+        -5.23
+      ],
+      "npcApproachXZ": [
+        0.52,
+        -4.85
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/항구-산책/세이지-카고-쇼츠/wear-bottom-sage-cargo.glb",
+      "wear": {
+        "body": 1,
+        "attach": "skin"
+      }
+    },
+    {
+      "id": "shortsNavy",
+      "nameKO": "남색 반바지",
+      "category": "bottom",
+      "wearableSource": "꾸미기/기본/라룹이-착장/하의/wear-bottom.glb",
+      "catalogId": "shortsNavy",
+      "registration": "registered",
+      "floor": 1,
+      "station": "F1_Slot_WallEast",
+      "pickNode": "Stock_shortsNavy",
+      "displayAnchor": "F1_Item_shortsNavy",
+      "playerApproach": "F1_Visit_shortsNavy",
+      "npcApproach": "F1_Staff_shortsNavy",
+      "mount": "suspended",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "f5f9236174028239d20770488e6653e87f630bfd482d201348bf028877a2e469",
+      "positionXYZ": [
+        1.74,
+        1.99,
+        -6.68
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        1.74,
+        -5.23
+      ],
+      "npcApproachXZ": [
+        2.04,
+        -4.85
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/기본/라룹이-착장/하의/wear-bottom.glb",
+      "wear": {
+        "body": 1,
+        "attach": "skin"
+      }
+    },
+    {
+      "id": "wear-hat-breakwater-bucket",
+      "nameKO": "마린 버킷햇",
+      "category": "hat",
+      "wearableSource": "꾸미기/옷가게/세트/항구-산책/마린-버킷햇/wear-hat-breakwater-bucket.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 1,
+      "station": "F1_Slot_WindowJacket",
+      "pickNode": "Stock_wear-hat-breakwater-bucket",
+      "displayAnchor": "F1_Item_wear-hat-breakwater-bucket",
+      "playerApproach": "F1_Visit_wear-hat-breakwater-bucket",
+      "npcApproach": "F1_Staff_wear-hat-breakwater-bucket",
+      "mount": "body",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "254b68046e3183c361c634e3a96c821c486885ce4a9c0e24ad8ed846cb5bd335",
+      "positionXYZ": [
+        -4.96,
+        0.548,
+        3.8
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -4.96,
+        5.28
+      ],
+      "npcApproachXZ": [
+        -4.54,
+        5.52
+      ],
+      "outfitIds": [
+        "harborMarine"
+      ],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/항구-산책/마린-버킷햇/wear-hat-breakwater-bucket.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "head"
+      }
+    },
+    {
+      "id": "wear-top-tide-sailor",
+      "nameKO": "스트라이프 세일러 니트",
+      "category": "top",
+      "wearableSource": "꾸미기/옷가게/세트/항구-산책/스트라이프-세일러-니트/wear-top-tide-sailor.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 1,
+      "station": "F1_Slot_WindowJacket",
+      "pickNode": "Stock_wear-top-tide-sailor",
+      "displayAnchor": "F1_Item_wear-top-tide-sailor",
+      "playerApproach": "F1_Visit_wear-top-tide-sailor",
+      "npcApproach": "F1_Staff_wear-top-tide-sailor",
+      "mount": "body",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "3c49cb264f50c0bac8f62c3b71ae5d9c6bbe34b67cb5b483a57f98823daf83b9",
+      "positionXYZ": [
+        -4.96,
+        0.548,
+        3.8
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -4.96,
+        5.28
+      ],
+      "npcApproachXZ": [
+        -4.54,
+        5.52
+      ],
+      "outfitIds": [
+        "harborMarine"
+      ],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/항구-산책/스트라이프-세일러-니트/wear-top-tide-sailor.glb",
+      "wear": {
+        "body": 1,
+        "attach": "skin"
+      }
+    },
+    {
+      "id": "wear-bottom-jetty-denim",
+      "nameKO": "인디고 데님 쇼츠",
+      "category": "bottom",
+      "wearableSource": "꾸미기/옷가게/세트/항구-산책/인디고-데님-쇼츠/wear-bottom-jetty-denim.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 1,
+      "station": "F1_Slot_WindowJacket",
+      "pickNode": "Stock_wear-bottom-jetty-denim",
+      "displayAnchor": "F1_Item_wear-bottom-jetty-denim",
+      "playerApproach": "F1_Visit_wear-bottom-jetty-denim",
+      "npcApproach": "F1_Staff_wear-bottom-jetty-denim",
+      "mount": "body",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "041eff1787a525dee0054782fcfacdc9b80551c63bd66f1487f242ac4ea87b6a",
+      "positionXYZ": [
+        -4.96,
+        0.548,
+        3.8
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -4.96,
+        5.28
+      ],
+      "npcApproachXZ": [
+        -4.54,
+        5.52
+      ],
+      "outfitIds": [
+        "harborMarine"
+      ],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/항구-산책/인디고-데님-쇼츠/wear-bottom-jetty-denim.glb",
+      "wear": {
+        "body": 1,
+        "attach": "skin"
+      }
+    },
+    {
+      "id": "shoesWhite",
+      "nameKO": "흰 운동화",
+      "category": "shoes",
+      "wearableSource": "꾸미기/기본/라룹이-착장/신발/wear-shoe.glb",
+      "catalogId": "shoesWhite",
+      "registration": "registered",
+      "floor": 1,
+      "station": "F1_Slot_WindowJacket",
+      "pickNode": "Stock_shoesWhite",
+      "displayAnchor": "F1_Item_shoesWhite",
+      "playerApproach": "F1_Visit_shoesWhite",
+      "npcApproach": "F1_Staff_shoesWhite",
+      "mount": "body",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "40c49b5fa9504b33e8fb7f37d35c638dd83f4d1640c8cca99c81d7ab4d9cf9c3",
+      "positionXYZ": [
+        -4.96,
+        0.548,
+        3.8
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -4.96,
+        5.28
+      ],
+      "npcApproachXZ": [
+        -4.54,
+        5.52
+      ],
+      "outfitIds": [
+        "harborMarine"
+      ],
+      "archiveWearablePath": "wearables/꾸미기/기본/라룹이-착장/신발/wear-shoe.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "foot_l",
+        "mirror": "foot_r",
+        "color": "#DCD8CF"
+      }
+    },
+    {
+      "id": "capOrange",
+      "nameKO": "주황 야구모자",
+      "category": "hat",
+      "wearableSource": "꾸미기/기본/라룹이-착장/모자/wear-hat.glb",
+      "catalogId": "capOrange",
+      "registration": "registered",
+      "floor": 1,
+      "station": "F1_Slot_Table",
+      "pickNode": "Stock_capOrange",
+      "displayAnchor": "F1_Item_capOrange",
+      "playerApproach": "F1_Visit_capOrange",
+      "npcApproach": "F1_Staff_capOrange",
+      "mount": "surface",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "18976622f5686d81fe4377824d63b1588d132a5cfc164a7ccd26626f522040c4",
+      "positionXYZ": [
+        -6.9,
+        1.16,
+        0.4
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -6.9,
+        1.78
+      ],
+      "npcApproachXZ": [
+        -6.66,
+        2.01
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/기본/라룹이-착장/모자/wear-hat.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "head"
+      }
+    },
+    {
+      "id": "shoesBrown",
+      "nameKO": "갈색 운동화",
+      "category": "shoes",
+      "wearableSource": "꾸미기/기본/라룹이-착장/신발/wear-shoe.glb",
+      "catalogId": "shoesBrown",
+      "registration": "registered",
+      "floor": 1,
+      "station": "F1_Slot_Table",
+      "pickNode": "Stock_shoesBrown",
+      "displayAnchor": "F1_Item_shoesBrown",
+      "playerApproach": "F1_Visit_shoesBrown",
+      "npcApproach": "F1_Staff_shoesBrown",
+      "mount": "surface",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "40c49b5fa9504b33e8fb7f37d35c638dd83f4d1640c8cca99c81d7ab4d9cf9c3",
+      "positionXYZ": [
+        -5.82,
+        0.898,
+        0.4
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -5.82,
+        1.78
+      ],
+      "npcApproachXZ": [
+        -5.58,
+        2.01
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/기본/라룹이-착장/신발/wear-shoe.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "foot_l",
+        "mirror": "foot_r"
+      }
+    },
+    {
+      "id": "wear-face-honey-panto",
+      "nameKO": "허니 팬토 선글라스",
+      "category": "face",
+      "wearableSource": "꾸미기/옷가게/세트/항구-산책/허니-팬토-선글라스/wear-face-honey-panto.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 1,
+      "station": "F1_Slot_Table",
+      "pickNode": "Stock_wear-face-honey-panto",
+      "displayAnchor": "F1_Item_wear-face-honey-panto",
+      "playerApproach": "F1_Visit_wear-face-honey-panto",
+      "npcApproach": "F1_Staff_wear-face-honey-panto",
+      "mount": "surface",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "06170bbf9d1b452f245f45803a237c4c94c2afb3f48b2295021e4e635921f8f1",
+      "positionXYZ": [
+        -4.74,
+        1.05,
+        0.4
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -4.74,
+        1.78
+      ],
+      "npcApproachXZ": [
+        -4.5,
+        2.01
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/항구-산책/허니-팬토-선글라스/wear-face-honey-panto.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "head"
+      }
+    },
+    {
+      "id": "capBlue",
+      "nameKO": "파랑 야구모자",
+      "category": "hat",
+      "wearableSource": "꾸미기/기본/라룹이-착장/모자/wear-hat-blue.glb",
+      "catalogId": "capBlue",
+      "registration": "registered",
+      "floor": 1,
+      "station": "F1_Slot_WindowDress",
+      "pickNode": "Stock_capBlue",
+      "displayAnchor": "F1_Item_capBlue",
+      "playerApproach": "F1_Visit_capBlue",
+      "npcApproach": "F1_Staff_capBlue",
+      "mount": "surface",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "580c09611c1c046a9419fcd2c481224d76bb5ed3f84f542a99ad6d8957ce180f",
+      "positionXYZ": [
+        -6.68,
+        1.33,
+        3.8
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -6.68,
+        5.28
+      ],
+      "npcApproachXZ": [
+        -6.34,
+        5.52
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/기본/라룹이-착장/모자/wear-hat-blue.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "head"
+      }
+    },
+    {
+      "id": "mufflerRed",
+      "nameKO": "빨강 머플러",
+      "category": "accessory",
+      "wearableSource": "꾸미기/기본/라룹이-착장/머플러/wear-muffler.glb",
+      "catalogId": "mufflerRed",
+      "registration": "registered",
+      "floor": 1,
+      "station": "F1_Slot_RailEast",
+      "pickNode": "Stock_mufflerRed",
+      "displayAnchor": "F1_Item_mufflerRed",
+      "playerApproach": "F1_Visit_mufflerRed",
+      "npcApproach": "F1_Staff_mufflerRed",
+      "mount": "suspended",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "fbad6c03ff847c82d95fd93f7b01ccd6222983bd7a75fd2396f432b8dddd1b06",
+      "positionXYZ": [
+        -3.18,
+        1.99,
+        -6.55
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -3.18,
+        -5.23
+      ],
+      "npcApproachXZ": [
+        -2.88,
+        -4.85
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/기본/라룹이-착장/머플러/wear-muffler.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "spine"
+      }
+    },
+    {
+      "id": "backpackRed",
+      "nameKO": "빨강 백팩",
+      "category": "back",
+      "wearableSource": "꾸미기/기본/라룹이-착장/백팩/wear-backpack.glb",
+      "catalogId": "backpackRed",
+      "registration": "registered",
+      "floor": 1,
+      "station": "F1_Slot_RailEast",
+      "pickNode": "Stock_backpackRed",
+      "displayAnchor": "F1_Item_backpackRed",
+      "playerApproach": "F1_Visit_backpackRed",
+      "npcApproach": "F1_Staff_backpackRed",
+      "mount": "suspended",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "d75ecf1ddd136c28a90481bdffd91ee1b633793550f16a6198a4e117f8bc5a8c",
+      "positionXYZ": [
+        -1.66,
+        1.99,
+        -6.55
+      ],
+      "rotationYDegrees": 180,
+      "playerApproachXZ": [
+        -1.66,
+        -5.23
+      ],
+      "npcApproachXZ": [
+        -1.36,
+        -4.85
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/기본/라룹이-착장/백팩/wear-backpack.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "spine"
+      }
+    },
+    {
+      "id": "wear-hat-field-cap",
+      "nameKO": "차양형 전투모",
+      "category": "hat",
+      "wearableSource": "꾸미기/옷가게/세트/한국군-밀리터리/전투모/wear-hat-field-cap.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 2,
+      "station": "F2_Slot_AtelierDress",
+      "pickNode": "Stock_wear-hat-field-cap",
+      "displayAnchor": "F2_Item_wear-hat-field-cap",
+      "playerApproach": "F2_Visit_wear-hat-field-cap",
+      "npcApproach": "F2_Staff_wear-hat-field-cap",
+      "mount": "body",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "bdc084bfe71e4fb27f869760ee209d4dddba5b57ee639aff5865e20ba9819d78",
+      "positionXYZ": [
+        -5.82,
+        0.418,
+        -1.7
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -5.82,
+        -0.25
+      ],
+      "npcApproachXZ": [
+        -5.42,
+        -0.02
+      ],
+      "outfitIds": [
+        "fieldUniform"
+      ],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/한국군-밀리터리/전투모/wear-hat-field-cap.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "head"
+      }
+    },
+    {
+      "id": "wear-top-field-blouse",
+      "nameKO": "디지털 무늬 전투복 상의",
+      "category": "top",
+      "wearableSource": "꾸미기/옷가게/세트/한국군-밀리터리/야전상의/wear-top-field-blouse.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 2,
+      "station": "F2_Slot_AtelierDress",
+      "pickNode": "Stock_wear-top-field-blouse",
+      "displayAnchor": "F2_Item_wear-top-field-blouse",
+      "playerApproach": "F2_Visit_wear-top-field-blouse",
+      "npcApproach": "F2_Staff_wear-top-field-blouse",
+      "mount": "body",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "c8fe6df3e42bc25e214ccdb469080c505cd7db9bfc05cfb991f9aa3bba7fcf26",
+      "positionXYZ": [
+        -5.82,
+        0.418,
+        -1.7
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -5.82,
+        -0.25
+      ],
+      "npcApproachXZ": [
+        -5.42,
+        -0.02
+      ],
+      "outfitIds": [
+        "fieldUniform"
+      ],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/한국군-밀리터리/야전상의/wear-top-field-blouse.glb",
+      "wear": {
+        "body": 1,
+        "attach": "skin"
+      }
+    },
+    {
+      "id": "wear-bottom-field-trousers",
+      "nameKO": "카고 포켓 전투복 하의",
+      "category": "bottom",
+      "wearableSource": "꾸미기/옷가게/세트/한국군-밀리터리/야전바지/wear-bottom-field-trousers.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 2,
+      "station": "F2_Slot_AtelierDress",
+      "pickNode": "Stock_wear-bottom-field-trousers",
+      "displayAnchor": "F2_Item_wear-bottom-field-trousers",
+      "playerApproach": "F2_Visit_wear-bottom-field-trousers",
+      "npcApproach": "F2_Staff_wear-bottom-field-trousers",
+      "mount": "body",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "e7bb7b10fe0fe334b01e7c20cc6fe681a94fc5827569ee50e90c15b57769676f",
+      "positionXYZ": [
+        -5.82,
+        0.418,
+        -1.7
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -5.82,
+        -0.25
+      ],
+      "npcApproachXZ": [
+        -5.42,
+        -0.02
+      ],
+      "outfitIds": [
+        "fieldUniform"
+      ],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/한국군-밀리터리/야전바지/wear-bottom-field-trousers.glb",
+      "wear": {
+        "body": 1,
+        "attach": "skin"
+      }
+    },
+    {
+      "id": "wear-shoe-combat-boot",
+      "nameKO": "끈 전투화 한 켤레",
+      "category": "shoes",
+      "wearableSource": "꾸미기/옷가게/세트/한국군-밀리터리/전투화/wear-shoe-combat-boot.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 2,
+      "station": "F2_Slot_AtelierDress",
+      "pickNode": "Stock_wear-shoe-combat-boot",
+      "displayAnchor": "F2_Item_wear-shoe-combat-boot",
+      "playerApproach": "F2_Visit_wear-shoe-combat-boot",
+      "npcApproach": "F2_Staff_wear-shoe-combat-boot",
+      "mount": "body",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "80786668bbeee8ab022ebb8b64a58f0cb838c61c6991199dc4cd5155b8ac1006",
+      "positionXYZ": [
+        -5.82,
+        0.418,
+        -1.7
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -5.82,
+        -0.25
+      ],
+      "npcApproachXZ": [
+        -5.42,
+        -0.02
+      ],
+      "outfitIds": [
+        "fieldUniform"
+      ],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/한국군-밀리터리/전투화/wear-shoe-combat-boot.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "foot_l",
+        "mirror": "foot_r"
+      }
+    },
+    {
+      "id": "wear-top-quilted-liner",
+      "nameKO": "군대 깔깔이",
+      "category": "top",
+      "wearableSource": "꾸미기/옷가게/상의/군대-깔깔이/wear-top-quilted-liner.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 2,
+      "station": "F2_Slot_AtelierJacket",
+      "pickNode": "Stock_wear-top-quilted-liner",
+      "displayAnchor": "F2_Item_wear-top-quilted-liner",
+      "playerApproach": "F2_Visit_wear-top-quilted-liner",
+      "npcApproach": "F2_Staff_wear-top-quilted-liner",
+      "mount": "suspended",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "f5e5c72f499e9af3b973c24c1ba0ac047f39c3d23dfafd8b729a8e1decc70f35",
+      "positionXYZ": [
+        -2.42,
+        2.23,
+        -6.68
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -2.42,
+        -5.23
+      ],
+      "npcApproachXZ": [
+        -2.04,
+        -4.85
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/상의/군대-깔깔이/wear-top-quilted-liner.glb",
+      "wear": {
+        "body": 1,
+        "attach": "skin"
+      }
+    },
+    {
+      "id": "wear-hat-peddler-straw",
+      "nameKO": "장돌뱅이 모자",
+      "category": "hat",
+      "wearableSource": "꾸미기/옷가게/모자/장돌뱅이-모자/wear-hat-peddler-straw.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 2,
+      "station": "F2_Slot_Peddler",
+      "pickNode": "Stock_wear-hat-peddler-straw",
+      "displayAnchor": "F2_Item_wear-hat-peddler-straw",
+      "playerApproach": "F2_Visit_wear-hat-peddler-straw",
+      "npcApproach": "F2_Staff_wear-hat-peddler-straw",
+      "mount": "hat-stand",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "b4edb5b1865bae1edd2786e262d3d10bb08437e5647d380c98ad29184850ca3a",
+      "positionXYZ": [
+        -5.82,
+        1.43,
+        2.25
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -5.82,
+        3.58
+      ],
+      "npcApproachXZ": [
+        -5.46,
+        3.88
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/모자/장돌뱅이-모자/wear-hat-peddler-straw.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "head"
+      }
+    },
+    {
+      "id": "wear-hat-bramble-beret",
+      "nameKO": "베리 베레모",
+      "category": "hat",
+      "wearableSource": "꾸미기/옷가게/세트/항구-산책/베리-베레모/wear-hat-bramble-beret.glb",
+      "catalogId": null,
+      "registration": "catalog-binding-required",
+      "floor": 2,
+      "station": "F2_Slot_Beret",
+      "pickNode": "Stock_wear-hat-bramble-beret",
+      "displayAnchor": "F2_Item_wear-hat-bramble-beret",
+      "playerApproach": "F2_Visit_wear-hat-bramble-beret",
+      "npcApproach": "F2_Staff_wear-hat-bramble-beret",
+      "mount": "surface",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "355beeb6b3ca4045ae0ddeebe2cae8474c089e0a31284f4d2cbfa0ac7112c258",
+      "positionXYZ": [
+        -1.64,
+        1.39,
+        2.25
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -1.64,
+        3.6
+      ],
+      "npcApproachXZ": [
+        -1.37,
+        3.9
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/옷가게/세트/항구-산책/베리-베레모/wear-hat-bramble-beret.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "head"
+      }
+    },
+    {
+      "id": "necklaceGold",
+      "nameKO": "금 목걸이",
+      "category": "accessory",
+      "wearableSource": "꾸미기/기본/라룹이-착장/목걸이/wear-necklace.glb",
+      "catalogId": "necklaceGold",
+      "registration": "registered",
+      "floor": 2,
+      "station": "F2_Slot_BucketHat",
+      "pickNode": "Stock_necklaceGold",
+      "displayAnchor": "F2_Item_necklaceGold",
+      "playerApproach": "F2_Visit_necklaceGold",
+      "npcApproach": "F2_Staff_necklaceGold",
+      "mount": "surface",
+      "displayFile": "clothing-display-samples.glb",
+      "wearableSHA256": "cfb099e8a98a73e093ecdd57935dbc11a40c8fd9444c6dde80e6f48c6a08be0f",
+      "positionXYZ": [
+        -3.2,
+        1.09,
+        2.25
+      ],
+      "rotationYDegrees": 0,
+      "playerApproachXZ": [
+        -3.2,
+        3.6
+      ],
+      "npcApproachXZ": [
+        -2.93,
+        3.9
+      ],
+      "outfitIds": [],
+      "archiveWearablePath": "wearables/꾸미기/기본/라룹이-착장/목걸이/wear-necklace.glb",
+      "wear": {
+        "body": 1,
+        "attach": "bone",
+        "bone": "spine"
+      }
+    }
+  ],
+  "outfits": [
+    {
+      "id": "harborMarine",
+      "nameKO": "항구 산책 · 마린",
+      "itemIds": [
+        "wear-hat-breakwater-bucket",
+        "wear-top-tide-sailor",
+        "wear-bottom-jetty-denim",
+        "shoesWhite"
+      ],
+      "category": "set",
+      "purchasableAsSeparateSKU": false
+    },
+    {
+      "id": "fieldUniform",
+      "nameKO": "한국군 밀리터리",
+      "itemIds": [
+        "wear-hat-field-cap",
+        "wear-top-field-blouse",
+        "wear-bottom-field-trousers",
+        "wear-shoe-combat-boot"
+      ],
+      "category": "set",
+      "purchasableAsSeparateSKU": false
+    }
+  ],
+  "fitting": {
+    "room": "F1_Fitting1",
+    "inventorySource": "products from both floors whose stock mesh is instantiated in its declared station; list unowned for purchase",
+    "slots": [
+      "hat",
+      "top",
+      "bottom",
+      "shoes",
+      "face",
+      "back",
+      "accessory"
+    ],
+    "equippedPerSlot": 1,
+    "setSelection": "apply component items per category; replace the previous item in that slot only; cart keyed by item id",
+    "ownedItems": "try-on permitted; never charge twice",
+    "noExtraBundleSKU": true
+  },
+  "displayRules": {
+    "stockRoot": "ClothingDisplaySamples",
+    "oneVisibleOccurrencePerProduct": true,
+    "emptyOrHiddenStock": "remove from fitting purchase list and disable picking and price label",
+    "buyableNodes": "instantiated product pickNode only; shelves, forms, curtains, props, plates and empty hooks are scenery",
+    "resolveCatalog": "registered rows use catalogId; bind missing entries to approved catalog item and price before enabling checkout; no sample price",
+    "selection": "raycast the isolated mesh or use the component picker at its station"
+  },
+  "excluded": [
+    "always-owned:goggles",
+    "unpriced:vestGreen",
+    "unfitted:raw-baseball-cap",
+    "unverified:peddler-clothing-beyond-hat"
+  ]
+}

@@ -27,6 +27,7 @@ jest.mock("../../assets/models/shop/furniture-shop-interior.glb", () => "interio
 jest.mock("../../assets/models/shop/beodeul.glb", () => "beodeul.glb");
 jest.mock("../../assets/models/clothing-shop/clothing-shop-interior-1f.glb", () => "f1.glb");
 jest.mock("../../assets/models/clothing-shop/clothing-shop-interior-2f.glb", () => "f2.glb");
+jest.mock("../../assets/models/clothing-shop/clothing-display-samples.glb", () => "samples.glb");
 jest.mock("@/components/lobby3d/lobby3d-character", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const three = require("three") as typeof import("three");
@@ -107,4 +108,66 @@ describe("옷집 층 장면", () => {
       built.dispose();
     }, 60000);
   }
+});
+
+// 작업 133 ② 진열: 진열 상품 모델의 pickNode를 displayAnchor에 붙이고, 진열 해제·선택 명패·예비 자리
+describe("옷집 진열 상품", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const stock = require("@/lib/lobby3d/clothing-stock") as typeof import("@/lib/lobby3d/clothing-stock");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+
+  afterEach(() => stock.resetClothingShop());
+
+  it("층마다 진열 중인 상품만 그 displayAnchor에 로컬 0·배율 1로 붙고(1층 14·2층 8), 예비 자리에는 아무것도 붙지 않는다", async () => {
+    const samples = await load(APP_MODELS, "clothing-display-samples.glb");
+    for (const floor of [1, 2] as const) {
+      const built = buildClothingFloor(floor, await load(APP_MODELS, FILES[floor]));
+      built.setStockModel(samples);
+      built.setDisplayed(stock.clothingDisplayed());
+      const expected = stock.clothingProductsOnFloor(floor).map((p) => p.id);
+      expect(expected).toHaveLength(floor === 1 ? 14 : 8);
+      expect([...built.products.keys()].sort()).toEqual([...expected].sort());
+      for (const id of expected) {
+        const item = built.products.get(id)!;
+        expect(item.parent?.name).toBe(stock.clothingProduct(id)!.displayAnchor);
+        expect(item.position.length()).toBe(0);
+        expect(item.scale.x).toBe(1);
+        let tagged = true;
+        item.traverse((o) => {
+          if ((o as { isMesh?: boolean }).isMesh && o.userData.clothingProduct !== id) tagged = false;
+        });
+        expect({ id, tagged }).toEqual({ id, tagged: true });
+      }
+      expect(built.productTargets()).toHaveLength(expected.length);
+      for (const mount of stock.CLOTHING_RESERVE_MOUNTS[floor]) {
+        const node = built.root.getObjectByName(mount);
+        expect({ mount, found: Boolean(node) }).toEqual({ mount, found: true });
+        expect(node!.children.some((c) => c.name.startsWith("clothing-product-"))).toBe(false);
+      }
+      built.dispose();
+    }
+  }, 60000);
+
+  it("진열을 해제하면 떼고 다시 켜면 붙으며, 선택한 상품의 진열대 명패만 보인다", async () => {
+    const samples = await load(APP_MODELS, "clothing-display-samples.glb");
+    const built = buildClothingFloor(1, await load(APP_MODELS, FILES[1]));
+    built.setStockModel(samples);
+    built.setDisplayed(stock.clothingDisplayed());
+    const cap = stock.clothingProduct("capOrange")!;
+    built.setSelected("capOrange");
+    expect(built.root.getObjectByName(cap.nameplate)!.visible).toBe(true);
+    expect(built.root.getObjectByName(stock.clothingProduct("tshirtOrange")!.nameplate)!.visible).toBe(false);
+    expect(built.textAnchorPoint("capOrange")).not.toBeNull();
+    expect(built.textAnchorPoint("necklaceGold")).toBeNull();
+    stock.setClothingDisplayed("capOrange", false);
+    built.setDisplayed(stock.clothingDisplayed());
+    built.setSelected("capOrange");
+    expect(built.products.has("capOrange")).toBe(false);
+    expect(built.root.getObjectByName(cap.nameplate)!.visible).toBe(false);
+    stock.setClothingDisplayed("capOrange", true);
+    built.setDisplayed(stock.clothingDisplayed());
+    expect(built.products.get("capOrange")!.parent!.name).toBe(cap.displayAnchor);
+    built.setSelected(null);
+    expect(built.root.getObjectByName(cap.nameplate)!.visible).toBe(false);
+  }, 60000);
 });

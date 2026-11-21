@@ -1,29 +1,52 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber/native";
-import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useSyncExternalStore, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { PlaceId } from "@/lib/lobby3d/engine";
 import { CLOTHING_FLOOR_ROOTS, CLOTHING_HIDDEN_NODES, CLOTHING_OFFSET, type ClothingFloor } from "@/lib/lobby3d/clothing-shop";
+import { CLOTHING_STOCK_ROOT, clothingDisplayed, clothingProduct, clothingProductsOnFloor, subscribeClothingDisplay } from "@/lib/lobby3d/clothing-stock";
 import type { DaylightState } from "./lobby3d-daylight";
 import { SHOP_OUTSIDE_COLOR, convertMaterials, type ShopPickData } from "./lobby3d-shop";
 
 // 마을 옷집 실내(구역 clothing1·clothing2): 지금 층의 실내 모델 하나만 장면에 둔다(층을 옮기면 빠지고 다른 층이 붙는다).
 // 층 모델은 앱에 들어 있다. 모델 좌표에 CLOTHING_OFFSET을 더한 자리에 놓는다(오프셋은 clothing-shop.ts의 한 값이다).
 // 앞쪽 가림 노드(창틀·유리)는 숨기고 누르기 대상에서 뺀다. 그 밖의 부품은 누르면 그 자리로 걸어가는 물체다(장소는 없다).
+// 진열 상품: 진열 상품 모델(clothing-display-samples.glb)에서 그 층의 진열 중인 상품마다 pickNode만 복제해 displayAnchor에 붙인다.
+// 상품 메시는 userData.clothingProduct(상품 ID)로 누르기 판정을 받는다. 진열 상품 모델을 읽지 못하면 진열 없이 층만 보인다.
+// 예비 진열 자리(빈 진열대·마네킹·벽걸이)에는 아무것도 붙이지 않는다(집기는 층 모델의 부품일 뿐이다).
+// 선택한 상품이 이 층에 붙어 있으면 그 진열대의 명패 노드를 보인다(화면 이름표는 로비 화면이 textAnchor 자리에 띄운다).
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 export const CLOTHING_FLOOR_ASSETS: Record<ClothingFloor, number> = {
   1: require("../../../assets/models/clothing-shop/clothing-shop-interior-1f.glb"),
   2: require("../../../assets/models/clothing-shop/clothing-shop-interior-2f.glb")
 };
+export const CLOTHING_STOCK_ASSET: number = require("../../../assets/models/clothing-shop/clothing-display-samples.glb");
 /* eslint-enable @typescript-eslint/no-require-imports */
+
+/** 누르기 판정에 쓰는 진열 상품 메시의 표시. */
+export interface ClothingPickData {
+  clothingProduct?: string;
+}
 
 export interface BuiltClothingFloor {
   floor: ClothingFloor;
   /** 장면에 붙일 뿌리(CLOTHING_OFFSET 자리). */
   root: THREE.Group;
-  /** 누르기 판정을 받는 물체들(숨긴 앞쪽 노드·바닥은 빠진다). */
+  /** 누르기 판정을 받는 층 부품(숨긴 앞쪽 노드·바닥·유리는 빠진다). 진열 상품은 productTargets()가 따로 준다. */
   pickTargets: THREE.Object3D[];
+  /** 지금 붙은 진열 상품(상품 ID → 붙인 물체). */
+  products: Map<string, THREE.Object3D>;
+  /** 진열 상품 모델이 들어왔을 때: 이 층 상품마다 진열용 원본을 만든다(재질을 한 번 바꾼다). */
+  setStockModel(gltf: GLTF): void;
+  /** 진열을 맞춘다: 이 층의 상품 가운데 진열 중인 것만 붙이고, 진열 해제된 것은 뗀다(원본이 아직 없으면 붙이지 못한다). */
+  setDisplayed(displayed: Readonly<Record<string, boolean>>): void;
+  /** 지금 붙은 진열 상품(누르기 대상). */
+  productTargets(): THREE.Object3D[];
+  /** 선택한 상품: 그 상품이 이 층에 붙어 있으면 그 진열대의 명패를 보이고 나머지 명패는 숨긴다. null이면 모두 숨긴다. */
+  setSelected(id: string | null): void;
+  /** 상품 진열대의 이름표 자리(textAnchor 노드)의 세계 좌표. 이 층 상품이 아니면 null. */
+  textAnchorPoint(id: string): THREE.Vector3 | null;
   /** 만든 재질을 버린다(모양은 useLoader의 원본과 함께 쓰므로 버리지 않는다). */
   dispose(): void;
 }
@@ -64,33 +87,117 @@ export function buildClothingFloor(floor: ClothingFloor, gltf: GLTF): BuiltCloth
     });
     pickTargets.push(child);
   }
-  return {
+
+  // 진열대 명패는 처음에 숨긴다(선택한 상품의 진열대만 보인다)
+  const floorProducts = clothingProductsOnFloor(floor);
+  const nameplates = new Map<string, THREE.Object3D>();
+  for (const product of floorProducts) {
+    const plate = interior.getObjectByName(product.nameplate);
+    if (!plate) continue;
+    plate.visible = false;
+    nameplates.set(product.nameplate, plate);
+  }
+  const templates = new Map<string, THREE.Object3D>();
+  const products = new Map<string, THREE.Object3D>();
+  let shown: Readonly<Record<string, boolean>> = {};
+  const attach = (id: string) => {
+    const product = clothingProduct(id);
+    const template = templates.get(id);
+    const anchor = product ? interior.getObjectByName(product.displayAnchor) : undefined;
+    if (!product || !template || !anchor || products.has(id)) return;
+    // 로컬 위치·회전 0, 배율 1로 붙인다(stock.json의 규칙)
+    const item = template.clone(true);
+    item.name = `clothing-product-${id}`;
+    item.position.set(0, 0, 0);
+    item.quaternion.identity();
+    item.scale.setScalar(1);
+    item.traverse((o) => {
+      (o.userData as ClothingPickData).clothingProduct = id;
+    });
+    anchor.add(item);
+    products.set(id, item);
+  };
+  const detach = (id: string) => {
+    const item = products.get(id);
+    if (!item) return;
+    item.removeFromParent();
+    products.delete(id);
+  };
+  const built: BuiltClothingFloor = {
     floor,
     root,
     pickTargets,
+    products,
+    setStockModel(stock) {
+      const source = stock.scene.getObjectByName(CLOTHING_STOCK_ROOT) ?? stock.scene;
+      for (const product of floorProducts) {
+        if (templates.has(product.id)) continue;
+        const node = source.getObjectByName(product.pickNode);
+        if (!node) continue;
+        const template = node.clone(true);
+        convertMaterials(template, owned);
+        templates.set(product.id, template);
+      }
+      built.setDisplayed(shown);
+    },
+    setDisplayed(displayed) {
+      shown = displayed;
+      for (const product of floorProducts) {
+        if (displayed[product.id]) attach(product.id);
+        else detach(product.id);
+      }
+    },
+    productTargets() {
+      return [...products.values()];
+    },
+    setSelected(id) {
+      const product = id ? clothingProduct(id) : undefined;
+      const on = product && products.has(product.id) ? product.nameplate : null;
+      for (const [name, plate] of nameplates) plate.visible = name === on;
+    },
+    textAnchorPoint(id) {
+      const product = clothingProduct(id);
+      if (!product || product.floor !== floor) return null;
+      const node = interior.getObjectByName(product.textAnchor);
+      if (!node) return null;
+      root.updateMatrixWorld(true);
+      return node.getWorldPosition(new THREE.Vector3());
+    },
     dispose() {
       for (const m of owned) m.dispose();
     }
   };
+  return built;
 }
 
 export interface ClothingFloorModelProps {
   floor: ClothingFloor;
   daylight: DaylightState;
-  /** 누르기 판정 대상(로비 캔버스가 넘긴 자리에 넣는다). */
+  /** 누르기 판정 대상(로비 캔버스가 넘긴 자리에 넣는다). 진열 상품과 층 부품. */
   pickTargets: MutableRefObject<THREE.Object3D[]>;
+  /** 선택한 상품(그 진열대 명패를 보인다). */
+  selected: string | null;
+  /** 지은 층 장면(로비 캔버스가 이름표 자리를 읽는다). */
+  builtRef?: MutableRefObject<BuiltClothingFloor | null>;
 }
 
-export function ClothingFloorModel({ floor, daylight, pickTargets }: ClothingFloorModelProps) {
+export function ClothingFloorModel({ floor, daylight, pickTargets, selected, builtRef }: ClothingFloorModelProps) {
   const gltf = useLoader(GLTFLoader, CLOTHING_FLOOR_ASSETS[floor] as unknown as string) as GLTF;
   const built = useMemo(() => buildClothingFloor(floor, gltf), [floor, gltf]);
   useEffect(() => () => built.dispose(), [built]);
+  const displayed = useSyncExternalStore(subscribeClothingDisplay, clothingDisplayed, clothingDisplayed);
   useEffect(() => {
-    pickTargets.current = [...built.pickTargets];
+    built.setDisplayed(displayed);
+    built.setSelected(selected);
+    pickTargets.current = [...built.productTargets(), ...built.pickTargets];
+  }, [built, displayed, selected, pickTargets]);
+  useEffect(() => {
+    if (builtRef) builtRef.current = built;
     return () => {
       pickTargets.current = [];
+      if (builtRef && builtRef.current === built) builtRef.current = null;
     };
-  }, [built, pickTargets]);
+  }, [built, pickTargets, builtRef]);
 
   // 실내 빛(가구점과 같은 시각별 색감)과 창 너머 바깥색. 실내를 나가면 바깥색을 거두고 검정으로 되돌린다
   const { scene } = useThree();
@@ -127,8 +234,45 @@ export function ClothingFloorModel({ floor, daylight, pickTargets }: ClothingFlo
       <primitive object={lights.sun} />
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={lights.sun.target} />
+      {/* 진열 상품 모델은 따로 읽는다(못 읽어도 층은 그대로 보인다. 층이 뜨는 것을 기다리게 하지 않는다) */}
+      <ClothingStockErrorBoundary>
+        <Suspense fallback={null}>
+          <ClothingStock built={built} selected={selected} pickTargets={pickTargets} />
+        </Suspense>
+      </ClothingStockErrorBoundary>
     </>
   );
+}
+
+/** 진열 상품 모델을 읽어 지금 층에 붙인다. */
+function ClothingStock({ built, selected, pickTargets }: { built: BuiltClothingFloor; selected: string | null; pickTargets: MutableRefObject<THREE.Object3D[]> }) {
+  const stock = useLoader(GLTFLoader, CLOTHING_STOCK_ASSET as unknown as string) as GLTF;
+  const displayed = useSyncExternalStore(subscribeClothingDisplay, clothingDisplayed, clothingDisplayed);
+  useEffect(() => {
+    built.setStockModel(stock);
+    built.setDisplayed(displayed);
+    built.setSelected(selected);
+    pickTargets.current = [...built.productTargets(), ...built.pickTargets];
+  }, [built, stock, displayed, selected, pickTargets]);
+  return null;
+}
+
+/** 진열 상품 모델을 읽지 못하면 진열 없이 둔다(층은 그대로). 다음에 다시 읽게 캐시를 비운다. */
+class ClothingStockErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.warn("[lobby3d] 옷집 진열 상품 모델을 불러오지 못했습니다", error);
+    useLoader.clear(GLTFLoader, CLOTHING_STOCK_ASSET as unknown as string);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
 }
 
 /** 층 모델(앱 자산)을 읽지 못하면 아무것도 그리지 않고 알린다(로비 화면이 떠나온 곳으로 되돌린다). 다음에 다시 읽게 캐시를 비운다. */

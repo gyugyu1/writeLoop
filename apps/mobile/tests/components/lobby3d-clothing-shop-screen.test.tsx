@@ -574,3 +574,47 @@ describe("피팅 저장이 옷집을 나간 뒤 실패할 때", () => {
     expect(canvas().look?.hat ?? null).not.toBe("capOrange");
   });
 });
+
+// 작업 133 피팅 회전판: 피팅 창 바깥(testID lobby-sheet-backdrop)을 옆으로 끌면 라룹이가 돈다. 바깥을 눌러도 취소되지 않는다
+describe("옷집 피팅 회전판", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const shopData = require("@/lib/lobby3d/clothing-shop") as typeof import("@/lib/lobby3d/clothing-shop");
+  const { Dimensions } = require("react-native") as typeof import("react-native");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  afterEach(() => shopData.setClothingCurtainClosed(null));
+
+  let startX = 0;
+  let prevX = 0;
+  let clock = 1000;
+  const touch = (x: number, start = false) => {
+    if (start) startX = prevX = x;
+    // PanResponder는 시각이 같은 움직임을 한 번만 센다(가짜 타이머라 Date.now가 멈춰 있어 직접 늘린다)
+    clock += 16;
+    const t = clock;
+    const entry = { touchActive: true, startPageX: startX, startPageY: 120, startTimeStamp: t, currentPageX: x, currentPageY: 120, currentTimeStamp: t, previousPageX: prevX, previousPageY: 120, previousTimeStamp: t };
+    prevX = x;
+    const point = { identifier: 0, pageX: x, pageY: 120, locationX: x, locationY: 120, timestamp: t, target: 1 };
+    return { persist: () => {}, nativeEvent: { ...point, touches: [point], changedTouches: [point] }, touchHistory: { numberActiveTouches: 1, indexOfSingleActiveTouch: 0, mostRecentTimeStamp: t, touchBank: [entry] } };
+  };
+
+  it("화면 폭의 1/4을 오른쪽으로 끌면 얼굴이 오른쪽으로 90° 돌고(heading +π/2), 안내가 사라지며, 바깥만 눌러서는 취소되지 않는다", async () => {
+    await toClothingDoor();
+    await press("들어가기");
+    await frames(1.2);
+    await walkTo(CLOTHING_MARKS.clothingFitting1.approach[0], "clothingFitting1");
+    await press("들어가기");
+    await frames(6);
+    expect(screen.queryAllByText("옆으로 밀어 돌려 보세요", ALL)).toHaveLength(1);
+    const backdrop = screen.getByTestId("lobby-sheet-backdrop", ALL);
+    const width = Dimensions.get("window").width;
+    await act(async () => {
+      backdrop.props.onResponderGrant?.(touch(100, true));
+      backdrop.props.onResponderMove?.(touch(100 + width / 8));
+      backdrop.props.onResponderMove?.(touch(100 + width / 4));
+      backdrop.props.onResponderRelease?.(touch(100 + width / 4));
+    });
+    expect(angleGap(sim().heading, Math.PI / 2)).toBeLessThan(1e-3);
+    expect(screen.queryAllByText("옆으로 밀어 돌려 보세요", ALL)).toHaveLength(0);
+    expect(screen.getByRole("button", { name: "취소" })).toBeTruthy();
+  });
+});

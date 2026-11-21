@@ -128,7 +128,7 @@ describe("[spec] 090-③ A: 앱에서 빠지는 옷 파일", () => {
 // ---------- B. 그릴 수 있는 옷인지 ----------
 
 describe("[spec] 090-③ B: 받은·저장한 목록의 draw로만 그릴 수 있는 옷", () => {
-  test("B1(모듈) 목록이 없으면 옷 열여섯 모두 그릴 줄 모르는 옷이다: 홈쇼핑에 보일 옷이 아니고 옷장 칸도 없으며(고글만 칸이 남는다), 그리기 정보가 없다", () => {
+  test("B1(모듈) 목록이 없으면 옷 열여섯 모두 그릴 줄 모르는 옷이다: 홈쇼핑에 보일 옷이 아니고 옷장 칸도 없으며(134 ①: 라룹이 고글도 그릴 수 없어 칸이 없다), 그리기 정보가 없다", () => {
     const mods = freshModules();
     expect(mods.store.currentItemCatalog()).toBeNull();
     for (const type of SIXTEEN) {
@@ -136,7 +136,7 @@ describe("[spec] 090-③ B: 받은·저장한 목록의 draw로만 그릴 수 �
     }
     const wardrobe = owned(...SIXTEEN.map((type): [string, WardrobeSlot] => [type, WEARABLE_ITEMS[type].slot]), ["goggles", "face"]);
     const cells = Object.fromEntries(SLOTS.map((slot) => [slot, mods.closet.closetItems(wardrobe, slot).map((item) => item.type)]));
-    expect(cells).toEqual({ hat: [], top: [], bottom: [], shoes: [], face: ["goggles"], back: [], accessory: [] });
+    expect(cells).toEqual({ hat: [], top: [], bottom: [], shoes: [], face: [], back: [], accessory: [] });
   });
 
   test("B2 draw가 없는 옷(noDrawQa)은 그릴 줄 모르는 옷이다: 홈쇼핑에 보이지 않고 옷장 모자 칸이 없으며 그리기 정보가 없다", () => {
@@ -178,13 +178,13 @@ describe("[spec] 090-③ B: 받은·저장한 목록의 draw로만 그릴 수 �
     expect(closetItems(wardrobe, "accessory")).toEqual([{ type: "bowtieQa", label: "QA 나비넥타이" }]);
   });
 
-  test("B8(모듈) 라룹이 고글은 목록이 없어도, CAT-W(draw·파일 없음)여도 옷장 얼굴장식 칸이 있고 그림은 앱의 goggles.png이며 받기 요청이 없다", async () => {
+  test("B8(모듈) 134 ①: 라룹이 고글은 목록이 없어도, CAT-W(draw·파일 없음)여도 옷장 얼굴장식 칸이 없고(그릴 수 없음) 그림은 앱의 goggles.png이며 받기 요청이 없다", async () => {
     const appGoggles = require("../../assets/icons/wearables/goggles.png");
     const mods = freshModules();
-    expect(mods.closet.closetItems(owned(["goggles", "face"]), "face")).toEqual([{ type: "goggles", label: "라룹이 고글" }]);
+    expect(mods.closet.closetItems(owned(["goggles", "face"]), "face")).toEqual([]);
     expect(mods.icons.wearableIcon("goggles")).toEqual(appGoggles);
     useCatW();
-    expect(closetItems(owned(["goggles", "face"]), "face")).toEqual([{ type: "goggles", label: "라룹이 고글" }]);
+    expect(closetItems(owned(["goggles", "face"]), "face")).toEqual([]);
     expect(wearableIcon("goggles")).toEqual(appGoggles);
     await flush();
     expect(device.downloads).toEqual([]);
@@ -192,7 +192,7 @@ describe("[spec] 090-③ B: 받은·저장한 목록의 draw로만 그릴 수 �
 
   test("05 결정 Q1 draw는 맞는데 assets.model이 없는 옷은 그릴 줄 모르는 옷이다(홈쇼핑에 보이지 않음)", () => {
     const cat = catW(`lib-q1-${round}`);
-    cat.catalog.items.push({ id: "noModelQa", kind: "wearable", name: "QA 모델 없는 모자", shopName: "QA 모델 없는 모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 1 }, assets: null });
+    cat.catalog.items.push({ id: "noModelQa", kind: "wearable", name: "QA 모델 없는 모자", shopName: "QA 모델 없는 모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 2 }, assets: null });
     setItemCatalog(parseItemCatalog(cat.catalog)!);
     expect(isShopWearable("noModelQa")).toBe(false);
     expect(wearDraw("noModelQa")).toBeNull();
@@ -203,8 +203,8 @@ describe("[spec] 090-③ B: 받은·저장한 목록의 draw로만 그릴 수 �
     const cat = catW(`lib-q2-${round}`);
     const assets = (cat.catalog.items[0] as { assets: unknown }).assets;
     cat.catalog.items.push(
-      { id: "noBoneQa", kind: "wearable", name: "QA 뼈 없는 모자", shopName: "QA 뼈 없는 모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", body: 1 }, assets },
-      { id: "oddBoneQa", kind: "wearable", name: "QA 낯선 뼈 모자", shopName: "QA 낯선 뼈 모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "antenna", body: 1 }, assets }
+      { id: "noBoneQa", kind: "wearable", name: "QA 뼈 없는 모자", shopName: "QA 뼈 없는 모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", body: 2 }, assets },
+      { id: "oddBoneQa", kind: "wearable", name: "QA 낯선 뼈 모자", shopName: "QA 낯선 뼈 모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "antenna", body: 2 }, assets }
     );
     setItemCatalog(parseItemCatalog(cat.catalog)!);
     expect(isShopWearable("noBoneQa")).toBe(false);
@@ -265,14 +265,14 @@ describe("[spec] 090-③ V(모듈): 시험판 옷 고르기는 받은 목록의 
     expect(itemsInSlot("top")).toEqual(["tshirtOrange", "tshirtWhite", "tshirtGreenQa", "vestQa"]);
   });
 
-  test("V2 시험판의 처음 모습은 얼굴장식 goggles 하나다", () => {
-    expect(DEFAULT_LOOK).toEqual({ hat: null, top: null, bottom: null, shoes: null, face: "goggles", back: null, accessory: null });
+  test("V2 134 ①: 시험판의 처음 모습은 아무것도 입지 않은 모습이다(고글 없음)", () => {
+    expect(DEFAULT_LOOK).toEqual({ hat: null, top: null, bottom: null, shoes: null, face: null, back: null, accessory: null });
   });
 
-  test("05 결정 Q5 목록이 없으면 시험판 차례는 앱 이름표 순서다(모자: capOrange·capBlue·capGreen, 얼굴장식: goggles·sunglassesBlack)", () => {
+  test("05 결정 Q5 목록이 없으면 시험판 차례는 앱 이름표 순서다(모자: capOrange·capBlue·capGreen, 얼굴장식: sunglassesBlack. 134 ①: goggles는 빠진다)", () => {
     const mods = freshModules();
     expect(mods.wear.itemsInSlot("hat")).toEqual(["capOrange", "capBlue", "capGreen"]);
-    expect(mods.wear.itemsInSlot("face")).toEqual(["goggles", "sunglassesBlack"]);
+    expect(mods.wear.itemsInSlot("face")).toEqual(["sunglassesBlack"]);
   });
 });
 

@@ -36,13 +36,13 @@ describe("[spec] 089-⑤ 10 GC1~GC4: 앱 목록과 그릴 값", () => {
     expect({ slot: WEARABLE_ITEMS.goggles?.slot, label: WEARABLE_ITEMS.goggles?.label }).toEqual({ slot: "face", label: "라룹이 고글" });
   });
 
-  it("GC2 받은 목록이 없을 때 얼굴장식 아이템 순서가 [goggles, sunglassesBlack]이다", () => {
-    expect(freshWear().itemsInSlot("face")).toEqual(["goggles", "sunglassesBlack"]);
+  it("GC2 134 ①: 받은 목록이 없을 때 얼굴장식 아이템 순서가 [sunglassesBlack]이다(goggles는 그릴 수 없어 빠진다)", () => {
+    expect(freshWear().itemsInSlot("face")).toEqual(["sunglassesBlack"]);
   });
 
-  it("GC2 서버 목록 파일의 옷을 받은 뒤에도 얼굴장식 아이템 순서가 [goggles, sunglassesBlack]이다(고글이 얼굴장식의 첫 아이템)", () => {
+  it("GC2 134 ①: 서버 목록 파일의 옷을 받은 뒤에도 얼굴장식 아이템 순서가 [sunglassesBlack]이다(goggles는 그릴 수 없어 빠진다)", () => {
     setItemCatalog(parseItemCatalog(withoutShopWear(serverWearCatalog("qa-089-gc2")))!);
-    expect(itemsInSlot("face")).toEqual(["goggles", "sunglassesBlack"]);
+    expect(itemsInSlot("face")).toEqual(["sunglassesBlack"]);
   });
 
   it("GC3 서버 equipped { ...ALL_NULL, face: goggles }를 그릴 값으로 바꾸면 { ...ALL_NULL, face: goggles }다(목록 없음·서버 목록 모두)", () => {
@@ -61,8 +61,8 @@ describe("[spec] 089-⑤ 10 GC1~GC4: 앱 목록과 그릴 값", () => {
 });
 
 describe("[spec] 089-⑤ 23 NF2·NF8: 새 옷 파일을 앱이 읽을 때", () => {
-  it("NF2 앱의 WEAR_BODY는 1이다", () => {
-    expect(WEAR_BODY).toBe(1);
+  it("NF2 134 ①: 앱의 WEAR_BODY는 2다(사람형)", () => {
+    expect(WEAR_BODY).toBe(2);
   });
 
   it("NF8 지금 서버 목록 파일의 옷을 응답 모양으로 앱에 넣으면 열여섯과 조끼 모두 그릴 수 있는 옷(wearDraw가 null 아님)이다", () => {

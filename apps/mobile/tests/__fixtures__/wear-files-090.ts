@@ -72,7 +72,8 @@ export function serverWearableItems(): Record<string, unknown>[] {
       category: item.category,
       slot: item.slot ?? null,
       price: item.price,
-      draw: item.draw ?? null,
+      // 134 ①: 앱의 몸판이 사람형(2)이라 서버 목록 파일(②에서 body 2로 바뀐다. 지금은 1)의 그리기 정보를 body 2로 바꿔 쓴다
+      draw: item.draw ? { ...item.draw, body: 2 } : null,
       assets: item.files?.model ? { model: serverRef(item.files.model), icon: item.files.icon ? serverRef(item.files.icon) : null } : null
     }));
 }
@@ -230,22 +231,22 @@ export type CatWModel = "HAT_O" | "HAT_B" | "TOP" | "BOTTOM" | "SHOE" | "GLASSES
 
 /** CAT-W 한 줄: id, 부위, 이름, draw(없으면 undefined), 모델, 아이콘 있음, 가격. */
 const CAT_W_ROWS: [string, string, string, Record<string, unknown> | undefined, CatWModel | null, boolean, number | null][] = [
-  ["capOrange", "hat", "주황 야구모자", { attach: "bone", bone: "head", body: 1 }, "HAT_O", true, 60],
-  ["capBlue", "hat", "파랑 야구모자", { attach: "bone", bone: "head", body: 1 }, "HAT_B", true, 60],
-  ["tshirtOrange", "top", "주황 티셔츠", { attach: "skin", body: 1 }, "TOP", true, 80],
-  ["tshirtWhite", "top", "흰 티셔츠", { attach: "skin", color: "#F4F0E8", body: 1 }, "TOP", true, 80],
-  ["shortsRed", "bottom", "빨강 반바지", { attach: "skin", color: "#C8443A", body: 1 }, "BOTTOM", true, 70],
-  ["shoesBrown", "shoes", "갈색 운동화", { attach: "bone", bone: "foot_l", mirror: "foot_r", body: 1 }, "SHOE", true, 90],
-  ["sunglassesBlack", "face", "검정 선글라스", { attach: "bone", bone: "head", body: 1 }, "GLASSES", true, 100],
-  ["mufflerRed", "accessory", "빨강 머플러", { attach: "bone", bone: "spine", body: 1 }, "MUFFLER", true, 90],
+  ["capOrange", "hat", "주황 야구모자", { attach: "bone", bone: "head", body: 2 }, "HAT_O", true, 60],
+  ["capBlue", "hat", "파랑 야구모자", { attach: "bone", bone: "head", body: 2 }, "HAT_B", true, 60],
+  ["tshirtOrange", "top", "주황 티셔츠", { attach: "skin", body: 2 }, "TOP", true, 80],
+  ["tshirtWhite", "top", "흰 티셔츠", { attach: "skin", color: "#F4F0E8", body: 2 }, "TOP", true, 80],
+  ["shortsRed", "bottom", "빨강 반바지", { attach: "skin", color: "#C8443A", body: 2 }, "BOTTOM", true, 70],
+  ["shoesBrown", "shoes", "갈색 운동화", { attach: "bone", bone: "foot_l", mirror: "foot_r", body: 2 }, "SHOE", true, 90],
+  ["sunglassesBlack", "face", "검정 선글라스", { attach: "bone", bone: "head", body: 2 }, "GLASSES", true, 100],
+  ["mufflerRed", "accessory", "빨강 머플러", { attach: "bone", bone: "spine", body: 2 }, "MUFFLER", true, 90],
   ["goggles", "face", "라룹이 고글", undefined, null, false, null],
-  ["tshirtGreenQa", "top", "QA 초록 티", { attach: "skin", color: "#3A9A4A", body: 1 }, "TOP", true, 80],
-  ["bowtieQa", "accessory", "QA 나비넥타이", { attach: "bone", bone: "spine", body: 1 }, "BOWTIE", true, 70],
-  ["vestQa", "top", "QA 조끼", { attach: "skin", body: 1 }, "VEST", true, 50],
-  ["hatBody2Qa", "hat", "QA 새 몸 모자", { attach: "bone", bone: "head", body: 2 }, "HAT2", true, 60],
-  ["clothQa", "back", "QA 천 망토", { attach: "cloth", body: 1 }, "CLOTH", true, 60],
+  ["tshirtGreenQa", "top", "QA 초록 티", { attach: "skin", color: "#3A9A4A", body: 2 }, "TOP", true, 80],
+  ["bowtieQa", "accessory", "QA 나비넥타이", { attach: "bone", bone: "spine", body: 2 }, "BOWTIE", true, 70],
+  ["vestQa", "top", "QA 조끼", { attach: "skin", body: 2 }, "VEST", true, 50],
+  ["hatBody2Qa", "hat", "QA 새 몸 모자", { attach: "bone", bone: "head", body: 1 }, "HAT2", true, 60],
+  ["clothQa", "back", "QA 천 망토", { attach: "cloth", body: 2 }, "CLOTH", true, 60],
   ["noDrawQa", "hat", "QA 그림만 모자", undefined, "NODRAW", true, 60],
-  ["plainQa", "accessory", "QA 무늬 없는 목걸이", { attach: "bone", bone: "spine", body: 1 }, "PLAIN", false, 60]
+  ["plainQa", "accessory", "QA 무늬 없는 목걸이", { attach: "bone", bone: "spine", body: 2 }, "PLAIN", false, 60]
 ];
 
 export interface CatW {

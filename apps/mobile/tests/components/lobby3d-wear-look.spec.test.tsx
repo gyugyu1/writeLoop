@@ -116,6 +116,7 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
   };
 });
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 라룹이 고글이 앱에 든 착용 모델(assets/models/wear-goggles.glb)이 되어
 // 라룹이를 그리면 그 파일도 react-three-fiber useLoader로 읽는다. 그래서 가짜 불러오기가 그 파일에 가짜 고글 모델(skin 없는 메시 wear-goggles 하나,
 // 점 136개)을 주게 했다. 단언·입력은 바꾸지 않았다(고글이 그려져 바뀐 기대값은 그 테스트에 따로 적었다).
@@ -124,7 +125,7 @@ jest.mock("@/assets/models/lobby-wearables.glb", () => "lobby-wearables.glb");
 
 // ---------- 시나리오의 값 ----------
 
-const CHARACTER_FILE = "writeloop.glb";
+const CHARACTER_FILE = "player-human.glb";
 const WEAR_FILE = "lobby-wearables.glb";
 const SLOW_TEST_MS = 60_000;
 const LINE_COLOR = 0x3d1b0f;

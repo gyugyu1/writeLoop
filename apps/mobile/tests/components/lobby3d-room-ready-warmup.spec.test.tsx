@@ -162,6 +162,7 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
 });
 jest.mock("@/assets/models/lobby-room.glb", () => "lobby-room.glb");
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 // 090-② 05 결정 3: 가구 묶음 대신 앱에 든 처음 방 가구 일곱의 파일이다(Jest가 읽지 못하는 파일이라 이름만 준다)
 jest.mock("@/assets/models/furniture/desk.glb", () => "furniture/desk.glb");
 jest.mock("@/assets/models/furniture/bookcase.glb", () => "furniture/bookcase.glb");
@@ -230,7 +231,7 @@ const GREETING_LINE = "오늘도 해냈어!";
 const STREAK = "연속 3일";
 const HEADER_BUTTONS = [STREAK, "꾸미기", "카메라 거리 설정"];
 const ROOM_FILE = "lobby-room.glb";
-const CHARACTER_FILE = "writeloop.glb";
+const CHARACTER_FILE = "player-human.glb";
 // 090-② 05 결정 3: 가구 묶음(lobby-furniture.glb) 대신 앱에 든 처음 방 가구 일곱 파일(목록)이다. 그 목록을 이 이름 하나로 본다
 const FURNITURE_FILE = "furniture/처음-방-일곱";
 const ALL_FILES = [ROOM_FILE, CHARACTER_FILE, FURNITURE_FILE];

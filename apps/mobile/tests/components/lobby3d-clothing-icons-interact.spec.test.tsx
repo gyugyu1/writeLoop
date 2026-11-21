@@ -167,7 +167,7 @@ function wearable(id: string, slot: string, price: number | null) {
   const icon = NO_ICON.includes(id) ? null : { url: `/api/catalog/files/${hex(`icon-${id}`)}.png`, sha256: hex(`icon-${id}`), bytes: 1 };
   return {
     id, kind: "wearable" as const, name: id, shopName: id, description: "", category: price === null ? null : ("clothes" as const), slot, price,
-    draw: { attach: "bone", bone: "head", body: 1 }, assets: { model, icon }
+    draw: { attach: "bone", bone: "head", body: 2 }, assets: { model, icon }
   };
 }
 

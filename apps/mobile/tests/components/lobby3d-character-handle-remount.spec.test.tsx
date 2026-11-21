@@ -35,6 +35,7 @@ jest.mock("three/examples/jsm/utils/SkeletonUtils.js", () => ({
   clone: (source: { clone: (recursive: boolean) => unknown }) => source.clone(true)
 }));
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 
 function fakeModel() {
   const scene = new THREE.Group();

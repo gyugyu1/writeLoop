@@ -95,6 +95,7 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
 });
 jest.mock("@/assets/models/lobby-room.glb", () => "lobby-room.glb");
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 jest.mock("@/assets/models/furniture/desk.glb", () => "furniture/desk.glb");
 jest.mock("@/assets/models/furniture/bookcase.glb", () => "furniture/bookcase.glb");
 jest.mock("@/assets/models/furniture/board.glb", () => "furniture/board.glb");

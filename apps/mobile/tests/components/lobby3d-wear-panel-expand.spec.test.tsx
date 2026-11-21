@@ -159,9 +159,11 @@ afterEach(() => {
 // 라룹이 고글이 얼굴장식의 첫 아이템이 되고 시험판이 고글을 쓴 채('얼굴장식' 켜짐) 시작한다. 그래서 처음 상태와 그리는 착용의 기대값에
 // 얼굴장식 고글을 더했다. 누르는 차례(입력)는 그대로다. 얼굴장식은 고글에서 시작하므로 '얼굴장식 바꾸기'는 선글라스 → 고글 차례이고,
 // '얼굴장식' 버튼의 첫 누르기는 끄기, 둘째 누르기가 켜기(첫 아이템 고글)다.
-const GOGGLES = { face: "goggles" } as const;
-/** 11-B6: 고글을 쓴 채 '얼굴장식 바꾸기'를 누를 때마다 고글 → 선글라스 → 고글. */
-const FACE_FROM_GOGGLES = ["sunglassesBlack", "goggles"] as const;
+// 작업 134 ① 결정(사용자 2026-11-22 "모두 허락"): 라룹이 고글은 사람형에게 그리지 않아 시험판이 맨몸으로 시작하고(DEFAULT_LOOK = 맨몸) 얼굴장식 차례에서 빠진다.
+// 그래서 아래 GOGGLES는 "처음에 그리는 착용"(이제 아무것도 없음)이고, 얼굴장식 차례는 선글라스 하나(바꿀 때마다 같은 선글라스)이며 '얼굴장식' 첫 누르기가 켜기다.
+const GOGGLES = {} as const;
+/** 134 ①: '얼굴장식 바꾸기'를 누를 때마다 선글라스(차례가 하나뿐이라 같은 것). */
+const FACE_FROM_GOGGLES = ["sunglassesBlack", "sunglassesBlack"] as const;
 
 describe("[spec] 089-⑤ P: 개발 화면 '착용 시험'", () => {
   it("P1 '착용 시험'과 부위 일곱 버튼(모자·상의·하의·신발·얼굴장식·등장식·액세서리)이 하나씩, '착용 바꾸기'와 '<부위> 바꾸기' 일곱이 하나씩 있다", async () => {
@@ -174,9 +176,9 @@ describe("[spec] 089-⑤ P: 개발 화면 '착용 시험'", () => {
     }
   });
 
-  it("P2 처음에는 '얼굴장식'만 켜져 있고(라룹이 고글) 나머지 여섯 버튼은 꺼져 있으며 그리는 착용이 고글뿐이다", async () => {
+  it("P2 처음에는 일곱 버튼이 모두 꺼져 있고 그리는 착용이 없다(134 ①: 라룹이 고글 없음)", async () => {
     await renderDevWithPanel();
-    expect(selected()).toEqual(["얼굴장식"]);
+    expect(selected()).toEqual([]);
     expect(drawnLook()).toEqual(GOGGLES);
   });
 
@@ -200,19 +202,19 @@ describe("[spec] 089-⑤ P: 개발 화면 '착용 시험'", () => {
     await renderDevWithPanel();
     await press(name);
     if (slot === "face") {
-      // 고글을 쓴 채 시작하므로 첫 누르기는 벗기, 둘째 누르기가 켜기(첫 아이템 고글)다
-      expect(drawnLook()).toEqual({});
-      expect(selected()).toEqual([]);
+      // 134 ①: 맨몸으로 시작하므로 첫 누르기가 켜기(첫 아이템 선글라스), 둘째 누르기가 벗기다
+      expect(drawnLook()).toEqual({ face: "sunglassesBlack" });
+      expect(selected()).toEqual(["얼굴장식"]);
       await press(name);
       expect(drawnLook()).toEqual(GOGGLES);
-      expect(selected()).toEqual(["얼굴장식"]);
+      expect(selected()).toEqual([]);
       return;
     }
     expect(drawnLook()).toEqual({ ...GOGGLES, [slot]: first });
-    expect(selected()).toEqual(NAMES.filter((n) => n === name || n === "얼굴장식"));
+    expect(selected()).toEqual(NAMES.filter((n) => n === name));
     await press(name);
     expect(drawnLook()).toEqual(GOGGLES);
-    expect(selected()).toEqual(["얼굴장식"]);
+    expect(selected()).toEqual([]);
   });
 
   it("P4 일곱을 모두 입힌 뒤 '액세서리'를 끄면 액세서리만 빠지고 나머지 여섯은 그대로다", async () => {

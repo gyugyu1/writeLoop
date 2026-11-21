@@ -54,7 +54,7 @@ jest.mock("@react-three/fiber/native", () => {
     useLoader: (_loader: unknown, url: unknown) => {
       // 작업 089 ⑤ 24 결정: 앱에 든 라룹이 고글 모델
       if (String(url) === "wear-goggles.glb") return mockGoggles.value;
-      if (String(url) !== "writeloop.glb") throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
+      if (String(url) !== "player-human.glb") throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
       return mockCharacter.value;
     }
   };
@@ -98,6 +98,7 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
   };
 });
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 라룹이 고글이 앱에 든 착용 모델(assets/models/wear-goggles.glb)이 되어
 // 라룹이를 그리면 그 파일도 react-three-fiber useLoader로 읽는다. 그래서 가짜 불러오기가 그 파일에 가짜 고글 모델(skin 없는 메시 wear-goggles 하나,
 // 점 136개)을 주게 했다. 단언·입력은 바꾸지 않았다(고글이 그려져 바뀐 기대값은 그 테스트에 따로 적었다).

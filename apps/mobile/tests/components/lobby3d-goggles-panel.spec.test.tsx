@@ -125,24 +125,26 @@ afterEach(() => {
 
 // ---------- GP ----------
 
+// 작업 134 ① 결정(사용자 2026-11-22 "모두 허락"): 시험판의 처음 모습에 라룹이 고글이 없고(DEFAULT_LOOK = 맨몸), 라룹이 고글은 그릴 수 없어
+// 얼굴장식 차례(itemsInSlot("face"))에서 빠진다(차례는 sunglassesBlack 하나). 아래 기대값을 그 새 동작대로 고쳤다(입력·준비는 그대로).
 function gpTests(state: string) {
-  it(`GP1(${state}) 시험판을 펴면 '얼굴장식' 버튼만 켜져 있고 그릴 look이 { ...ALL_NULL, face: goggles }다`, async () => {
+  it(`GP1(${state}) 시험판을 펴면 켜진 버튼이 없고 그릴 look이 ALL_NULL(고글 없음)이다`, async () => {
     await renderDevWithPanel();
-    expect(selected()).toEqual(["얼굴장식"]);
-    expect(drawnLook()).toEqual({ ...ALL_NULL, face: "goggles" });
+    expect(selected()).toEqual([]);
+    expect(drawnLook()).toEqual(ALL_NULL);
   });
 
-  it(`GP2(${state}) '얼굴장식'을 누르면 face null(버튼 꺼짐), 다시 누르면 goggles(버튼 켜짐, 첫 아이템)다`, async () => {
+  it(`GP2(${state}) '얼굴장식'을 누르면 face sunglassesBlack(버튼 켜짐, 첫 아이템), 다시 누르면 null(버튼 꺼짐)이다`, async () => {
     await renderDevWithPanel();
+    await press("얼굴장식");
+    expect(drawnLook()).toEqual({ ...ALL_NULL, face: "sunglassesBlack" });
+    expect(selected()).toEqual(["얼굴장식"]);
     await press("얼굴장식");
     expect(drawnLook()).toEqual(ALL_NULL);
     expect(selected()).toEqual([]);
-    await press("얼굴장식");
-    expect(drawnLook()).toEqual({ ...ALL_NULL, face: "goggles" });
-    expect(selected()).toEqual(["얼굴장식"]);
   });
 
-  it(`GP3(${state}) '얼굴장식 바꾸기'를 세 번 누르면 face가 sunglassesBlack → goggles → sunglassesBlack이고 다른 부위는 null 그대로다`, async () => {
+  it(`GP3(${state}) '얼굴장식 바꾸기'를 세 번 눌러도 face가 sunglassesBlack이고 goggles는 나오지 않으며 다른 부위는 null 그대로다`, async () => {
     await renderDevWithPanel();
     const seen: unknown[] = [];
     for (let i = 0; i < 3; i += 1) {
@@ -151,39 +153,40 @@ function gpTests(state: string) {
     }
     expect(seen).toEqual([
       { ...ALL_NULL, face: "sunglassesBlack" },
-      { ...ALL_NULL, face: "goggles" },
+      { ...ALL_NULL, face: "sunglassesBlack" },
       { ...ALL_NULL, face: "sunglassesBlack" }
     ]);
   });
 
-  it(`GP4(${state}) '얼굴장식'으로 끈 뒤 '얼굴장식 바꾸기'를 누르면 face가 goggles(입지 않았으면 첫 아이템)다`, async () => {
+  it(`GP4(${state}) '얼굴장식'을 켰다 끈 뒤 '얼굴장식 바꾸기'를 누르면 face가 sunglassesBlack(입지 않았으면 첫 아이템)이다`, async () => {
     await renderDevWithPanel();
+    await press("얼굴장식");
     await press("얼굴장식");
     expect(drawnLook()).toEqual(ALL_NULL);
     await press("얼굴장식 바꾸기");
-    expect(drawnLook()).toEqual({ ...ALL_NULL, face: "goggles" });
+    expect(drawnLook()).toEqual({ ...ALL_NULL, face: "sunglassesBlack" });
   });
 
-  it(`GP5(${state}) '모자' 켜기와 '액세서리 바꾸기' 한 번이면 look이 { ...ALL_NULL, face: goggles, hat: capOrange, accessory: mufflerRed }다`, async () => {
+  it(`GP5(${state}) '모자' 켜기와 '액세서리 바꾸기' 한 번이면 look이 { ...ALL_NULL, hat: capOrange, accessory: mufflerRed }다(고글 없음)`, async () => {
     await renderDevWithPanel();
     await press("모자");
     await press("액세서리 바꾸기");
-    expect(drawnLook()).toEqual({ ...ALL_NULL, face: "goggles", hat: "capOrange", accessory: "mufflerRed" });
+    expect(drawnLook()).toEqual({ ...ALL_NULL, hat: "capOrange", accessory: "mufflerRed" });
   });
 
-  it(`GP6(${state}) '얼굴장식'으로 끈 뒤 시험판 '마을' → '방', 접었다 펴도 face는 null이고 '얼굴장식' 버튼도 꺼진 그대로다`, async () => {
+  it(`GP6(${state}) '얼굴장식'을 켠 뒤 시험판 '마을' → '방', 접었다 펴도 face는 sunglassesBlack이고 '얼굴장식' 버튼도 켜진 그대로다`, async () => {
     await renderDevWithPanel();
     await press("얼굴장식");
     await press("마을");
     expect(area()).toBe("village");
     await press("방");
     expect(area()).toBe("room");
-    expect(drawnLook()).toEqual(ALL_NULL);
-    expect(selected()).toEqual([]);
+    expect(drawnLook()).toEqual({ ...ALL_NULL, face: "sunglassesBlack" });
+    expect(selected()).toEqual(["얼굴장식"]);
     await press("시험판 접기");
     await press("시험판 펴기");
-    expect(drawnLook()).toEqual(ALL_NULL);
-    expect(selected()).toEqual([]);
+    expect(drawnLook()).toEqual({ ...ALL_NULL, face: "sunglassesBlack" });
+    expect(selected()).toEqual(["얼굴장식"]);
   });
 }
 

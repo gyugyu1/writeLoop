@@ -277,11 +277,11 @@ describe("옷집 피팅룸", () => {
     store.setItemCatalog({
       version: "test-fitting",
       items: [
-        wearable("capOrange", "hat", 60, { attach: "bone", bone: "head", body: 1 }),
-        wearable("wear-hat-breakwater-bucket", "hat", null, { attach: "bone", bone: "head", body: 1 }),
-        wearable("wear-top-tide-sailor", "top", null, { attach: "skin", body: 1 }),
-        wearable("wear-bottom-jetty-denim", "bottom", null, { attach: "skin", body: 1 }),
-        wearable("shoesWhite", "shoes", 90, { attach: "bone", bone: "foot_l", mirror: "foot_r", color: "#DCD8CF", body: 1 })
+        wearable("capOrange", "hat", 60, { attach: "bone", bone: "head", body: 2 }),
+        wearable("wear-hat-breakwater-bucket", "hat", null, { attach: "bone", bone: "head", body: 2 }),
+        wearable("wear-top-tide-sailor", "top", null, { attach: "skin", body: 2 }),
+        wearable("wear-bottom-jetty-denim", "bottom", null, { attach: "skin", body: 2 }),
+        wearable("shoesWhite", "shoes", 90, { attach: "bone", bone: "foot_l", mirror: "foot_r", color: "#DCD8CF", body: 2 })
       ]
     });
   });
@@ -443,8 +443,8 @@ describe("옷집 즉석 입어보기와 피팅 카메라", () => {
     store.setItemCatalog({
       version: "test-try",
       items: [
-        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 1 }, assets: { model: file("capOrange"), icon: null } },
-        { id: "wear-face-honey-panto", kind: "wearable", name: "허니 팬토 선글라스", shopName: "허니 팬토 선글라스", description: "", category: null, slot: "face", price: null, draw: { attach: "bone", bone: "head", body: 1 }, assets: { model: file("panto"), icon: null } }
+        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 2 }, assets: { model: file("capOrange"), icon: null } },
+        { id: "wear-face-honey-panto", kind: "wearable", name: "허니 팬토 선글라스", shopName: "허니 팬토 선글라스", description: "", category: null, slot: "face", price: null, draw: { attach: "bone", bone: "head", body: 2 }, assets: { model: file("panto"), icon: null } }
       ]
     });
   });
@@ -527,8 +527,8 @@ describe("피팅 저장이 옷집을 나간 뒤 실패할 때", () => {
     store.setItemCatalog({
       version: "test-late-fail",
       items: [
-        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 1 }, assets: { model: file("capOrange"), icon: null } },
-        { id: "mufflerRed", kind: "wearable", name: "빨강 머플러", shopName: "빨강 머플러", description: "", category: "clothes", slot: "accessory", price: 90, draw: { attach: "bone", bone: "spine", body: 1 }, assets: { model: file("mufflerRed"), icon: null } }
+        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 2 }, assets: { model: file("capOrange"), icon: null } },
+        { id: "mufflerRed", kind: "wearable", name: "빨강 머플러", shopName: "빨강 머플러", description: "", category: "clothes", slot: "accessory", price: 90, draw: { attach: "bone", bone: "spine", body: 2 }, assets: { model: file("mufflerRed"), icon: null } }
       ]
     });
     let rejectSave: (e: Error) => void = () => {};
@@ -630,8 +630,8 @@ describe("옷집 입고 있는 옷 바로 사기", () => {
     store.setItemCatalog({
       version: "test-worn-buy",
       items: [
-        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 1 }, assets: { model: file("capOrange"), icon: null } },
-        { id: "mufflerRed", kind: "wearable", name: "빨강 머플러", shopName: "빨강 머플러", description: "", category: "clothes", slot: "accessory", price: 90, draw: { attach: "bone", bone: "spine", body: 1 }, assets: { model: file("mufflerRed"), icon: null } }
+        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 2 }, assets: { model: file("capOrange"), icon: null } },
+        { id: "mufflerRed", kind: "wearable", name: "빨강 머플러", shopName: "빨강 머플러", description: "", category: "clothes", slot: "accessory", price: 90, draw: { attach: "bone", bone: "spine", body: 2 }, assets: { model: file("mufflerRed"), icon: null } }
       ]
     });
   });

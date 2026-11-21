@@ -49,8 +49,7 @@ const MODEL_FILES = [
   "village-fountain.glb",
   // 120: 새 가로등 모델(마을 가로등)도 앱이 시작될 때 미리 읽는다(명세 2)
   "village-streetlamp.glb",
-  "wear-goggles.glb",
-  "writeloop.glb",
+  "player-human.glb",
   ...TREE_FILES.map(treeAssetRel)
 ].sort();
 
@@ -129,6 +128,7 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
 });
 jest.mock("@/assets/models/lobby-room.glb", () => "lobby-room.glb");
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 jest.mock("@/assets/models/furniture/desk.glb", () => "furniture/desk.glb");
 jest.mock("@/assets/models/furniture/bookcase.glb", () => "furniture/bookcase.glb");
 jest.mock("@/assets/models/furniture/board.glb", () => "furniture/board.glb");

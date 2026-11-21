@@ -59,7 +59,7 @@ jest.mock("@react-three/fiber/native", () => {
     },
     useLoader: (_loader: unknown, url: unknown) => {
       mockLoaderCalls.push(String(url));
-      if (String(url) === "writeloop.glb") return mockCharacter.value;
+      if (String(url) === "player-human.glb") return mockCharacter.value;
       if (String(url) === "wear-goggles.glb") {
         if (mockGoggles.fail) throw new Error("고글 모델을 읽지 못함(테스트 가짜)");
         return mockGoggles.value;
@@ -107,6 +107,7 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
   };
 });
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
 jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 jest.mock("@react-native-async-storage/async-storage", () =>
@@ -439,7 +440,7 @@ function expectSameMatrix(actual: THREE.Matrix4, expected: THREE.Matrix4, label:
   expect({ label, close: diff <= tolerance }).toEqual({ label, close: true });
 }
 
-const CHARACTER_FILE = "writeloop.glb";
+const CHARACTER_FILE = "player-human.glb";
 const GOGGLES_FILE = "wear-goggles.glb";
 
 let errorSpy: jest.SpyInstance;
@@ -467,11 +468,11 @@ afterEach(() => {
 // ---------- NR3(목록 없음): 이 파일 맨 앞(아직 목록이 없는 상태에서 시작한다) ----------
 
 describe("[spec] 089-⑤ 23 NR3(받은 목록 없음)", () => {
-  it("NR3 받은 목록이 없을 때 face goggles면 고글 보임, 옷 파일 받기 요청 0건, 받은 옷 모델 읽기 0건", async () => {
+  it("NR3 134 ①: 받은 목록이 없을 때 face goggles여도 고글이 그려지지 않고, 옷 파일 받기 요청 0건, 받은 옷 모델 읽기 0건", async () => {
     expect(currentItemCatalog()).toBeNull();
     const rig = makeRig();
     const { group } = await draw(rig, look({ face: "goggles" }));
-    expectGogglesShown(group, "목록 없음");
+    expectGogglesHidden(group, "목록 없음");
     expect(device.downloads).toEqual([]);
     expect(mockReads).toEqual([]);
   });
@@ -480,36 +481,33 @@ describe("[spec] 089-⑤ 23 NR3(받은 목록 없음)", () => {
 // ---------- NR1~NR4 ----------
 
 describe("[spec] 089-⑤ 23 NR1~NR4: look이 없거나 face가 goggles면 고글이 머리 뼈에", () => {
-  it("NR1·NR4 look 없이(wear 모두 거짓) 그리면 고글 보임이고 고글 메시는 그 라룹이의 head 뼈 자손이며, 옷 받기·받은 옷 읽기가 0건이고 읽는 모델은 라룹이와 고글뿐이다", async () => {
+  it("NR1·NR4 134 ①: look 없이(wear 모두 거짓) 그려도 고글이 그려지지 않고, 옷 받기·받은 옷 읽기가 0건이고 읽는 모델은 라룹이(플레이어)뿐이다", async () => {
     newCatW();
     const rig = makeRig();
     const { group } = await draw(rig, undefined);
-    const g = expectGogglesShown(group, "NR1");
-    const head = bone(group, "head");
-    expect(g.all.every((m) => isAncestor(head, m))).toBe(true);
+    expectGogglesHidden(group, "NR1");
     expect(device.downloads).toEqual([]);
     expect(mockReads).toEqual([]);
-    expect([...new Set(mockLoaderCalls)].sort()).toEqual([CHARACTER_FILE, GOGGLES_FILE].sort());
+    expect([...new Set(mockLoaderCalls)].sort()).toEqual([CHARACTER_FILE]);
   });
 
-  it("NR2·NR4 look { ...ALL_NULL, face: goggles }이면 고글 보임(head 자손)이고 고글 말고 더해진 메시가 없으며, 옷 받기·받은 옷 읽기가 0건이고 읽는 모델은 라룹이와 고글뿐이다", async () => {
+  it("NR2·NR4 134 ①: look { ...ALL_NULL, face: goggles }여도 고글이 그려지지 않고 더해진 메시가 없으며, 옷 받기·받은 옷 읽기가 0건이고 읽는 모델은 라룹이(플레이어)뿐이다", async () => {
     newCatW();
     const rig = makeRig();
     const { group } = await draw(rig, look({ face: "goggles" }));
-    const g = expectGogglesShown(group, "NR2");
-    expect(g.all.every((m) => isAncestor(bone(group, "head"), m))).toBe(true);
+    expectGogglesHidden(group, "NR2");
     const others = shownMeshes(group).filter((m) => m.geometry.attributes.position.count !== GOGGLES_POINTS);
     expect(others.length).toBe(2);
     expect(others.every((m) => m.geometry.attributes.position.count === BODY_POINTS)).toBe(true);
     expect(device.downloads).toEqual([]);
     expect(mockReads).toEqual([]);
-    expect([...new Set(mockLoaderCalls)].sort()).toEqual([CHARACTER_FILE, GOGGLES_FILE].sort());
+    expect([...new Set(mockLoaderCalls)].sort()).toEqual([CHARACTER_FILE]);
   });
 
   it.each([
     ["목록의 goggles가 draw·assets null", [] as string[]],
     ["목록에 goggles가 없음", ["goggles"]]
-  ])("NR3 %s이어도 face goggles면 고글 보임, 옷 받기 0건, 받은 옷 읽기 0건", async (_label, without) => {
+  ])("NR3 134 ①: %s이어도 face goggles면 고글이 그려지지 않고, 옷 받기 0건, 받은 옷 읽기 0건", async (_label, without) => {
     const cat = newCatW({ without });
     if (without.length === 0) {
       const item = cat.catalog.items.find((i) => i.id === "goggles")!;
@@ -519,7 +517,7 @@ describe("[spec] 089-⑤ 23 NR1~NR4: look이 없거나 face가 goggles면 고글
     }
     const rig = makeRig();
     const { group } = await draw(rig, look({ face: "goggles" }));
-    expectGogglesShown(group, _label);
+    expectGogglesHidden(group, _label);
     expect(device.downloads).toEqual([]);
     expect(mockReads).toEqual([]);
   });
@@ -573,17 +571,17 @@ describe("[spec] 089-⑤ 23 NR5~NR10: 다른 얼굴장식·맨얼굴·모르는 
     expect(shown.every((m) => m.geometry.attributes.position.count === BODY_POINTS)).toBe(true);
   });
 
-  it("NR9 goggles → sunglassesBlack → goggles → ALL_NULL → 모름 → ALL_NULL로 바꿀 때마다 바로 보임 → 숨김(선글라스) → 보임(선글라스 없음) → 숨김 → 보임 → 숨김이고, 보일 때마다 고글은 겉 하나·외곽선 하나다", async () => {
+  it("NR9 134 ①: goggles → sunglassesBlack → goggles → ALL_NULL → 모름 → ALL_NULL로 바꿀 때마다 고글은 늘 숨김이고 선글라스만 두 번째에 그려진다. 보일 때마다 고글은 겉 하나·외곽선 하나다", async () => {
     const cat = newCatW();
     putOnDevice(cat.model.GLASSES);
     const rig = makeRig();
     const { view, group } = await draw(rig, look({ face: "goggles" }));
     const steps: [LookArg, boolean, boolean][] = [
-      [look({ face: "goggles" }), true, false],
+      [look({ face: "goggles" }), false, false],
       [look({ face: "sunglassesBlack" }), false, true],
-      [look({ face: "goggles" }), true, false],
+      [look({ face: "goggles" }), false, false],
       [ALL_NULL, false, false],
-      [undefined, true, false],
+      [undefined, false, false],
       [ALL_NULL, false, false]
     ];
     for (const [i, [value, shown, glasses]] of steps.entries()) {
@@ -595,14 +593,13 @@ describe("[spec] 089-⑤ 23 NR5~NR10: 다른 얼굴장식·맨얼굴·모르는 
     }
   });
 
-  it("NR10 face goggles와 hat capOrange(모자 모델 기기에 있음)면 고글과 모자가 모두 head 자손으로 그려진다", async () => {
+  it("NR10 134 ①: face goggles와 hat capOrange(모자 모델 기기에 있음)면 고글은 그려지지 않고 모자만 head 자손으로 그려진다", async () => {
     const cat = newCatW();
     putOnDevice(cat.model.HAT_O);
     const rig = makeRig();
     const { group } = await draw(rig, look({ face: "goggles", hat: "capOrange" }));
     const head = bone(group, "head");
-    const g = expectGogglesShown(group, "NR10");
-    expect(g.all.every((m) => isAncestor(head, m))).toBe(true);
+    expectGogglesHidden(group, "NR10");
     const hats = shownMeshes(group).filter((m) => isToon(m) && m.geometry.attributes.position.count === 24);
     expect(hats.length).toBe(1);
     expect(isAncestor(head, hats[0])).toBe(true);
@@ -628,44 +625,33 @@ const MOTIONS: SimSetup[] = [
   { label: "책 꺼내기", frames: at([0.2, 0.7, 1.2], (t) => (s) => (s.scene = { kind: "book", mark: "bookcase", phase: "in", t })) }
 ];
 
-describe("[spec] 089-⑤ 23 NR11~NR14: 카툰 명암·갈색 외곽선, 움직임 따라가기, 쉬는 자세 자리", () => {
-  it("NR11 고글 겉 재질은 카툰 재질이고 명암 그림이 그 라룹이의 kit.gradient이며 kit.toonMaterials에 들어 있다", async () => {
+// 작업 134 ① 결정(사용자 2026-11-22 "모두 허락"): 라룹이 고글은 사람형 플레이어에게 그리지 않는다. NR11~NR20은 "고글 보임"을 확인하던 테스트라
+// 같은 입력에서 "고글이 그려지지 않고 고글 모델 파일도 읽지 않는다"로 기대값을 고쳤다(입력·준비는 그대로. 고글 메시의 재질·자리를 보던 NR11·NR12·NR14는 고글 메시가 없음을 본다).
+describe("[spec] 089-⑤ 23 NR11~NR14(134 ①): 라룹이 고글 메시가 없다 — 재질·외곽선·움직임·쉬는 자세 어디서도", () => {
+  it("NR11 face goggles여도 고글 겉·외곽선 메시가 없고 고글 모델 파일을 읽지 않는다", async () => {
     newCatW();
     const rig = makeRig();
     const { group } = await draw(rig, look({ face: "goggles" }));
-    const material = expectGogglesShown(group, "NR11").surface[0].material as THREE.MeshToonMaterial;
-    expect(material.isMeshToonMaterial).toBe(true);
-    expect(material.gradientMap === rig.kit.gradient).toBe(true);
-    expect(rig.kit.toonMaterials.includes(material)).toBe(true);
+    expectGogglesHidden(group, "NR11");
+    expect(mockLoaderCalls).not.toContain(GOGGLES_FILE);
   });
 
-  it("NR12 고글 외곽선이 그려지고 색이 0x3d1b0f이며, 굵기 2.0에서 두께가 1.0의 2배다", async () => {
+  it("NR12 외곽선 굵기 1.0·2.0 모두 고글 외곽선이 없다", async () => {
     newCatW();
     const rig = makeRig();
     const { view, group } = await draw(rig, look({ face: "goggles" }), { outline: 1 });
-    const line = expectGogglesShown(group, "NR12 1.0").outline[0];
-    expect((line.material as THREE.MeshBasicMaterial).color.getHex()).toBe(LINE_COLOR);
-    const thin = outlineThickness(line.material as THREE.Material);
-    expect(typeof thin).toBe("number");
-    expect(thin!).toBeGreaterThan(0);
+    expectGogglesHidden(group, "NR12 1.0");
     await redraw(view, rig, look({ face: "goggles" }), { outline: 2 });
-    const thick = outlineThickness(expectGogglesShown(group, "NR12 2.0").outline[0].material as THREE.Material);
-    expect(thick).toBeCloseTo(thin! * 2, 6);
+    expectGogglesHidden(group, "NR12 2.0");
   });
 
   it(
-    "NR13 걷기·서기·앉기·점프·생각하기·책 꺼내기의 여러 프레임에서 고글 메시의 head 기준 자리·방향이 처음과 같다",
+    "NR13 걷기·서기·앉기·점프·생각하기·책 꺼내기의 여러 프레임에서 고글이 그려지지 않고 고글 모델 파일도 읽지 않는다",
     async () => {
       newCatW();
       const rig = makeRig();
       const { group } = await draw(rig, look({ face: "goggles" }));
       const handle = rig.handleRef.current!;
-      const head = bone(group, "head");
-      const mesh = expectGogglesShown(group, "NR13").surface[0];
-      group.updateMatrixWorld(true);
-      const rest = relative(head, mesh);
-      const headStart = head.getWorldPosition(new THREE.Vector3());
-      let headMoved = 0;
       const sim = new LobbySim({ x: 4, z: 6, random: () => 0.5 });
       let now = 1;
       for (const motion of MOTIONS) {
@@ -679,50 +665,46 @@ describe("[spec] 089-⑤ 23 NR11~NR14: 카툰 명암·갈색 외곽선, 움직�
           now += 1 / 30;
           handle.update(sim, 1 / 30, now);
           group.updateMatrixWorld(true);
-          expectSameMatrix(relative(head, mesh), rest, motion.label);
-          headMoved = Math.max(headMoved, head.getWorldPosition(new THREE.Vector3()).distanceTo(headStart));
+          expectGogglesHidden(group, motion.label);
         }
       }
-      expect(headMoved).toBeGreaterThan(0.05);
+      expect(mockLoaderCalls).not.toContain(GOGGLES_FILE);
     },
     SLOW_TEST_MS
   );
 
-  it("NR14 쉬는 자세(동작 무게 0)에서 고글 메시의 월드 자리가 고글 모델 파일의 wear-goggles 자리를 라룹이 모델과 같은 변환으로 둔 자리와 같다(오차 1e-4)", async () => {
+  it("NR14 쉬는 자세에서도 고글 메시가 없고 그려지는 메시는 몸과 외곽선 둘뿐이다", async () => {
     newCatW();
     const rig = makeRig();
     const { group } = await draw(rig, look({ face: "goggles" }));
-    const mesh = expectGogglesShown(group, "NR14").surface[0];
     group.updateMatrixWorld(true);
-    const source = (mockGoggles.value as { scene: THREE.Group }).scene.getObjectByName("wear-goggles")!;
-    source.updateWorldMatrix(true, false);
-    const expected = new THREE.Matrix4().multiplyMatrices(modelRoot(group).matrixWorld, source.matrixWorld);
-    expectSameMatrix(mesh.matrixWorld, expected, "NR14", 1e-4);
+    expectGogglesHidden(group, "NR14");
+    expect(shownMeshes(group).length).toBe(2);
   });
 });
 
 // ---------- NR15~NR20 ----------
 
-describe("[spec] 089-⑤ 23 NR15~NR20: 누르기 판정, 실패해도 라룹이는 그대로, 몸 그림, 새 kit, 라룹이마다", () => {
-  it("NR15 앞·위에서 라룹이 머리를 누르면 맞는 것은 보이지 않는 통(isCharacter)뿐이고 고글 메시는 맞지 않는다", async () => {
+describe("[spec] 089-⑤ 23 NR15~NR20(134 ①): 누르기 판정, 고글 파일 실패, 몸 그림, 새 kit, 라룹이마다", () => {
+  it("NR15 앞·위에서 라룹이 머리를 누르면 맞는 것은 보이지 않는 통(isCharacter)뿐이고 고글 메시는 없다", async () => {
     newCatW();
     const rig = makeRig();
     const { group } = await draw(rig, look({ face: "goggles" }));
-    const g = expectGogglesShown(group, "NR15");
+    expectGogglesHidden(group, "NR15");
     group.updateMatrixWorld(true);
-    const gogglesAt = g.surface[0].getWorldPosition(new THREE.Vector3());
+    // 134 ①: 고글 자리 대신 보이지 않는 통(isCharacter)의 가운데 높이를 겨눈다(앞에서, 위에서)
+    const hitAt = group.children.find((child) => (child.userData as { isCharacter?: boolean }).isCharacter === true)!.position;
     for (const [origin, direction] of [
-      [new THREE.Vector3(gogglesAt.x, gogglesAt.y, gogglesAt.z + 6), new THREE.Vector3(0, 0, -1)],
-      [new THREE.Vector3(gogglesAt.x, gogglesAt.y + 12, gogglesAt.z), new THREE.Vector3(0, -1, 0)]
+      [new THREE.Vector3(hitAt.x, hitAt.y, hitAt.z + 6), new THREE.Vector3(0, 0, -1)],
+      [new THREE.Vector3(hitAt.x + 0.1, hitAt.y + 12, hitAt.z + 0.1), new THREE.Vector3(0, -1, 0)]
     ] as const) {
       const hits = new THREE.Raycaster(origin, direction.clone().normalize()).intersectObject(group, true);
       expect(hits.length).toBeGreaterThan(0);
       expect(hits.every((h) => (h.object.userData as { isCharacter?: boolean }).isCharacter === true)).toBe(true);
-      expect(hits.some((h) => g.all.includes(h.object as THREE.Mesh))).toBe(false);
     }
   });
 
-  it("NR16 고글 모델 파일만 못 읽으면 오류가 밖으로 나오지 않고 라룹이(몸·외곽선)가 그대로 보이며 라룹이 손잡이도 그대로다", async () => {
+  it("NR16 고글 모델 파일을 못 읽는 상태여도 오류가 밖으로 나오지 않고 라룹이(몸·외곽선)가 그대로 보이며 라룹이 손잡이도 그대로다", async () => {
     newCatW();
     mockGoggles.fail = true;
     const rig = makeRig();
@@ -735,13 +717,13 @@ describe("[spec] 089-⑤ 23 NR15~NR20: 누르기 판정, 실패해도 라룹이�
     expect(shown.filter(isToon).length).toBe(1);
   });
 
-  it("NR17 face goggles·hat capOrange에서 모자 파일 받기가 실패하면 고글 보임, 모자는 그려지지 않고, 오류가 밖으로 나오지 않는다", async () => {
+  it("NR17 face goggles·hat capOrange에서 모자 파일 받기가 실패하면 고글도 모자도 그려지지 않고, 오류가 밖으로 나오지 않는다", async () => {
     const cat = newCatW();
     failDownload(cat.model.HAT_O);
     const rig = makeRig();
     const { group } = await draw(rig, look({ face: "goggles", hat: "capOrange" }));
     expect(device.downloads.length).toBe(1);
-    expectGogglesShown(group, "NR17");
+    expectGogglesHidden(group, "NR17");
     expect(drawnClothes(group)).toEqual([]);
     expect(rig.failed).not.toHaveBeenCalled();
   });
@@ -752,7 +734,7 @@ describe("[spec] 089-⑤ 23 NR15~NR20: 누르기 판정, 실패해도 라룹이�
     const rig = makeRig();
     const { view, group } = await draw(rig, look({ face: "goggles" }));
     const body = () => shownMeshes(group).find((m) => isToon(m) && m.geometry.attributes.position.count === BODY_POINTS)!;
-    expectGogglesShown(group, "NR18 고글");
+    expectGogglesHidden(group, "NR18 고글");
     const mapWithGoggles = (body().material as THREE.MeshToonMaterial).map;
     expect(mapWithGoggles !== null).toBe(true);
     const influencesWith = body().morphTargetInfluences;
@@ -764,20 +746,21 @@ describe("[spec] 089-⑤ 23 NR15~NR20: 누르기 판정, 실패해도 라룹이�
     }
   });
 
-  it("NR19 그린 뒤 새 kit으로 다시 그리면 고글 메시는 여전히 하나이고, 고글 겉 재질이 새 kit의 명암 목록에 있고 옛 kit 목록에는 없다", async () => {
+  it("NR19 그린 뒤 새 kit으로 다시 그려도 고글 메시는 없고, 몸 겉 재질이 새 kit의 명암 목록에 있고 옛 kit 목록에는 없다", async () => {
     newCatW();
     const rig = makeRig();
     const { view, group } = await draw(rig, look({ face: "goggles" }));
-    expectGogglesShown(group, "NR19 처음");
+    expectGogglesHidden(group, "NR19 처음");
     const oldKit = rig.kit;
     const kit2 = newKit();
     await redraw(view, rig, look({ face: "goggles" }), { kit: kit2 });
-    const material = expectGogglesShown(group, "NR19 새 kit").surface[0].material as THREE.MeshToonMaterial;
+    expectGogglesHidden(group, "NR19 새 kit");
+    const material = shownMeshes(group).find((m) => isToon(m))!.material as THREE.MeshToonMaterial;
     expect(kit2.toonMaterials.includes(material)).toBe(true);
     expect(oldKit.toonMaterials.includes(material)).toBe(false);
   });
 
-  it("NR20 라룹이 둘을 각각 look 없음 / look ALL_NULL로 그리면 첫째만 고글 보임, 둘째는 숨김이고 고글 메시는 첫째의 head 자손이다", async () => {
+  it("NR20 라룹이 둘을 각각 look 없음 / look ALL_NULL로 그려도 둘 다 고글이 없다", async () => {
     newCatW();
     const first = makeRig();
     const second = makeRig();
@@ -792,8 +775,7 @@ describe("[spec] 089-⑤ 23 NR15~NR20: 누르기 판정, 실패해도 라룹이�
     const a = first.handleRef.current!.group;
     const b = second.handleRef.current!.group;
     expect(a === b).toBe(false);
-    const g = expectGogglesShown(a, "NR20 첫째");
+    expectGogglesHidden(a, "NR20 첫째");
     expectGogglesHidden(b, "NR20 둘째");
-    expect(g.all.every((m) => isAncestor(bone(a, "head"), m))).toBe(true);
   });
 });

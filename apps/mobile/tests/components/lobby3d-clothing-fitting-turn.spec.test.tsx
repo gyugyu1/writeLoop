@@ -141,7 +141,7 @@ function wearable(id: string, slot: string, price: number | null) {
   const file = { url: `/api/catalog/files/${id}.glb`, sha256: id.padEnd(64, "0").slice(0, 64), size: 1 };
   return {
     id, kind: "wearable" as const, name: id, shopName: id, description: "", category: price === null ? null : ("clothes" as const), slot, price,
-    draw: { attach: "bone", bone: "head", body: 1 }, assets: { model: file, icon: null }
+    draw: { attach: "bone", bone: "head", body: 2 }, assets: { model: file, icon: null }
   };
 }
 

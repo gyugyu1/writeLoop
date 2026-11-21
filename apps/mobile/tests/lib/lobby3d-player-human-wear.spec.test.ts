@@ -44,6 +44,29 @@ describe("[spec] 134-① 앱의 몸판은 사람형(2)이다", () => {
   });
 });
 
+describe("[spec] 134-① 라룹이 고글(goggles)은 그릴 수 있는 옷이 아니라 목록에서 빠진다(03-main-decision.md 사용자 결정)", () => {
+  it("[바뀔] isWearableDrawable(\"goggles\")는 거짓이다(받은 목록이 있든 없든)", () => {
+    setCatalogWithBody(2, "qa-134-goggles-drawable");
+    expect(isWearableDrawable("goggles")).toBe(false);
+    let fresh!: typeof import("@/lib/lobby3d/wear");
+    jest.isolateModules(() => {
+      fresh = require("@/lib/lobby3d/wear");
+    });
+    expect(fresh.isWearableDrawable("goggles")).toBe(false);
+  });
+
+  it("[바뀔] 얼굴장식 차례(itemsInSlot(\"face\"))에 goggles가 없다(받은 목록이 있을 때와 없을 때)", () => {
+    setCatalogWithBody(2, "qa-134-goggles-face");
+    expect(itemsInSlot("face")).not.toContain("goggles");
+    let fresh!: typeof import("@/lib/lobby3d/wear");
+    jest.isolateModules(() => {
+      fresh = require("@/lib/lobby3d/wear");
+    });
+    expect(fresh.itemsInSlot("face")).not.toContain("goggles");
+    expect(fresh.itemsInSlot("face")).toEqual(["sunglassesBlack"]);
+  });
+});
+
 describe("[spec] 134-① 라룹이 고글을 기본으로 씌우지 않는다", () => {
   it("[바뀔] 개발 화면 시험판의 기본 모습(DEFAULT_LOOK)은 아무것도 입지 않은 일곱 부위(얼굴장식 없음)다", () => {
     expect(DEFAULT_LOOK).toEqual({ hat: null, top: null, bottom: null, shoes: null, face: null, back: null, accessory: null });

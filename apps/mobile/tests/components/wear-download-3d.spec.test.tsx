@@ -78,7 +78,7 @@ jest.mock("@react-three/fiber/native", () => {
     useLoader: (_loader: unknown, url: unknown) => {
       // 작업 089 ⑤ 24 결정: 앱에 든 라룹이 고글 모델
       if (String(url) === "wear-goggles.glb") return mockGoggles.value;
-      if (String(url) !== "writeloop.glb") throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
+      if (String(url) !== "player-human.glb") throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
       return mockCharacter.value;
     }
   };
@@ -122,6 +122,7 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
   };
 });
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 라룹이 고글이 앱에 든 착용 모델(assets/models/wear-goggles.glb)이 되어
 // 라룹이를 그리면 그 파일도 react-three-fiber useLoader로 읽는다. 그래서 가짜 불러오기가 그 파일에 가짜 고글 모델(skin 없는 메시 wear-goggles 하나,
 // 점 136개)을 주게 했다. 단언·입력은 바꾸지 않았다(고글이 그려져 바뀐 기대값은 그 테스트에 따로 적었다).
@@ -662,7 +663,8 @@ describe("[spec] 090-③ C: 받은 목록의 그리기 정보로 라룹이에 �
 
   // 작업 089 ⑤ 24 결정(사용자: qa가 새 동작에 맞게 고침): 22 결정으로 고글이 앱에 든 착용 모델이 되어 얼굴장식이 고글이면 고글 겉·외곽선이
   // 그려진다. 그래서 마지막(고글만) 메시 기대값을 "몸과 외곽선 둘"에서 "몸과 외곽선 둘 + 고글 둘"로 고쳤다(받는 옷 요청·읽기 0건은 그대로).
-  it("C9 일곱 부위가 null이거나 고글만이면 착용 모델 요청·읽기가 0건이고, 고글만이면 라룹이 메시는 몸과 외곽선 둘과 고글 겉·외곽선 둘뿐이다", async () => {
+  // 작업 134 ① 결정(사용자 2026-11-22 "모두 허락"): 라룹이 고글은 사람형에게 그리지 않으므로 고글만이어도 몸과 외곽선 둘뿐이다(고글 메시 0).
+  it("C9 일곱 부위가 null이거나 고글만이면 착용 모델 요청·읽기가 0건이고, 라룹이 메시는 몸과 외곽선 둘뿐이다(고글은 그리지 않는다)", async () => {
     newCatW();
     const rig = makeRig();
     const { view, group } = await renderBare(rig);
@@ -671,9 +673,9 @@ describe("[spec] 090-③ C: 받은 목록의 그리기 정보로 라룹이에 �
     expect(device.downloads).toEqual([]);
     expect(mockReads).toEqual([]);
     const shown = meshesUnder(group).filter((m) => drawn(m, group));
-    expect(shown.length).toBe(4);
+    expect(shown.length).toBe(2);
     expect(shown.filter((m) => m.geometry.attributes.position.count === BODY_POINTS).length).toBe(2);
-    expect(shown.filter((m) => m.geometry.attributes.position.count === 136).length).toBe(2);
+    expect(shown.filter((m) => m.geometry.attributes.position.count === 136).length).toBe(0);
   });
 
   it("C10 받은 파일이 깨진 모델이면 오류가 밖으로 나오지 않고 라룹이가 그대로 보인다", async () => {

@@ -56,6 +56,7 @@ jest.mock("three/examples/jsm/utils/SkeletonUtils.js", () => ({ clone: (o: { clo
 jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => ({ RoundedBoxGeometry: class {} }));
 jest.mock("@/assets/models/lobby-room.glb", () => 9001);
 jest.mock("@/assets/models/writeloop.glb", () => 9002);
+jest.mock("../../assets/models/player-human.glb", () => 9099, { virtual: true });
 jest.mock("@/assets/models/furniture/desk.glb", () => 9011);
 jest.mock("@/assets/models/furniture/bookcase.glb", () => 9012);
 jest.mock("@/assets/models/furniture/board.glb", () => 9013);

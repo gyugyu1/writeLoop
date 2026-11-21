@@ -154,6 +154,7 @@ jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => {
 });
 jest.mock("@/assets/models/lobby-room.glb", () => "lobby-room.glb");
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
+jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 라룹이 고글이 앱에 든 착용 모델(assets/models/wear-goggles.glb)이 되어
 // 라룹이를 그리면 그 파일도 react-three-fiber useLoader로 읽는다. 그래서 가짜 불러오기가 그 파일에 가짜 고글 모델(skin 없는 메시 wear-goggles 하나,
 // 점 136개)을 주게 했다. 단언·입력은 바꾸지 않았다(고글이 그려져 바뀐 기대값은 그 테스트에 따로 적었다).
@@ -210,7 +211,7 @@ jest.mock("@react-native-async-storage/async-storage", () =>
 
 const NOW = new Date("2026-11-13T03:00:00.000Z");
 const ROOM_FILE = "lobby-room.glb";
-const CHARACTER_FILE = "writeloop.glb";
+const CHARACTER_FILE = "player-human.glb";
 // 090-② 05 결정 3: 가구 묶음(lobby-furniture.glb) 대신 앱에 든 처음 방 가구 일곱 파일(목록)이다. 그 목록을 이 이름 하나로 본다
 const FURNITURE_FILE = "furniture/처음-방-일곱";
 const VILLAGE_FILE = "lobby-village.glb";
@@ -858,14 +859,15 @@ describe("[spec] 누르기 판정과 착용하지 않은 라룹이(U1, U2, 결�
 
   // 작업 089 ⑤ 24 결정(사용자: qa가 새 동작에 맞게 고침): 입은 것을 모르면(look 없음) 라룹이 고글(앱에 든 착용 모델)이 그려지므로(22 결정)
   // 그려지는 메시의 기대값을 "몸과 외곽선 둘"에서 "몸과 외곽선 둘 + 고글 겉·외곽선 둘"로 고쳤다. 받는 옷 모델을 읽지 않는 것은 그대로다.
-  it("U1: 아무것도 입히지 않으면 그려지는 메시는 몸과 그 외곽선 껍질 둘과 라룹이 고글 겉·외곽선 둘뿐이고, 착용 모델을 읽지 않는다", async () => {
+  // 작업 134 ① 결정(사용자 2026-11-22 "모두 허락"): 라룹이 고글은 사람형에게 그리지 않으므로 몸과 외곽선 둘뿐이다(고글 메시 0). 받는 옷 모델을 읽지 않는 것은 그대로다.
+  it("U1: 아무것도 입히지 않으면 그려지는 메시는 몸과 그 외곽선 껍질 둘뿐이고(134 ①: 라룹이 고글 없음), 착용 모델을 읽지 않는다", async () => {
     const rig = makeRig();
     const { group } = await renderBare(rig);
     const shown = meshesUnder(group).filter((m) => drawn(m, group));
-    expect(shown.length).toBe(4);
+    expect(shown.length).toBe(2);
     expect(shown.filter((m) => (m as THREE.SkinnedMesh).isSkinnedMesh && m.geometry.attributes.position.count === BODY_POINTS).length).toBe(2);
-    expect(shown.filter((m) => m.geometry.attributes.position.count === 136).length).toBe(2);
-    expect(shown.filter(isToon).length).toBe(2);
+    expect(shown.filter((m) => m.geometry.attributes.position.count === 136).length).toBe(0);
+    expect(shown.filter(isToon).length).toBe(1);
     expect(wearLoads()).toBe(0);
   });
 
@@ -976,7 +978,8 @@ describe("[spec] 착용 모델을 읽는 때와 못 읽을 때(결정 4·5, F1)"
     const primitives = screen.container.queryAll((i: TestInstance) => (i.type as unknown) === "primitive" && i.props.object === group);
     expect(primitives.length).toBe(1);
     // 작업 089 ⑤ 24 결정(사용자: qa가 새 동작에 맞게 고침): 입은 것을 모르면(look 없음) 라룹이 고글(앱에 든 착용 모델, 겉·외곽선 둘)이 그려진다(22 결정).
-    expect(meshesUnder(group).filter((m) => drawn(m, group)).length).toBe(4);
+    // 134 ①: 라룹이 고글을 그리지 않으므로 몸과 외곽선 둘뿐이다
+    expect(meshesUnder(group).filter((m) => drawn(m, group)).length).toBe(2);
 
     await act(async () => {
       mark("loaded", WEAR_FILE);
@@ -1031,7 +1034,8 @@ describe("[spec] 화면 단위: 개발 화면에서 입고 벗기(F1·F2, 결정
       const group = characterGroupOnScreen();
       expect(group !== null).toBe(true);
       // 작업 089 ⑤ 24 결정: 시험판은 라룹이 고글을 쓴 채 시작해(11-B6) 고글 겉·외곽선 둘이 더 그려진다(받는 옷은 붙지 않는다)
-      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(4);
+      // 134 ①: 시험판은 맨몸으로 시작해 고글 메시가 없다(몸과 외곽선 둘뿐, 받는 옷은 붙지 않는다)
+      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(2);
 
       // 끄고 다시 켜도 눌린 대로 바뀐다
       await press("모자");
@@ -1039,7 +1043,8 @@ describe("[spec] 화면 단위: 개발 화면에서 입고 벗기(F1·F2, 결정
       await press("모자");
       expect(screen.getByRole("button", { name: "모자" }).props.accessibilityState?.selected).toBe(true);
       await frame(3);
-      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(4);
+      // 134 ①: 시험판은 맨몸으로 시작해 고글 메시가 없다(몸과 외곽선 둘뿐, 받는 옷은 붙지 않는다)
+      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(2);
 
       await press("신나게 점프");
       expect(mockCanvas.props!.sim.action?.type).toBe("jump");
@@ -1062,7 +1067,8 @@ describe("[spec] 화면 단위: 개발 화면에서 입고 벗기(F1·F2, 결정
       const group = characterGroupOnScreen();
       expect(group !== null).toBe(true);
       // 작업 089 ⑤ 24 결정: 시험판은 라룹이 고글을 쓴 채 시작해(11-B6) 고글 겉·외곽선 둘이 더 그려진다
-      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(4);
+      // 134 ①: 시험판은 맨몸으로 시작해 고글 메시가 없다(몸과 외곽선 둘뿐, 받는 옷은 붙지 않는다)
+      expect(meshesUnder(group!).filter((m) => drawn(m, group!)).length).toBe(2);
     },
     SLOW_TEST_MS
   );

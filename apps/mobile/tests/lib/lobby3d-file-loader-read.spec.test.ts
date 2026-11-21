@@ -193,6 +193,7 @@ jest.mock("three/examples/jsm/utils/SkeletonUtils.js", () => ({ clone: (o: { clo
 jest.mock("three/examples/jsm/geometries/RoundedBoxGeometry.js", () => ({ RoundedBoxGeometry: class {} }));
 jest.mock("@/assets/models/lobby-room.glb", () => 9001);
 jest.mock("@/assets/models/writeloop.glb", () => 9002);
+jest.mock("../../assets/models/player-human.glb", () => 9099, { virtual: true });
 // 090-② 05 결정 3(사용자 2026-11-13 "qa가 새 동작에 맞게 고침"): 가구 묶음(lobby-furniture.glb) 대신 앱에 든 처음 방 가구 일곱의 파일이다(준비 변경. 단언은 그대로다)
 jest.mock("@/assets/models/furniture/desk.glb", () => 9011);
 jest.mock("@/assets/models/furniture/bookcase.glb", () => 9012);

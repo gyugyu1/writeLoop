@@ -1357,6 +1357,12 @@ export class LobbySim {
     this.checkZoneWhenStopped = checkZone;
   }
 
+  /** 제자리에서 몸을 돌린다(라디안, 바로 그 방향을 본다). 옷집 피팅룸 회전판이 쓴다. */
+  turnBy(delta: number): void {
+    this.heading += delta;
+    this.goalHeading = this.heading;
+  }
+
   /** 들어가기 동작 중에 왔던 인사를 한다(앞을 보고 동작한다). */
   private greetAfterSceneEnds(): void {
     const action = this.greetAfterScene;

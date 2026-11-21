@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, type GestureResponderHandlers } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // 홈(로비) 위로 아래에서 올라오는 판. 닫기 버튼, 뒤로가기, 판 바깥 누르기로 닫힌다.
@@ -14,19 +14,25 @@ interface LobbySheetProps {
   maxHeight?: `${number}%` | number;
   /** 바깥 판을 어둡게 할지(기본 어둡게). 로비를 그대로 보여야 하면 false. */
   dimBackdrop?: boolean;
+  /** 바깥 판의 터치 응답(주면 바깥 판을 눌러도 닫히지 않고 이 응답이 끌기를 받는다. 옷집 피팅 회전판). */
+  backdropHandlers?: GestureResponderHandlers;
 }
 
-export default function LobbySheet({ visible, title, onClose, children, maxHeight, dimBackdrop = true }: LobbySheetProps) {
+export default function LobbySheet({ visible, title, onClose, children, maxHeight, dimBackdrop = true, backdropHandlers }: LobbySheetProps) {
   const insets = useSafeAreaInsets();
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.root}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${title} 닫기`}
-          style={[styles.backdrop, !dimBackdrop && styles.backdropClear]}
-          onPress={onClose}
-        />
+        {backdropHandlers ? (
+          <View testID="lobby-sheet-backdrop" style={[styles.backdrop, !dimBackdrop && styles.backdropClear]} {...backdropHandlers} />
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${title} 닫기`}
+            style={[styles.backdrop, !dimBackdrop && styles.backdropClear]}
+            onPress={onClose}
+          />
+        )}
         <View accessibilityViewIsModal style={[styles.panel, { paddingBottom: insets.bottom + 12 }, maxHeight !== undefined && { maxHeight }]}>
           <View style={styles.header}>
             <Text accessibilityRole="header" style={styles.title}>

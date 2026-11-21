@@ -649,6 +649,8 @@ export default function Lobby3dScreen({
   // 옷집 피팅룸: 들어가는 중(walk-in)·안(inside)·나오는 중(walk-out)과 들어오기 전 착장, 피팅 중 임시 착장
   const fittingRef = useRef<{ floor: ClothingFloor; phase: "walk-in" | "inside" | "walk-out"; base: WearLook } | null>(null);
   const [curtainFloor, setCurtainFloor] = useState<ClothingFloor | null>(null);
+  // 피팅 회전판 안내(들어갈 때마다 보이고, 한 번 돌리면 사라진다)
+  const [rotateHint, setRotateHint] = useState(false);
   // 옷집 계산대 장바구니 창과 주문 중
   const [cartOpen, setCartOpen] = useState(false);
   const [buying, setBuying] = useState(false);
@@ -1218,6 +1220,7 @@ export default function Lobby3dScreen({
             setClothingCurtainClosed(fitting.floor);
             setCurtainFloor(fitting.floor);
             setFittingFocus({ x: room.inside.x, z: room.inside.z });
+            setRotateHint(true);
             setFittingLook(fitting.base);
           } else fittingRef.current = null;
         } else if (fitting.phase === "walk-out") fittingRef.current = null;
@@ -2122,6 +2125,14 @@ export default function Lobby3dScreen({
         onOutfit={(outfitId) => setFittingLook((current) => (current ? { ...current, ...outfitPieces(outfitId, clothingDisplayed()) } : current))}
         onCancel={() => leaveFitting(null)}
         onFinish={() => leaveFitting(fittingLook)}
+        showRotateHint={rotateHint}
+        onRotate={(delta) => {
+          // 오른쪽으로 끌면 얼굴이 화면 오른쪽으로 돈다(회전판을 손으로 미는 쪽)
+          if (fittingRef.current?.phase !== "inside") return;
+          sim.turnBy(delta);
+          setRotateHint(false);
+          syncView();
+        }}
       />
       <ClothingProductSheet
         productId={clothingFloorOf(area) && fittingLook === null && !cartOpen ? clothingSelected : null}

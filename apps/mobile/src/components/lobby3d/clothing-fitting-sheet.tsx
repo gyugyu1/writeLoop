@@ -1,5 +1,5 @@
-import { useSyncExternalStore } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMemo, useRef, useSyncExternalStore } from "react";
+import { Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import LobbySheet from "@/components/home/lobby-sheet";
 import { catalogItem, useItemCatalog } from "@/lib/item-catalog-store";
 import { useItemFiles } from "@/lib/item-files";
@@ -97,16 +97,46 @@ interface ClothingFittingSheetProps {
   onOutfit: (outfitId: string) => void;
   onCancel: () => void;
   onFinish: () => void;
+  /** 바깥 화면(라룹이)을 옆으로 끌 때: 돌릴 각도(라디안). 화면 폭만큼 끌면 한 바퀴. */
+  onRotate?: (delta: number) => void;
+  /** 돌려 보라는 안내를 보일지(처음 들어가 아직 돌리지 않았을 때). */
+  showRotateHint?: boolean;
 }
 
-export default function ClothingFittingSheet({ visible, look, owned, onWear, onOutfit, onCancel, onFinish }: ClothingFittingSheetProps) {
+export default function ClothingFittingSheet({ visible, look, owned, onWear, onOutfit, onCancel, onFinish, onRotate, showRotateHint = false }: ClothingFittingSheetProps) {
+  // 회전판: 바깥 화면을 옆으로 끈 거리만큼 라룹이를 돌린다(누르기만 해서는 닫히지 않는다)
+  const { width } = useWindowDimensions();
+  const rotateRef = useRef(onRotate);
+  rotateRef.current = onRotate;
+  const widthRef = useRef(width);
+  widthRef.current = width;
+  const lastX = useRef(0);
+  const responder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (event) => {
+          lastX.current = event.nativeEvent.pageX;
+        },
+        onPanResponderMove: (event) => {
+          // 손가락이 지난번보다 옆으로 간 만큼 돌린다
+          const x = event.nativeEvent.pageX;
+          const step = x - lastX.current;
+          lastX.current = x;
+          if (step !== 0) rotateRef.current?.((step / Math.max(1, widthRef.current)) * Math.PI * 2);
+        }
+      }),
+    []
+  );
   useItemCatalog();
   // 아이콘 그림을 받으면 다시 그린다
   useItemFiles();
   const displayed = useSyncExternalStore(subscribeClothingDisplay, clothingDisplayed, clothingDisplayed);
   const items = fittingItems(displayed, owned);
   return (
-    <LobbySheet visible={visible} title="피팅룸" onClose={onCancel} maxHeight="46%" dimBackdrop={false}>
+    <LobbySheet visible={visible} title="피팅룸" onClose={onCancel} maxHeight="46%" dimBackdrop={false} backdropHandlers={responder.panHandlers}>
+      {showRotateHint ? <Text style={styles.hint}>옆으로 밀어 돌려 보세요</Text> : null}
       <View style={styles.outfits}>
         {CLOTHING_OUTFITS.map((outfit) => (
           <Pressable key={outfit.id} accessibilityRole="button" style={styles.outfit} onPress={() => onOutfit(outfit.id)}>
@@ -166,6 +196,11 @@ export default function ClothingFittingSheet({ visible, look, owned, onWear, onO
 }
 
 const styles = StyleSheet.create({
+  hint: {
+    paddingHorizontal: 16,
+    fontSize: 13,
+    color: "#7A6655"
+  },
   outfits: {
     flexDirection: "row",
     flexWrap: "wrap",

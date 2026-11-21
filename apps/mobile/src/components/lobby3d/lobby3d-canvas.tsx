@@ -25,6 +25,7 @@ import {
 import { VILLAGE_FOUNTAIN, VILLAGE_PLACES } from "@/lib/lobby3d/village";
 import { SHOP_LABEL_POINTS, type ShopPlaceId } from "@/lib/lobby3d/shop";
 import { CLOTHING_LABEL_POINTS, CLOTHING_PLACE_IDS, type ClothingFloor, type ClothingPlaceId } from "@/lib/lobby3d/clothing-shop";
+import { clothingProduct } from "@/lib/lobby3d/clothing-stock";
 import { prefetchShopFiles, shopProductFiles } from "@/lib/lobby3d/shop-files";
 import { useItemCatalog } from "@/lib/item-catalog-store";
 import { useItemFiles } from "@/lib/item-files";
@@ -105,7 +106,12 @@ export interface Lobby3dCanvasProps {
    * 매 프레임 말풍선 꼬리가 닿을 화면 좌표와 장소 이름표 화면 좌표. 화면이 다시 그리지 않고 옮겨,
    * 말풍선·이름표가 라이트루프와 카메라를 바로 따라간다.
    */
-  onOverlayFrame?: (bubble: { x: number; y: number }, labels: Partial<Record<PlaceId, { x: number; y: number }>>) => void;
+  onOverlayFrame?: (
+    bubble: { x: number; y: number },
+    labels: Partial<Record<PlaceId, { x: number; y: number }>>,
+    /** 옷집에서 선택한 상품의 이름표 자리(없으면 null). */
+    productLabel?: { x: number; y: number } | null
+  ) => void;
   /** 화면이 다른 화면 아래에 깔려 있을 때처럼 그리기를 멈출 때. */
   paused?: boolean;
   /** 지금 시각의 햇빛·하루의 때·계절(daylightAt). 바뀌면 방 색감·창문 빛·천장 조명·창밖이 부드럽게 따라간다. */
@@ -140,6 +146,8 @@ export interface Lobby3dCanvasProps {
   onClothingReady?: () => void;
   /** 옷집 층 모델을 불러오지 못했을 때. */
   onClothingFailed?: () => void;
+  /** 옷집에서 선택한 진열 상품(그 진열대 명패를 보이고, 이름표 자리를 onOverlayFrame으로 알린다). */
+  clothingSelected?: string | null;
   /** 라룹이가 입은 착용 아이템(캐릭터 꾸미기 기술 시험, 개발 화면). */
   wear?: WearState;
   /** 부위 일곱마다 입은 아이템 종류(⑤). 없으면 wear의 넷을 기본 아이템으로 그린다. */
@@ -881,6 +889,7 @@ function Scene({
   onShopFailed,
   onClothingReady,
   onClothingFailed,
+  clothingSelected = null,
   wear,
   look,
   pickRef
@@ -952,6 +961,9 @@ function Scene({
   const shopPick = useRef<THREE.Object3D[]>([]);
   // 옷집 지금 층의 누르기 대상과 장소 이름표 자리
   const clothingPick = useRef<THREE.Object3D[]>([]);
+  const clothingBuilt = useRef<ClothingModule.BuiltClothingFloor | null>(null);
+  const clothingSelectedRef = useRef<string | null>(clothingSelected);
+  clothingSelectedRef.current = clothingSelected;
   const clothingLabels = useMemo(
     () =>
       Object.fromEntries(
@@ -1066,6 +1078,10 @@ function Scene({
         const targets: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...clothingPick.current];
         const hit = raycaster.intersectObjects(targets, true)[0];
         if (hit && (hit.object.userData as { isCharacter?: boolean }).isCharacter) return { point: floorPoint(), mark: null, onCharacter: true };
+        // 진열 상품: 그 상품의 서는 자리로 걸어간다(누르고 있어도 끌기가 되지 않게 물체를 누른 것으로 본다)
+        const productId = (hit?.object.userData as ClothingModule.ClothingPickData | undefined)?.clothingProduct;
+        const product = productId ? clothingProduct(productId) : undefined;
+        if (product) return { point: { ...product.approach }, mark: null, onCharacter: false, onScenery: true, building: null, product: product.id };
         const place = (hit?.object.userData as ShopModule.ShopPickData | undefined)?.shopPlace ?? null;
         if (place) return { point: floorPoint(), mark: place, onCharacter: false };
         if (hit) return { point: { x: hit.point.x, z: hit.point.z }, mark: null, onCharacter: false, onScenery: true, building: null };
@@ -1351,7 +1367,14 @@ function Scene({
         if (point) labels[id] = toScreen(point);
       }
     }
-    onOverlayFrame?.(bubble, labels);
+    // 옷집에서 선택한 상품의 이름표 자리(그 진열대 textAnchor). 이 층에 없거나 화면 뒤면 null
+    let productLabel: { x: number; y: number } | null = null;
+    const selectedId = clothingSelectedRef.current;
+    if (selectedId && clothingFloorOf(areaRef.current)) {
+      const point = clothingBuilt.current?.textAnchorPoint(selectedId) ?? null;
+      if (point && point.clone().project(camera).z < 1) productLabel = toScreen(point);
+    }
+    onOverlayFrame?.(bubble, labels, productLabel);
 
     // 초당 프레임 수, 말풍선·이름표 위치(초당 약 15번 보낸다)
     const f = fps.current;
@@ -1425,6 +1448,8 @@ function Scene({
           floor={clothingFloorOf(area)!}
           daylight={daylightState}
           pickTargets={clothingPick}
+          builtRef={clothingBuilt}
+          selected={clothingSelected}
           onReady={onClothingReady}
           onFailed={onClothingFailed}
         />
@@ -1551,12 +1576,16 @@ function ClothingLayer({
   floor,
   daylight,
   pickTargets,
+  builtRef,
+  selected,
   onReady,
   onFailed
 }: {
   floor: ClothingFloor;
   daylight: DaylightState;
   pickTargets: MutableRefObject<THREE.Object3D[]>;
+  builtRef: MutableRefObject<ClothingModule.BuiltClothingFloor | null>;
+  selected: string | null;
   onReady?: () => void;
   onFailed?: () => void;
 }) {
@@ -1565,7 +1594,7 @@ function ClothingLayer({
   return (
     <clothing.ClothingFloorErrorBoundary floor={floor} onFailed={onFailed}>
       <Suspense fallback={null}>
-        <clothing.ClothingFloorModel floor={floor} daylight={daylight} pickTargets={pickTargets} />
+        <clothing.ClothingFloorModel floor={floor} daylight={daylight} pickTargets={pickTargets} selected={selected} builtRef={builtRef} />
         <VillageWarmUp onReady={onReady ?? noop} />
       </Suspense>
     </clothing.ClothingFloorErrorBoundary>

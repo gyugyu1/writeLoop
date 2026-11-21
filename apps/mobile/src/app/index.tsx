@@ -93,6 +93,8 @@ export default function HomeScreen() {
   const loopBalanceRequest = useRef(0);
   // 라룹이가 입은 것(서버에 저장된 입은 아이템의 응답 값). 입은 것을 모르면(불러오기 전·실패·손님) null이다
   const [lobbyEquipped, setLobbyEquipped] = useState<{ value: Wardrobe["equipped"] | null | undefined } | null>(null);
+  // 가진 옷(옷장의 아이템 종류). 로비의 옷집이 가진 옷을 가린다. 모르면 null(가진 옷 없음으로 본다)
+  const [lobbyOwned, setLobbyOwned] = useState<readonly string[] | null>(null);
   // 입힐 것은 받은 아이템 목록으로 고르므로(서버가 더한 옷의 부위 등) 목록이 바뀌면 다시 만든다.
   // lobbyWear: 불러오지 못했거나 손님이면 아무것도 입지 않는다. lobbyLook: 부위 일곱마다 입은 아이템(모델·색을 고른다).
   // 입은 것을 모르면 null이라 라룹이는 기본 모습(고글)으로 보인다
@@ -141,9 +143,11 @@ export default function HomeScreen() {
       if (wardrobeUserId.current !== homeUserId) {
         wardrobeUserId.current = homeUserId;
         setLobbyEquipped(null);
+        setLobbyOwned(null);
       }
       if (homeUserId === null) {
         setLobbyEquipped(null);
+        setLobbyOwned(null);
         return;
       }
       Promise.resolve()
@@ -152,11 +156,13 @@ export default function HomeScreen() {
           if (request === wardrobeRequest.current) {
             // 옷장을 받지 못했으면(로그인이 풀림 등 null) 입은 것을 모르는 것으로 둔다(라룹이 기본 모습대로 고글을 쓴다)
             setLobbyEquipped(wardrobe ? { value: wardrobe.equipped } : null);
+            setLobbyOwned(wardrobe ? wardrobe.items.map((item) => item.type) : null);
           }
         })
         .catch(() => {
           if (request === wardrobeRequest.current) {
             setLobbyEquipped(null);
+            setLobbyOwned(null);
           }
         });
     }, [homeUserId])
@@ -166,6 +172,7 @@ export default function HomeScreen() {
   const handleClosetSaved = useCallback((wardrobe: Wardrobe) => {
     wardrobeRequest.current += 1;
     setLobbyEquipped({ value: wardrobe.equipped });
+    setLobbyOwned(wardrobe.items.map((item) => item.type));
     setIsClosetOpen(false);
   }, []);
   const handleShopBalance = useCallback((balance: number) => {
@@ -174,8 +181,9 @@ export default function HomeScreen() {
   }, []);
   const handleShopOrdered = useCallback(
     (result: HomeShoppingAnyOrderResult) => {
-      // 옷 주문은 방 배치를 바꾸지 않는다(배치가 null)
+      // 옷 주문은 방 배치를 바꾸지 않는다(배치가 null). 옷 주문 뒤 옷장을 받았으면 가진 옷을 맞춘다
       if (result.layout) applyLobbyLayoutForHome(result.layout);
+      else if (result.wardrobe) setLobbyOwned(result.wardrobe.items.map((item) => item.type));
     },
     [applyLobbyLayoutForHome]
   );
@@ -187,6 +195,7 @@ export default function HomeScreen() {
   const handleShopWore = useCallback((wardrobe: Wardrobe) => {
     wardrobeRequest.current += 1;
     setLobbyEquipped({ value: wardrobe.equipped });
+    setLobbyOwned(wardrobe.items.map((item) => item.type));
     setIsShopOpen(false);
   }, []);
   // 로비 편집 모드('꾸미기') 동안은 아래 탭바를 숨긴다
@@ -525,6 +534,7 @@ export default function HomeScreen() {
           look={lobbyLook}
           onEnterCloset={() => setIsClosetOpen(true)}
           signedIn={currentUser !== null}
+          ownedItems={lobbyOwned}
         />
       </View>
       {isEditingLobby ? null : <MobileNavBar activeTab="home" />}

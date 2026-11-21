@@ -65,6 +65,8 @@ export interface PointerHit {
   onScenery?: boolean;
   /** 마을에서 누른 건물이 장소가 있는 건물이면 그 장소. 톡하면 그 장소의 문 앞으로 간다(이름표를 누른 것과 같다). */
   building?: PlaceId | null;
+  /** 옷집에서 누른 진열 상품(상품 ID). 있으면 point는 그 상품의 서는 자리다. */
+  product?: string | null;
   /** 누른 곳에 있는 가구(배치한 가구의 id, 딸린 의자는 그 책상). 편집 모드에서 쓴다. */
   piece?: string | null;
   /** 누른 곳이 벽 위면 그 벽과 벽을 따라간 자리. 편집 모드에서 벽 가구를 끌 때 쓴다(없으면 바닥 점에서 가장 가까운 벽으로 본다). */
@@ -1086,6 +1088,11 @@ export class LobbySim {
   /** 들어가기 동작 중에 온 인사의 동작. 제자리로 돌아온 뒤 한다. */
   private greetAfterScene: ActionType | null = null;
   private path: FloorPoint[] = [];
+
+  /** 걸어갈 길이 남아 있는지(누른 곳으로 가는 중). */
+  get walking(): boolean {
+    return this.path.length > 0;
+  }
   private target: PlaceId | null = null;
   private goalHeading: number | null = null;
   private dragPoint: FloorPoint | null = null;

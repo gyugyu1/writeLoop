@@ -51,6 +51,17 @@ import {
 } from "@/lib/lobby3d/shop";
 import { retryShopFiles } from "@/lib/lobby3d/shop-files";
 import ShopDisplaySheet from "@/components/lobby3d/shop-display-sheet";
+import ClothingProductSheet, { clothingCatalogPrice } from "@/components/lobby3d/clothing-product-sheet";
+import {
+  CLOTHING_PRODUCTS,
+  clothingCart,
+  clothingDisplayed,
+  clothingPriceText,
+  clothingProduct,
+  setClothingDisplayed,
+  subscribeClothingCart,
+  subscribeClothingDisplay
+} from "@/lib/lobby3d/clothing-stock";
 import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type { WardrobeSlot } from "@/lib/types";
 import { daylightAt } from "@/lib/lobby3d/daylight";
@@ -97,6 +108,18 @@ const CLOTHING_LOADING = "옷집에 들어가는 중…";
 const CLOTHING_FAILED = "옷집에 들어가지 못했어요";
 /** 옷집 층을 옮기지 못했을 때(가려던 층마다). */
 const CLOTHING_FLOOR_FAILED: Record<ClothingFloor, string> = { 1: "1층으로 가지 못했어요", 2: "2층으로 가지 못했어요" };
+
+/** 옷집 상품 이름표의 폭(px). */
+const PRODUCT_LABEL_WIDTH = 180;
+
+/** 옷집 상품 이름표 글: "이름 · 80룹"(미등록 "판매 준비 중", 가진 옷 "가진 옷", 가격을 아직 모르면 이름만). */
+function productLabelText(id: string, owned: ReadonlySet<string>): string {
+  const product = clothingProduct(id);
+  if (!product) return "";
+  const price = clothingCatalogPrice(id);
+  const text = clothingPriceText(product, price, Boolean(product.catalogId && owned.has(product.catalogId)));
+  return text ? `${product.name} · ${text}` : product.name;
+}
 
 /** 시험판의 구역 버튼. */
 /** 가구점은 마을 이름표 "가구점"과 헷갈리지 않게 "가구점 실내"로 쓴다. */
@@ -481,6 +504,8 @@ export interface Lobby3dScreenProps {
   onEnterCloset?: () => void;
   /** 로그인했는지. 손님이면 옷장 말풍선이 로그인 안내만 하고 버튼이 없다. 주지 않으면 로그인한 것으로 본다(개발 화면). */
   signedIn?: boolean;
+  /** 홈: 가진 옷(옷장의 아이템 종류). 옷집이 가진 옷을 가린다. 주지 않거나 null이면 가진 옷이 없는 것으로 본다(개발 화면 시험판은 늘 없음). */
+  ownedItems?: readonly string[] | null;
 }
 
 /** 꾸미기 보관함 줄의 가구 한 칸: 가구 모양 그림(없으면 이름 첫 글자)과 이름. 보관함은 가구 하나마다 한 칸이다. */
@@ -526,7 +551,8 @@ export default function Lobby3dScreen({
   wear: wearProp,
   look: lookProp = null,
   onEnterCloset,
-  signedIn = true
+  signedIn = true,
+  ownedItems = null
 }: Lobby3dScreenProps = {}) {
   // 옷장 말풍선(로그인 안내인지)은 그리기 전에 맞춘다
   setClosetSignedIn(signedIn);
@@ -584,6 +610,16 @@ export default function Lobby3dScreen({
   };
   // 가구점 진열대의 진열 목록 시트(연 진열대 번호 0~2, 닫혀 있으면 null). 연 동안 로비를 누르지 못한다
   const [displaySlot, setDisplaySlot] = useState<number | null>(null);
+  // 옷집: 선택한 진열 상품(이름표·명패), 연 상품 창, 상품을 누르고 걸어가는 중인 상품
+  const [clothingSelected, setClothingSelected] = useState<string | null>(null);
+  const [clothingSheet, setClothingSheet] = useState<string | null>(null);
+  const clothingSheetOpenRef = useRef(false);
+  clothingSheetOpenRef.current = clothingSheet !== null;
+  const productDownRef = useRef<string | null>(null);
+  const pendingProductRef = useRef<string | null>(null);
+  const ownedSet = useMemo(() => new Set(devPanel ? [] : ownedItems ?? []), [devPanel, ownedItems]);
+  const clothingDisplayedNow = useSyncExternalStore(subscribeClothingDisplay, clothingDisplayed, clothingDisplayed);
+  const clothingCartNow = useSyncExternalStore(subscribeClothingCart, clothingCart, clothingCart);
   const displayOpenRef = useRef(false);
   displayOpenRef.current = displaySlot !== null;
   useEffect(
@@ -618,6 +654,18 @@ export default function Lobby3dScreen({
     setVillageBgmArea(area === "village" || area === "shop" || clothingFloorOf(area) !== null, daylight.phase);
   }, [area, daylight.phase]);
   useEffect(() => () => setVillageBgmArea(false, "day"), []);
+  // 옷집: 층을 옮기거나 나가면 선택한 상품과 상품 창, 걸어가던 상품을 잊는다
+  useEffect(() => {
+    setClothingSelected(null);
+    setClothingSheet(null);
+    pendingProductRef.current = null;
+  }, [area]);
+  // 진열을 해제한 상품이면 선택과 상품 창을 거둔다
+  useEffect(() => {
+    if (clothingSelected && !clothingDisplayedNow[clothingSelected]) setClothingSelected(null);
+    if (clothingSheet && !clothingDisplayedNow[clothingSheet]) setClothingSheet(null);
+    if (pendingProductRef.current && !clothingDisplayedNow[pendingProductRef.current]) pendingProductRef.current = null;
+  }, [clothingDisplayedNow, clothingSelected, clothingSheet]);
   // 마을에 나가면 가구점 진열 상품 모델 셋을 뒤에서 미리 받기 시작한다(기기에 있으면 받지 않고, 이번 실행에서 실패한 것은 다시 받아 본다. 방에 있는 동안은 받지 않는다)
   useEffect(() => {
     if (area === "village") retryShopFiles();
@@ -837,8 +885,10 @@ export default function Lobby3dScreen({
   screenWidthRef.current = screenWidth;
   // 장소 이름표 자리도 같은 까닭으로 매 프레임 값만 바꾼다(카메라가 움직여도 화면 전체를 다시 그리지 않는다)
   const labelPos = useRef(placeValues(() => ({ left: nativeValue(0), top: nativeValue(0) }))).current;
+  // 옷집에서 선택한 상품의 화면 이름표 자리(그 진열대 textAnchor를 따라간다)
+  const productLabelPos = useRef({ left: nativeValue(0), top: nativeValue(0), shown: nativeValue(0) }).current;
   const onOverlayFrame = useCallback(
-    (bubble: { x: number; y: number }, labels: Partial<Record<PlaceId, { x: number; y: number }>>) => {
+    (bubble: { x: number; y: number }, labels: Partial<Record<PlaceId, { x: number; y: number }>>, productLabel?: { x: number; y: number } | null) => {
       const left = Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8));
       const top = Math.max(120, bubble.y);
       const movedLeft = send(bubbleLeft, left, 0.5);
@@ -859,8 +909,13 @@ export default function Lobby3dScreen({
         send(labelPos[id].left, at.x, 0.5);
         send(labelPos[id].top, at.y, 0.5);
       }
+      if (productLabel) {
+        send(productLabelPos.left, productLabel.x, 0.5);
+        send(productLabelPos.top, productLabel.y, 0.5);
+      }
+      send(productLabelPos.shown, productLabel ? 1 : 0, 0);
     },
-    [bubbleLeft, bubbleTop, labelPos, send, lastSent, settleStore]
+    [bubbleLeft, bubbleTop, labelPos, productLabelPos, send, lastSent, settleStore]
   );
 
   /** 스냅숏대로 장소 안내 말풍선·인사 말풍선·메뉴 강조의 보임을 네이티브 쪽에서 바로 바꾼다. */
@@ -1077,6 +1132,16 @@ export default function Lobby3dScreen({
       const entered = sim.consumeSceneEntered();
       if (entered && !enterPlaceRef.current(entered)) sim.endScene();
       const snap = sim.snapshot(Date.now());
+      // 옷집: 누른 진열 상품 앞에 멈춰 섰으면 그 상품을 선택하고 상품 창을 연다(못 가고 멈췄으면 잊는다)
+      const pending = pendingProductRef.current;
+      if (pending && !sim.walking && !snap.moving) {
+        pendingProductRef.current = null;
+        const product = clothingProduct(pending);
+        if (product && Math.hypot(snap.x - product.approach.x, snap.z - product.approach.z) <= 0.1) {
+          setClothingSelected(pending);
+          setClothingSheet(pending);
+        }
+      }
       applyOverlay(snap);
       syncView(snap);
     },
@@ -1115,17 +1180,26 @@ export default function Lobby3dScreen({
       }
       // 시트를 연 동안에는 로비를 누르지 못한다. 막는 중에 누른 것이 남지 않게 지금 누르기도 거둔다.
       // 시트를 연 동안과 '들어가기' 동작을 하는 동안에는 로비를 누르지 못한다
-      if (inputBlockedRef.current || sim.scene || travelingRef.current || displayOpenRef.current) {
+      if (inputBlockedRef.current || sim.scene || travelingRef.current || displayOpenRef.current || clothingSheetOpenRef.current) {
         if (phase !== "move") sim.pointerCancel();
         return;
       }
       const now = Date.now();
       if (phase === "down") {
         setCameraOpen(false);
+        // 새로 누르면 걸어가던 상품은 잊는다. 진열 상품을 눌렀으면 톡으로 끝날 때 그 상품 앞으로 간다
+        pendingProductRef.current = null;
+        productDownRef.current = hit?.product ?? null;
         sim.pointerDown(hit ?? EMPTY_HIT, x, y, now);
       } else if (phase === "move") sim.pointerMove(hit ?? EMPTY_HIT, x, y);
-      else if (phase === "up") sim.pointerUp(now);
-      else sim.pointerCancel();
+      else if (phase === "up") {
+        const result = sim.pointerUp(now);
+        pendingProductRef.current = result === "walk" ? productDownRef.current : null;
+        productDownRef.current = null;
+      } else {
+        productDownRef.current = null;
+        sim.pointerCancel();
+      }
       syncView();
     },
     [sim, syncView, showToast, refreshEdit]
@@ -1376,6 +1450,7 @@ export default function Lobby3dScreen({
         onShopFailed={onShopFailed}
         onClothingReady={onClothingReady}
         onClothingFailed={onClothingFailed}
+        clothingSelected={clothingSelected}
         wear={wear}
         look={look}
       />
@@ -1414,6 +1489,24 @@ export default function Lobby3dScreen({
           <Text style={styles.labelText}>{markInfo(id).label}</Text>
         </Animated.View>
       ))}
+
+      {/* 옷집에서 선택한 상품의 이름표: 그 진열대의 이름표 자리(textAnchor)를 따라간다. 이름과 가격 글(판매 준비 중·가진 옷) */}
+      {editing || !roomShown || returning || !clothingSelected || !clothingFloorOf(area) ? null : (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.productLabel,
+            {
+              opacity: productLabelPos.shown,
+              transform: [{ translateX: productLabelPos.left }, { translateY: productLabelPos.top }, { translateX: -PRODUCT_LABEL_WIDTH / 2 }, { translateY: -20 }]
+            }
+          ]}
+        >
+          <Text style={styles.productLabelText} numberOfLines={2}>
+            {productLabelText(clothingSelected, ownedSet)}
+          </Text>
+        </Animated.View>
+      )}
 
       {/* 장소 안내 말풍선과 인사·짧은 말 말풍선. 편집 모드, 방이 보이기 전, '완료' 뒤 로딩 표시가 떠 있는 동안에는 숨긴다 */}
       <LobbyBubbles
@@ -1478,6 +1571,12 @@ export default function Lobby3dScreen({
               <Pressable accessibilityRole="button" style={styles.decorButton} onPress={onOpenShop}>
                 <Text style={styles.decorText}>홈쇼핑</Text>
               </Pressable>
+            ) : null}
+            {/* 옷집 안에서는 장바구니에 담은 개수(0이면 숨김) */}
+            {clothingFloorOf(area) && clothingCartNow.length > 0 ? (
+              <View style={styles.chip} accessibilityLabel={`장바구니 ${clothingCartNow.length}`}>
+                <Text style={styles.chipText}>장바구니 {clothingCartNow.length}</Text>
+              </View>
             ) : null}
             {onSaveLayout && onOpenShop && area === "room" && shopBalance !== null ? (
               <Pressable
@@ -1608,6 +1707,26 @@ export default function Lobby3dScreen({
                   <Text style={[styles.stepText, area === next && styles.stepTextOn]}>{AREA_LABELS[next]}</Text>
                 </Pressable>
               ))}
+            </View>
+            <Text style={styles.panelLabel}>옷집 진열 시험</Text>
+            <View style={[styles.row, styles.rowWrap]}>
+              {CLOTHING_PRODUCTS.map((product) => {
+                const on = clothingDisplayedNow[product.id] === true;
+                return (
+                  <Pressable
+                    key={product.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${product.name} 진열`}
+                    accessibilityState={{ selected: on }}
+                    style={[styles.stepButton, on && styles.stepButtonOn]}
+                    onPress={() => setClothingDisplayed(product.id, !on)}
+                  >
+                    <Text style={[styles.stepText, on && styles.stepTextOn]}>
+                      {product.floor}층 {product.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
             <Text style={styles.panelLabel}>가구점 품절 시험</Text>
             <View style={[styles.row, styles.rowWrap]}>
@@ -1790,6 +1909,15 @@ export default function Lobby3dScreen({
       </Animated.View>
       {/* 가구점 진열대의 진열 목록. 고르면 그 진열대만 바뀌고 닫힌다 */}
       <ShopDisplaySheet slot={displaySlot} onClose={() => setDisplaySlot(null)} />
+      <ClothingProductSheet
+        productId={clothingFloorOf(area) ? clothingSheet : null}
+        owned={ownedSet}
+        onClose={() => setClothingSheet(null)}
+        onAdded={() => {
+          setClothingSheet(null);
+          showToast("장바구니에 담았어요");
+        }}
+      />
     </View>
   );
 }
@@ -1835,6 +1963,25 @@ function FpsText({
 const LobbyCanvas = memo(Lobby3dCanvas);
 
 const styles = StyleSheet.create({
+  productLabel: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: PRODUCT_LABEL_WIDTH,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 252, 247, 0.95)",
+    borderWidth: 1,
+    borderColor: "#E6D7C7",
+    alignItems: "center"
+  },
+  productLabelText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#3B2A1E",
+    textAlign: "center"
+  },
   travelShade: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "#000000",

@@ -182,3 +182,81 @@ it("2층 모델을 읽지 못하면 1층 계단 자리에 남고 '2층으로 가
   expect(dist(pos(), CLOTHING_MARKS.clothingUp.approach[0])).toBeLessThan(1e-6);
   expect(screen.queryAllByText("2층으로 가지 못했어요", ALL)).toHaveLength(1);
 });
+
+// 작업 133 ②: 진열 상품을 누르면 그 앞으로 걸어가 상품 창이 열리고, 담으면 '장바구니 N'. 미등록은 담을 수 없다
+describe("옷집 진열 상품 선택과 장바구니", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const stock = require("@/lib/lobby3d/clothing-stock") as typeof import("@/lib/lobby3d/clothing-stock");
+  const store = require("@/lib/item-catalog-store") as typeof import("@/lib/item-catalog-store");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+
+  beforeEach(() => {
+    store.setItemCatalog({
+      version: "test-clothing",
+      items: [
+        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: null, assets: null }
+      ]
+    });
+  });
+  afterEach(() => stock.resetClothingShop());
+
+  async function tapProduct(id: string) {
+    const product = stock.clothingProduct(id)!;
+    await act(async () => {
+      canvas().onPointer("down", { point: product.approach, mark: null, onCharacter: false, onScenery: true, building: null, product: id }, 100, 100);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(30);
+      canvas().onPointer("up", null, 100, 100);
+    });
+    await frames(20);
+  }
+
+  it("등록된 상품: 걸어가 상품 창이 열리고 이름표에 이름·가격, 담으면 안내와 '장바구니 1', 다시 열면 막힘", async () => {
+    await toClothingDoor();
+    await press("들어가기");
+    await frames(1.2);
+    await tapProduct("capOrange");
+    expect(dist(pos(), stock.clothingProduct("capOrange")!.approach)).toBeLessThan(0.1);
+    expect(canvas().clothingSelected).toBe("capOrange");
+    expect(screen.queryAllByText("주황 야구모자 · 60룹", ALL)).toHaveLength(1);
+    expect(screen.queryAllByText("60룹", ALL)).toHaveLength(1);
+    await press("장바구니 담기");
+    expect(stock.clothingCart()).toEqual(["capOrange"]);
+    expect(screen.queryAllByText("장바구니에 담았어요", ALL).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("장바구니 1", ALL)).toHaveLength(1);
+    // 다른 층에 갔다 와도 장바구니는 그대로이고 선택은 풀린다
+    await walkTo(CLOTHING_MARKS.clothingUp.approach[0], "clothingUp");
+    await press("올라가기");
+    await frames(1.2);
+    expect(canvas().clothingSelected).toBeNull();
+    expect(screen.queryAllByText("장바구니 1", ALL)).toHaveLength(1);
+  });
+
+  it("미등록 상품은 '판매 준비 중'이고 담을 수 없다", async () => {
+    await toClothingDoor();
+    await press("들어가기");
+    await frames(1.2);
+    await tapProduct("wear-face-honey-panto");
+    expect(screen.queryAllByText("허니 팬토 선글라스 · 판매 준비 중", ALL)).toHaveLength(1);
+    expect(screen.queryAllByText("판매 준비 중인 옷이에요", ALL)).toHaveLength(1);
+    await press("장바구니 담기");
+    expect(stock.clothingCart()).toEqual([]);
+  });
+
+  it("진열을 해제하면 선택·상품 창이 닫히고 장바구니에서 빠진다", async () => {
+    await toClothingDoor();
+    await press("들어가기");
+    await frames(1.2);
+    await tapProduct("capOrange");
+    await press("장바구니 담기");
+    await tapProduct("capOrange");
+    expect(canvas().clothingSelected).toBe("capOrange");
+    await act(async () => {
+      stock.setClothingDisplayed("capOrange", false);
+    });
+    expect(canvas().clothingSelected).toBeNull();
+    expect(stock.clothingCart()).toEqual([]);
+    expect(screen.queryAllByText("장바구니 1", ALL)).toHaveLength(0);
+  });
+});

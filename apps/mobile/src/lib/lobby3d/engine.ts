@@ -15,6 +15,15 @@ import {
   shopProduct,
   type ShopPlaceId
 } from "./shop";
+import {
+  CLOTHING_BOUNDS,
+  CLOTHING_NODES,
+  CLOTHING_PLACE_IDS,
+  CLOTHING_SHOP,
+  CLOTHING_SOLID_CELLS,
+  type ClothingFloor,
+  type ClothingPlaceId
+} from "./clothing-shop";
 
 // 3D 로비(라이트루프의 방)의 동작 규칙. 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 // 좌표: 바닥 한 칸 = 1. x는 왼쪽→오른쪽(0..width), z는 뒷벽→앞(0..depth). 높이는 y.
@@ -26,11 +35,18 @@ export type MarkId = "board" | "window" | "desk" | "door" | "bookcase";
  * 방의 장소 다섯, 방에 놓인 옷장마다의 장소(ClosetPlaceId), 마을의 장소 넷(건물 문 앞).
  * 지금 구역(currentArea)의 장소만 쓴다(activePlaceIds).
  */
-export type PlaceId = MarkId | ClosetPlaceId | VillageBuildingId | ShopPlaceId;
-export type { ClosetPlaceId, ShopPlaceId };
+export type PlaceId = MarkId | ClosetPlaceId | VillageBuildingId | ShopPlaceId | ClothingPlaceId;
+export type { ClosetPlaceId, ShopPlaceId, ClothingPlaceId };
 export { isClosetPlaceId };
-/** 로비의 구역: 라룹이 방, 바깥 마을, 마을 가구점 실내. */
-export type LobbyArea = "room" | "village" | "shop";
+/** 로비의 구역: 라룹이 방, 바깥 마을, 마을 가구점 실내, 마을 옷집 1층·2층(층마다 한 구역). */
+export type LobbyArea = "room" | "village" | "shop" | "clothing1" | "clothing2";
+
+/** 옷집 층 구역이면 그 층(아니면 null). */
+export function clothingFloorOf(area: LobbyArea): ClothingFloor | null {
+  if (area === "clothing1") return 1;
+  if (area === "clothing2") return 2;
+  return null;
+}
 export type ActionType = "wave" | "jump" | "hop" | "point" | "spin" | "look" | "poke";
 
 export interface FloorPoint {
@@ -137,7 +153,7 @@ export const MARKS: Record<MarkId, MarkInfo> = {
 const VILLAGE_PROMPTS: Record<VillageBuildingId, { prompt: string; buttonLabel: string }> = {
   home: { prompt: "집으로 들어갈까?", buttonLabel: "들어가기" },
   furnitureShop: { prompt: "가구점에 들어갈까?", buttonLabel: "들어가기" },
-  clothingShop: { prompt: "옷집은 곧 열려요", buttonLabel: "" }
+  clothingShop: { prompt: "옷집에 들어갈까?", buttonLabel: "들어가기" }
 };
 
 /** 마을의 장소(건물 문 앞). */
@@ -197,6 +213,39 @@ export const SHOP_MARKS: Record<ShopPlaceId, MarkInfo<ShopPlaceId>> = {
   >)
 };
 
+/** 마을 옷집 실내의 장소: 1층 출입문·2층 계단, 2층의 1층 계단. */
+export const CLOTHING_MARKS: Record<ClothingPlaceId, MarkInfo<ClothingPlaceId>> = {
+  clothingExit: {
+    id: "clothingExit",
+    label: "마을로",
+    faceTo: CLOTHING_NODES.exitTrigger,
+    approach: [{ x: CLOTHING_NODES.exitApproach.x, z: CLOTHING_NODES.exitApproach.z }],
+    prompt: "마을로 나갈까?",
+    buttonLabel: "나가기",
+    enterMessage: ""
+  },
+  clothingUp: {
+    id: "clothingUp",
+    label: "2층",
+    // 계단 아래에서 계단(−z) 쪽을 본다
+    faceTo: { x: CLOTHING_NODES.stairsUp.x, z: CLOTHING_NODES.stairsUp.z - 1 },
+    approach: [{ x: CLOTHING_NODES.stairsUp.x, z: CLOTHING_NODES.stairsUp.z }],
+    prompt: "2층으로 올라갈까?",
+    buttonLabel: "올라가기",
+    enterMessage: ""
+  },
+  clothingDown: {
+    id: "clothingDown",
+    label: "1층",
+    // 계단 위에서 계단(+z) 쪽을 본다
+    faceTo: { x: CLOTHING_NODES.stairsDown.x, z: CLOTHING_NODES.stairsDown.z + 1 },
+    approach: [{ x: CLOTHING_NODES.stairsDown.x, z: CLOTHING_NODES.stairsDown.z }],
+    prompt: "1층으로 내려갈까?",
+    buttonLabel: "내려가기",
+    enterMessage: ""
+  }
+};
+
 /** 옷장 말풍선(로그인했는지에 따라). 로그인하면 대사 없이 '들어가기' 버튼만(2026-11-13 사용자 결정), 손님은 버튼 없이 안내만 한다. */
 export const CLOSET_PROMPT = { prompt: "", buttonLabel: "들어가기" } as const;
 export const CLOSET_GUEST_PROMPT = { prompt: "로그인하면 라룹이 옷을\n갈아입힐 수 있어", buttonLabel: "" } as const;
@@ -231,6 +280,7 @@ export function hasPlaceBubble(id: PlaceId): boolean {
 export function markInfo(id: PlaceId): MarkInfo<PlaceId> {
   if (isClosetPlaceId(id)) return closetMarks.get(id) ?? MISSING_CLOSET;
   if (id in SHOP_MARKS) return SHOP_MARKS[id as ShopPlaceId];
+  if (id in CLOTHING_MARKS) return CLOTHING_MARKS[id as ClothingPlaceId];
   return id in VILLAGE_MARKS ? VILLAGE_MARKS[id as VillageBuildingId] : MARKS[id as MarkId];
 }
 
@@ -258,6 +308,8 @@ export function currentArea(): LobbyArea {
 /** 지금 구역의 장소들. */
 export function activePlaceIds(): readonly PlaceId[] {
   if (area === "shop") return SHOP_MARK_IDS;
+  const floor = clothingFloorOf(area);
+  if (floor) return CLOTHING_PLACE_IDS[floor];
   return area === "village" ? VILLAGE_MARK_IDS : roomPlaces;
 }
 
@@ -270,12 +322,15 @@ export type AreaSize = Pick<RoomSpec, "width" | "depth"> & { cell?: number };
 /** 지금 구역의 바닥 크기: 방이면 지금 방, 마을이면 마을, 가구점이면 실내. */
 function activeSize(): AreaSize {
   if (area === "shop") return SHOP;
+  if (clothingFloorOf(area)) return CLOTHING_SHOP;
   return area === "village" ? VILLAGE : currentRoom();
 }
 
 /** 지금 구역의 막힌 칸: 방이면 지금 배치의 가구, 마을이면 건물·소품·가장자리, 가구점이면 벽·계산대·선반·진열대. */
 function activeSolid(): ReadonlySet<string> {
   if (area === "shop") return SHOP_SOLID_CELLS;
+  const floor = clothingFloorOf(area);
+  if (floor) return CLOTHING_SOLID_CELLS[floor];
   return area === "village" ? VILLAGE_SOLID_TILES : solidTiles;
 }
 
@@ -584,7 +639,17 @@ export function findPath(
  */
 export function nearestOpenSpot(from: FloorPoint): FloorPoint | null {
   // 입구: 방은 밖으로 나가는 발판 안쪽, 마을은 라룹이 집 문 앞, 가구점은 출입문 안쪽
-  const entry = area === "village" ? VILLAGE_MARKS.home.approach : area === "shop" ? SHOP_MARKS.shopExit.approach : MARKS.door.approach;
+  const floor = clothingFloorOf(area);
+  const entry =
+    area === "village"
+      ? VILLAGE_MARKS.home.approach
+      : area === "shop"
+        ? SHOP_MARKS.shopExit.approach
+        : floor === 1
+          ? CLOTHING_MARKS.clothingExit.approach
+          : floor === 2
+            ? CLOTHING_MARKS.clothingDown.approach
+            : MARKS.door.approach;
   return firstOpenSpot(from, (spot) => findPath(spot, entry) !== null) ?? nearestFreeSpot(from);
 }
 
@@ -685,6 +750,8 @@ export const VILLAGE_BOUNDS = {
 /** 지금 구역의 끝 상자(카메라가 넘지 않는다). 가구점은 방과 같은 방식으로 실내 상자를 넘지 않는다. */
 export function activeBounds(): typeof ROOM_BOUNDS {
   if (area === "shop") return SHOP_BOUNDS;
+  const floor = clothingFloorOf(area);
+  if (floor) return CLOTHING_BOUNDS[floor];
   return area === "village" ? VILLAGE_BOUNDS : ROOM_BOUNDS;
 }
 
@@ -1330,7 +1397,7 @@ export class LobbySim {
     let goals: FloorPoint[];
     if (mark) goals = markInfo(mark).approach;
     else if (point && isFree(point.x, point.z)) goals = [point];
-    else if (point && (area === "village" || area === "shop")) {
+    else if (point && (area === "village" || area === "shop" || clothingFloorOf(area) !== null)) {
       const spot = nearestReachableSpot({ x: this.x, z: this.z }, point);
       if (!spot) return false;
       goals = [spot];

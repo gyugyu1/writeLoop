@@ -120,6 +120,9 @@ const CLOTHING_FAILED = "옷집에 들어가지 못했어요";
 /** 옷집 층을 옮기지 못했을 때(가려던 층마다). */
 const CLOTHING_FLOOR_FAILED: Record<ClothingFloor, string> = { 1: "1층으로 가지 못했어요", 2: "2층으로 가지 못했어요" };
 
+/** 진열대 앞 상호작용 칸이 뜨는 거리: 진열 상품의 서는 자리에서 이만큼 안(m). */
+const INTERACT_RADIUS = 0.9;
+
 /** 옷집 상품 이름표의 폭(px). */
 const PRODUCT_LABEL_WIDTH = 180;
 
@@ -639,10 +642,10 @@ export default function Lobby3dScreen({
   // 가구점 진열대의 진열 목록 시트(연 진열대 번호 0~2, 닫혀 있으면 null). 연 동안 로비를 누르지 못한다
   const [displaySlot, setDisplaySlot] = useState<number | null>(null);
   // 옷집: 선택한 진열 상품(이름표·명패), 연 상품 창, 상품을 누르고 걸어가는 중인 상품
+  // 진열대 앞 상호작용 칸의 상품(= 선택한 상품: 이름표·명패). 멈춰 서 있을 때 누른 상품(멀어질 때까지) 또는 가장 가까운 상품
   const [clothingSelected, setClothingSelected] = useState<string | null>(null);
-  const [clothingSheet, setClothingSheet] = useState<string | null>(null);
-  const clothingSheetOpenRef = useRef(false);
-  clothingSheetOpenRef.current = clothingSheet !== null;
+  const clothingSelectedRef = useRef<string | null>(null);
+  const pinnedProductRef = useRef<string | null>(null);
   // 옷집 피팅룸: 들어가는 중(walk-in)·안(inside)·나오는 중(walk-out)과 들어오기 전 착장, 피팅 중 임시 착장
   const fittingRef = useRef<{ floor: ClothingFloor; phase: "walk-in" | "inside" | "walk-out"; base: WearLook } | null>(null);
   const [curtainFloor, setCurtainFloor] = useState<ClothingFloor | null>(null);
@@ -693,7 +696,8 @@ export default function Lobby3dScreen({
   // 옷집: 층을 옮기거나 나가면 선택한 상품과 상품 창, 걸어가던 상품을 잊는다
   useEffect(() => {
     setClothingSelected(null);
-    setClothingSheet(null);
+    clothingSelectedRef.current = null;
+    pinnedProductRef.current = null;
     setCartOpen(false);
     pendingProductRef.current = null;
   }, [area]);
@@ -716,8 +720,11 @@ export default function Lobby3dScreen({
   useEffect(() => () => setClothingCurtainClosed(null), []);
   // 진열을 해제한 상품이면 선택과 상품 창을 거둔다
   useEffect(() => {
-    if (clothingSelected && !clothingDisplayedNow[clothingSelected]) setClothingSelected(null);
-    if (clothingSheet && !clothingDisplayedNow[clothingSheet]) setClothingSheet(null);
+    if (clothingSelected && !clothingDisplayedNow[clothingSelected]) {
+      setClothingSelected(null);
+      clothingSelectedRef.current = null;
+    }
+    if (pinnedProductRef.current && !clothingDisplayedNow[pinnedProductRef.current]) pinnedProductRef.current = null;
     if (pendingProductRef.current && !clothingDisplayedNow[pendingProductRef.current]) pendingProductRef.current = null;
     // 진열을 해제한 상품을 옷집 임시 착장에 입고 있었으면 그 부위는 옷집에 들어오기 전 옷으로
     setShopLook((current) => {
@@ -732,7 +739,7 @@ export default function Lobby3dScreen({
       }
       return next;
     });
-  }, [clothingDisplayedNow, clothingSelected, clothingSheet]);
+  }, [clothingDisplayedNow, clothingSelected]);
   // 마을에 나가면 가구점 진열 상품 모델 셋을 뒤에서 미리 받기 시작한다(기기에 있으면 받지 않고, 이번 실행에서 실패한 것은 다시 받아 본다. 방에 있는 동안은 받지 않는다)
   useEffect(() => {
     if (area === "village") retryShopFiles();
@@ -1215,15 +1222,38 @@ export default function Lobby3dScreen({
           } else fittingRef.current = null;
         } else if (fitting.phase === "walk-out") fittingRef.current = null;
       }
-      // 옷집: 누른 진열 상품 앞에 멈춰 섰으면 그 상품을 선택하고 상품 창을 연다(못 가고 멈췄으면 잊는다)
+      // 옷집: 누른 진열 상품 앞에 멈춰 섰으면 그 상품을 상호작용 칸의 상품으로 붙든다(멀어질 때까지. 못 가고 멈췄으면 잊는다)
       const pending = pendingProductRef.current;
       if (pending && !sim.walking && !snap.moving) {
         pendingProductRef.current = null;
         const product = clothingProduct(pending);
-        if (product && Math.hypot(snap.x - product.approach.x, snap.z - product.approach.z) <= 0.1) {
-          setClothingSelected(pending);
-          setClothingSheet(pending);
+        if (product && Math.hypot(snap.x - product.approach.x, snap.z - product.approach.z) <= 0.1) pinnedProductRef.current = pending;
+      }
+      // 진열대 앞 상호작용 칸: 멈춰 서 있으면 붙든 상품(가까이 있는 동안), 아니면 서는 자리가 가장 가까운 진열 상품(0.9m 안).
+      // 걷는 중·피팅 중·계산대 창·전환 중에는 없다
+      const floorNow = clothingFloorOf(areaRef.current);
+      let interact: string | null = null;
+      const pinned = pinnedProductRef.current ? clothingProduct(pinnedProductRef.current) : undefined;
+      if (pinned && Math.hypot(snap.x - pinned.approach.x, snap.z - pinned.approach.z) > INTERACT_RADIUS) pinnedProductRef.current = null;
+      if (floorNow && !snap.moving && !sim.walking && !fittingRef.current && !cartOpenRef.current && !travelingRef.current) {
+        const displayed = clothingDisplayed();
+        if (pinnedProductRef.current && displayed[pinnedProductRef.current]) interact = pinnedProductRef.current;
+        else {
+          let best = Infinity;
+          for (const product of CLOTHING_PRODUCTS) {
+            if (product.floor !== floorNow || !displayed[product.id]) continue;
+            const d = Math.hypot(snap.x - product.approach.x, snap.z - product.approach.z);
+            // 같은 거리면 stock.json 순서로 앞의 것(마네킹 네 벌)
+            if (d <= INTERACT_RADIUS && d < best - 1e-6) {
+              best = d;
+              interact = product.id;
+            }
+          }
         }
+      }
+      if (interact !== clothingSelectedRef.current) {
+        clothingSelectedRef.current = interact;
+        setClothingSelected(interact);
       }
       applyOverlay(snap);
       syncView(snap);
@@ -1263,7 +1293,7 @@ export default function Lobby3dScreen({
       }
       // 시트를 연 동안에는 로비를 누르지 못한다. 막는 중에 누른 것이 남지 않게 지금 누르기도 거둔다.
       // 시트를 연 동안과 '들어가기' 동작을 하는 동안에는 로비를 누르지 못한다
-      if (inputBlockedRef.current || sim.scene || travelingRef.current || displayOpenRef.current || clothingSheetOpenRef.current || fittingRef.current || cartOpenRef.current) {
+      if (inputBlockedRef.current || sim.scene || travelingRef.current || displayOpenRef.current || fittingRef.current || cartOpenRef.current) {
         if (phase !== "move") sim.pointerCancel();
         return;
       }
@@ -2094,10 +2124,11 @@ export default function Lobby3dScreen({
         onFinish={() => leaveFitting(fittingLook)}
       />
       <ClothingProductSheet
-        productId={clothingFloorOf(area) ? clothingSheet : null}
+        productId={clothingFloorOf(area) && fittingLook === null && !cartOpen ? clothingSelected : null}
         owned={ownedSet}
+        bottom={bottomPad + 76}
         worn={(() => {
-          const product = clothingSheet ? clothingProduct(clothingSheet) : undefined;
+          const product = clothingSelected ? clothingProduct(clothingSelected) : undefined;
           if (!product || !shopLook) return false;
           return Object.values(shopLook).includes(fittingItemId(product));
         })()}
@@ -2107,7 +2138,6 @@ export default function Lobby3dScreen({
           const itemId = fittingItemId(product);
           const slot = wearableSlotOf(itemId) ?? product.slot;
           setShopLook((current) => ({ ...(current ?? shownLook(baseWear, baseLook)), [slot]: itemId }));
-          setClothingSheet(null);
         }}
         onUntry={(id) => {
           const product = clothingProduct(id);
@@ -2119,13 +2149,8 @@ export default function Lobby3dScreen({
             const slot = (Object.keys(current) as WardrobeSlot[]).find((s) => current[s] === itemId);
             return slot ? { ...current, [slot]: base[slot] } : current;
           });
-          setClothingSheet(null);
         }}
-        onClose={() => setClothingSheet(null)}
-        onAdded={() => {
-          setClothingSheet(null);
-          showToast("장바구니에 담았어요");
-        }}
+        onAdded={() => showToast("장바구니에 담았어요")}
       />
     </View>
   );

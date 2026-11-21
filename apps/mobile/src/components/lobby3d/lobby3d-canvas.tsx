@@ -16,6 +16,7 @@ import {
   VILLAGE_MARK_IDS,
   activeLobbyLayout,
   cameraPose,
+  fittingCameraPose,
   roomPlaceIds,
   type FloorPoint,
   type LobbyArea,
@@ -1349,16 +1350,11 @@ function Scene({
     target.current.z += (follow.z - target.current.z) * k;
     // 피팅 중에는 라룹이 앞(매장 앞쪽)에서 전신을 크게 비춘다(피팅 창이 화면 아래쪽을 덮어 라룹이가 화면 위쪽에 오게 아래를 본다)
     const focus = fittingFocusRef.current;
-    const pose = focus
-      ? {
-          position: { x: focus.x, y: FITTING_CAMERA.height, z: focus.z + FITTING_CAMERA.distance },
-          lookAt: { x: focus.x, y: FITTING_CAMERA.lookHeight, z: focus.z },
-          fovDeg: FITTING_CAMERA.fovDeg
-        }
-      : cameraPose(target.current, viewWidth, aspect);
-    if (Math.abs(persp.fov - pose.fovDeg) > 0.01 || Math.abs(persp.aspect - aspect) > 0.001) {
+    const pose = focus ? fittingCameraPose(focus, aspect, FITTING_SHEET_COVER) : { ...cameraPose(target.current, viewWidth, aspect), near: CAMERA_NEAR };
+    if (Math.abs(persp.fov - pose.fovDeg) > 0.01 || Math.abs(persp.aspect - aspect) > 0.001 || Math.abs(persp.near - pose.near) > 0.001) {
       persp.fov = pose.fovDeg;
       persp.aspect = aspect;
+      persp.near = pose.near;
       persp.updateProjectionMatrix();
     }
     camera.position.set(pose.position.x, pose.position.y, pose.position.z);
@@ -1482,8 +1478,10 @@ function Scene({
   );
 }
 
-/** 피팅 중 카메라: 라룹이 앞 거리·높이, 보는 높이, 세로 시야각(도). 피팅룸 안이 좁아 가까이서 넓게 본다. */
-const FITTING_CAMERA = { distance: 2.6, height: 1.55, lookHeight: 0.75, fovDeg: 60 } as const;
+/** 피팅 창이 덮는 화면 아래 비율(창 최대 높이 46%와 아래 여백). 피팅 카메라가 라룹이 전신을 그 위에 넣는다. */
+const FITTING_SHEET_COVER = 0.5;
+/** 평소 카메라의 가까운 자르는 면(Canvas camera near와 같다). */
+const CAMERA_NEAR = 1;
 
 /** 화면 이름표 상자의 반 크기(px). 화면(lobby3d-screen)의 이름표가 가운데에서 (-40, -22)만큼 옮겨 그려진다. */
 const LABEL_HALF_WIDTH = 40;

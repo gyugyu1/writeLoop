@@ -889,6 +889,42 @@ export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number
 }
 
 /**
+ * 옷집 피팅 중 카메라: 라룹이 앞(+z)에서 전신(발끝 0 ~ 머리 위 bodyHeight)이 화면 위쪽(아래 cover 비율은 피팅 창이 덮는다) 안에 다 들어오게,
+ * 카메라 높이는 정해 두고 거리와 내려다보는 각도를 푼다. 화면 비율이 바뀌어도 세로로 맞추고(라룹이는 가로로 좁다), 가로로도 넘치면 더 물러난다.
+ * near는 라룹이 바로 앞까지로 둬서, 카메라와 피팅룸 사이의 진열대·피팅룸 앞면이 가리지 않게 잘라 낸다.
+ */
+export const FITTING_VIEW = { fovDeg: 45, cameraHeight: 1.3, bodyHeight: 2.55, bodyHalfWidth: 0.75, margin: 0.06, nearAhead: 0.6 } as const;
+
+export function fittingCameraPose(focus: FloorPoint, aspect: number, cover: number): CameraPose & { near: number } {
+  const v = FITTING_VIEW;
+  const tanV = Math.tan((v.fovDeg * Math.PI) / 360);
+  const tanH = tanV * Math.max(aspect, 0.01);
+  const top = 1 - v.margin;
+  const bottom = Math.min(top - 0.2, -1 + 2 * cover + v.margin);
+  const c = v.cameraHeight;
+  // 거리 d에서 머리 위가 top에 오는 내려다보는 각도와, 그때 발끝의 화면 세로 자리
+  const pitchAt = (d: number) => Math.atan(top * tanV) - Math.atan((v.bodyHeight - c) / d);
+  const feetAt = (d: number) => Math.tan(Math.atan(-c / d) + pitchAt(d)) / tanV;
+  // 가까울수록 발끝이 화면 아래로 내려간다: 발끝이 bottom에 오는 거리를 반으로 나눠 찾는다
+  let lo = 0.5;
+  let hi = 40;
+  for (let i = 0; i < 60; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (feetAt(mid) < bottom) lo = mid;
+    else hi = mid;
+  }
+  // 가로로도 다 들어오게(어깨 폭)
+  const d = Math.max(hi, v.bodyHalfWidth / (tanH * (1 - v.margin)));
+  const pitch = pitchAt(d);
+  return {
+    position: { x: focus.x, y: c, z: focus.z + d },
+    lookAt: { x: focus.x, y: c - d * Math.tan(pitch), z: focus.z },
+    fovDeg: v.fovDeg,
+    near: Math.max(0.1, d - v.nearAhead)
+  };
+}
+
+/**
  * 마을의 카메라 자리. 방과 같은 기울기·시야각·거리로 내려다보되, 마을은 넓어서 끝 상자의 모든 모서리를 카메라 앞에 둘 수 없다.
  * 그래서 바닥으로 정한다: 화면 아래 끝에 보이는 바닥이 마을 앞끝을 넘지 않고, 화면 위 끝에 보이는 바닥이 마을 뒤끝 너머
  * VILLAGE_TOP_SLACK칸(마을 끝 너머 숲)까지만 가는 범위에서 follow를 따라간다. 세로로 다 들어오면 앞끝을 화면 아래 끝에 맞춘다(넘쳐 보이는 곳은 화면 위쪽, 마을 뒤 숲이다).

@@ -1,13 +1,16 @@
 import { useSyncExternalStore } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import LobbySheet from "@/components/home/lobby-sheet";
 import { catalogItem, useItemCatalog } from "@/lib/item-catalog-store";
+import { useItemFiles } from "@/lib/item-files";
+import { wearableIcon } from "@/lib/lobby3d/wearable-icons";
 import { CLOTHING_OUTFITS, CLOTHING_PRODUCTS, clothingDisplayed, subscribeClothingDisplay, type ClothingProduct } from "@/lib/lobby3d/clothing-stock";
 import { BODY_WEARABLES, isWearableDrawable, wearableLabel, wearableSlotOf, type WearLook } from "@/lib/lobby3d/wear";
 import type { WardrobeSlot } from "@/lib/types";
 
 // 옷집 피팅 창(아래에서 올라오는 판). 피팅룸에 들어가 커튼이 닫히면 연다. 두 층 피팅룸이 같은 목록을 쓴다.
-// 목록: 양 층에서 지금 진열 중인 상품 + 가진 옷(같은 옷이면 한 번), 부위별. 그릴 줄 모르는 옷은 뺀다.
+// 목록: 양 층에서 지금 진열 중인 상품 + 가진 옷(같은 옷이면 한 번), 부위별 아이콘 칸. 그릴 줄 모르는 옷은 뺀다.
+// 칸은 옷 아이콘(서버 아이템 목록의 그림. 아직 받지 못했거나 없으면 이름 첫 글자), 짧은 이름, 표시(가진 옷·판매 준비 중·가격).
 // 줄을 누르면 그 부위에 입고, 입은 줄을 다시 누르면 벗는다. 세트는 구성품을 각 부위에 입힌다(진열 해제된 구성품은 건너뛴다).
 // 착장은 로비 화면이 임시로 들고 있다(이 창은 바꾸자고 알리기만 한다). '취소'는 들어오기 전으로, '장바구니에 넣기'는 장바구니·옷장으로.
 // 창은 화면 아래쪽만 덮고 바깥 판을 어둡게 하지 않는다(위쪽에 라룹이가 입은 모습이 보인다).
@@ -98,6 +101,8 @@ interface ClothingFittingSheetProps {
 
 export default function ClothingFittingSheet({ visible, look, owned, onWear, onOutfit, onCancel, onFinish }: ClothingFittingSheetProps) {
   useItemCatalog();
+  // 아이콘 그림을 받으면 다시 그린다
+  useItemFiles();
   const displayed = useSyncExternalStore(subscribeClothingDisplay, clothingDisplayed, clothingDisplayed);
   const items = fittingItems(displayed, owned);
   return (
@@ -116,22 +121,34 @@ export default function ClothingFittingSheet({ visible, look, owned, onWear, onO
           return (
             <View key={slot}>
               <Text style={styles.slotLabel}>{label}</Text>
-              {rows.map((item) => {
-                const worn = look[slot] === item.id;
-                return (
-                  <Pressable
-                    key={item.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={item.tag ? `${item.name}, ${item.tag}` : item.name}
-                    accessibilityState={{ selected: worn }}
-                    style={[styles.row, worn && styles.rowWorn]}
-                    onPress={() => onWear(slot, worn ? null : item.id)}
-                  >
-                    <Text style={styles.name}>{item.name}</Text>
-                    {item.tag ? <Text style={styles.tag}>{item.tag}</Text> : null}
-                  </Pressable>
-                );
-              })}
+              <View style={styles.grid}>
+                {rows.map((item) => {
+                  const worn = look[slot] === item.id;
+                  const icon = wearableIcon(item.id);
+                  return (
+                    <Pressable
+                      key={item.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={item.tag ? `${item.name}, ${item.tag}` : item.name}
+                      accessibilityState={{ selected: worn }}
+                      style={[styles.tile, worn && styles.tileWorn]}
+                      onPress={() => onWear(slot, worn ? null : item.id)}
+                    >
+                      <View style={styles.tileBox}>
+                        {icon ? <Image source={icon} style={styles.tileImage} resizeMode="contain" /> : <Text style={styles.tileInitial}>{item.name.slice(0, 1)}</Text>}
+                      </View>
+                      <Text style={styles.tileName} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      {item.tag ? (
+                        <Text style={styles.tileTag} numberOfLines={1}>
+                          {item.tag}
+                        </Text>
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
           );
         })}
@@ -180,23 +197,48 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#7A6655"
   },
-  row: {
+  grid: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    minHeight: 48,
-    paddingHorizontal: 12,
-    borderRadius: 10
+    flexWrap: "wrap",
+    gap: 8
   },
-  rowWorn: {
+  tile: {
+    width: 84,
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "transparent"
+  },
+  tileWorn: {
+    borderColor: "#E36A00",
     backgroundColor: "#FDEBDC"
   },
-  name: {
-    fontSize: 15,
+  tileBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F3ECE6"
+  },
+  tileImage: {
+    width: 60,
+    height: 60
+  },
+  tileInitial: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#7A6655"
+  },
+  tileName: {
+    marginTop: 4,
+    fontSize: 12,
     color: "#3B2A1E"
   },
-  tag: {
-    fontSize: 13,
+  tileTag: {
+    fontSize: 11,
     color: "#7A6655"
   },
   actions: {

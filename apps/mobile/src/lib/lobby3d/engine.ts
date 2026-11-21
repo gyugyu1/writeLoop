@@ -17,10 +17,11 @@ import {
 } from "./shop";
 import {
   CLOTHING_BOUNDS,
+  CLOTHING_FITTING_ROOMS,
   CLOTHING_NODES,
   CLOTHING_PLACE_IDS,
   CLOTHING_SHOP,
-  CLOTHING_SOLID_CELLS,
+  clothingSolidCells,
   type ClothingFloor,
   type ClothingPlaceId
 } from "./clothing-shop";
@@ -215,7 +216,21 @@ export const SHOP_MARKS: Record<ShopPlaceId, MarkInfo<ShopPlaceId>> = {
   >)
 };
 
-/** 마을 옷집 실내의 장소: 1층 출입문·2층 계단, 2층의 1층 계단. */
+/** 층마다 피팅룸 장소: 그 방 앞에 서서 방 안쪽을 본다. */
+function fittingMark(id: "clothingFitting1" | "clothingFitting2", floor: ClothingFloor): MarkInfo<ClothingPlaceId> {
+  const room = CLOTHING_FITTING_ROOMS[floor];
+  return {
+    id,
+    label: "피팅룸",
+    faceTo: { x: room.inside.x, z: room.inside.z },
+    approach: [{ x: room.approach.x, z: room.approach.z }],
+    prompt: "피팅룸에 들어갈까?",
+    buttonLabel: "들어가기",
+    enterMessage: ""
+  };
+}
+
+/** 마을 옷집 실내의 장소: 1층 출입문·2층 계단·피팅룸, 2층의 1층 계단·피팅룸. */
 export const CLOTHING_MARKS: Record<ClothingPlaceId, MarkInfo<ClothingPlaceId>> = {
   clothingExit: {
     id: "clothingExit",
@@ -236,6 +251,8 @@ export const CLOTHING_MARKS: Record<ClothingPlaceId, MarkInfo<ClothingPlaceId>> 
     buttonLabel: "올라가기",
     enterMessage: ""
   },
+  clothingFitting1: fittingMark("clothingFitting1", 1),
+  clothingFitting2: fittingMark("clothingFitting2", 2),
   clothingDown: {
     id: "clothingDown",
     label: "1층",
@@ -332,7 +349,7 @@ function activeSize(): AreaSize {
 function activeSolid(): ReadonlySet<string> {
   if (area === "shop") return SHOP_SOLID_CELLS;
   const floor = clothingFloorOf(area);
-  if (floor) return CLOTHING_SOLID_CELLS[floor];
+  if (floor) return clothingSolidCells(floor);
   return area === "village" ? VILLAGE_SOLID_TILES : solidTiles;
 }
 

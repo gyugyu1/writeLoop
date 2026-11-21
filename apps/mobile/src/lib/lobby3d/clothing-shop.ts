@@ -121,8 +121,69 @@ function buildSolidCells(floor: ClothingFloor): Set<string> {
   return solid;
 }
 
-/** 층마다 걸을 수 없는 격자 칸("열,행", 한 칸 = CLOTHING_SHOP.cell). 칸 가운데가 걸을 수 없는 곳이면 막힌다. */
+/** 층마다 걸을 수 없는 격자 칸("열,행", 한 칸 = CLOTHING_SHOP.cell). 칸 가운데가 걸을 수 없는 곳이면 막힌다. 커튼이 모두 열린 때다. */
 export const CLOTHING_SOLID_CELLS: Record<ClothingFloor, ReadonlySet<string>> = { 1: buildSolidCells(1), 2: buildSolidCells(2) };
+
+// ---------- 피팅룸(층마다 하나, layout의 fittingRooms) ----------
+
+interface FittingRoomData {
+  approach: string;
+  inside: string;
+  curtain: string;
+  closedMorph: { name: string };
+  closedDoorwayBoundsXZ: number[];
+}
+
+export interface ClothingFittingRoom {
+  /** 피팅룸 앞 서는 자리와 피팅룸 안 자리(앱 좌표·방향). */
+  approach: ClothingSpot;
+  inside: ClothingSpot;
+  /** 커튼 노드와 닫힘 모프 이름(0이면 열림, 1이면 닫힘). */
+  curtain: string;
+  morph: string;
+}
+
+const fittingRoomOf = (floor: ClothingFloor): ClothingFittingRoom => {
+  const room = (LAYOUT.fittingRooms as Record<string, FittingRoomData>)[String(floor)];
+  const key = (node: string) => node.replace(/^F\d_/, "");
+  return { approach: spot(floor, key(room.approach)), inside: spot(floor, key(room.inside)), curtain: room.curtain, morph: room.closedMorph.name };
+};
+
+/** 층마다 피팅룸. */
+export const CLOTHING_FITTING_ROOMS: Record<ClothingFloor, ClothingFittingRoom> = { 1: fittingRoomOf(1), 2: fittingRoomOf(2) };
+
+/** 커튼이 닫힌 동안 그 방 입구를 막는 사각형(closedDoorwayBoundsXZ)까지 막은 칸. */
+function buildClosedCells(floor: ClothingFloor): Set<string> {
+  const doorway = rect((LAYOUT.fittingRooms as Record<string, FittingRoomData>)[String(floor)].closedDoorwayBoundsXZ);
+  const solid = new Set(CLOTHING_SOLID_CELLS[floor]);
+  const cols = Math.round(CLOTHING_SHOP.width / CLOTHING_SHOP.cell);
+  const rows = Math.round(CLOTHING_SHOP.depth / CLOTHING_SHOP.cell);
+  for (let c = 0; c < cols; c += 1) {
+    for (let r = 0; r < rows; r += 1) {
+      if (inRect(doorway, (c + 0.5) * CLOTHING_SHOP.cell, (r + 0.5) * CLOTHING_SHOP.cell)) solid.add(`${c},${r}`);
+    }
+  }
+  return solid;
+}
+
+const CLOSED_CELLS: Record<ClothingFloor, ReadonlySet<string>> = { 1: buildClosedCells(1), 2: buildClosedCells(2) };
+
+/** 커튼이 닫힌 피팅룸의 층(피팅 중). null이면 두 방 모두 열려 있다. */
+let curtainClosedFloor: ClothingFloor | null = null;
+
+/** 피팅룸 커튼을 닫거나(그 층) 연다(null). 닫힌 동안 그 방 입구가 걸을 수 없는 곳이 된다. */
+export function setClothingCurtainClosed(floor: ClothingFloor | null): void {
+  curtainClosedFloor = floor;
+}
+
+export function clothingCurtainClosed(): ClothingFloor | null {
+  return curtainClosedFloor;
+}
+
+/** 지금 그 층의 걸을 수 없는 칸(커튼이 닫힌 방이면 입구까지 막는다). */
+export function clothingSolidCells(floor: ClothingFloor): ReadonlySet<string> {
+  return curtainClosedFloor === floor ? CLOSED_CELLS[floor] : CLOTHING_SOLID_CELLS[floor];
+}
 
 /** 실내 높이(카메라 끝 상자의 위). 층 높이(levelPitchMetres)와 같다. */
 const WALL_HEIGHT: number = LAYOUT.levelPitchMetres;
@@ -151,15 +212,22 @@ export const CLOTHING_FLOOR_ROOTS: Record<ClothingFloor, string> = { 1: floorOf(
 
 // ---------- 장소 ----------
 
-/** 옷집 장소: 1층 출입문·2층 계단, 2층 1층 계단. */
-export type ClothingPlaceId = "clothingExit" | "clothingUp" | "clothingDown";
+/** 옷집 장소: 1층 출입문·2층 계단·피팅룸, 2층 1층 계단·피팅룸. */
+export type ClothingPlaceId = "clothingExit" | "clothingUp" | "clothingFitting1" | "clothingDown" | "clothingFitting2";
 
 export const CLOTHING_PLACE_IDS: Record<ClothingFloor, readonly ClothingPlaceId[]> = {
-  1: ["clothingExit", "clothingUp"],
-  2: ["clothingDown"]
+  1: ["clothingExit", "clothingUp", "clothingFitting1"],
+  2: ["clothingDown", "clothingFitting2"]
 };
 
-const ALL_PLACES: readonly ClothingPlaceId[] = ["clothingExit", "clothingUp", "clothingDown"];
+const ALL_PLACES: readonly ClothingPlaceId[] = ["clothingExit", "clothingUp", "clothingFitting1", "clothingDown", "clothingFitting2"];
+
+/** 피팅룸 장소의 층(피팅룸이 아니면 null). */
+export function clothingFittingFloorOf(id: string): ClothingFloor | null {
+  if (id === "clothingFitting1") return 1;
+  if (id === "clothingFitting2") return 2;
+  return null;
+}
 
 export function isClothingPlaceId(id: string): id is ClothingPlaceId {
   return (ALL_PLACES as readonly string[]).includes(id);
@@ -169,5 +237,8 @@ export function isClothingPlaceId(id: string): id is ClothingPlaceId {
 export const CLOTHING_LABEL_POINTS: Record<ClothingPlaceId, { x: number; y: number; z: number }> = {
   clothingExit: { x: CLOTHING_NODES.exitTrigger.x, y: 2.9, z: CLOTHING_NODES.exitTrigger.z - 0.4 },
   clothingUp: { x: CLOTHING_NODES.stairsUp.x, y: 2.4, z: CLOTHING_NODES.stairsUp.z - 0.6 },
-  clothingDown: { x: CLOTHING_NODES.stairsDown.x, y: 2.4, z: CLOTHING_NODES.stairsDown.z + 0.6 }
+  clothingDown: { x: CLOTHING_NODES.stairsDown.x, y: 2.4, z: CLOTHING_NODES.stairsDown.z + 0.6 },
+  // 피팅룸 입구 위(표지 아래)
+  clothingFitting1: { x: CLOTHING_FITTING_ROOMS[1].inside.x, y: 2.5, z: CLOTHING_FITTING_ROOMS[1].approach.z - 0.6 },
+  clothingFitting2: { x: CLOTHING_FITTING_ROOMS[2].inside.x, y: 2.5, z: CLOTHING_FITTING_ROOMS[2].approach.z - 0.6 }
 };

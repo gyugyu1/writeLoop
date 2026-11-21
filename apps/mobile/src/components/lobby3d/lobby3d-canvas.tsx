@@ -148,6 +148,8 @@ export interface Lobby3dCanvasProps {
   onClothingFailed?: () => void;
   /** 옷집에서 선택한 진열 상품(그 진열대 명패를 보이고, 이름표 자리를 onOverlayFrame으로 알린다). */
   clothingSelected?: string | null;
+  /** 커튼이 닫힌 옷집 피팅룸의 층(피팅 중). null이면 열려 있다. */
+  clothingCurtainClosed?: ClothingFloor | null;
   /** 라룹이가 입은 착용 아이템(캐릭터 꾸미기 기술 시험, 개발 화면). */
   wear?: WearState;
   /** 부위 일곱마다 입은 아이템 종류(⑤). 없으면 wear의 넷을 기본 아이템으로 그린다. */
@@ -890,6 +892,7 @@ function Scene({
   onClothingReady,
   onClothingFailed,
   clothingSelected = null,
+  clothingCurtainClosed = null,
   wear,
   look,
   pickRef
@@ -1450,6 +1453,7 @@ function Scene({
           pickTargets={clothingPick}
           builtRef={clothingBuilt}
           selected={clothingSelected}
+          curtainClosed={clothingCurtainClosed === clothingFloorOf(area)}
           onReady={onClothingReady}
           onFailed={onClothingFailed}
         />
@@ -1578,6 +1582,7 @@ function ClothingLayer({
   pickTargets,
   builtRef,
   selected,
+  curtainClosed,
   onReady,
   onFailed
 }: {
@@ -1586,6 +1591,7 @@ function ClothingLayer({
   pickTargets: MutableRefObject<THREE.Object3D[]>;
   builtRef: MutableRefObject<ClothingModule.BuiltClothingFloor | null>;
   selected: string | null;
+  curtainClosed: boolean;
   onReady?: () => void;
   onFailed?: () => void;
 }) {
@@ -1594,7 +1600,7 @@ function ClothingLayer({
   return (
     <clothing.ClothingFloorErrorBoundary floor={floor} onFailed={onFailed}>
       <Suspense fallback={null}>
-        <clothing.ClothingFloorModel floor={floor} daylight={daylight} pickTargets={pickTargets} selected={selected} builtRef={builtRef} />
+        <clothing.ClothingFloorModel floor={floor} daylight={daylight} pickTargets={pickTargets} selected={selected} builtRef={builtRef} curtainClosed={curtainClosed} />
         <VillageWarmUp onReady={onReady ?? noop} />
       </Suspense>
     </clothing.ClothingFloorErrorBoundary>

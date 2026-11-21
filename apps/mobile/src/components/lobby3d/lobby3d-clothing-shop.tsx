@@ -3,7 +3,7 @@ import { Component, Suspense, useEffect, useMemo, useSyncExternalStore, type Mut
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { PlaceId } from "@/lib/lobby3d/engine";
-import { CLOTHING_FLOOR_ROOTS, CLOTHING_HIDDEN_NODES, CLOTHING_OFFSET, type ClothingFloor } from "@/lib/lobby3d/clothing-shop";
+import { CLOTHING_FITTING_ROOMS, CLOTHING_FLOOR_ROOTS, CLOTHING_HIDDEN_NODES, CLOTHING_OFFSET, type ClothingFloor } from "@/lib/lobby3d/clothing-shop";
 import { CLOTHING_STOCK_ROOT, clothingDisplayed, clothingProduct, clothingProductsOnFloor, subscribeClothingDisplay } from "@/lib/lobby3d/clothing-stock";
 import type { DaylightState } from "./lobby3d-daylight";
 import { SHOP_OUTSIDE_COLOR, convertMaterials, type ShopPickData } from "./lobby3d-shop";
@@ -47,6 +47,10 @@ export interface BuiltClothingFloor {
   setSelected(id: string | null): void;
   /** 상품 진열대의 이름표 자리(textAnchor 노드)의 세계 좌표. 이 층 상품이 아니면 null. */
   textAnchorPoint(id: string): THREE.Vector3 | null;
+  /** 이 층 피팅룸 커튼을 닫는다(Closed 모프 1)·연다(0). */
+  setCurtainClosed(closed: boolean): void;
+  /** 지금 커튼 닫힘 모프 값(커튼 메시가 없으면 null). */
+  curtainWeight(): number | null;
   /** 만든 재질을 버린다(모양은 useLoader의 원본과 함께 쓰므로 버리지 않는다). */
   dispose(): void;
 }
@@ -97,6 +101,16 @@ export function buildClothingFloor(floor: ClothingFloor, gltf: GLTF): BuiltCloth
     plate.visible = false;
     nameplates.set(product.nameplate, plate);
   }
+  // 피팅룸 커튼: 커튼 노드 아래 메시들의 닫힘 모프(처음에는 열림)
+  const room = CLOTHING_FITTING_ROOMS[floor];
+  const curtains: { mesh: THREE.Mesh; index: number }[] = [];
+  interior.getObjectByName(room.curtain)?.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    const index = mesh.isMesh ? mesh.morphTargetDictionary?.[room.morph] : undefined;
+    if (index === undefined || !mesh.morphTargetInfluences) return;
+    mesh.morphTargetInfluences[index] = 0;
+    curtains.push({ mesh, index });
+  });
   const templates = new Map<string, THREE.Object3D>();
   const products = new Map<string, THREE.Object3D>();
   let shown: Readonly<Record<string, boolean>> = {};
@@ -155,6 +169,13 @@ export function buildClothingFloor(floor: ClothingFloor, gltf: GLTF): BuiltCloth
       const on = product && products.has(product.id) ? product.nameplate : null;
       for (const [name, plate] of nameplates) plate.visible = name === on;
     },
+    setCurtainClosed(closed) {
+      for (const { mesh, index } of curtains) mesh.morphTargetInfluences![index] = closed ? 1 : 0;
+    },
+    curtainWeight() {
+      const first = curtains[0];
+      return first ? first.mesh.morphTargetInfluences![first.index] : null;
+    },
     textAnchorPoint(id) {
       const product = clothingProduct(id);
       if (!product || product.floor !== floor) return null;
@@ -179,9 +200,11 @@ export interface ClothingFloorModelProps {
   selected: string | null;
   /** 지은 층 장면(로비 캔버스가 이름표 자리를 읽는다). */
   builtRef?: MutableRefObject<BuiltClothingFloor | null>;
+  /** 이 층 피팅룸 커튼이 닫혀 있는지(피팅 중). */
+  curtainClosed?: boolean;
 }
 
-export function ClothingFloorModel({ floor, daylight, pickTargets, selected, builtRef }: ClothingFloorModelProps) {
+export function ClothingFloorModel({ floor, daylight, pickTargets, selected, builtRef, curtainClosed = false }: ClothingFloorModelProps) {
   const gltf = useLoader(GLTFLoader, CLOTHING_FLOOR_ASSETS[floor] as unknown as string) as GLTF;
   const built = useMemo(() => buildClothingFloor(floor, gltf), [floor, gltf]);
   useEffect(() => () => built.dispose(), [built]);
@@ -191,6 +214,7 @@ export function ClothingFloorModel({ floor, daylight, pickTargets, selected, bui
     built.setSelected(selected);
     pickTargets.current = [...built.productTargets(), ...built.pickTargets];
   }, [built, displayed, selected, pickTargets]);
+  useEffect(() => built.setCurtainClosed(curtainClosed), [built, curtainClosed]);
   useEffect(() => {
     if (builtRef) builtRef.current = built;
     return () => {

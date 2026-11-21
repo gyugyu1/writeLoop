@@ -215,7 +215,6 @@ describe("[spec] 새 자리 상품(그대로 둘 가격·이름, 바뀐 자리)"
     expect(canvas().clothingSelected).toBe("tshirtOrange");
     expect(dist(pos(), stock.clothingProduct("tshirtOrange")!.approach)).toBeLessThan(0.1);
     expect(textsContaining("주황 티셔츠", "80룹").length).toBeGreaterThan(0);
-    await press("닫기");
     await tapProduct("shoesBrown");
     expect(canvas().clothingSelected).toBe("shoesBrown");
     expect(textsContaining("갈색 운동화", "90룹").length).toBeGreaterThan(0);

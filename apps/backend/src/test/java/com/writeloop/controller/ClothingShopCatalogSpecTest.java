@@ -129,7 +129,7 @@ class ClothingShopCatalogSpecTest extends IntegrationTestSupport {
             String id = product.get("id").asText();
             JsonNode files = items.get(id).path("files");
             assertThat(files.path("model").asText()).as("A5 model of %s", id).isEqualTo(id + ".glb");
-            assertThat(files.hasNonNull("icon")).as("A5 %s has no icon: %s", id, files).isFalse();
+            assertThat(files.path("icon").asText()).as("A5 %s icon (09: 아이콘이 있다): %s", id, files).isEqualTo(id + ".png");
             Path file = repo().resolve(FILES_PATH).resolve(id + ".glb");
             assertThat(Files.exists(file)).as("A6 file of %s exists", id).isTrue();
             assertThat(sha256(Files.readAllBytes(file))).as("A6 sha256 of %s", id).isEqualTo(product.path("wearableSHA256").asText());

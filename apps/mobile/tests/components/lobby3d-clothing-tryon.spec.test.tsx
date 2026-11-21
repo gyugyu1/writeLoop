@@ -93,10 +93,8 @@ async function press(name: string) {
   await fireEvent.press(screen.getAllByRole("button", { name })[0]);
 }
 
-/** 상품 창이 열려 있으면 닫는다(열려 있는 동안은 로비를 누를 수 없다). */
-async function closeSheetIfOpen() {
-  if (buttons("입어보기").length > 0 || buttons("벗기").length > 0) await press("닫기");
-}
+/** 상호작용 칸은 창이 아니라 로비를 막지 않아 닫을 것이 없다(09: 상품 창을 없앴다). */
+async function closeSheetIfOpen() {}
 
 async function tapProduct(id: string) {
   await closeSheetIfOpen();
@@ -197,23 +195,22 @@ afterEach(() => {
 });
 
 describe("[spec] 상품 창 버튼(명세 1)", () => {
-  it("버튼은 '입어보기'·'장바구니'·'닫기'이고 '장바구니 담기'는 없다. 이름·가격 글은 그대로", async () => {
+  it("버튼은 '입어보기'·'장바구니'이고 '닫기'와 '장바구니 담기'는 없다(상호작용 칸). 이름·가격 글은 그대로", async () => {
     await renderShop();
     await tapProduct("capOrange");
     expect(buttons("입어보기").length).toBeGreaterThan(0);
     expect(buttons("장바구니").length).toBeGreaterThan(0);
-    expect(buttons("닫기").length).toBeGreaterThan(0);
+    expect(buttons("닫기")).toHaveLength(0);
     expect(texts("장바구니 담기")).toHaveLength(0);
     expect(texts("60룹").length).toBeGreaterThan(0);
   });
 
-  it("'장바구니'는 이전 '장바구니 담기'와 같다: 담고 '장바구니에 담았어요' 안내, 창이 닫힌다", async () => {
+  it("'장바구니'는 이전 '장바구니 담기'와 같다: 담고 '장바구니에 담았어요' 안내", async () => {
     await renderShop();
     await tapProduct("capOrange");
     await press("장바구니");
     expect(stock.clothingCart()).toEqual(["capOrange"]);
     expect(texts("장바구니에 담았어요").length).toBeGreaterThan(0);
-    expect(buttons("입어보기")).toHaveLength(0);
   });
 
   it("'장바구니'는 가진 옷이면 막히고 '이미 가진 옷이에요'를 보인다(그대로)", async () => {
@@ -234,7 +231,7 @@ describe("[spec] 상품 창 버튼(명세 1)", () => {
 });
 
 describe("[spec] 입어보기·벗기(명세 1)", () => {
-  it("'입어보기'는 그 부위에 입히고 창을 닫는다. 다른 부위는 그대로, 담기·저장은 없다", async () => {
+  it("'입어보기'는 그 부위에 입히고 칸의 버튼이 '벗기'로 바뀐다. 다른 부위는 그대로, 담기·저장은 없다", async () => {
     const onSaveLook = jest.fn().mockResolvedValue(undefined);
     await renderShop({ onSaveLook });
     expect(look()).toEqual(BASE_LOOK);

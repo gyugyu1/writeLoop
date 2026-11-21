@@ -168,7 +168,7 @@ afterEach(() => {
 });
 
 describe("[spec] 상품 누르기와 선택(S13·S15·S16·S17)", () => {
-  it("S13: 상품을 누르면 그 서는 자리로 걸어가고, 걷는 동안은 선택이 없고 도착하면 선택·상품 창이 열린다", async () => {
+  it("S13: 상품을 누르면 그 서는 자리로 걸어가고, 걷는 동안은 선택이 없고 도착하면 선택되어 상호작용 칸이 뜬다", async () => {
     await enterClothing();
     await tapProductNoWait("tshirtOrange");
     expect(canvas().clothingSelected ?? null).toBeNull();
@@ -189,22 +189,20 @@ describe("[spec] 상품 누르기와 선택(S13·S15·S16·S17)", () => {
     expect(texts("장바구니")).toHaveLength(0);
   });
 
-  it("S16: 상품 창을 닫고 다른 상품을 누르면 선택이 그 상품으로 옮겨 가고 이름표는 하나뿐이다", async () => {
+  it("S16: 다른 상품을 누르면 선택이 그 상품으로 옮겨 가고 이름표는 하나뿐이다", async () => {
     await enterClothing();
     await tapProduct("capOrange");
     expect(canvas().clothingSelected).toBe("capOrange");
-    await press("닫기");
     await tapProduct("mufflerRed");
     expect(canvas().clothingSelected).toBe("mufflerRed");
     expect(textsContaining("빨강 머플러", "90룹")).toHaveLength(1);
     expect(textsContaining("주황 야구모자")).toHaveLength(0);
   });
 
-  it("S17: 층을 옮기면 선택이 풀리고 이름표·상품 창이 사라진다", async () => {
+  it("S17: 층을 옮기면 선택이 풀리고 이름표·상호작용 칸이 사라진다", async () => {
     await enterClothing();
     await tapProduct("capOrange");
     expect(canvas().clothingSelected).toBe("capOrange");
-    await press("닫기");
     await goUp();
     expect(canvas().clothingSelected ?? null).toBeNull();
     expect(textsContaining("주황 야구모자")).toHaveLength(0);
@@ -215,7 +213,6 @@ describe("[spec] 상품 누르기와 선택(S13·S15·S16·S17)", () => {
   it("S17: 옷집을 나가도 선택이 풀린다", async () => {
     await enterClothing();
     await tapProduct("capOrange");
-    await press("닫기");
     await walkTo(CLOTHING_MARKS.clothingExit.approach[0], "clothingExit");
     await press("나가기");
     await frames(1.2);
@@ -225,12 +222,12 @@ describe("[spec] 상품 누르기와 선택(S13·S15·S16·S17)", () => {
 });
 
 describe("[spec] 이름표와 상품 창(S19~S21, S24~S29)", () => {
-  it("S19·S24·S25·S29: 등록 상품은 이름·'80룹'이 보이고 담으면 '장바구니 담았어요' 안내와 '장바구니 1'. 닫기는 창을 닫는다", async () => {
+  it("S19·S24·S25·S29: 등록 상품은 이름·'80룹'이 보이고 담으면 '장바구니 담았어요' 안내와 '장바구니 1'. 상호작용 칸에 '닫기'는 없다", async () => {
     await enterClothing();
     await tapProduct("tshirtOrange");
     expect(textsContaining("주황 티셔츠", "80룹").length).toBeGreaterThan(0);
     expect(texts("80룹").length).toBeGreaterThan(0);
-    expect(texts("닫기").length).toBeGreaterThan(0);
+    expect(texts("닫기")).toHaveLength(0);
     await press("장바구니");
     expect(stock.clothingCart()).toEqual(["tshirtOrange"]);
     expect(texts("장바구니에 담았어요").length).toBeGreaterThan(0);
@@ -242,8 +239,7 @@ describe("[spec] 이름표와 상품 창(S19~S21, S24~S29)", () => {
     for (const id of ["capOrange", "shoesWhite", "backpackRed", "capBlue"]) {
       await tapProduct(id);
       expect({ id, found: textsContaining(stock.clothingProduct(id)!.name, `${PRICES[id]}룹`).length > 0 }).toEqual({ id, found: true });
-      await press("닫기");
-    }
+      }
   });
 
   it("S20·S26: 미등록 상품은 이름표 '판매 준비 중', 창에 '판매 준비 중인 옷이에요', 담을 수 없다", async () => {
@@ -266,14 +262,13 @@ describe("[spec] 이름표와 상품 창(S19~S21, S24~S29)", () => {
     expect(stock.clothingCart()).toEqual(["capOrange"]);
   });
 
-  it("S29: '닫기'를 누르면 상품 창이 닫히고 장바구니는 그대로다", async () => {
+  it("S29: 다른 상품을 누르면 칸이 그 상품으로 바뀌고 '닫기'는 없으며 장바구니는 그대로다", async () => {
     await enterClothing();
     await tapProduct("capOrange");
     await press("장바구니");
     await tapProduct("shortsNavy");
-    await press("닫기");
-    expect(texts("장바구니 담기")).toHaveLength(0);
-    expect(texts("장바구니")).toHaveLength(0);
+    expect(canvas().clothingSelected).toBe("shortsNavy");
+    expect(texts("닫기")).toHaveLength(0);
     expect(stock.clothingCart()).toEqual(["capOrange"]);
   });
 });

@@ -509,3 +509,68 @@ describe("옷집 즉석 입어보기와 피팅 카메라", () => {
     expect(canvas().clothingFittingFocus).toBeNull();
   });
 });
+
+// 작업 133 즉석 입어보기 4단계 의심: 옷집을 나간 뒤 늦게 도착한 저장 실패는 옷집 착장을 되살리지 않는다
+describe("피팅 저장이 옷집을 나간 뒤 실패할 때", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const stock = require("@/lib/lobby3d/clothing-stock") as typeof import("@/lib/lobby3d/clothing-stock");
+  const store = require("@/lib/item-catalog-store") as typeof import("@/lib/item-catalog-store");
+  const shopData = require("@/lib/lobby3d/clothing-shop") as typeof import("@/lib/lobby3d/clothing-shop");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  const file = (n: string) => ({ url: `/api/catalog/files/${n}.glb`, sha256: n.padEnd(64, "0").slice(0, 64), bytes: 1 });
+  afterEach(() => {
+    stock.resetClothingShop();
+    shopData.setClothingCurtainClosed(null);
+  });
+
+  it("마을에서는 실제 착장 그대로다", async () => {
+    store.setItemCatalog({
+      version: "test-late-fail",
+      items: [
+        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 1 }, assets: { model: file("capOrange"), icon: null } },
+        { id: "mufflerRed", kind: "wearable", name: "빨강 머플러", shopName: "빨강 머플러", description: "", category: "clothes", slot: "accessory", price: 90, draw: { attach: "bone", bone: "spine", body: 1 }, assets: { model: file("mufflerRed"), icon: null } }
+      ]
+    });
+    let rejectSave: (e: Error) => void = () => {};
+    const onSaveLook = jest.fn(() => new Promise<void>((_, reject) => (rejectSave = reject)));
+    await screen.unmount();
+    mockCanvas.props = null;
+    await render(<Lobby3dScreen devPanel={false} ownedItems={["capOrange", "mufflerRed"]} onSaveLook={onSaveLook} />);
+    await flushAsync();
+    await toClothingDoor();
+    const villageLook = canvas().look;
+    await press("들어가기");
+    await frames(1.2);
+    // 진열 상품 앞에서 모자를 입어 본다(옷집 임시 착장 = 피팅 시작 착장에 모자)
+    const cap = stock.clothingProduct("capOrange")!;
+    await act(async () => {
+      canvas().onPointer("down", { point: cap.approach, mark: null, onCharacter: false, onScenery: true, building: null, product: "capOrange" }, 100, 100);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(30);
+      canvas().onPointer("up", null, 100, 100);
+    });
+    await frames(20);
+    await press("입어보기");
+    expect(canvas().look?.hat).toBe("capOrange");
+    await walkTo(CLOTHING_MARKS.clothingFitting1.approach[0], "clothingFitting1");
+    await press("들어가기");
+    await frames(6);
+    await press("빨강 머플러, 가진 옷");
+    await press("장바구니에 넣기");
+    expect(onSaveLook).toHaveBeenCalled();
+    await frames(6);
+    await walkTo(CLOTHING_MARKS.clothingExit.approach[0], "clothingExit");
+    await press("나가기");
+    await frames(1.2);
+    expect(area()).toBe("village");
+    await act(async () => {
+      rejectSave(new Error("fail"));
+      await Promise.resolve();
+    });
+    await flushAsync();
+    // 옷집 착장(모자)이 되살아나지 않는다
+    expect(canvas().look).toEqual(villageLook);
+    expect(canvas().look?.hat ?? null).not.toBe("capOrange");
+  });
+});

@@ -1485,8 +1485,8 @@ export default function Lobby3dScreen({
         if (devPanel || !onSaveLook) setTestLook(saved);
         else
           void onSaveLook(saved).catch(() => {
-            // 저장에 실패하면 들어오기 전 착장(피팅 시작 착장)으로 돌리고 안내한다
-            setShopLook(base);
+            // 저장에 실패하면 들어오기 전 착장(피팅 시작 착장)으로 돌리고 안내한다. 그사이 옷집을 나갔으면 옷집 착장은 이미 버렸으니 되살리지 않는다
+            if (shopBaseRef.current) setShopLook(base);
             showToast("옷을 저장하지 못했어요");
           });
       }

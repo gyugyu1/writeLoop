@@ -67,7 +67,10 @@ export const CLOTHING_NODES = {
   fromUpper: spot(1, "FromUpper"),
   /** 2층 계단 위 서는 자리(F2_StairsDown)와 1층에서 올라와 서는 자리(F2_FromLower). */
   stairsDown: spot(2, "StairsDown"),
-  fromLower: spot(2, "FromLower")
+  fromLower: spot(2, "FromLower"),
+  /** 1층 계산대 앞 손님 자리(F1_CheckoutInteract)와 점원 자리(F1_CheckoutNPC). */
+  checkoutInteract: spot(1, "CheckoutInteract"),
+  checkoutNpc: spot(1, "CheckoutNPC")
 } as const;
 
 interface ClothingRect {
@@ -213,14 +216,14 @@ export const CLOTHING_FLOOR_ROOTS: Record<ClothingFloor, string> = { 1: floorOf(
 // ---------- 장소 ----------
 
 /** 옷집 장소: 1층 출입문·2층 계단·피팅룸, 2층 1층 계단·피팅룸. */
-export type ClothingPlaceId = "clothingExit" | "clothingUp" | "clothingFitting1" | "clothingDown" | "clothingFitting2";
+export type ClothingPlaceId = "clothingExit" | "clothingUp" | "clothingFitting1" | "clothingCheckout" | "clothingDown" | "clothingFitting2";
 
 export const CLOTHING_PLACE_IDS: Record<ClothingFloor, readonly ClothingPlaceId[]> = {
-  1: ["clothingExit", "clothingUp", "clothingFitting1"],
+  1: ["clothingExit", "clothingUp", "clothingFitting1", "clothingCheckout"],
   2: ["clothingDown", "clothingFitting2"]
 };
 
-const ALL_PLACES: readonly ClothingPlaceId[] = ["clothingExit", "clothingUp", "clothingFitting1", "clothingDown", "clothingFitting2"];
+const ALL_PLACES: readonly ClothingPlaceId[] = ["clothingExit", "clothingUp", "clothingFitting1", "clothingCheckout", "clothingDown", "clothingFitting2"];
 
 /** 피팅룸 장소의 층(피팅룸이 아니면 null). */
 export function clothingFittingFloorOf(id: string): ClothingFloor | null {
@@ -240,5 +243,7 @@ export const CLOTHING_LABEL_POINTS: Record<ClothingPlaceId, { x: number; y: numb
   clothingDown: { x: CLOTHING_NODES.stairsDown.x, y: 2.4, z: CLOTHING_NODES.stairsDown.z + 0.6 },
   // 피팅룸 입구 위(표지 아래)
   clothingFitting1: { x: CLOTHING_FITTING_ROOMS[1].inside.x, y: 2.5, z: CLOTHING_FITTING_ROOMS[1].approach.z - 0.6 },
-  clothingFitting2: { x: CLOTHING_FITTING_ROOMS[2].inside.x, y: 2.5, z: CLOTHING_FITTING_ROOMS[2].approach.z - 0.6 }
+  clothingFitting2: { x: CLOTHING_FITTING_ROOMS[2].inside.x, y: 2.5, z: CLOTHING_FITTING_ROOMS[2].approach.z - 0.6 },
+  // 계산대 위(점원 자리 쪽)
+  clothingCheckout: { x: (CLOTHING_NODES.checkoutInteract.x + CLOTHING_NODES.checkoutNpc.x) / 2, y: 2.3, z: CLOTHING_NODES.checkoutNpc.z }
 };

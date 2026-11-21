@@ -457,6 +457,14 @@ export interface HomeShoppingWearableOrderResult {
 /** 주문 결과(가구나 옷). layout이 null이면 옷 주문이다. */
 export type HomeShoppingAnyOrderResult = HomeShoppingOrderResult | HomeShoppingWearableOrderResult;
 
+/** POST /api/clothing-shop/orders 결과: 산 옷과 값, 합계, 주문 뒤 잔액, 주문 뒤 옷장(읽지 못했으면 null). */
+export interface ClothingShopOrderResult {
+  items: { type: string; price: number }[];
+  total: number;
+  balance: number;
+  wardrobe: Wardrobe | null;
+}
+
 /** 라룹이 착용 부위(캐릭터 꾸미기). 부위마다 한 번에 하나만 입는다. */
 export type WardrobeSlot = "hat" | "top" | "bottom" | "shoes" | "face" | "back" | "accessory";
 

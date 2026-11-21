@@ -10,7 +10,7 @@ afterEach(() => applyArea("room"));
 describe("옷집 층마다 장소와 걷기", () => {
   it("1층: 입장 자리에서 출입문·2층 계단까지 길이 있다", () => {
     applyArea("clothing1");
-    expect(activePlaceIds()).toEqual(["clothingExit", "clothingUp", "clothingFitting1"]);
+    expect(activePlaceIds()).toEqual(["clothingExit", "clothingUp", "clothingFitting1", "clothingCheckout"]);
     const from: FloorPoint = CLOTHING_NODES.entranceSpawn;
     expect(isFree(from.x, from.z)).toBe(true);
     for (const id of ["clothingExit", "clothingUp"] as const) {

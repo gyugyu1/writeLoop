@@ -60,6 +60,7 @@ import { retryShopFiles } from "@/lib/lobby3d/shop-files";
 import ShopDisplaySheet from "@/components/lobby3d/shop-display-sheet";
 import ClothingProductSheet, { clothingCatalogPrice } from "@/components/lobby3d/clothing-product-sheet";
 import ClothingFittingSheet, { outfitPieces, ownsWearable } from "@/components/lobby3d/clothing-fitting-sheet";
+import ClothingCartSheet from "@/components/lobby3d/clothing-cart-sheet";
 import {
   CLOTHING_PRODUCTS,
   clothingCart,
@@ -67,6 +68,7 @@ import {
   clothingPriceText,
   clothingProduct,
   addToClothingCart,
+  clearClothingCart,
   setClothingDisplayed,
   subscribeClothingCart,
   subscribeClothingDisplay
@@ -517,6 +519,8 @@ export interface Lobby3dScreenProps {
   ownedItems?: readonly string[] | null;
   /** 홈: 옷집 피팅룸 '끝내기'에서 가진 옷으로 바꾼 착장을 옷장에 저장한다(실패하면 거부). 개발 화면은 주지 않는다(시험 착장만 바꾼다). */
   onSaveLook?: (look: WearLook) => Promise<void>;
+  /** 홈: 옷집 계산대 구매(장바구니를 한 번에 서버에 주문하고 잔액·옷장을 맞춘다). 실패하면 서버 안내 글로 거부. 개발 화면은 주지 않는다. */
+  onClothingOrder?: (items: { type: string; price: number }[]) => Promise<void>;
 }
 
 /** 꾸미기 보관함 줄의 가구 한 칸: 가구 모양 그림(없으면 이름 첫 글자)과 이름. 보관함은 가구 하나마다 한 칸이다. */
@@ -564,7 +568,8 @@ export default function Lobby3dScreen({
   onEnterCloset,
   signedIn = true,
   ownedItems = null,
-  onSaveLook
+  onSaveLook,
+  onClothingOrder
 }: Lobby3dScreenProps = {}) {
   // 옷장 말풍선(로그인 안내인지)은 그리기 전에 맞춘다
   setClosetSignedIn(signedIn);
@@ -635,6 +640,11 @@ export default function Lobby3dScreen({
   // 옷집 피팅룸: 들어가는 중(walk-in)·안(inside)·나오는 중(walk-out)과 들어오기 전 착장, 피팅 중 임시 착장
   const fittingRef = useRef<{ floor: ClothingFloor; phase: "walk-in" | "inside" | "walk-out"; base: WearLook } | null>(null);
   const [curtainFloor, setCurtainFloor] = useState<ClothingFloor | null>(null);
+  // 옷집 계산대 장바구니 창과 주문 중
+  const [cartOpen, setCartOpen] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const cartOpenRef = useRef(false);
+  cartOpenRef.current = cartOpen;
   const productDownRef = useRef<string | null>(null);
   const pendingProductRef = useRef<string | null>(null);
   const ownedSet = useMemo(() => new Set(devPanel ? [] : ownedItems ?? []), [devPanel, ownedItems]);
@@ -678,6 +688,7 @@ export default function Lobby3dScreen({
   useEffect(() => {
     setClothingSelected(null);
     setClothingSheet(null);
+    setCartOpen(false);
     pendingProductRef.current = null;
   }, [area]);
   // 피팅 중에 로비 화면이 사라지면 커튼 닫힘(그 방 입구를 막는 임시 충돌)을 풀어 둔다. 다음에 들어와도 방이 막혀 있지 않게
@@ -1216,7 +1227,7 @@ export default function Lobby3dScreen({
       }
       // 시트를 연 동안에는 로비를 누르지 못한다. 막는 중에 누른 것이 남지 않게 지금 누르기도 거둔다.
       // 시트를 연 동안과 '들어가기' 동작을 하는 동안에는 로비를 누르지 못한다
-      if (inputBlockedRef.current || sim.scene || travelingRef.current || displayOpenRef.current || clothingSheetOpenRef.current || fittingRef.current) {
+      if (inputBlockedRef.current || sim.scene || travelingRef.current || displayOpenRef.current || clothingSheetOpenRef.current || fittingRef.current || cartOpenRef.current) {
         if (phase !== "move") sim.pointerCancel();
         return;
       }
@@ -1389,6 +1400,23 @@ export default function Lobby3dScreen({
   );
   const shownToon = devPanel ? toon : HOME_TOON;
   // 장소 안내 말풍선의 버튼과 아래 메뉴 버튼. 말풍선 묶음·메뉴가 다시 그려지지 않게 늘 같은 함수를 넘기고, 하는 일은 지금 그린 화면의 것을 부른다
+  /** 계산대 '구매': 홈이 서버에 주문한다. 성공하면 장바구니를 비우고 창을 닫고 안내, 실패하면 서버 안내를 보이고 장바구니·창은 둔다. */
+  const buyClothing = (items: { type: string; price: number }[]) => {
+    if (buying || items.length === 0) return;
+    if (!onClothingOrder) {
+      showToast("홈 화면에서 살 수 있어요");
+      return;
+    }
+    setBuying(true);
+    onClothingOrder(items)
+      .then(() => {
+        clearClothingCart();
+        setCartOpen(false);
+        showToast(`옷 ${items.length}개를 샀어요`);
+      })
+      .catch((error: unknown) => showToast(error instanceof Error && error.message ? error.message : "사지 못했어요. 다시 시도해 주세요"))
+      .finally(() => setBuying(false));
+  };
   /**
    * 피팅룸에서 나온다. finished가 null이면 '취소'(들어오기 전 착장), 아니면 '끝내기': 가지지 않은 등록된 상품은 장바구니에 담고 그 부위를 들어오기 전 옷으로,
    * 가진 옷으로 바꾼 착장은 입은 채 옷장에 저장한다(개발 화면은 시험 착장만). 커튼을 열고(입구를 풂) 방 앞으로 걸어 나온다.
@@ -1465,6 +1493,12 @@ export default function Lobby3dScreen({
     }
     if (id === "clothingDown") {
       travel("clothing1");
+      return;
+    }
+    // 계산대의 '계산하기': 장바구니 창을 연다
+    if (id === "clothingCheckout") {
+      sim.pointerCancel();
+      setCartOpen(true);
       return;
     }
     // 피팅룸의 '들어가기': 들어오기 전 착장을 기억하고 그 방 안까지 걸어 들어간다
@@ -1994,6 +2028,13 @@ export default function Lobby3dScreen({
       </Animated.View>
       {/* 가구점 진열대의 진열 목록. 고르면 그 진열대만 바뀌고 닫힌다 */}
       <ShopDisplaySheet slot={displaySlot} onClose={() => setDisplaySlot(null)} />
+      <ClothingCartSheet
+        visible={cartOpen && clothingFloorOf(area) !== null}
+        balance={shopBalance}
+        buying={buying}
+        onClose={() => setCartOpen(false)}
+        onBuy={buyClothing}
+      />
       <ClothingFittingSheet
         visible={fittingLook !== null && clothingFloorOf(area) !== null}
         look={fittingLook ?? NO_LOOK}

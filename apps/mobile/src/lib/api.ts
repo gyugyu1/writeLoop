@@ -8,6 +8,7 @@ import type { LobbyLayout } from "./lobby3d/lobby-layout";
 import { parseLobbyLayoutPayload, toLobbyLayoutPayload } from "./lobby3d/lobby-layout-payload";
 import { normalizeDailyDifficulty } from "./practice";
 import type {
+  ClothingShopOrderResult,
   AdminPrompt,
   AdminPromptHint,
   AdminPromptHintRequest,
@@ -1738,6 +1739,27 @@ export async function orderHomeShoppingWearable(request: { type: string; price: 
   const payload = (await response.json()) as { type: string; price: number; balance: number; owned: number; wardrobe?: unknown };
   const wardrobe = payload.wardrobe && typeof payload.wardrobe === "object" && !Array.isArray(payload.wardrobe) ? (payload.wardrobe as Wardrobe) : null;
   return { type: payload.type, price: payload.price, balance: payload.balance, owned: payload.owned, itemId: null, layout: null, wardrobe };
+}
+
+/**
+ * 마을 옷집 계산대 주문(장바구니를 한 번에). price는 화면에 보인 가격이다. 서버가 진열·판매·소유·가격·룹을 보고 전부 사거나 전부 안 산다
+ * (실패하면 서버의 안내 글로 던진다: 진열하지 않은 옷, 판매 준비 중, 이미 가짐, 가격 바뀜, 룹 부족).
+ */
+export async function orderClothingShop(items: { type: string; price: number }[]): Promise<ClothingShopOrderResult> {
+  const response = await apiFetch("/api/clothing-shop/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ items })
+  });
+  if (!response.ok) {
+    throw await parseApiError(response, "사지 못했어요. 다시 시도해 주세요");
+  }
+  const payload = (await response.json()) as { items?: unknown; total?: unknown; balance?: unknown; wardrobe?: unknown };
+  const wardrobe = payload.wardrobe && typeof payload.wardrobe === "object" && !Array.isArray(payload.wardrobe) ? (payload.wardrobe as Wardrobe) : null;
+  const bought = Array.isArray(payload.items) ? (payload.items as { type: string; price: number }[]) : [];
+  return { items: bought, total: Number(payload.total) || 0, balance: Number(payload.balance) || 0, wardrobe };
 }
 
 export async function getTodayWritingStatus(): Promise<TodayWritingStatus | null> {

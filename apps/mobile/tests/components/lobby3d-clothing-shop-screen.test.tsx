@@ -352,3 +352,81 @@ describe("피팅 중 화면이 사라질 때", () => {
     expect(shopData.clothingCurtainClosed()).toBeNull();
   });
 });
+
+// 작업 133 ④: 계산대에서 장바구니 창을 열고 구매한다(홈이 주문). 개발 화면은 살 수 없다는 안내
+describe("옷집 계산대", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const stock = require("@/lib/lobby3d/clothing-stock") as typeof import("@/lib/lobby3d/clothing-stock");
+  const store = require("@/lib/item-catalog-store") as typeof import("@/lib/item-catalog-store");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+
+  beforeEach(() => {
+    store.setItemCatalog({
+      version: "test-checkout",
+      items: [
+        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: null, assets: null },
+        { id: "mufflerRed", kind: "wearable", name: "빨강 머플러", shopName: "빨강 머플러", description: "", category: "clothes", slot: "accessory", price: 90, draw: null, assets: null }
+      ]
+    });
+  });
+  afterEach(() => stock.resetClothingShop());
+
+  async function toCheckout(order?: (items: { type: string; price: number }[]) => Promise<void>, balance: number | null = 500) {
+    await screen.unmount();
+    mockCanvas.props = null;
+    await render(<Lobby3dScreen devPanel={false} shopBalance={balance} onClothingOrder={order} />);
+    await flushAsync();
+    await toClothingDoor();
+    await press("들어가기");
+    await frames(1.2);
+    await walkTo(CLOTHING_MARKS.clothingCheckout.approach[0], "clothingCheckout");
+    expect(sim().snapshot(Date.now()).bubbleText).toBe("계산할까?");
+    await press("계산하기");
+  }
+
+  it("담은 상품과 합계·잔액이 보이고, 구매하면 홈이 주문한 뒤 장바구니가 비고 안내가 뜬다", async () => {
+    stock.addToClothingCart("capOrange");
+    stock.addToClothingCart("mufflerRed");
+    const order = jest.fn(async () => {});
+    await toCheckout(order);
+    expect(screen.queryAllByText("합계 150룹", ALL)).toHaveLength(1);
+    expect(screen.queryAllByText("잔액 500룹", ALL)).toHaveLength(1);
+    await press("구매");
+    await flushAsync();
+    expect(order).toHaveBeenCalledWith([
+      { type: "capOrange", price: 60 },
+      { type: "mufflerRed", price: 90 }
+    ]);
+    expect(stock.clothingCart()).toEqual([]);
+    expect(screen.queryAllByText("옷 2개를 샀어요", ALL).length).toBeGreaterThan(0);
+  });
+
+  it("주문이 실패하면 서버 안내를 보이고 장바구니는 그대로, 룹이 모자라면 구매를 누를 수 없다", async () => {
+    stock.addToClothingCart("capOrange");
+    const order = jest.fn(async () => {
+      throw new Error("이미 가진 옷이에요.");
+    });
+    await toCheckout(order);
+    await press("구매");
+    await flushAsync();
+    expect(screen.queryAllByText("이미 가진 옷이에요.", ALL).length).toBeGreaterThan(0);
+    expect(stock.clothingCart()).toEqual(["capOrange"]);
+  });
+
+  it("잔액이 합계보다 적으면 '룹이 N 모자라요'이고 구매가 막히며, 비었으면 '장바구니가 비었어요'", async () => {
+    stock.addToClothingCart("mufflerRed");
+    await toCheckout(jest.fn(async () => {}), 50);
+    expect(screen.queryAllByText("룹이 40 모자라요", ALL)).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "구매" }).props.accessibilityState).toMatchObject({ disabled: true });
+    await press("빨강 머플러 빼기");
+    expect(screen.queryAllByText("장바구니가 비었어요", ALL)).toHaveLength(1);
+  });
+
+  it("홈이 주문을 맡지 않으면(개발 화면) '홈 화면에서 살 수 있어요'", async () => {
+    stock.addToClothingCart("capOrange");
+    await toCheckout(undefined);
+    await press("구매");
+    expect(screen.queryAllByText("홈 화면에서 살 수 있어요", ALL).length).toBeGreaterThan(0);
+    expect(stock.clothingCart()).toEqual(["capOrange"]);
+  });
+});

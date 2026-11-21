@@ -37,7 +37,7 @@ import { useHomeMonthCalendar } from "@/components/home/use-home-month-calendar"
 import { useLobbyGreeting } from "@/components/home/use-lobby-greeting";
 import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
-import { getLoopPoints, getWardrobe, saveWardrobeEquipped, trackDailyPromptClick } from "@/lib/api";
+import { getLoopPoints, getWardrobe, orderClothingShop, saveWardrobeEquipped, trackDailyPromptClick } from "@/lib/api";
 import { refreshItemCatalog } from "@/lib/item-catalog";
 import { useItemCatalog } from "@/lib/item-catalog-store";
 import { retryFailedItemFiles } from "@/lib/item-files";
@@ -181,6 +181,17 @@ export default function HomeScreen() {
     wardrobeRequest.current += 1;
     setLobbyEquipped({ value: wardrobe.equipped });
     setLobbyOwned(wardrobe.items.map((item) => item.type));
+  }, []);
+  // 옷집 계산대 구매: 서버에 주문하고 잔액·옷장(가진 옷·착장)을 응답으로 맞춘다(실패하면 로비가 서버 안내를 보인다)
+  const handleClothingOrder = useCallback(async (items: { type: string; price: number }[]) => {
+    const result = await orderClothingShop(items);
+    loopBalanceRequest.current += 1;
+    setLoopBalance(result.balance);
+    if (result.wardrobe) {
+      wardrobeRequest.current += 1;
+      setLobbyEquipped({ value: result.wardrobe.equipped });
+      setLobbyOwned(result.wardrobe.items.map((item) => item.type));
+    }
   }, []);
   const handleShopBalance = useCallback((balance: number) => {
     loopBalanceRequest.current += 1;
@@ -543,6 +554,7 @@ export default function HomeScreen() {
           signedIn={currentUser !== null}
           ownedItems={lobbyOwned}
           onSaveLook={handleSaveLook}
+          onClothingOrder={handleClothingOrder}
         />
       </View>
       {isEditingLobby ? null : <MobileNavBar activeTab="home" />}

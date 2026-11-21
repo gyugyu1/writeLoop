@@ -216,6 +216,10 @@ export const SHOP_MARKS: Record<ShopPlaceId, MarkInfo<ShopPlaceId>> = {
   >)
 };
 
+/** 옷집 계산대 말풍선(로그인했는지에 따라). 손님은 버튼 없이 안내만 한다. */
+export const CLOTHING_CHECKOUT_PROMPT = { prompt: "계산할까?", buttonLabel: "계산하기" } as const;
+export const CLOTHING_CHECKOUT_GUEST_PROMPT = { prompt: "로그인하면 옷을 살 수 있어", buttonLabel: "" } as const;
+
 /** 층마다 피팅룸 장소: 그 방 앞에 서서 방 안쪽을 본다. */
 function fittingMark(id: "clothingFitting1" | "clothingFitting2", floor: ClothingFloor): MarkInfo<ClothingPlaceId> {
   const room = CLOTHING_FITTING_ROOMS[floor];
@@ -252,6 +256,15 @@ export const CLOTHING_MARKS: Record<ClothingPlaceId, MarkInfo<ClothingPlaceId>> 
     enterMessage: ""
   },
   clothingFitting1: fittingMark("clothingFitting1", 1),
+  clothingCheckout: {
+    id: "clothingCheckout",
+    label: "계산대",
+    // 손님 자리에서 계산대(점원 자리) 쪽을 본다
+    faceTo: { x: CLOTHING_NODES.checkoutNpc.x, z: CLOTHING_NODES.checkoutNpc.z },
+    approach: [{ x: CLOTHING_NODES.checkoutInteract.x, z: CLOTHING_NODES.checkoutInteract.z }],
+    ...CLOTHING_CHECKOUT_PROMPT,
+    enterMessage: ""
+  },
   clothingFitting2: fittingMark("clothingFitting2", 2),
   clothingDown: {
     id: "clothingDown",
@@ -276,6 +289,8 @@ let closetSignedIn = true;
 /** 옷장 말풍선을 로그인한 사용자용으로 할지(손님이면 false). 홈이 로그인 상태가 바뀔 때 알린다. */
 export function setClosetSignedIn(signedIn: boolean): void {
   closetSignedIn = signedIn;
+  // 옷집 계산대도 로그인했는지에 따라 안내가 다르다
+  Object.assign(CLOTHING_MARKS.clothingCheckout, signedIn ? CLOTHING_CHECKOUT_PROMPT : CLOTHING_CHECKOUT_GUEST_PROMPT);
   for (const mark of closetMarks.values()) Object.assign(mark, signedIn ? CLOSET_PROMPT : CLOSET_GUEST_PROMPT);
 }
 

@@ -68,6 +68,9 @@ describe("계산 창 '지금 입고 있는 옷'", () => {
     expect(buy().props.accessibilityState.disabled).toBe(false);
     await act(async () => fireEvent.press(screen.getByRole("checkbox", { name: "주황 야구모자 60룹" })));
     expect(buy().props.accessibilityState.disabled).toBe(true);
+    // 살 것이 없어도 합계 줄은 남아 창 높이가 그대로다
+    expect(screen.getByText("합계 0룹")).toBeTruthy();
+    expect(screen.getByText("잔액 500룹")).toBeTruthy();
   });
 
   it("판매 준비 중인 옷은 체크할 수 없고 주문에 들어가지 않는다", async () => {

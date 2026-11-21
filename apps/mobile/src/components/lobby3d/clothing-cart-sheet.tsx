@@ -110,7 +110,8 @@ export default function ClothingCartSheet({ visible, worn = NO_WORN, balance, bu
             </Pressable>
           </View>
         ))}
-        {order.length > 0 ? (
+        {/* 입은 옷 줄이 있으면 체크를 모두 풀어도(합계 0룹) 합계 줄을 남겨 창 높이가 바뀌지 않게 한다 */}
+        {order.length > 0 || wornRows.length > 0 ? (
           <View style={styles.summary}>
             <Text style={styles.total}>합계 {total}룹</Text>
             {balance !== null ? <Text style={styles.balance}>잔액 {balance}룹</Text> : null}

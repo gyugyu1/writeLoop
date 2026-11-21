@@ -221,7 +221,7 @@ describe("옷집 진열 상품 선택과 장바구니", () => {
     expect(canvas().clothingSelected).toBe("capOrange");
     expect(screen.queryAllByText("주황 야구모자 · 60룹", ALL)).toHaveLength(1);
     expect(screen.queryAllByText("60룹", ALL)).toHaveLength(1);
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual(["capOrange"]);
     expect(screen.queryAllByText("장바구니에 담았어요", ALL).length).toBeGreaterThan(0);
     expect(screen.queryAllByText("장바구니 1", ALL)).toHaveLength(1);
@@ -240,7 +240,7 @@ describe("옷집 진열 상품 선택과 장바구니", () => {
     await tapProduct("wear-face-honey-panto");
     expect(screen.queryAllByText("허니 팬토 선글라스 · 판매 준비 중", ALL)).toHaveLength(1);
     expect(screen.queryAllByText("판매 준비 중인 옷이에요", ALL)).toHaveLength(1);
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual([]);
   });
 
@@ -249,7 +249,7 @@ describe("옷집 진열 상품 선택과 장바구니", () => {
     await press("들어가기");
     await frames(1.2);
     await tapProduct("capOrange");
-    await press("장바구니 담기");
+    await press("장바구니");
     await tapProduct("capOrange");
     expect(canvas().clothingSelected).toBe("capOrange");
     await act(async () => {
@@ -331,7 +331,7 @@ describe("옷집 피팅룸", () => {
     expect(canvas().clothingCurtainClosed).toBe(2);
     await press("항구 산책 · 마린");
     expect(canvas().look).toMatchObject({ hat: "wear-hat-breakwater-bucket", top: "wear-top-tide-sailor", bottom: "wear-bottom-jetty-denim", shoes: "shoesWhite" });
-    await press("끝내기");
+    await press("장바구니에 넣기");
     expect(stock.clothingCart()).toEqual(["shoesWhite"]);
     expect(screen.queryAllByText("장바구니에 1개 담았어요", ALL).length).toBeGreaterThan(0);
     expect(canvas().look?.shoes ?? null).not.toBe("shoesWhite");
@@ -428,5 +428,84 @@ describe("옷집 계산대", () => {
     await press("구매");
     expect(screen.queryAllByText("홈 화면에서 살 수 있어요", ALL).length).toBeGreaterThan(0);
     expect(stock.clothingCart()).toEqual(["capOrange"]);
+  });
+});
+
+// 작업 133 즉석 입어보기·피팅 카메라: 진열 상품 앞에서 입어보기·벗기, 옷집 안에서만 유지, 피팅 중 카메라 초점
+describe("옷집 즉석 입어보기와 피팅 카메라", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const stock = require("@/lib/lobby3d/clothing-stock") as typeof import("@/lib/lobby3d/clothing-stock");
+  const store = require("@/lib/item-catalog-store") as typeof import("@/lib/item-catalog-store");
+  const shopData = require("@/lib/lobby3d/clothing-shop") as typeof import("@/lib/lobby3d/clothing-shop");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  const file = (n: string) => ({ url: `/api/catalog/files/${n}.glb`, sha256: n.padEnd(64, "0").slice(0, 64), bytes: 1 });
+  beforeEach(() => {
+    store.setItemCatalog({
+      version: "test-try",
+      items: [
+        { id: "capOrange", kind: "wearable", name: "주황 야구모자", shopName: "주황 야구모자", description: "", category: "clothes", slot: "hat", price: 60, draw: { attach: "bone", bone: "head", body: 1 }, assets: { model: file("capOrange"), icon: null } },
+        { id: "wear-face-honey-panto", kind: "wearable", name: "허니 팬토 선글라스", shopName: "허니 팬토 선글라스", description: "", category: null, slot: "face", price: null, draw: { attach: "bone", bone: "head", body: 1 }, assets: { model: file("panto"), icon: null } }
+      ]
+    });
+  });
+  afterEach(() => {
+    stock.resetClothingShop();
+    shopData.setClothingCurtainClosed(null);
+  });
+
+  async function tapProduct(id: string) {
+    const product = stock.clothingProduct(id)!;
+    await act(async () => {
+      canvas().onPointer("down", { point: product.approach, mark: null, onCharacter: false, onScenery: true, building: null, product: id }, 100, 100);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(30);
+      canvas().onPointer("up", null, 100, 100);
+    });
+    await frames(20);
+  }
+
+  it("입어보기를 누르면 창이 닫히고 바로 입으며, 다시 열면 '벗기'로 들어오기 전 옷으로, 층을 옮겨도 유지되고 옷집을 나가면 돌아온다", async () => {
+    await toClothingDoor();
+    const before = canvas().look;
+    await press("들어가기");
+    await frames(1.2);
+    await tapProduct("capOrange");
+    await press("입어보기");
+    expect(canvas().look?.hat).toBe("capOrange");
+    expect(screen.queryByRole("button", { name: "입어보기" })).toBeNull();
+    await tapProduct("wear-face-honey-panto");
+    await press("입어보기");
+    expect(canvas().look).toMatchObject({ hat: "capOrange", face: "wear-face-honey-panto" });
+    await walkTo(CLOTHING_MARKS.clothingUp.approach[0], "clothingUp");
+    await press("올라가기");
+    await frames(1.2);
+    expect(canvas().look).toMatchObject({ hat: "capOrange", face: "wear-face-honey-panto" });
+    await walkTo(CLOTHING_MARKS.clothingDown.approach[0], "clothingDown");
+    await press("내려가기");
+    await frames(1.2);
+    await tapProduct("capOrange");
+    await press("벗기");
+    expect(canvas().look?.hat ?? null).not.toBe("capOrange");
+    await walkTo(CLOTHING_MARKS.clothingExit.approach[0], "clothingExit");
+    await press("나가기");
+    await frames(1.2);
+    expect(canvas().look).toEqual(before);
+  });
+
+  it("피팅룸 안에서는 카메라 초점이 그 방 안 자리이고 라룹이는 카메라 쪽을 보며, 버튼은 '장바구니에 넣기', 나오면 초점이 풀린다", async () => {
+    await toClothingDoor();
+    await press("들어가기");
+    await frames(1.2);
+    await walkTo(CLOTHING_MARKS.clothingFitting1.approach[0], "clothingFitting1");
+    await press("들어가기");
+    await frames(6);
+    const room = shopData.CLOTHING_FITTING_ROOMS[1];
+    expect(canvas().clothingFittingFocus).toEqual({ x: room.inside.x, z: room.inside.z });
+    expect(angleGap(sim().heading, 0)).toBeLessThan(1e-3);
+    expect(screen.getByRole("button", { name: "장바구니에 넣기" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "끝내기" })).toBeNull();
+    await press("취소");
+    expect(canvas().clothingFittingFocus).toBeNull();
   });
 });

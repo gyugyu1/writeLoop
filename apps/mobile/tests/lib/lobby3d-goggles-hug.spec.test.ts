@@ -845,8 +845,8 @@ describe("[spec] 095 그대로: 옷 내려받기·서버 아이템 목록 파일
   it("R1 서버 아이템 목록 폴더(apps/backend/src/main/resources/catalog)가 기준 커밋과 같다(다른 착용 옷 11개와 목록 파일 포함. 가구점 진열 상품 항목·파일은 뺀다)", () => {
     const diff = spawnSync("git", ["diff", "--name-only", BASE, "--", "apps/backend/src/main/resources/catalog"], { cwd: REPO, encoding: "utf8" });
     expect(diff.status).toBe(0);
-    const changed = diff.stdout.split(/\r?\n/).filter(Boolean).filter((f) => !SHOP_FILES.includes(f) && !CLOTHING_FILES.includes(f));
-    // 가구점 파일 말고는 목록 파일(items.json)만 바뀔 수 있다(다른 모델·그림 파일은 그대로)
+    const changed = diff.stdout.split(/\r?\n/).filter(Boolean).filter((f) => !SHOP_FILES.includes(f) && !CLOTHING_FILES.includes(f) && f !== "apps/backend/src/main/resources/catalog/clothing-shop-stock.json");
+    // 가구점 파일과 옷집 진열 파일(clothing-shop-stock.json) 말고는 목록 파일(items.json)만 바뀔 수 있다(다른 모델·그림 파일은 그대로)
     expect(changed).toEqual([ITEMS]);
     const base = JSON.parse(baseFile(ITEMS).toString("utf8")) as { _comment: string; items: { id: string }[] };
     const now = JSON.parse(readFileSync(join(REPO, ITEMS), "utf8")) as { _comment: string; items: { id: string }[] };

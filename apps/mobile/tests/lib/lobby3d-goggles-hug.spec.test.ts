@@ -840,7 +840,8 @@ describe("[spec] 095 그대로: 옷 내려받기·서버 아이템 목록 파일
   // 작업 133 ③ 결정(사용자 "qa가 옷집 13종을 빼고 견주게 고침"): 서버 목록에 더해진 옷집 미등록 13종(stock.json catalogId null)과 그 모델 파일은 뺀다
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const CLOTHING_UNREGISTERED: string[] = (require("../../src/lib/lobby3d/clothing-shop-stock.json").products as { id: string; catalogId: string | null }[]).filter((p) => p.catalogId === null).map((p) => p.id);
-  const CLOTHING_FILES = CLOTHING_UNREGISTERED.map((id) => `apps/backend/src/main/resources/catalog/files/${id}.glb`);
+  // 작업 133 09 결정(03): 13종 아이콘 PNG(<id>.png)도 뺀다
+  const CLOTHING_FILES = CLOTHING_UNREGISTERED.flatMap((id) => [`apps/backend/src/main/resources/catalog/files/${id}.glb`, `apps/backend/src/main/resources/catalog/files/${id}.png`]);
 
   it("R1 서버 아이템 목록 폴더(apps/backend/src/main/resources/catalog)가 기준 커밋과 같다(다른 착용 옷 11개와 목록 파일 포함. 가구점 진열 상품 항목·파일은 뺀다)", () => {
     const diff = spawnSync("git", ["diff", "--name-only", BASE, "--", "apps/backend/src/main/resources/catalog"], { cwd: REPO, encoding: "utf8" });

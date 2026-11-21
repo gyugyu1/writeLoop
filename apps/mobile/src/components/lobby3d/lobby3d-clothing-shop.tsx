@@ -6,7 +6,7 @@ import type { PlaceId } from "@/lib/lobby3d/engine";
 import { CLOTHING_FITTING_ROOMS, CLOTHING_FLOOR_ROOTS, CLOTHING_HIDDEN_NODES, CLOTHING_OFFSET, type ClothingFloor } from "@/lib/lobby3d/clothing-shop";
 import { CLOTHING_STOCK_ROOT, clothingDisplayed, clothingProduct, clothingProductsOnFloor, subscribeClothingDisplay } from "@/lib/lobby3d/clothing-stock";
 import type { DaylightState } from "./lobby3d-daylight";
-import { SHOP_OUTSIDE_COLOR, convertMaterials, type ShopPickData } from "./lobby3d-shop";
+import { INDOOR_OUTSIDE_COLOR, convertMaterials, type ShopPickData } from "./lobby3d-shop";
 
 // 마을 옷집 실내(구역 clothing1·clothing2): 지금 층의 실내 모델 하나만 장면에 둔다(층을 옮기면 빠지고 다른 층이 붙는다).
 // 층 모델은 앱에 들어 있다. 모델 좌표에 CLOTHING_OFFSET을 더한 자리에 놓는다(오프셋은 clothing-shop.ts의 한 값이다).
@@ -268,7 +268,7 @@ export function ClothingFloorModel({ floor, daylight, pickTargets, selected, bui
     };
   }, [built, pickTargets, builtRef]);
 
-  // 실내 빛(가구점과 같은 시각별 색감)과 창 너머 바깥색. 실내를 나가면 바깥색을 거두고 검정으로 되돌린다
+  // 실내 빛(가구점과 같은 시각별 색감)과 건물 밖 배경(집처럼 검정). 실내를 나가면 검정으로 되돌린다
   const { scene } = useThree();
   const lights = useMemo(() => {
     const ambient = new THREE.AmbientLight(0xffffff, 1.35);
@@ -277,7 +277,7 @@ export function ClothingFloorModel({ floor, daylight, pickTargets, selected, bui
     sun.target.position.set(CLOTHING_OFFSET.x, 0, CLOTHING_OFFSET.z);
     return { ambient, sun };
   }, []);
-  const outside = useMemo(() => new THREE.Color(SHOP_OUTSIDE_COLOR), []);
+  const outside = useMemo(() => new THREE.Color(INDOOR_OUTSIDE_COLOR), []);
   useEffect(() => {
     scene.background = outside;
     return () => {

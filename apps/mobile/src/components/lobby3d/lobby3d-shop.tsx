@@ -88,8 +88,11 @@ function loadProductModel(uri: string): Promise<GLTF | null> {
   return job;
 }
 
-/** 유리 너머(실내 바깥)의 낮 바깥색. */
-export const SHOP_OUTSIDE_COLOR = 0xdcebf2;
+/**
+ * 실내(가구점·옷집) 건물 밖 배경색. 집(방)처럼 검정으로 통일한다(2026-11-22 사용자 결정).
+ * 새로 만드는 실내도 이 색을 쓴다.
+ */
+export const INDOOR_OUTSIDE_COLOR = 0x000000;
 
 /** 누르기 판정에 쓰는 물체의 표시: 장소가 있으면 그 장소(버들·계산대 → shopCounter, 진열대·상품 → shopSlotN, 문 → shopExit). */
 export interface ShopPickData {
@@ -587,7 +590,7 @@ export function ShopModel({ products, daylight, kit, outline, pickTargets }: Sho
   );
   useEffect(() => built.setOutline(outline), [built, outline]);
 
-  // 실내 빛(방과 같은 시각별 색감)과 유리 너머 바깥색. 실내를 나가면 바깥색을 거두고 검정으로 되돌린다(방과 같다)
+  // 실내 빛(방과 같은 시각별 색감)과 건물 밖 배경(집처럼 검정). 실내를 나가면 검정으로 되돌린다(방과 같다)
   const { scene } = useThree();
   const lights = useMemo(() => {
     const ambient = new THREE.AmbientLight(0xffffff, 1.35);
@@ -596,7 +599,7 @@ export function ShopModel({ products, daylight, kit, outline, pickTargets }: Sho
     sun.target.position.set(SHOP_OFFSET.x, 0, SHOP_OFFSET.z);
     return { ambient, sun };
   }, []);
-  const outside = useMemo(() => new THREE.Color(SHOP_OUTSIDE_COLOR), []);
+  const outside = useMemo(() => new THREE.Color(INDOOR_OUTSIDE_COLOR), []);
   useEffect(() => {
     scene.background = outside;
     return () => {

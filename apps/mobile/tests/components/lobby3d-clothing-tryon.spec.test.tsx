@@ -432,3 +432,53 @@ describe("[spec] 피팅 중 라룹이 방향(명세 4)", () => {
     expect(look().hat).toBe("capBlue");
   });
 });
+
+describe("[spec] 옷장 저장 기준(03 결정 2)과 카메라 초점 prop", () => {
+  it("안 가진 옷을 입어 본 채 가진 옷으로 바꾸고 넣으면, 실제 착장에 가진 옷만 얹어 저장하고 시착 옷은 저장하지 않는다. 옷집 안에는 시착이 남는다", async () => {
+    const onSaveLook = jest.fn().mockResolvedValue(undefined);
+    await renderShop({ onSaveLook });
+    await tryOn("capOrange");
+    await enterFitting1();
+    await press("shortsBrown, 가진 옷");
+    await press("장바구니에 넣기");
+    await flushAsync();
+    expect(onSaveLook).toHaveBeenCalledTimes(1);
+    expect(onSaveLook).toHaveBeenCalledWith({ ...BASE_LOOK, bottom: "shortsBrown" });
+    expect(stock.clothingCart()).toEqual([]);
+    expect(look()).toEqual({ ...BASE_LOOK, hat: "capOrange", bottom: "shortsBrown" });
+  });
+
+  it("가진 옷을 벗은 부위도 실제 착장에 반영해 저장하고 시착 옷은 저장하지 않는다", async () => {
+    const onSaveLook = jest.fn().mockResolvedValue(undefined);
+    await renderShop({ onSaveLook });
+    await tryOn("capOrange");
+    await enterFitting1();
+    await press(rowName("tshirtOrange", "가진 옷"));
+    expect(look().top).toBeNull();
+    await press("장바구니에 넣기");
+    await flushAsync();
+    expect(onSaveLook).toHaveBeenCalledTimes(1);
+    expect(onSaveLook).toHaveBeenCalledWith({ ...BASE_LOOK, top: null });
+  });
+
+  it("피팅 결과가 실제 착장과 같으면(시착 옷만 있으면) 저장하지 않는다", async () => {
+    const onSaveLook = jest.fn().mockResolvedValue(undefined);
+    await renderShop({ onSaveLook });
+    await tryOn("capOrange");
+    await enterFitting1();
+    await press("장바구니에 넣기");
+    await flushAsync();
+    expect(onSaveLook).not.toHaveBeenCalled();
+    expect(look()).toEqual({ ...BASE_LOOK, hat: "capOrange" });
+  });
+
+  it("피팅 중에는 캔버스에 카메라 초점(clothingFittingFocus)을 넘기고 나오면 비운다", async () => {
+    await renderShop();
+    expect(canvas().clothingFittingFocus ?? null).toBeNull();
+    await enterFitting1();
+    expect(canvas().clothingFittingFocus ?? null).not.toBeNull();
+    await press("취소");
+    await frames(6);
+    expect(canvas().clothingFittingFocus ?? null).toBeNull();
+  });
+});

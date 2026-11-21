@@ -183,11 +183,11 @@ describe("[spec] 피팅룸 장소와 들어가기(B1~B5, B31)", () => {
     await enterFitting(1);
     const inside = appPoint(1, "Fitting1");
     expect(dist(pos(), inside)).toBeLessThan(0.05);
-    const gap = Math.abs(((((sim().heading - (anchor(1, "Fitting1").rotationYDegrees * Math.PI) / 180 + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI);
+    const gap = Math.abs(((((sim().heading - 0 + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI);
     expect(gap).toBeLessThan(1e-3);
     expect(canvas().clothingCurtainClosed).toBe(1);
     expect(roomReachable(1)).toBe(false);
-      expect(screen.queryAllByRole("button", { name: "끝내기" }).length).toBeGreaterThan(0);
+      expect(screen.queryAllByRole("button", { name: "장바구니에 넣기" }).length).toBeGreaterThan(0);
     // 피팅 중 로비를 눌러도 가지 않는다
     const before = pos();
     await walkTo(appPoint(1, "Fitting1"), null);
@@ -322,6 +322,7 @@ describe("[spec] 취소·끝내기(B21~B29, B32)", () => {
     await frames(6);
     expect(dist(pos(), appPoint(1, "FittingApproach1"))).toBeLessThan(0.1);
     expect(screen.queryAllByRole("button", { name: "끝내기" })).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: "장바구니에 넣기" })).toHaveLength(0);
     expect(stock.clothingCart()).toEqual([]);
     expect(onSaveLook).not.toHaveBeenCalled();
   });
@@ -341,7 +342,7 @@ describe("[spec] 취소·끝내기(B21~B29, B32)", () => {
     await enterHomeFitting(1, { onSaveLook });
     await press(rowName("capOrange", "60룹"));
     await press(rowName("shoesWhite", "90룹"));
-    await press("끝내기");
+    await press("장바구니에 넣기");
     await flushAsync();
     expect([...stock.clothingCart()].sort()).toEqual(["capOrange", "shoesWhite"]);
     expect(texts("장바구니에 2개 담았어요").length).toBeGreaterThan(0);
@@ -352,7 +353,7 @@ describe("[spec] 취소·끝내기(B21~B29, B32)", () => {
   it("B22·B27: 하나만 담으면 '장바구니에 1개 담았어요'", async () => {
     await enterHomeFitting(1);
     await press(rowName("capOrange", "60룹"));
-    await press("끝내기");
+    await press("장바구니에 넣기");
     expect(stock.clothingCart()).toEqual(["capOrange"]);
     expect(texts("장바구니에 1개 담았어요").length).toBeGreaterThan(0);
   });
@@ -362,7 +363,7 @@ describe("[spec] 취소·끝내기(B21~B29, B32)", () => {
     expect(stock.clothingCart()).toEqual(["capOrange"]);
     await enterHomeFitting(1);
     await press(rowName("capOrange", "60룹"));
-    await press("끝내기");
+    await press("장바구니에 넣기");
     expect(stock.clothingCart()).toEqual(["capOrange"]);
     expect(screen.queryAllByText(/장바구니에 \d+개 담았어요/, ALL)).toHaveLength(0);
   });
@@ -372,7 +373,7 @@ describe("[spec] 취소·끝내기(B21~B29, B32)", () => {
     await enterHomeFitting(1, { onSaveLook });
     await press(rowName("wear-top-kiln-jacket", "판매 준비 중"));
     expect(look().top).toBe("wear-top-kiln-jacket");
-    await press("끝내기");
+    await press("장바구니에 넣기");
     await flushAsync();
     expect(stock.clothingCart()).toEqual([]);
     expect(canvas().look).toEqual(BASE_LOOK);
@@ -384,7 +385,7 @@ describe("[spec] 취소·끝내기(B21~B29, B32)", () => {
     const onSaveLook = jest.fn().mockResolvedValue(undefined);
     await enterHomeFitting(2, { onSaveLook });
     await press("shortsBrown, 가진 옷");
-    await press("끝내기");
+    await press("장바구니에 넣기");
     await flushAsync();
     expect(onSaveLook).toHaveBeenCalledTimes(1);
     expect(onSaveLook).toHaveBeenCalledWith({ ...BASE_LOOK, bottom: "shortsBrown" });
@@ -394,13 +395,14 @@ describe("[spec] 취소·끝내기(B21~B29, B32)", () => {
     await frames(6);
     expect(dist(pos(), appPoint(2, "FittingApproach1"))).toBeLessThan(0.1);
     expect(screen.queryAllByRole("button", { name: "끝내기" })).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: "장바구니에 넣기" })).toHaveLength(0);
   });
 
   it("B26: 저장이 실패하면 들어오기 전 착장으로 돌아가고 '옷을 저장하지 못했어요'가 안내된다", async () => {
     const onSaveLook = jest.fn().mockRejectedValue(new Error("fail"));
     await enterHomeFitting(1, { onSaveLook });
     await press("shortsBrown, 가진 옷");
-    await press("끝내기");
+    await press("장바구니에 넣기");
     await flushAsync();
     expect(onSaveLook).toHaveBeenCalledTimes(1);
     expect(texts("옷을 저장하지 못했어요").length).toBeGreaterThan(0);
@@ -412,7 +414,7 @@ describe("[spec] 취소·끝내기(B21~B29, B32)", () => {
     await enterHomeFitting(1, { onSaveLook });
     await press(rowName("capOrange", "60룹"));
     await press("shortsBrown, 가진 옷");
-    await press("끝내기");
+    await press("장바구니에 넣기");
     await flushAsync();
     expect(stock.clothingCart()).toEqual(["capOrange"]);
     expect(onSaveLook).toHaveBeenCalledWith({ ...BASE_LOOK, bottom: "shortsBrown" });
@@ -431,7 +433,7 @@ describe("[spec] 취소·끝내기(B21~B29, B32)", () => {
     expect(canvas().clothingCurtainClosed).toBe(2);
     expect(dist(pos(), appPoint(2, "Fitting1"))).toBeLessThan(0.05);
     expect(roomReachable(2)).toBe(false);
-    await press("끝내기");
+    await press("장바구니에 넣기");
     await frames(6);
     expect(canvas().clothingCurtainClosed ?? null).toBeNull();
     expect(dist(pos(), appPoint(2, "FittingApproach1"))).toBeLessThan(0.1);

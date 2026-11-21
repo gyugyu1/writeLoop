@@ -193,7 +193,7 @@ describe("[spec] 입구에서 선글라스까지(사용자 확인 요청)", () =
   it("선글라스는 장바구니에 담을 수 없다(미등록)", async () => {
     await enterClothing();
     await tapProduct("wear-face-honey-panto");
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual([]);
   });
 });
@@ -204,7 +204,7 @@ describe("[spec] 새 자리 상품(그대로 둘 가격·이름, 바뀐 자리)"
     await tapProduct("backpackRed");
     expect(canvas().clothingSelected).toBe("backpackRed");
     expect(textsContaining("빨강 백팩", "120룹").length).toBeGreaterThan(0);
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual(["backpackRed"]);
   });
 
@@ -234,6 +234,7 @@ describe("[spec] 빈 진열 자리(바뀌는 동작 4)", () => {
       await walkTo({ x: s.x + 9, z: s.z + 8 }, null);
       expect(canvas().clothingSelected ?? null).toBeNull();
       expect(texts("장바구니 담기")).toHaveLength(0);
+      expect(texts("장바구니")).toHaveLength(0);
     }
   });
 });
@@ -243,7 +244,7 @@ describe("[spec] 그대로 둘 동작", () => {
     await enterClothing({ devPanel: true });
     expect(stock.CLOTHING_PRODUCTS).toHaveLength(22);
     await tapProduct("capOrange");
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual(["capOrange"]);
     stock.setClothingDisplayed("capOrange", false);
     expect(stock.clothingCart()).toEqual([]);

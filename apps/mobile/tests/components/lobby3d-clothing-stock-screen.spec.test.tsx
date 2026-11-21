@@ -173,10 +173,11 @@ describe("[spec] 상품 누르기와 선택(S13·S15·S16·S17)", () => {
     await tapProductNoWait("tshirtOrange");
     expect(canvas().clothingSelected ?? null).toBeNull();
     expect(texts("장바구니 담기")).toHaveLength(0);
+    expect(texts("장바구니")).toHaveLength(0);
     await frames(20);
     expect(dist(pos(), stock.clothingProduct("tshirtOrange")!.approach)).toBeLessThan(0.1);
     expect(canvas().clothingSelected).toBe("tshirtOrange");
-    expect(texts("장바구니 담기").length).toBeGreaterThan(0);
+    expect(texts("장바구니").length).toBeGreaterThan(0);
   });
 
   it("S15: 상품이 아닌 집기(상품 정보 없는 누르기)를 누르면 선택도 상품 창도 없다", async () => {
@@ -185,6 +186,7 @@ describe("[spec] 상품 누르기와 선택(S13·S15·S16·S17)", () => {
     await walkTo({ x: near.x, z: near.z }, null);
     expect(canvas().clothingSelected ?? null).toBeNull();
     expect(texts("장바구니 담기")).toHaveLength(0);
+    expect(texts("장바구니")).toHaveLength(0);
   });
 
   it("S16: 상품 창을 닫고 다른 상품을 누르면 선택이 그 상품으로 옮겨 가고 이름표는 하나뿐이다", async () => {
@@ -207,6 +209,7 @@ describe("[spec] 상품 누르기와 선택(S13·S15·S16·S17)", () => {
     expect(canvas().clothingSelected ?? null).toBeNull();
     expect(textsContaining("주황 야구모자")).toHaveLength(0);
     expect(texts("장바구니 담기")).toHaveLength(0);
+    expect(texts("장바구니")).toHaveLength(0);
   });
 
   it("S17: 옷집을 나가도 선택이 풀린다", async () => {
@@ -228,7 +231,7 @@ describe("[spec] 이름표와 상품 창(S19~S21, S24~S29)", () => {
     expect(textsContaining("주황 티셔츠", "80룹").length).toBeGreaterThan(0);
     expect(texts("80룹").length).toBeGreaterThan(0);
     expect(texts("닫기").length).toBeGreaterThan(0);
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual(["tshirtOrange"]);
     expect(texts("장바구니에 담았어요").length).toBeGreaterThan(0);
     expect(texts("장바구니 1")).toHaveLength(1);
@@ -248,7 +251,7 @@ describe("[spec] 이름표와 상품 창(S19~S21, S24~S29)", () => {
     await tapProduct("wear-top-kiln-jacket");
     expect(textsContaining("코랄 워크 재킷", "판매 준비 중").length).toBeGreaterThan(0);
     expect(texts("판매 준비 중인 옷이에요")).toHaveLength(1);
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual([]);
     expect(texts("장바구니 1")).toHaveLength(0);
   });
@@ -256,20 +259,21 @@ describe("[spec] 이름표와 상품 창(S19~S21, S24~S29)", () => {
   it("S28: 이미 담은 상품을 다시 열면 '장바구니에 담았어요'가 보이고 다시 담기지 않는다", async () => {
     await enterClothing();
     await tapProduct("capOrange");
-    await press("장바구니 담기");
+    await press("장바구니");
     await tapProduct("capOrange");
     expect(texts("장바구니에 담았어요").length).toBeGreaterThan(0);
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual(["capOrange"]);
   });
 
   it("S29: '닫기'를 누르면 상품 창이 닫히고 장바구니는 그대로다", async () => {
     await enterClothing();
     await tapProduct("capOrange");
-    await press("장바구니 담기");
+    await press("장바구니");
     await tapProduct("shortsNavy");
     await press("닫기");
     expect(texts("장바구니 담기")).toHaveLength(0);
+    expect(texts("장바구니")).toHaveLength(0);
     expect(stock.clothingCart()).toEqual(["capOrange"]);
   });
 });
@@ -281,7 +285,7 @@ describe("[spec] 가진 옷(S21·S27·S44·S45)", () => {
     expect(textsContaining("주황 티셔츠", "가진 옷").length).toBeGreaterThan(0);
     expect(textsContaining("주황 티셔츠", "80룹")).toHaveLength(0);
     expect(texts("이미 가진 옷이에요")).toHaveLength(1);
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual([]);
   });
 
@@ -289,7 +293,7 @@ describe("[spec] 가진 옷(S21·S27·S44·S45)", () => {
     await enterClothing({ ownedItems: null });
     await tapProduct("tshirtOrange");
     expect(texts("이미 가진 옷이에요")).toHaveLength(0);
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(stock.clothingCart()).toEqual(["tshirtOrange"]);
   });
 });
@@ -299,9 +303,9 @@ describe("[spec] 장바구니 표시와 진열 해제(S35~S37, S41~S42)", () => 
     await enterClothing();
     expect(textsContaining("장바구니 ")).toHaveLength(0);
     await tapProduct("capOrange");
-    await press("장바구니 담기");
+    await press("장바구니");
     await tapProduct("shortsNavy");
-    await press("장바구니 담기");
+    await press("장바구니");
     expect(texts("장바구니 2")).toHaveLength(1);
     await goUp();
     expect(texts("장바구니 2")).toHaveLength(1);
@@ -311,7 +315,7 @@ describe("[spec] 장바구니 표시와 진열 해제(S35~S37, S41~S42)", () => 
   it("S35·S36·S42: 선택한 상품의 진열을 끄면 선택이 풀리고 창이 닫히고, 담겨 있었으면 장바구니에서 빠져 '장바구니 N'이 사라진다", async () => {
     await enterClothing();
     await tapProduct("capOrange");
-    await press("장바구니 담기");
+    await press("장바구니");
     await tapProduct("capOrange");
     expect(canvas().clothingSelected).toBe("capOrange");
     await act(async () => {
@@ -319,6 +323,7 @@ describe("[spec] 장바구니 표시와 진열 해제(S35~S37, S41~S42)", () => 
     });
     expect(canvas().clothingSelected ?? null).toBeNull();
     expect(texts("장바구니 담기")).toHaveLength(0);
+    expect(texts("장바구니")).toHaveLength(0);
     expect(texts("장바구니 1")).toHaveLength(0);
     expect(stock.clothingCart()).toEqual([]);
     await act(async () => {
@@ -330,7 +335,7 @@ describe("[spec] 장바구니 표시와 진열 해제(S35~S37, S41~S42)", () => 
   it("S07: 옷집을 나갔다 다시 들어와도 장바구니와 진열 여부가 유지된다", async () => {
     await enterClothing();
     await tapProduct("capOrange");
-    await press("장바구니 담기");
+    await press("장바구니");
     stock.setClothingDisplayed("capBlue", false);
     await walkTo(CLOTHING_MARKS.clothingExit.approach[0], "clothingExit");
     await press("나가기");

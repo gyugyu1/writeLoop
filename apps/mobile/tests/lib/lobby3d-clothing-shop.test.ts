@@ -137,3 +137,24 @@ describe("옷집 피팅룸 장소와 임시 충돌", () => {
     }
   });
 });
+
+// 작업 133 피팅 카메라 전신: 화면 비율마다 발끝·머리 위가 피팅 창(아래 절반) 위 화면 안에 들어온다
+describe("피팅 카메라 전신", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const engine = require("@/lib/lobby3d/engine") as typeof import("@/lib/lobby3d/engine");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  it("세로로 긴 폰부터 태블릿 비율까지 전신이 창 위에 들어오고, 가까운 자르는 면은 라룹이 바로 앞이다", () => {
+    for (const aspect of [0.42, 0.46, 0.5, 0.56, 0.75]) {
+      const pose = engine.fittingCameraPose({ x: 3, z: 4 }, aspect, 0.5);
+      const d = pose.position.z - 4;
+      const pitch = Math.atan((pose.position.y - pose.lookAt.y) / d);
+      const tanV = Math.tan((pose.fovDeg * Math.PI) / 360);
+      const ndc = (y: number) => Math.tan(Math.atan((y - pose.position.y) / d) + pitch) / tanV;
+      expect(ndc(0)).toBeGreaterThanOrEqual(0);
+      expect(ndc(engine.FITTING_VIEW.bodyHeight)).toBeLessThanOrEqual(1);
+      expect(Math.abs(engine.FITTING_VIEW.bodyHalfWidth / (d * tanV * aspect))).toBeLessThanOrEqual(1);
+      expect(pose.near).toBeCloseTo(d - engine.FITTING_VIEW.nearAhead, 6);
+      expect(pose.position.x).toBe(3);
+    }
+  });
+});

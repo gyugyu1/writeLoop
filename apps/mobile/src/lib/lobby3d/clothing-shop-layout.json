@@ -22,22 +22,22 @@
         "CheckoutInteract": {
           "node": "F1_CheckoutInteract",
           "positionXYZ": [
-            4.91,
+            2.72,
             0,
-            5.05
+            -0.31
           ],
-          "rotationYDegrees": 180,
+          "rotationYDegrees": 90,
           "active": true,
           "role": "checkout-customer"
         },
         "CheckoutNPC": {
           "node": "F1_CheckoutNPC",
           "positionXYZ": [
-            4.91,
+            5.09,
             0,
-            2.55
+            -0.31
           ],
-          "rotationYDegrees": 0,
+          "rotationYDegrees": -90,
           "active": true,
           "role": "checkout-cashier"
         },
@@ -48,7 +48,8 @@
             0,
             -1.03
           ],
-          "rotationYDegrees": 180
+          "rotationYDegrees": 180,
+          "active": true
         },
         "Fitting1": {
           "node": "F1_Fitting1",
@@ -74,7 +75,8 @@
             1.16,
             -3.66
           ],
-          "rotationYDegrees": 0
+          "rotationYDegrees": 0,
+          "active": true
         },
         "EntranceSpawn": {
           "node": "F1_EntranceSpawn",
@@ -131,6 +133,50 @@
             2.96
           ],
           "rotationYDegrees": 0
+        },
+        "HarborTable_Mount02_Visit": {
+          "node": "F1_HarborTable_Mount02_Visit",
+          "positionXYZ": [
+            4.58,
+            0,
+            3.38
+          ],
+          "rotationYDegrees": 180.0,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "HarborTable_Mount02_Staff": {
+          "node": "F1_HarborTable_Mount02_Staff",
+          "positionXYZ": [
+            5.28,
+            0,
+            3.61
+          ],
+          "rotationYDegrees": -154.2307,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "HarborRail_Mount02_Visit": {
+          "node": "F1_HarborRail_Mount02_Visit",
+          "positionXYZ": [
+            -1.87,
+            0,
+            -1.64
+          ],
+          "rotationYDegrees": 180.0,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "HarborRail_Mount02_Staff": {
+          "node": "F1_HarborRail_Mount02_Staff",
+          "positionXYZ": [
+            -1.62,
+            0,
+            -4.09
+          ],
+          "rotationYDegrees": -11.489,
+          "active": false,
+          "navigationEnabled": false
         },
         "Reserve_Table_Visit": {
           "node": "F1_Reserve_Table_Visit",
@@ -216,24 +262,6 @@
           ],
           "rotationYDegrees": -170.6901
         },
-        "Visit_tshirtOrange": {
-          "node": "F1_Visit_tshirtOrange",
-          "positionXYZ": [
-            -5.06,
-            0,
-            -5.23
-          ],
-          "rotationYDegrees": 180.0
-        },
-        "Staff_tshirtOrange": {
-          "node": "F1_Staff_tshirtOrange",
-          "positionXYZ": [
-            -4.76,
-            0,
-            -4.85
-          ],
-          "rotationYDegrees": -170.6901
-        },
         "Visit_wear-bottom-sage-cargo": {
           "node": "F1_Visit_wear-bottom-sage-cargo",
           "positionXYZ": [
@@ -247,24 +275,6 @@
           "node": "F1_Staff_wear-bottom-sage-cargo",
           "positionXYZ": [
             0.52,
-            0,
-            -4.85
-          ],
-          "rotationYDegrees": -170.6901
-        },
-        "Visit_shortsNavy": {
-          "node": "F1_Visit_shortsNavy",
-          "positionXYZ": [
-            1.74,
-            0,
-            -5.23
-          ],
-          "rotationYDegrees": 180.0
-        },
-        "Staff_shortsNavy": {
-          "node": "F1_Staff_shortsNavy",
-          "positionXYZ": [
-            2.04,
             0,
             -4.85
           ],
@@ -345,7 +355,7 @@
         "Visit_capOrange": {
           "node": "F1_Visit_capOrange",
           "positionXYZ": [
-            -6.9,
+            -5.82,
             0,
             1.78
           ],
@@ -354,43 +364,7 @@
         "Staff_capOrange": {
           "node": "F1_Staff_capOrange",
           "positionXYZ": [
-            -6.66,
-            0,
-            2.01
-          ],
-          "rotationYDegrees": -171.5214
-        },
-        "Visit_shoesBrown": {
-          "node": "F1_Visit_shoesBrown",
-          "positionXYZ": [
-            -5.82,
-            0,
-            1.78
-          ],
-          "rotationYDegrees": 180.0
-        },
-        "Staff_shoesBrown": {
-          "node": "F1_Staff_shoesBrown",
-          "positionXYZ": [
             -5.58,
-            0,
-            2.01
-          ],
-          "rotationYDegrees": -171.5214
-        },
-        "Visit_wear-face-honey-panto": {
-          "node": "F1_Visit_wear-face-honey-panto",
-          "positionXYZ": [
-            -4.74,
-            0,
-            1.78
-          ],
-          "rotationYDegrees": 180.0
-        },
-        "Staff_wear-face-honey-panto": {
-          "node": "F1_Staff_wear-face-honey-panto",
-          "positionXYZ": [
-            -4.5,
             0,
             2.01
           ],
@@ -432,23 +406,41 @@
           ],
           "rotationYDegrees": -169.992
         },
+        "Visit_wear-face-honey-panto": {
+          "node": "F1_Visit_wear-face-honey-panto",
+          "positionXYZ": [
+            3.48,
+            0,
+            3.38
+          ],
+          "rotationYDegrees": 180.0
+        },
+        "Staff_wear-face-honey-panto": {
+          "node": "F1_Staff_wear-face-honey-panto",
+          "positionXYZ": [
+            4.18,
+            0,
+            3.61
+          ],
+          "rotationYDegrees": -154.2307
+        },
         "Visit_backpackRed": {
           "node": "F1_Visit_backpackRed",
           "positionXYZ": [
-            -1.66,
+            -2.97,
             0,
-            -5.23
+            -1.64
           ],
           "rotationYDegrees": 180.0
         },
         "Staff_backpackRed": {
           "node": "F1_Staff_backpackRed",
           "positionXYZ": [
-            -1.36,
+            -2.72,
             0,
-            -4.85
+            -4.09
           ],
-          "rotationYDegrees": -169.992
+          "rotationYDegrees": -11.489
         },
         "CeilingMount": {
           "node": "F1_CeilingMount",
@@ -606,6 +598,42 @@
           "textAnchor": "F1_ProductName_WindowJacket",
           "legacySampleNode": "Sample_ClayJacket",
           "occupancy": "stock-roster"
+        },
+        {
+          "node": "F1_Slot_HarborTable",
+          "positionXYZ": [
+            4.03,
+            0,
+            2.16
+          ],
+          "rotationYDegrees": 0,
+          "placement": "table-surface",
+          "visitXZ": [
+            3.4800000000000004,
+            3.38
+          ],
+          "nameplate": "F1_Nameplate_HarborTable",
+          "textAnchor": "F1_ProductName_HarborTable",
+          "legacySampleNode": "Sample_None",
+          "occupancy": "stock-roster"
+        },
+        {
+          "node": "F1_Slot_HarborRail",
+          "positionXYZ": [
+            -2.42,
+            0,
+            -2.86
+          ],
+          "rotationYDegrees": 0,
+          "placement": "freestanding-hanger-bar",
+          "visitXZ": [
+            -2.9699999999999998,
+            -1.64
+          ],
+          "nameplate": "F1_Nameplate_HarborRail",
+          "textAnchor": "F1_ProductName_HarborRail",
+          "legacySampleNode": "Sample_None",
+          "occupancy": "stock-roster"
         }
       ],
       "blockedRectsXZ": [
@@ -640,10 +668,10 @@
           -6.51
         ],
         [
-          -7.65,
-          -0.32,
-          -3.99,
-          1.12
+          -7.08,
+          -0.2,
+          -4.56,
+          1.0
         ],
         [
           -7.725,
@@ -652,10 +680,10 @@
           4.59
         ],
         [
-          2.88,
-          3.22,
-          5.88,
-          4.38
+          3.39,
+          -2.34,
+          4.55,
+          0.66
         ],
         [
           -7.015,
@@ -686,6 +714,18 @@
           -1.99,
           -4.71,
           -1.81
+        ],
+        [
+          2.81,
+          1.62,
+          5.25,
+          2.7
+        ],
+        [
+          -3.67,
+          -3.29,
+          -1.17,
+          -2.43
         ],
         [
           -3.69,
@@ -769,6 +809,118 @@
         ],
         "stackHideNode": "F1_StairUpperContext"
       },
+      "merchandisingFixtures": [
+        {
+          "station": "F1_Slot_HarborTable",
+          "frameNode": "F1_HarborTableFrame",
+          "placement": "floor",
+          "type": "table",
+          "boundsXZ": [
+            2.81,
+            1.62,
+            5.25,
+            2.7
+          ],
+          "mounts": [
+            {
+              "node": "F1_HarborTable_Mount01",
+              "mount": "surface",
+              "localPositionXYZ": [
+                -0.55,
+                1.0,
+                0
+              ],
+              "usableSizeXYZ": [
+                1.08,
+                0.84,
+                0.74
+              ],
+              "productId": "wear-face-honey-panto",
+              "occupancy": "occupied",
+              "displayAnchor": "F1_Item_wear-face-honey-panto",
+              "playerApproach": "F1_Visit_wear-face-honey-panto",
+              "npcApproach": "F1_Staff_wear-face-honey-panto"
+            },
+            {
+              "node": "F1_HarborTable_Mount02",
+              "mount": "surface",
+              "localPositionXYZ": [
+                0.55,
+                0.81,
+                0
+              ],
+              "usableSizeXYZ": [
+                1.08,
+                0.84,
+                0.74
+              ],
+              "productId": null,
+              "occupancy": "empty",
+              "selectable": false,
+              "sellable": false,
+              "navigationEnabled": false,
+              "playerApproach": "F1_HarborTable_Mount02_Visit",
+              "npcApproach": "F1_HarborTable_Mount02_Staff"
+            }
+          ]
+        },
+        {
+          "station": "F1_Slot_HarborRail",
+          "frameNode": "F1_HarborRailFrame",
+          "placement": "floor",
+          "type": "floor-rail",
+          "boundsXZ": [
+            -3.67,
+            -3.29,
+            -1.17,
+            -2.43
+          ],
+          "mounts": [
+            {
+              "node": "F1_HarborRail_Mount01",
+              "mount": "suspended",
+              "localPositionXYZ": [
+                -0.55,
+                1.77,
+                0
+              ],
+              "usableSizeXYZ": [
+                0.96,
+                1.24,
+                0.64
+              ],
+              "hangerNode": "F1_HarborRail_Mount01_Hanger",
+              "productId": "backpackRed",
+              "occupancy": "occupied",
+              "displayAnchor": "F1_Item_backpackRed",
+              "playerApproach": "F1_Visit_backpackRed",
+              "npcApproach": "F1_Staff_backpackRed"
+            },
+            {
+              "node": "F1_HarborRail_Mount02",
+              "mount": "suspended",
+              "localPositionXYZ": [
+                0.55,
+                1.77,
+                0
+              ],
+              "usableSizeXYZ": [
+                0.96,
+                1.24,
+                0.64
+              ],
+              "hangerNode": "F1_HarborRail_Mount02_Hanger",
+              "productId": null,
+              "occupancy": "empty",
+              "selectable": false,
+              "sellable": false,
+              "navigationEnabled": false,
+              "playerApproach": "F1_HarborRail_Mount02_Visit",
+              "npcApproach": "F1_HarborRail_Mount02_Staff"
+            }
+          ]
+        }
+      ],
       "reserveStations": [
         {
           "node": "F1_Reserve_Table",
@@ -987,27 +1139,42 @@
         7.15
       ],
       "anchors": {
-        "Fitting1": {
-          "node": "F2_Fitting1",
-          "positionXYZ": [
-            -5.52,
-            0,
-            -5.56
-          ],
-          "rotationYDegrees": 180,
-          "active": false,
-          "role": "legacy-inactive"
-        },
         "FittingApproach1": {
           "node": "F2_FittingApproach1",
           "positionXYZ": [
-            -5.55,
+            -5.64,
             0,
-            -4.05
+            -4.09
           ],
           "rotationYDegrees": 180,
-          "active": false,
-          "role": "legacy-inactive"
+          "active": true
+        },
+        "Fitting1": {
+          "node": "F2_Fitting1",
+          "positionXYZ": [
+            -5.82,
+            0,
+            -5.74
+          ],
+          "rotationYDegrees": 180,
+          "active": true,
+          "curtainNode": "F2_FittingCurtain1",
+          "closedMorph": {
+            "name": "Closed",
+            "index": 0,
+            "openWeight": 0,
+            "closedWeight": 1
+          }
+        },
+        "FittingMirror": {
+          "node": "F2_FittingMirror",
+          "positionXYZ": [
+            -5.95,
+            1.16,
+            -6.72
+          ],
+          "rotationYDegrees": 0,
+          "active": true
         },
         "Fitting2": {
           "node": "F2_Fitting2",
@@ -1048,6 +1215,94 @@
             -5.63
           ],
           "rotationYDegrees": 180
+        },
+        "FieldBootTable_Mount02_Visit": {
+          "node": "F2_FieldBootTable_Mount02_Visit",
+          "positionXYZ": [
+            -5.27,
+            0,
+            6.76
+          ],
+          "rotationYDegrees": 180.0,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "FieldBootTable_Mount02_Staff": {
+          "node": "F2_FieldBootTable_Mount02_Staff",
+          "positionXYZ": [
+            -5.02,
+            0,
+            4.31
+          ],
+          "rotationYDegrees": -11.489,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "FieldCapTable_Mount02_Visit": {
+          "node": "F2_FieldCapTable_Mount02_Visit",
+          "positionXYZ": [
+            -1.87,
+            0,
+            6.76
+          ],
+          "rotationYDegrees": 180.0,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "FieldCapTable_Mount02_Staff": {
+          "node": "F2_FieldCapTable_Mount02_Staff",
+          "positionXYZ": [
+            -1.62,
+            0,
+            4.31
+          ],
+          "rotationYDegrees": -11.489,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "StudioRail_Mount02_Visit": {
+          "node": "F2_StudioRail_Mount02_Visit",
+          "positionXYZ": [
+            1.62,
+            0,
+            6.76
+          ],
+          "rotationYDegrees": 180.0,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "StudioRail_Mount02_Staff": {
+          "node": "F2_StudioRail_Mount02_Staff",
+          "positionXYZ": [
+            1.87,
+            0,
+            4.31
+          ],
+          "rotationYDegrees": -11.489,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "FieldRail_Mount02_Visit": {
+          "node": "F2_FieldRail_Mount02_Visit",
+          "positionXYZ": [
+            1.53,
+            0,
+            -0.48
+          ],
+          "rotationYDegrees": 180.0,
+          "active": false,
+          "navigationEnabled": false
+        },
+        "FieldRail_Mount02_Staff": {
+          "node": "F2_FieldRail_Mount02_Staff",
+          "positionXYZ": [
+            1.78,
+            0,
+            -2.93
+          ],
+          "rotationYDegrees": -11.489,
+          "active": false,
+          "navigationEnabled": false
         },
         "Reserve_Table_Visit": {
           "node": "F2_Reserve_Table_Visit",
@@ -1114,24 +1369,6 @@
           "rotationYDegrees": -166.373,
           "active": false,
           "navigationEnabled": false
-        },
-        "Visit_wear-hat-field-cap": {
-          "node": "F2_Visit_wear-hat-field-cap",
-          "positionXYZ": [
-            -5.82,
-            0,
-            -0.25
-          ],
-          "rotationYDegrees": 180.0
-        },
-        "Staff_wear-hat-field-cap": {
-          "node": "F2_Staff_wear-hat-field-cap",
-          "positionXYZ": [
-            -5.42,
-            0,
-            -0.02
-          ],
-          "rotationYDegrees": -166.6075
         },
         "Visit_wear-top-field-blouse": {
           "node": "F2_Visit_wear-top-field-blouse",
@@ -1259,6 +1496,78 @@
           ],
           "rotationYDegrees": -170.7067
         },
+        "Visit_shoesBrown": {
+          "node": "F2_Visit_shoesBrown",
+          "positionXYZ": [
+            -6.37,
+            0,
+            6.76
+          ],
+          "rotationYDegrees": 180.0
+        },
+        "Staff_shoesBrown": {
+          "node": "F2_Staff_shoesBrown",
+          "positionXYZ": [
+            -6.12,
+            0,
+            4.31
+          ],
+          "rotationYDegrees": -11.489
+        },
+        "Visit_wear-hat-field-cap": {
+          "node": "F2_Visit_wear-hat-field-cap",
+          "positionXYZ": [
+            -2.97,
+            0,
+            6.76
+          ],
+          "rotationYDegrees": 180.0
+        },
+        "Staff_wear-hat-field-cap": {
+          "node": "F2_Staff_wear-hat-field-cap",
+          "positionXYZ": [
+            -2.72,
+            0,
+            4.31
+          ],
+          "rotationYDegrees": -11.489
+        },
+        "Visit_tshirtOrange": {
+          "node": "F2_Visit_tshirtOrange",
+          "positionXYZ": [
+            0.565,
+            0,
+            6.76
+          ],
+          "rotationYDegrees": 180.0
+        },
+        "Staff_tshirtOrange": {
+          "node": "F2_Staff_tshirtOrange",
+          "positionXYZ": [
+            0.815,
+            0,
+            4.31
+          ],
+          "rotationYDegrees": -11.489
+        },
+        "Visit_shortsNavy": {
+          "node": "F2_Visit_shortsNavy",
+          "positionXYZ": [
+            0.43,
+            0,
+            -0.48
+          ],
+          "rotationYDegrees": 180.0
+        },
+        "Staff_shortsNavy": {
+          "node": "F2_Staff_shortsNavy",
+          "positionXYZ": [
+            0.68,
+            0,
+            -2.93
+          ],
+          "rotationYDegrees": -11.489
+        },
         "CeilingMount": {
           "node": "F2_CeilingMount",
           "positionXYZ": [
@@ -1359,6 +1668,78 @@
           "textAnchor": "F2_ProductName_Beret",
           "legacySampleNode": "Sample_CatalogBeret",
           "occupancy": "stock-roster"
+        },
+        {
+          "node": "F2_Slot_FieldBootTable",
+          "positionXYZ": [
+            -5.82,
+            0,
+            5.54
+          ],
+          "rotationYDegrees": 0,
+          "placement": "table-surface",
+          "visitXZ": [
+            -6.37,
+            6.76
+          ],
+          "nameplate": "F2_Nameplate_FieldBootTable",
+          "textAnchor": "F2_ProductName_FieldBootTable",
+          "legacySampleNode": "Sample_None",
+          "occupancy": "stock-roster"
+        },
+        {
+          "node": "F2_Slot_FieldCapTable",
+          "positionXYZ": [
+            -2.42,
+            0,
+            5.54
+          ],
+          "rotationYDegrees": 0,
+          "placement": "table-surface",
+          "visitXZ": [
+            -2.9699999999999998,
+            6.76
+          ],
+          "nameplate": "F2_Nameplate_FieldCapTable",
+          "textAnchor": "F2_ProductName_FieldCapTable",
+          "legacySampleNode": "Sample_None",
+          "occupancy": "stock-roster"
+        },
+        {
+          "node": "F2_Slot_StudioRail",
+          "positionXYZ": [
+            0.98,
+            0,
+            5.54
+          ],
+          "rotationYDegrees": 0,
+          "placement": "freestanding-hanger-bar",
+          "visitXZ": [
+            0.565,
+            6.76
+          ],
+          "nameplate": "F2_Nameplate_StudioRail",
+          "textAnchor": "F2_ProductName_StudioRail",
+          "legacySampleNode": "Sample_None",
+          "occupancy": "stock-roster"
+        },
+        {
+          "node": "F2_Slot_FieldRail",
+          "positionXYZ": [
+            0.98,
+            0,
+            -1.7
+          ],
+          "rotationYDegrees": 0,
+          "placement": "freestanding-hanger-bar",
+          "visitXZ": [
+            0.42999999999999994,
+            -0.48
+          ],
+          "nameplate": "F2_Nameplate_FieldRail",
+          "textAnchor": "F2_ProductName_FieldRail",
+          "legacySampleNode": "Sample_None",
+          "occupancy": "stock-roster"
         }
       ],
       "blockedRectsXZ": [
@@ -1391,6 +1772,60 @@
           1.73,
           -0.925,
           2.77
+        ],
+        [
+          -7.015,
+          -6.94,
+          -6.865,
+          -4.9
+        ],
+        [
+          -4.775,
+          -6.94,
+          -4.625,
+          -4.9
+        ],
+        [
+          -6.995,
+          -6.95,
+          -4.645,
+          -6.79
+        ],
+        [
+          -6.955,
+          -5.05,
+          -6.125,
+          -4.87
+        ],
+        [
+          -4.95,
+          -5.05,
+          -4.71,
+          -4.87
+        ],
+        [
+          -6.95,
+          5.04,
+          -4.69,
+          6.04
+        ],
+        [
+          -3.55,
+          5.04,
+          -1.29,
+          6.04
+        ],
+        [
+          -0.27,
+          5.11,
+          2.23,
+          5.97
+        ],
+        [
+          -0.27,
+          -2.13,
+          2.23,
+          -1.27
         ],
         [
           -0.29,
@@ -1435,6 +1870,16 @@
         "wall": [
           "F2_Slot_AtelierJacket",
           "F2_Reserve_WallRail"
+        ],
+        "frontFeatures": [
+          "F2_Slot_FieldBootTable",
+          "F2_Slot_FieldCapTable",
+          "F2_Slot_StudioRail"
+        ],
+        "atelierFeatures": [
+          "F2_Slot_AtelierDress",
+          "F2_Reserve_Mannequin",
+          "F2_Slot_FieldRail"
         ]
       },
       "frontAperturesX": [
@@ -1473,6 +1918,228 @@
         ],
         "stackHideNode": "F1_StairUpperContext"
       },
+      "merchandisingFixtures": [
+        {
+          "station": "F2_Slot_FieldBootTable",
+          "frameNode": "F2_FieldBootTableFrame",
+          "placement": "floor",
+          "type": "table",
+          "boundsXZ": [
+            -6.95,
+            5.04,
+            -4.69,
+            6.04
+          ],
+          "mounts": [
+            {
+              "node": "F2_FieldBootTable_Mount01",
+              "mount": "surface",
+              "localPositionXYZ": [
+                -0.55,
+                0.87,
+                0
+              ],
+              "usableSizeXYZ": [
+                1.08,
+                0.84,
+                0.74
+              ],
+              "productId": "shoesBrown",
+              "occupancy": "occupied",
+              "displayAnchor": "F2_Item_shoesBrown",
+              "playerApproach": "F2_Visit_shoesBrown",
+              "npcApproach": "F2_Staff_shoesBrown"
+            },
+            {
+              "node": "F2_FieldBootTable_Mount02",
+              "mount": "surface",
+              "localPositionXYZ": [
+                0.55,
+                0.81,
+                0
+              ],
+              "usableSizeXYZ": [
+                1.08,
+                0.84,
+                0.74
+              ],
+              "productId": null,
+              "occupancy": "empty",
+              "selectable": false,
+              "sellable": false,
+              "navigationEnabled": false,
+              "playerApproach": "F2_FieldBootTable_Mount02_Visit",
+              "npcApproach": "F2_FieldBootTable_Mount02_Staff"
+            }
+          ]
+        },
+        {
+          "station": "F2_Slot_FieldCapTable",
+          "frameNode": "F2_FieldCapTableFrame",
+          "placement": "floor",
+          "type": "table",
+          "boundsXZ": [
+            -3.55,
+            5.04,
+            -1.29,
+            6.04
+          ],
+          "mounts": [
+            {
+              "node": "F2_FieldCapTable_Mount01",
+              "mount": "surface",
+              "localPositionXYZ": [
+                -0.55,
+                1.01,
+                0
+              ],
+              "usableSizeXYZ": [
+                1.08,
+                0.84,
+                0.74
+              ],
+              "productId": "wear-hat-field-cap",
+              "occupancy": "occupied",
+              "displayAnchor": "F2_Item_wear-hat-field-cap",
+              "playerApproach": "F2_Visit_wear-hat-field-cap",
+              "npcApproach": "F2_Staff_wear-hat-field-cap"
+            },
+            {
+              "node": "F2_FieldCapTable_Mount02",
+              "mount": "surface",
+              "localPositionXYZ": [
+                0.55,
+                0.81,
+                0
+              ],
+              "usableSizeXYZ": [
+                1.08,
+                0.84,
+                0.74
+              ],
+              "productId": null,
+              "occupancy": "empty",
+              "selectable": false,
+              "sellable": false,
+              "navigationEnabled": false,
+              "playerApproach": "F2_FieldCapTable_Mount02_Visit",
+              "npcApproach": "F2_FieldCapTable_Mount02_Staff"
+            }
+          ]
+        },
+        {
+          "station": "F2_Slot_StudioRail",
+          "frameNode": "F2_StudioRailFrame",
+          "placement": "floor",
+          "type": "floor-rail",
+          "boundsXZ": [
+            -0.27,
+            5.11,
+            2.23,
+            5.97
+          ],
+          "mounts": [
+            {
+              "node": "F2_StudioRail_Mount01",
+              "mount": "suspended",
+              "localPositionXYZ": [
+                -0.415,
+                1.77,
+                0
+              ],
+              "usableSizeXYZ": [
+                1.25,
+                1.24,
+                0.6
+              ],
+              "hangerNode": "F2_StudioRail_Mount01_Hanger",
+              "productId": "tshirtOrange",
+              "occupancy": "occupied",
+              "displayAnchor": "F2_Item_tshirtOrange",
+              "playerApproach": "F2_Visit_tshirtOrange",
+              "npcApproach": "F2_Staff_tshirtOrange"
+            },
+            {
+              "node": "F2_StudioRail_Mount02",
+              "mount": "suspended",
+              "localPositionXYZ": [
+                0.64,
+                1.77,
+                0
+              ],
+              "usableSizeXYZ": [
+                0.8,
+                1.24,
+                0.6
+              ],
+              "hangerNode": "F2_StudioRail_Mount02_Hanger",
+              "productId": null,
+              "occupancy": "empty",
+              "selectable": false,
+              "sellable": false,
+              "navigationEnabled": false,
+              "playerApproach": "F2_StudioRail_Mount02_Visit",
+              "npcApproach": "F2_StudioRail_Mount02_Staff"
+            }
+          ]
+        },
+        {
+          "station": "F2_Slot_FieldRail",
+          "frameNode": "F2_FieldRailFrame",
+          "placement": "floor",
+          "type": "floor-rail",
+          "boundsXZ": [
+            -0.27,
+            -2.13,
+            2.23,
+            -1.27
+          ],
+          "mounts": [
+            {
+              "node": "F2_FieldRail_Mount01",
+              "mount": "suspended",
+              "localPositionXYZ": [
+                -0.55,
+                1.77,
+                0
+              ],
+              "usableSizeXYZ": [
+                0.96,
+                1.24,
+                0.64
+              ],
+              "hangerNode": "F2_FieldRail_Mount01_Hanger",
+              "productId": "shortsNavy",
+              "occupancy": "occupied",
+              "displayAnchor": "F2_Item_shortsNavy",
+              "playerApproach": "F2_Visit_shortsNavy",
+              "npcApproach": "F2_Staff_shortsNavy"
+            },
+            {
+              "node": "F2_FieldRail_Mount02",
+              "mount": "suspended",
+              "localPositionXYZ": [
+                0.55,
+                1.77,
+                0
+              ],
+              "usableSizeXYZ": [
+                0.96,
+                1.24,
+                0.64
+              ],
+              "hangerNode": "F2_FieldRail_Mount02_Hanger",
+              "productId": null,
+              "occupancy": "empty",
+              "selectable": false,
+              "sellable": false,
+              "navigationEnabled": false,
+              "playerApproach": "F2_FieldRail_Mount02_Visit",
+              "npcApproach": "F2_FieldRail_Mount02_Staff"
+            }
+          ]
+        }
+      ],
       "reserveStations": [
         {
           "node": "F2_Reserve_Table",
@@ -1697,6 +2364,48 @@
       "to": "village:clothingShop"
     }
   ],
+  "fittingRooms": {
+    "1": {
+      "floor": 1,
+      "approach": "F1_FittingApproach1",
+      "inside": "F1_Fitting1",
+      "curtain": "F1_FittingCurtain1",
+      "mirror": "F1_FittingMirror",
+      "sign": "F1_FittingSignText",
+      "closedMorph": {
+        "name": "Closed",
+        "index": 0,
+        "openWeight": 0,
+        "closedWeight": 1
+      },
+      "closedDoorwayBoundsXZ": [
+        -6.94,
+        -1.99,
+        -4.7,
+        -1.81
+      ]
+    },
+    "2": {
+      "floor": 2,
+      "approach": "F2_FittingApproach1",
+      "inside": "F2_Fitting1",
+      "curtain": "F2_FittingCurtain1",
+      "mirror": "F2_FittingMirror",
+      "sign": "F2_FittingSignText",
+      "closedMorph": {
+        "name": "Closed",
+        "index": 0,
+        "openWeight": 0,
+        "closedWeight": 1
+      },
+      "closedDoorwayBoundsXZ": [
+        -6.94,
+        -5.05,
+        -4.7,
+        -4.87
+      ]
+    }
+  },
   "checkout": {
     "floor": 1,
     "active": true,
@@ -1704,17 +2413,17 @@
     "customer": "F1_CheckoutInteract",
     "staff": "F1_CheckoutNPC",
     "boundsXZ": [
-      2.88,
-      3.22,
-      5.88,
-      4.38
+      3.39,
+      -2.34,
+      4.55,
+      0.66
     ],
     "positionXYZ": [
-      4.38,
+      3.97,
       0,
-      3.8
+      -0.84
     ],
-    "rotationYDegrees": 0,
+    "rotationYDegrees": -90,
     "sizeXYZ": [
       3.0,
       1.7202,

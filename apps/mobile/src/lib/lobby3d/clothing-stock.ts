@@ -111,11 +111,16 @@ export const CLOTHING_OUTFITS: readonly ClothingOutfit[] = STOCK.outfits.map((o)
 /** 진열 상품 모델의 뿌리 노드 이름. */
 export const CLOTHING_STOCK_ROOT: string = STOCK.displayRules.stockRoot;
 
-/** 예비 진열 자리(층마다 진열대·마네킹·벽걸이의 빈 자리 노드). 비어 있는 동안 상품·누르기·판매·피팅 대상이 아니다. */
-export const CLOTHING_RESERVE_MOUNTS: Record<ClothingFloor, readonly string[]> = {
-  1: LAYOUT.floors["1"].reserveStations.flatMap((s) => s.mounts.map((m) => m.node)),
-  2: LAYOUT.floors["2"].reserveStations.flatMap((s) => s.mounts.map((m) => m.node))
-};
+/**
+ * 빈 진열 자리 노드: 층마다 예비 집기(진열대·마네킹·벽걸이)의 자리와, 새 가구(merchandisingFixtures)에서 비워 둔 자리.
+ * 비어 있는 동안 상품이 붙지 않고 누르기·판매·피팅 대상이 아니다(상품은 stock.json의 displayAnchor에만 붙는다).
+ */
+const emptyMounts = (floor: "1" | "2"): string[] => [
+  ...LAYOUT.floors[floor].reserveStations.flatMap((s) => s.mounts.map((m) => m.node)),
+  ...LAYOUT.floors[floor].merchandisingFixtures.flatMap((f) => f.mounts.filter((m) => m.occupancy === "empty").map((m) => m.node))
+];
+
+export const CLOTHING_RESERVE_MOUNTS: Record<ClothingFloor, readonly string[]> = { 1: emptyMounts("1"), 2: emptyMounts("2") };
 
 // ---------- 가격 글 ----------
 

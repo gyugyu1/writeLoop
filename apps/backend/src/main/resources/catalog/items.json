@@ -1320,6 +1320,234 @@
         "icon": null,
         "nameplate": "cloud-desk-nameplate.png"
       }
+    },
+    {
+      "id": "wear-top-kiln-jacket",
+      "kind": "wearable",
+      "name": "코랄 워크 재킷",
+      "shopName": "코랄 워크 재킷",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "top",
+      "draw": {
+        "attach": "skin",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-top-kiln-jacket.glb"
+      }
+    },
+    {
+      "id": "wear-bottom-sage-cargo",
+      "kind": "wearable",
+      "name": "세이지 카고 쇼츠",
+      "shopName": "세이지 카고 쇼츠",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "bottom",
+      "draw": {
+        "attach": "skin",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-bottom-sage-cargo.glb"
+      }
+    },
+    {
+      "id": "wear-hat-breakwater-bucket",
+      "kind": "wearable",
+      "name": "마린 버킷햇",
+      "shopName": "마린 버킷햇",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "hat",
+      "draw": {
+        "attach": "bone",
+        "bone": "head",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-hat-breakwater-bucket.glb"
+      }
+    },
+    {
+      "id": "wear-top-tide-sailor",
+      "kind": "wearable",
+      "name": "스트라이프 세일러 니트",
+      "shopName": "스트라이프 세일러 니트",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "top",
+      "draw": {
+        "attach": "skin",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-top-tide-sailor.glb"
+      }
+    },
+    {
+      "id": "wear-bottom-jetty-denim",
+      "kind": "wearable",
+      "name": "인디고 데님 쇼츠",
+      "shopName": "인디고 데님 쇼츠",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "bottom",
+      "draw": {
+        "attach": "skin",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-bottom-jetty-denim.glb"
+      }
+    },
+    {
+      "id": "wear-top-field-blouse",
+      "kind": "wearable",
+      "name": "디지털 무늬 전투복 상의",
+      "shopName": "디지털 무늬 전투복 상의",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "top",
+      "draw": {
+        "attach": "skin",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-top-field-blouse.glb"
+      }
+    },
+    {
+      "id": "wear-bottom-field-trousers",
+      "kind": "wearable",
+      "name": "카고 포켓 전투복 하의",
+      "shopName": "카고 포켓 전투복 하의",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "bottom",
+      "draw": {
+        "attach": "skin",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-bottom-field-trousers.glb"
+      }
+    },
+    {
+      "id": "wear-shoe-combat-boot",
+      "kind": "wearable",
+      "name": "끈 전투화 한 켤레",
+      "shopName": "끈 전투화 한 켤레",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "shoes",
+      "draw": {
+        "attach": "bone",
+        "bone": "foot_l",
+        "mirror": "foot_r",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-shoe-combat-boot.glb"
+      }
+    },
+    {
+      "id": "wear-top-quilted-liner",
+      "kind": "wearable",
+      "name": "군대 깔깔이",
+      "shopName": "군대 깔깔이",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "top",
+      "draw": {
+        "attach": "skin",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-top-quilted-liner.glb"
+      }
+    },
+    {
+      "id": "wear-hat-peddler-straw",
+      "kind": "wearable",
+      "name": "장돌뱅이 모자",
+      "shopName": "장돌뱅이 모자",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "hat",
+      "draw": {
+        "attach": "bone",
+        "bone": "head",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-hat-peddler-straw.glb"
+      }
+    },
+    {
+      "id": "wear-hat-bramble-beret",
+      "kind": "wearable",
+      "name": "베리 베레모",
+      "shopName": "베리 베레모",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "hat",
+      "draw": {
+        "attach": "bone",
+        "bone": "head",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-hat-bramble-beret.glb"
+      }
+    },
+    {
+      "id": "wear-face-honey-panto",
+      "kind": "wearable",
+      "name": "허니 팬토 선글라스",
+      "shopName": "허니 팬토 선글라스",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "face",
+      "draw": {
+        "attach": "bone",
+        "bone": "head",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-face-honey-panto.glb"
+      }
+    },
+    {
+      "id": "wear-hat-field-cap",
+      "kind": "wearable",
+      "name": "차양형 전투모",
+      "shopName": "차양형 전투모",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "hat",
+      "draw": {
+        "attach": "bone",
+        "bone": "head",
+        "body": 1
+      },
+      "files": {
+        "model": "wear-hat-field-cap.glb"
+      }
     }
   ]
 }

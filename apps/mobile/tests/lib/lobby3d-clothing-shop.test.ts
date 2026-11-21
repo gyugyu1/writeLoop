@@ -41,8 +41,9 @@ describe("옷집 층마다 장소와 걷기", () => {
       expect(isFree(x0 + 0.1 + CLOTHING_OFFSET.x, 0.3 + CLOTHING_OFFSET.z)).toBe(false);
       expect(isFree(1.2 + CLOTHING_OFFSET.x, z0 + 0.1 + CLOTHING_OFFSET.z)).toBe(false);
     }
-    // 계산대(F1_CheckoutCounter) 가운데
-    expect(clothingSolidAt(1, 4.38 + CLOTHING_OFFSET.x, 3.8 + CLOTHING_OFFSET.z)).toBe(true);
+    // 계산대(F1_CheckoutCounter, layout checkout.positionXYZ) 가운데
+    const [cx, , cz] = LAYOUT.checkout.positionXYZ;
+    expect(clothingSolidAt(1, cx + CLOTHING_OFFSET.x, cz + CLOTHING_OFFSET.z)).toBe(true);
   });
 
   it("층마다 카메라 끝 상자는 그 층 벽 안쪽이다", () => {
@@ -64,6 +65,51 @@ describe("옷집 층마다 장소와 걷기", () => {
         expect(isFree(sim.x, sim.z) || Math.hypot(sim.x - markInfo(id).approach[0].x, sim.z - markInfo(id).approach[0].z) < 0.3).toBe(true);
       }
       expect(sim.snapshot(t).place).toBe(id);
+    }
+  });
+});
+
+// 최신 애셋(2026-11-21 17:58 판): 입구에서 선글라스 진열대까지 곧게, 계단 통로가 막히지 않는다
+describe("옷집 최신 배치", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const { clothingProduct, CLOTHING_PRODUCTS } = require("@/lib/lobby3d/clothing-stock") as typeof import("@/lib/lobby3d/clothing-stock");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  const pathLength = (path: FloorPoint[], from: FloorPoint) => {
+    let d = 0;
+    let a = from;
+    for (const b of path) {
+      d += Math.hypot(b.x - a.x, b.z - a.z);
+      a = b;
+    }
+    return d;
+  };
+
+  it("1층 입구에서 선글라스 서는 자리까지 계산대를 돌아가지 않는다(길이 곧은 거리의 1.15배 안)", () => {
+    applyArea("clothing1");
+    const from = CLOTHING_NODES.entranceSpawn;
+    const goal = clothingProduct("wear-face-honey-panto")!.approach;
+    const path = findPath(from, [goal]);
+    expect(path).not.toBeNull();
+    expect(pathLength(path!, from)).toBeLessThanOrEqual(Math.hypot(goal.x - from.x, goal.z - from.z) * 1.15);
+  });
+
+  it("1층 입구에서 계단까지, 2층 도착 자리에서 1층 계단까지 막히지 않고 곧게 간다", () => {
+    applyArea("clothing1");
+    const up = markInfo("clothingUp").approach[0];
+    const a = findPath(CLOTHING_NODES.entranceSpawn, [up]);
+    expect(a).not.toBeNull();
+    expect(pathLength(a!, CLOTHING_NODES.entranceSpawn)).toBeLessThanOrEqual(Math.hypot(up.x - CLOTHING_NODES.entranceSpawn.x, up.z - CLOTHING_NODES.entranceSpawn.z) * 1.15);
+    applyArea("clothing2");
+    expect(findPath(CLOTHING_NODES.fromLower, markInfo("clothingDown").approach)).not.toBeNull();
+  });
+
+  it("층마다 모든 진열 상품의 서는 자리에 들어온 곳에서 걸어갈 수 있다", () => {
+    for (const floor of [1, 2] as const) {
+      applyArea(floor === 1 ? "clothing1" : "clothing2");
+      const from = floor === 1 ? CLOTHING_NODES.entranceSpawn : CLOTHING_NODES.fromLower;
+      for (const product of CLOTHING_PRODUCTS.filter((p) => p.floor === floor)) {
+        expect({ id: product.id, path: findPath(from, [product.approach]) !== null }).toEqual({ id: product.id, path: true });
+      }
     }
   });
 });

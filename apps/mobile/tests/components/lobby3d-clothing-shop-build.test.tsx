@@ -118,14 +118,14 @@ describe("옷집 진열 상품", () => {
 
   afterEach(() => stock.resetClothingShop());
 
-  it("층마다 진열 중인 상품만 그 displayAnchor에 로컬 0·배율 1로 붙고(1층 14·2층 8), 예비 자리에는 아무것도 붙지 않는다", async () => {
+  it("층마다 진열 중인 상품만 그 displayAnchor에 로컬 0·배율 1로 붙고(1층 11·2층 11), 빈 진열 자리 16곳에는 아무것도 붙지 않는다", async () => {
     const samples = await load(APP_MODELS, "clothing-display-samples.glb");
     for (const floor of [1, 2] as const) {
       const built = buildClothingFloor(floor, await load(APP_MODELS, FILES[floor]));
       built.setStockModel(samples);
       built.setDisplayed(stock.clothingDisplayed());
       const expected = stock.clothingProductsOnFloor(floor).map((p) => p.id);
-      expect(expected).toHaveLength(floor === 1 ? 14 : 8);
+      expect(expected).toHaveLength(11);
       expect([...built.products.keys()].sort()).toEqual([...expected].sort());
       for (const id of expected) {
         const item = built.products.get(id)!;
@@ -139,6 +139,7 @@ describe("옷집 진열 상품", () => {
         expect({ id, tagged }).toEqual({ id, tagged: true });
       }
       expect(built.productTargets()).toHaveLength(expected.length);
+      expect(stock.CLOTHING_RESERVE_MOUNTS[floor]).toHaveLength(floor === 1 ? 7 : 9);
       for (const mount of stock.CLOTHING_RESERVE_MOUNTS[floor]) {
         const node = built.root.getObjectByName(mount);
         expect({ mount, found: Boolean(node) }).toEqual({ mount, found: true });
@@ -156,7 +157,7 @@ describe("옷집 진열 상품", () => {
     const cap = stock.clothingProduct("capOrange")!;
     built.setSelected("capOrange");
     expect(built.root.getObjectByName(cap.nameplate)!.visible).toBe(true);
-    expect(built.root.getObjectByName(stock.clothingProduct("tshirtOrange")!.nameplate)!.visible).toBe(false);
+    expect(built.root.getObjectByName(stock.clothingProduct("mufflerRed")!.nameplate)!.visible).toBe(false);
     expect(built.textAnchorPoint("capOrange")).not.toBeNull();
     expect(built.textAnchorPoint("necklaceGold")).toBeNull();
     stock.setClothingDisplayed("capOrange", false);

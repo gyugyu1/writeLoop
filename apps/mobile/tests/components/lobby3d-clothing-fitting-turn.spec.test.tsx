@@ -184,6 +184,8 @@ type Host = NonNullable<typeof screen.root>;
 
 /** 응답자(끌기) 처리기가 달린 요소 중 '취소' 버튼을 품은 판(창 본체, 그 스크롤)이 아닌 것. */
 function dragTarget(): Host {
+  const backdrop = screen.root!.queryAll((node) => node.props.testID === "lobby-sheet-backdrop");
+  if (backdrop.length > 0) return backdrop[0];
   const cancel = screen.getAllByRole("button", { name: "취소", ...ALL })[0] as unknown as Host;
   const ancestors = new Set<unknown>();
   for (let node: Host | null = cancel; node; node = node.parent as Host | null) ancestors.add(node);
@@ -197,7 +199,7 @@ function dragTarget(): Host {
   return found[0];
 }
 
-function touchEvent(startX: number, x: number, t: number) {
+function touchEvent(startX: number, x: number, t: number, prevX = startX, prevT = 0) {
   const touch = { identifier: 0, pageX: x, pageY: 120, locationX: x, locationY: 120, timestamp: t, target: 1 };
   return {
     persist: () => {},
@@ -209,7 +211,7 @@ function touchEvent(startX: number, x: number, t: number) {
       mostRecentTimeStamp: t,
       numberActiveTouches: 1,
       touchBank: [
-        { touchActive: true, startPageX: startX, startPageY: 120, startTimeStamp: 0, currentPageX: x, currentPageY: 120, currentTimeStamp: t, previousPageX: startX, previousPageY: 120, previousTimeStamp: 0 }
+        { touchActive: true, startPageX: startX, startPageY: 120, startTimeStamp: 0, currentPageX: x, currentPageY: 120, currentTimeStamp: t, previousPageX: prevX, previousPageY: 120, previousTimeStamp: prevT }
       ]
     }
   };
@@ -223,8 +225,12 @@ async function drag(dx: number, steps = 8) {
   const el = dragTarget();
   const startX = width() / 2;
   const responder = typeof handlerOf(el, "onResponderMove") === "function";
+  let prevX = startX;
+  let prevT = 0;
   const fire = async (kind: "start" | "move" | "end", x: number, t: number) => {
-    const ev = touchEvent(startX, x, t);
+    const ev = touchEvent(startX, x, t, prevX, prevT);
+    prevX = x;
+    prevT = t;
     await act(async () => {
       if (responder) {
         if (kind === "start") {
@@ -378,6 +384,28 @@ describe("[spec] 처음 안내(명세 바뀌는 동작 4)", () => {
     await drag(width() / 4);
     await frames(1);
     expect(screen.queryAllByText(HINT, ALL)).toHaveLength(0);
+  });
+
+it("결정 2: 돌려서 안내가 사라진 뒤 나갔다 다시 들어가면 안내가 다시 보이고, 또 돌리면 사라진다", async () => {
+    await enterHomeFitting(1);
+    await drag(width() / 4);
+    await frames(1);
+    expect(screen.queryAllByText(HINT, ALL)).toHaveLength(0);
+    await press("취소");
+    await frames(6);
+    await enterFitting(1);
+    expect(screen.queryAllByText(HINT, ALL).length).toBeGreaterThan(0);
+    await drag(-width() / 4);
+    await frames(1);
+    expect(screen.queryAllByText(HINT, ALL)).toHaveLength(0);
+  });
+
+  it("결정 2: 돌리지 않고 나갔다 다시 들어가도 안내가 보인다(장바구니에 넣기로 나온 경우)", async () => {
+    await enterHomeFitting(1);
+    await press("장바구니에 넣기");
+    await frames(6);
+    await enterFitting(1);
+    expect(screen.queryAllByText(HINT, ALL).length).toBeGreaterThan(0);
   });
 
   it("톡만 누르면 안내는 사라지지 않는다", async () => {

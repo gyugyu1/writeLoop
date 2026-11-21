@@ -91,8 +91,8 @@ async function built(floor: 1 | 2, withStock = true) {
 }
 
 describe("[spec] 진열 붙이기(S08~S11)", () => {
-  it("S08·S09·S10: 층마다 진열 상품이 displayAnchor 아래 한 개씩(1층 14·2층 8) 로컬 위치 0·배율 1로 붙고, 마네킹 네 상품이 따로 붙는다", async () => {
-    for (const [floor, count, mannequin] of [[1, 14, MANNEQUIN_1F], [2, 8, MANNEQUIN_2F]] as const) {
+  it("S08·S09·S10: 층마다 진열 상품이 displayAnchor 아래 한 개씩(1층 11·2층 11) 로컬 위치 0·배율 1로 붙고, 마네킹 네 상품이 따로 붙는다", async () => {
+    for (const [floor, count, mannequin] of [[1, 11, MANNEQUIN_1F], [2, 11, MANNEQUIN_2F]] as const) {
       const b = await built(floor);
       expect(b.products.size).toBe(count);
       for (const p of stock.clothingProductsOnFloor(floor)) {
@@ -165,12 +165,12 @@ describe("[spec] 명패와 이름표 자리(S18·S22)", () => {
     const b = await built(1);
     const plateOf = (id: string) => b.root.getObjectByName(stock.clothingProduct(id)!.nameplate)!;
     b.setSelected(null);
-    expect(plateOf("tshirtOrange").visible).toBe(false);
-    b.setSelected("tshirtOrange");
-    expect(plateOf("tshirtOrange").visible).toBe(true);
+    expect(plateOf("capOrange").visible).toBe(false);
+    b.setSelected("capOrange");
+    expect(plateOf("capOrange").visible).toBe(true);
     expect(plateOf("capBlue").visible).toBe(false);
     b.setSelected("capBlue");
-    expect(plateOf("tshirtOrange").visible).toBe(false);
+    expect(plateOf("capOrange").visible).toBe(false);
     expect(plateOf("capBlue").visible).toBe(true);
     b.setSelected(null);
     expect(plateOf("capBlue").visible).toBe(false);
@@ -179,8 +179,8 @@ describe("[spec] 명패와 이름표 자리(S18·S22)", () => {
 
   it("S22: 이름표 자리는 선택 상품 진열대의 textAnchor 노드 위치이고, 다른 층 상품은 null이다", async () => {
     const b = await built(1);
-    const point = b.textAnchorPoint("tshirtOrange")!;
-    const node = b.root.getObjectByName("F1_ProductName_WallWest")!;
+    const point = b.textAnchorPoint("capOrange")!;
+    const node = b.root.getObjectByName("F1_ProductName_Table")!;
     expect(node).toBeDefined();
     const world = node.getWorldPosition(point.clone());
     expect(point.x).toBeCloseTo(world.x, 5);
@@ -197,12 +197,12 @@ describe("[spec] 진열 해제(S34~S35, S37)", () => {
     stock.setClothingDisplayed("capBlue", false);
     b.setDisplayed(stock.clothingDisplayed());
     expect(b.products.has("capBlue")).toBe(false);
-    expect(b.products.size).toBe(13);
-    expect(b.productTargets()).toHaveLength(13);
+    expect(b.products.size).toBe(10);
+    expect(b.productTargets()).toHaveLength(10);
     stock.setClothingDisplayed("capBlue", true);
     b.setDisplayed(stock.clothingDisplayed());
     expect(b.products.get("capBlue")!.parent?.name).toBe("F1_Item_capBlue");
-    expect(b.products.size).toBe(14);
+    expect(b.products.size).toBe(11);
     b.dispose();
   }, 60000);
 

@@ -353,15 +353,15 @@ describe("[spec] 개발 화면 시험판(S39·S46)", () => {
       expect({ id: p.id, found: texts(`${p.floor}층 ${p.name}`).length > 0 }).toEqual({ id: p.id, found: true });
     }
     expect(stock.CLOTHING_PRODUCTS).toHaveLength(22);
-    await fireEvent.press(screen.getByText("1층 주황 티셔츠"));
-    expect(stock.clothingDisplayed().tshirtOrange).toBe(false);
-    await fireEvent.press(screen.getByText("1층 주황 티셔츠"));
-    expect(stock.clothingDisplayed().tshirtOrange).toBe(true);
+    await fireEvent.press(screen.getByText("1층 주황 야구모자"));
+    expect(stock.clothingDisplayed().capOrange).toBe(false);
+    await fireEvent.press(screen.getByText("1층 주황 야구모자"));
+    expect(stock.clothingDisplayed().capOrange).toBe(true);
   });
 
   it("S39: 홈 화면(시험판 없음)에는 상품별 진열 버튼이 없다", async () => {
     await render(<Lobby3dScreen devPanel={false} />);
     await flushAsync();
-    expect(texts("1층 주황 티셔츠")).toHaveLength(0);
+    expect(texts("1층 주황 야구모자")).toHaveLength(0);
   });
 });

@@ -26,27 +26,27 @@ const sha256 = (path: string) => createHash("sha256").update(readFileSync(path))
 // [id, 이름, 부위, 층, 진열대, 가격(미등록 null)]
 const TABLE: [string, string, string, 1 | 2, string, number | null][] = [
   ["wear-top-kiln-jacket", "코랄 워크 재킷", "top", 1, "F1_Slot_WallWest", null],
-  ["tshirtOrange", "주황 티셔츠", "top", 1, "F1_Slot_WallWest", 80],
   ["wear-bottom-sage-cargo", "세이지 카고 쇼츠", "bottom", 1, "F1_Slot_WallEast", null],
-  ["shortsNavy", "남색 반바지", "bottom", 1, "F1_Slot_WallEast", 70],
   ["wear-hat-breakwater-bucket", "마린 버킷햇", "hat", 1, "F1_Slot_WindowJacket", null],
   ["wear-top-tide-sailor", "스트라이프 세일러 니트", "top", 1, "F1_Slot_WindowJacket", null],
   ["wear-bottom-jetty-denim", "인디고 데님 쇼츠", "bottom", 1, "F1_Slot_WindowJacket", null],
   ["shoesWhite", "흰 운동화", "shoes", 1, "F1_Slot_WindowJacket", 90],
   ["capOrange", "주황 야구모자", "hat", 1, "F1_Slot_Table", 60],
-  ["shoesBrown", "갈색 운동화", "shoes", 1, "F1_Slot_Table", 90],
-  ["wear-face-honey-panto", "허니 팬토 선글라스", "face", 1, "F1_Slot_Table", null],
   ["capBlue", "파랑 야구모자", "hat", 1, "F1_Slot_WindowDress", 60],
   ["mufflerRed", "빨강 머플러", "accessory", 1, "F1_Slot_RailEast", 90],
-  ["backpackRed", "빨강 백팩", "back", 1, "F1_Slot_RailEast", 120],
-  ["wear-hat-field-cap", "차양형 전투모", "hat", 2, "F2_Slot_AtelierDress", null],
   ["wear-top-field-blouse", "디지털 무늬 전투복 상의", "top", 2, "F2_Slot_AtelierDress", null],
   ["wear-bottom-field-trousers", "카고 포켓 전투복 하의", "bottom", 2, "F2_Slot_AtelierDress", null],
   ["wear-shoe-combat-boot", "끈 전투화 한 켤레", "shoes", 2, "F2_Slot_AtelierDress", null],
   ["wear-top-quilted-liner", "군대 깔깔이", "top", 2, "F2_Slot_AtelierJacket", null],
   ["wear-hat-peddler-straw", "장돌뱅이 모자", "hat", 2, "F2_Slot_Peddler", null],
   ["wear-hat-bramble-beret", "베리 베레모", "hat", 2, "F2_Slot_Beret", null],
-  ["necklaceGold", "금 목걸이", "accessory", 2, "F2_Slot_BucketHat", 110]
+  ["necklaceGold", "금 목걸이", "accessory", 2, "F2_Slot_BucketHat", 110],
+  ["wear-face-honey-panto", "허니 팬토 선글라스", "face", 1, "F1_Slot_HarborTable", null],
+  ["backpackRed", "빨강 백팩", "back", 1, "F1_Slot_HarborRail", 120],
+  ["shoesBrown", "갈색 운동화", "shoes", 2, "F2_Slot_FieldBootTable", 90],
+  ["wear-hat-field-cap", "차양형 전투모", "hat", 2, "F2_Slot_FieldCapTable", null],
+  ["tshirtOrange", "주황 티셔츠", "top", 2, "F2_Slot_StudioRail", 80],
+  ["shortsNavy", "남색 반바지", "bottom", 2, "F2_Slot_FieldRail", 70]
 ];
 
 afterEach(() => {
@@ -55,10 +55,10 @@ afterEach(() => {
 });
 
 describe("[spec] 자료 읽기(S01~S04)", () => {
-  it("S01: 상품 22종, id·층 구성이 표와 같다(1층 14·2층 8, 등록 9·미등록 13)", () => {
+  it("S01: 상품 22종, id·층 구성이 표와 같다(1층 11·2층 11, 등록 9·미등록 13)", () => {
     expect(CLOTHING_PRODUCTS.map((p) => p.id)).toEqual(TABLE.map((t) => t[0]));
-    expect(clothingProductsOnFloor(1)).toHaveLength(14);
-    expect(clothingProductsOnFloor(2)).toHaveLength(8);
+    expect(clothingProductsOnFloor(1)).toHaveLength(11);
+    expect(clothingProductsOnFloor(2)).toHaveLength(11);
     expect(CLOTHING_PRODUCTS.filter((p) => p.catalogId)).toHaveLength(9);
     expect(CLOTHING_PRODUCTS.filter((p) => !p.catalogId)).toHaveLength(13);
   });
@@ -91,10 +91,10 @@ describe("[spec] 자료 읽기(S01~S04)", () => {
 
   it("S04: 앱 자산 진열 상품 GLB와 stock.json이 애셋 최종본과 같고 CREDITS.md에 진열 상품 모델 줄이 있다", () => {
     const glb = join(MOBILE, "assets", "models", "clothing-shop", "clothing-display-samples.glb");
-    expect(readFileSync(glb).length).toBe(2694940);
-    expect(sha256(glb)).toBe("54f1fa3f51f891604d2e48544ed69a863768b32534513cecd34a8f05c9fdfe49");
+    expect(readFileSync(glb).length).toBe(2694924);
+    expect(sha256(glb)).toBe("b1a9078e910e00433b33e34cf353477aad2f67e33ae59ad3983c39ddb277e62f");
     expect(sha256(join(MOBILE, "src", "lib", "lobby3d", "clothing-shop-stock.json"))).toBe(
-      "54fb8cc5ec0476ca47b0275b78e6730029853f6cd8d518d648edce942269d817"
+      "261420f62340e9ca0978009f2aff0162616a8c630955001816f4fb57687e71bc"
     );
     const lines = readFileSync(join(MOBILE, "assets", "models", "CREDITS.md"), "utf8").split(/\r?\n/);
     const found = lines.filter((l) => l.includes("`clothing-shop/clothing-display-samples.glb`"));
@@ -194,11 +194,11 @@ describe("[spec] 가격 글과 담기 판정(S19~S21, S25~S28)", () => {
 });
 
 describe("[spec] 예비 진열 자리(S31, S33)", () => {
-  it("S31: 예비 자리 노드는 합계 10개이고 상품의 displayAnchor와 겹치지 않는다", () => {
+  it("S31: 빈 자리 노드는 합계 16개이고 상품의 displayAnchor와 겹치지 않는다", () => {
     for (const floor of [1, 2] as const) {
       for (const p of clothingProductsOnFloor(floor)) expect(CLOTHING_RESERVE_MOUNTS[floor]).not.toContain(p.displayAnchor);
     }
-    expect(CLOTHING_RESERVE_MOUNTS[1].length + CLOTHING_RESERVE_MOUNTS[2].length).toBe(10);
+    expect(CLOTHING_RESERVE_MOUNTS[1].length + CLOTHING_RESERVE_MOUNTS[2].length).toBe(16);
   });
 
   it("S33: 1·2층 장소 목록에 예비 자리로 가는 장소가 없다", () => {

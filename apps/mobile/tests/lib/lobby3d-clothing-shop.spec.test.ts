@@ -27,9 +27,9 @@ afterEach(() => applyArea("room"));
 
 describe("[spec] 앱 자산(S1~S3)", () => {
   it("S1: 두 층 GLB와 배치 JSON이 애셋 최종본과 바이트가 같다(sha256)", () => {
-    expect(sha256(FILE_1F)).toBe("2e033e1408c9352b02580d1151b7b4182989eb8bb38eae4d2e9485228d3f82e9");
-    expect(sha256(FILE_2F)).toBe("9ef05a10a5e8078d3b0bc67ff7b247735ceb36373fcd3bc763400d7fdf06d20f");
-    expect(sha256(join(MOBILE, "src", "lib", "lobby3d", "clothing-shop-layout.json"))).toBe("4cf72eb6d16c9cab5af2f00eeaf8b23324a5dd2d620691560587437d979eaa87");
+    expect(sha256(FILE_1F)).toBe("b6048fe0c841bd6842ef8b4c6f5bdd7ae6174602af5e491763e92b730bdfa24a");
+    expect(sha256(FILE_2F)).toBe("445771225fa6bb7bb666feadc80a185f1fcf8718c9875b68ae7deaeec2b9288c");
+    expect(sha256(join(MOBILE, "src", "lib", "lobby3d", "clothing-shop-layout.json"))).toBe("9c49ee2257ee27d285a668b65d55735d0fe07f329994c5a51dfc9b0caad51a77");
   });
 
   it("S2: CREDITS.md에 두 층 모델 줄이 하나씩 있고 WriteLoop이 Blender로 만들었다고 적혀 있다", () => {

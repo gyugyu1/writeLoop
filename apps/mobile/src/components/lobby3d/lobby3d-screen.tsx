@@ -680,6 +680,8 @@ export default function Lobby3dScreen({
     setClothingSheet(null);
     pendingProductRef.current = null;
   }, [area]);
+  // 피팅 중에 로비 화면이 사라지면 커튼 닫힘(그 방 입구를 막는 임시 충돌)을 풀어 둔다. 다음에 들어와도 방이 막혀 있지 않게
+  useEffect(() => () => setClothingCurtainClosed(null), []);
   // 진열을 해제한 상품이면 선택과 상품 창을 거둔다
   useEffect(() => {
     if (clothingSelected && !clothingDisplayedNow[clothingSelected]) setClothingSelected(null);

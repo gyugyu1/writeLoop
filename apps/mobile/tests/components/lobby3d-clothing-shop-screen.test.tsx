@@ -338,3 +338,17 @@ describe("옷집 피팅룸", () => {
     expect(canvas().clothingCurtainClosed).toBeNull();
   });
 });
+
+// 작업 133 ③ 4단계 의심 2: 피팅 중에 로비 화면이 사라지면 커튼 닫힘이 풀린다
+describe("피팅 중 화면이 사라질 때", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const shopData = require("@/lib/lobby3d/clothing-shop") as typeof import("@/lib/lobby3d/clothing-shop");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  it("커튼 닫힘(임시 충돌)을 풀어 둔다", async () => {
+    shopData.setClothingCurtainClosed(1);
+    await act(async () => {
+      screen.unmount();
+    });
+    expect(shopData.clothingCurtainClosed()).toBeNull();
+  });
+});

@@ -40,7 +40,24 @@ PIECES = [
     ("wear-muffler", "mufflerRed", 20, 18, 1.7, 0.0, None),
     ("wear-necklace", "necklaceGold", 15, 12, 1.8, 0.05, None),
     ("wear-vest", "vestGreen", 25, 10, 1.25, 0.18, None),
+    # 옷집 미등록 13종(작업 133): 같은 부위의 기존 옷과 같은 각도·화면 폭
+    ("wear-top-kiln-jacket", "wear-top-kiln-jacket", 25, 10, 1.25, 0.18, None),
+    ("wear-bottom-sage-cargo", "wear-bottom-sage-cargo", 25, 12, 1.45, 0.0, None),
+    ("wear-hat-breakwater-bucket", "wear-hat-breakwater-bucket", 30, 28, 2.4, 0.35, None),
+    ("wear-top-tide-sailor", "wear-top-tide-sailor", 25, 10, 1.25, 0.18, None),
+    ("wear-bottom-jetty-denim", "wear-bottom-jetty-denim", 25, 12, 1.45, 0.0, None),
+    ("wear-face-honey-panto", "wear-face-honey-panto", 20, 8, 1.6, 0.0, None),
+    ("wear-hat-field-cap", "wear-hat-field-cap", 30, 28, 2.4, 0.35, None),
+    ("wear-top-field-blouse", "wear-top-field-blouse", 25, 10, 1.25, 0.18, None),
+    ("wear-bottom-field-trousers", "wear-bottom-field-trousers", 25, 12, 1.45, 0.0, None),
+    ("wear-shoe-combat-boot", "wear-shoe-combat-boot", 30, 22, 1.7, -0.1, None),
+    ("wear-top-quilted-liner", "wear-top-quilted-liner", 25, 10, 1.25, 0.18, None),
+    ("wear-hat-peddler-straw", "wear-hat-peddler-straw", 30, 28, 1.45, -0.4, None),
+    ("wear-hat-bramble-beret", "wear-hat-bramble-beret", 30, 28, 2.4, 0.35, None),
 ]
+
+# 한 짝만 든 신발(오른쪽은 왼쪽을 뒤집어 그린다): 아이콘에서도 뒤집은 짝을 더해 두 발에 신긴다
+LEFT_SHOES = ("wear-shoe-l", "wear-shoe-combat-boot")
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -55,11 +72,13 @@ meshes = {o.name: o for o in scene.objects if o.type == "MESH" and o.name.starts
 from mathutils import Matrix
 
 companions = {}
-if "wear-shoe-l" in meshes:
-    shoe_r = meshes["wear-shoe-l"].copy()
+for shoe in LEFT_SHOES:
+    if shoe not in meshes:
+        continue
+    shoe_r = meshes[shoe].copy()
     scene.collection.objects.link(shoe_r)
-    shoe_r.matrix_world = Matrix.Scale(-1, 4, (1, 0, 0)) @ meshes["wear-shoe-l"].matrix_world
-    companions["wear-shoe-l"] = [shoe_r]
+    shoe_r.matrix_world = Matrix.Scale(-1, 4, (1, 0, 0)) @ meshes[shoe].matrix_world
+    companions[shoe] = [shoe_r]
 
 scene.render.engine = "CYCLES"
 scene.cycles.samples = 48

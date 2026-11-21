@@ -37,7 +37,7 @@ import { useHomeMonthCalendar } from "@/components/home/use-home-month-calendar"
 import { useLobbyGreeting } from "@/components/home/use-lobby-greeting";
 import { useLobbyLayout } from "@/components/home/use-lobby-layout";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
-import { getLoopPoints, getWardrobe, trackDailyPromptClick } from "@/lib/api";
+import { getLoopPoints, getWardrobe, saveWardrobeEquipped, trackDailyPromptClick } from "@/lib/api";
 import { refreshItemCatalog } from "@/lib/item-catalog";
 import { useItemCatalog } from "@/lib/item-catalog-store";
 import { retryFailedItemFiles } from "@/lib/item-files";
@@ -174,6 +174,13 @@ export default function HomeScreen() {
     setLobbyEquipped({ value: wardrobe.equipped });
     setLobbyOwned(wardrobe.items.map((item) => item.type));
     setIsClosetOpen(false);
+  }, []);
+  // 옷집 피팅룸 '끝내기': 가진 옷으로 바꾼 착장을 옷장에 저장하고 바로 입힌다(실패하면 로비가 안내한다)
+  const handleSaveLook = useCallback(async (look: Wardrobe["equipped"]) => {
+    const wardrobe = await saveWardrobeEquipped(look);
+    wardrobeRequest.current += 1;
+    setLobbyEquipped({ value: wardrobe.equipped });
+    setLobbyOwned(wardrobe.items.map((item) => item.type));
   }, []);
   const handleShopBalance = useCallback((balance: number) => {
     loopBalanceRequest.current += 1;
@@ -535,6 +542,7 @@ export default function HomeScreen() {
           onEnterCloset={() => setIsClosetOpen(true)}
           signedIn={currentUser !== null}
           ownedItems={lobbyOwned}
+          onSaveLook={handleSaveLook}
         />
       </View>
       {isEditingLobby ? null : <MobileNavBar activeTab="home" />}

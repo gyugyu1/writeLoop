@@ -260,3 +260,81 @@ describe("옷집 진열 상품 선택과 장바구니", () => {
     expect(screen.queryAllByText("장바구니 1", ALL)).toHaveLength(0);
   });
 });
+
+// 작업 133 ③ 양 층 피팅룸: 들어가면 커튼이 닫히고 피팅 창, 입기·세트·취소·끝내기
+describe("옷집 피팅룸", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const stock = require("@/lib/lobby3d/clothing-stock") as typeof import("@/lib/lobby3d/clothing-stock");
+  const store = require("@/lib/item-catalog-store") as typeof import("@/lib/item-catalog-store");
+  const shopData = require("@/lib/lobby3d/clothing-shop") as typeof import("@/lib/lobby3d/clothing-shop");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  const file = (n: string) => ({ url: `/api/catalog/files/${n}.glb`, sha256: n.padEnd(64, "0").slice(0, 64), size: 1 });
+  const wearable = (id: string, slot: string, price: number | null, draw: Record<string, unknown>) => ({
+    id, kind: "wearable" as const, name: id, shopName: id, description: "", category: price === null ? null : ("clothes" as const), slot, price, draw, assets: { model: file(id), icon: null }
+  });
+
+  beforeEach(() => {
+    store.setItemCatalog({
+      version: "test-fitting",
+      items: [
+        wearable("capOrange", "hat", 60, { attach: "bone", bone: "head", body: 1 }),
+        wearable("wear-hat-breakwater-bucket", "hat", null, { attach: "bone", bone: "head", body: 1 }),
+        wearable("wear-top-tide-sailor", "top", null, { attach: "skin", body: 1 }),
+        wearable("wear-bottom-jetty-denim", "bottom", null, { attach: "skin", body: 1 }),
+        wearable("shoesWhite", "shoes", 90, { attach: "bone", bone: "foot_l", mirror: "foot_r", color: "#DCD8CF", body: 1 })
+      ]
+    });
+  });
+  afterEach(() => {
+    stock.resetClothingShop();
+    shopData.setClothingCurtainClosed(null);
+  });
+
+  /** 피팅룸 앞에서 '들어가기'를 누르기 직전의 착장(들어오기 전 착장). */
+  let lookBefore: unknown = undefined;
+  async function enterFitting(floor: 1 | 2) {
+    await toClothingDoor();
+    await press("들어가기");
+    await frames(1.2);
+    if (floor === 2) {
+      await walkTo(CLOTHING_MARKS.clothingUp.approach[0], "clothingUp");
+      await press("올라가기");
+      await frames(1.2);
+    }
+    const id = floor === 1 ? "clothingFitting1" : "clothingFitting2";
+    await walkTo(CLOTHING_MARKS[id].approach[0], id);
+    expect(sim().snapshot(Date.now()).bubbleText).toBe("피팅룸에 들어갈까?");
+    lookBefore = canvas().look;
+    await press("들어가기");
+    await frames(6);
+  }
+
+  it("1층: 들어가면 방 안에 서고 커튼이 닫히며 입구가 막히고, 입은 뒤 취소하면 들어오기 전 착장·커튼 열림·방 앞으로 나온다", async () => {
+    await enterFitting(1);
+    const room = shopData.CLOTHING_FITTING_ROOMS[1];
+    expect(dist(pos(), room.inside)).toBeLessThan(1e-6);
+    expect(canvas().clothingCurtainClosed).toBe(1);
+    expect(shopData.clothingCurtainClosed()).toBe(1);
+    expect(screen.queryAllByText("피팅룸", ALL).length).toBeGreaterThan(0);
+    await press("마린 버킷햇, 판매 준비 중");
+    expect(canvas().look?.hat).toBe("wear-hat-breakwater-bucket");
+    await press("취소");
+    expect(canvas().look).toEqual(lookBefore);
+    expect(canvas().clothingCurtainClosed).toBeNull();
+    expect(shopData.clothingCurtainClosed()).toBeNull();
+    await frames(6);
+    expect(dist(pos(), room.approach)).toBeLessThan(0.1);
+  });
+
+  it("2층: 세트를 입고 끝내면 가지지 않은 등록 상품만 장바구니에 담고(미등록은 안 담음) 들어오기 전 착장으로 돌아온다", async () => {
+    await enterFitting(2);
+    expect(canvas().clothingCurtainClosed).toBe(2);
+    await press("항구 산책 · 마린");
+    expect(canvas().look).toMatchObject({ hat: "wear-hat-breakwater-bucket", top: "wear-top-tide-sailor", bottom: "wear-bottom-jetty-denim", shoes: "shoesWhite" });
+    await press("끝내기");
+    expect(stock.clothingCart()).toEqual(["shoesWhite"]);
+    expect(screen.queryAllByText("장바구니에 1개 담았어요", ALL).length).toBeGreaterThan(0);
+    expect(canvas().look?.shoes ?? null).not.toBe("shoesWhite");
+    expect(canvas().clothingCurtainClosed).toBeNull();
+  });
+});

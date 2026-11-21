@@ -10,7 +10,7 @@ afterEach(() => applyArea("room"));
 describe("옷집 층마다 장소와 걷기", () => {
   it("1층: 입장 자리에서 출입문·2층 계단까지 길이 있다", () => {
     applyArea("clothing1");
-    expect(activePlaceIds()).toEqual(["clothingExit", "clothingUp"]);
+    expect(activePlaceIds()).toEqual(["clothingExit", "clothingUp", "clothingFitting1"]);
     const from: FloorPoint = CLOTHING_NODES.entranceSpawn;
     expect(isFree(from.x, from.z)).toBe(true);
     for (const id of ["clothingExit", "clothingUp"] as const) {
@@ -24,7 +24,7 @@ describe("옷집 층마다 장소와 걷기", () => {
 
   it("2층: 올라와 서는 자리에서 1층 계단까지 길이 있다", () => {
     applyArea("clothing2");
-    expect(activePlaceIds()).toEqual(["clothingDown"]);
+    expect(activePlaceIds()).toEqual(["clothingDown", "clothingFitting2"]);
     const from = CLOTHING_NODES.fromLower;
     expect(isFree(from.x, from.z)).toBe(true);
     expect(findPath(from, markInfo("clothingDown").approach)).not.toBeNull();
@@ -110,6 +110,30 @@ describe("옷집 최신 배치", () => {
       for (const product of CLOTHING_PRODUCTS.filter((p) => p.floor === floor)) {
         expect({ id: product.id, path: findPath(from, [product.approach]) !== null }).toEqual({ id: product.id, path: true });
       }
+    }
+  });
+});
+
+// 작업 133 ③: 층마다 피팅룸 장소, 커튼이 닫힌 동안 그 방 입구가 막힌다
+describe("옷집 피팅룸 장소와 임시 충돌", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const shop = require("@/lib/lobby3d/clothing-shop") as typeof import("@/lib/lobby3d/clothing-shop");
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  afterEach(() => shop.setClothingCurtainClosed(null));
+
+  it("층마다 피팅룸 앞에서 방 안까지 갈 수 있고, 그 층 커튼이 닫히면 막히며 다른 층은 그대로다", () => {
+    for (const floor of [1, 2] as const) {
+      applyArea(floor === 1 ? "clothing1" : "clothing2");
+      const id = floor === 1 ? "clothingFitting1" : "clothingFitting2";
+      expect(activePlaceIds()).toContain(id);
+      const room = shop.CLOTHING_FITTING_ROOMS[floor];
+      const from = markInfo(id).approach[0];
+      expect(findPath(from, [room.inside])).not.toBeNull();
+      shop.setClothingCurtainClosed(floor);
+      expect(findPath(from, [room.inside])).toBeNull();
+      shop.setClothingCurtainClosed(floor === 1 ? 2 : 1);
+      expect(findPath(from, [room.inside])).not.toBeNull();
+      shop.setClothingCurtainClosed(null);
     }
   });
 });

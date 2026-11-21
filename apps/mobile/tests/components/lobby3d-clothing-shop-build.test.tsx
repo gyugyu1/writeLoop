@@ -172,3 +172,18 @@ describe("옷집 진열 상품", () => {
     expect(built.root.getObjectByName(cap.nameplate)!.visible).toBe(false);
   }, 60000);
 });
+
+// 작업 133 ③: 층마다 피팅룸 커튼의 Closed 모프를 닫고 연다
+describe("옷집 피팅룸 커튼", () => {
+  for (const floor of [1, 2] as const) {
+    it(`${floor}층: 커튼은 처음 열려 있고(0) 닫으면 1, 열면 0`, async () => {
+      const built = buildClothingFloor(floor, await load(APP_MODELS, FILES[floor]));
+      expect(built.curtainWeight()).toBe(0);
+      built.setCurtainClosed(true);
+      expect(built.curtainWeight()).toBe(1);
+      built.setCurtainClosed(false);
+      expect(built.curtainWeight()).toBe(0);
+      built.dispose();
+    }, 60000);
+  }
+});

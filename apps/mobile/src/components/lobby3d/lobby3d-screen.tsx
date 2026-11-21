@@ -37,7 +37,14 @@ import {
   type PointerHit
 } from "@/lib/lobby3d/engine";
 import { VILLAGE_PLACES, VILLAGE_START } from "@/lib/lobby3d/village";
-import { CLOTHING_NODES, CLOTHING_PLACE_IDS, type ClothingFloor } from "@/lib/lobby3d/clothing-shop";
+import {
+  CLOTHING_FITTING_ROOMS,
+  CLOTHING_NODES,
+  CLOTHING_PLACE_IDS,
+  clothingFittingFloorOf,
+  setClothingCurtainClosed,
+  type ClothingFloor
+} from "@/lib/lobby3d/clothing-shop";
 import {
   SHOP_NODES,
   SHOP_SLOTS,
@@ -52,17 +59,19 @@ import {
 import { retryShopFiles } from "@/lib/lobby3d/shop-files";
 import ShopDisplaySheet from "@/components/lobby3d/shop-display-sheet";
 import ClothingProductSheet, { clothingCatalogPrice } from "@/components/lobby3d/clothing-product-sheet";
+import ClothingFittingSheet, { outfitPieces, ownsWearable } from "@/components/lobby3d/clothing-fitting-sheet";
 import {
   CLOTHING_PRODUCTS,
   clothingCart,
   clothingDisplayed,
   clothingPriceText,
   clothingProduct,
+  addToClothingCart,
   setClothingDisplayed,
   subscribeClothingCart,
   subscribeClothingDisplay
 } from "@/lib/lobby3d/clothing-stock";
-import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_WEAR, WEAR_SLOTS, itemsInSlot, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
+import { DEFAULT_LOOK, EXTRA_WEAR_SLOTS, NO_LOOK, NO_WEAR, WEAR_SLOTS, itemsInSlot, shownLook, wearOfLook, type WearLook, type WearState } from "@/lib/lobby3d/wear";
 import type { WardrobeSlot } from "@/lib/types";
 import { daylightAt } from "@/lib/lobby3d/daylight";
 import { LobbyEditor } from "@/lib/lobby3d/lobby-edit";
@@ -506,6 +515,8 @@ export interface Lobby3dScreenProps {
   signedIn?: boolean;
   /** 홈: 가진 옷(옷장의 아이템 종류). 옷집이 가진 옷을 가린다. 주지 않거나 null이면 가진 옷이 없는 것으로 본다(개발 화면 시험판은 늘 없음). */
   ownedItems?: readonly string[] | null;
+  /** 홈: 옷집 피팅룸 '끝내기'에서 가진 옷으로 바꾼 착장을 옷장에 저장한다(실패하면 거부). 개발 화면은 주지 않는다(시험 착장만 바꾼다). */
+  onSaveLook?: (look: WearLook) => Promise<void>;
 }
 
 /** 꾸미기 보관함 줄의 가구 한 칸: 가구 모양 그림(없으면 이름 첫 글자)과 이름. 보관함은 가구 하나마다 한 칸이다. */
@@ -552,7 +563,8 @@ export default function Lobby3dScreen({
   look: lookProp = null,
   onEnterCloset,
   signedIn = true,
-  ownedItems = null
+  ownedItems = null,
+  onSaveLook
 }: Lobby3dScreenProps = {}) {
   // 옷장 말풍선(로그인 안내인지)은 그리기 전에 맞춘다
   setClosetSignedIn(signedIn);
@@ -577,8 +589,13 @@ export default function Lobby3dScreen({
   const [testLook, setTestLook] = useState<WearLook>(DEFAULT_LOOK);
   // 가구점 진열대별 빈 상태(시험판 '품절' 버튼이 바꾼다. 재고가 생기면 재고가 채운다)
   const shopVacant = useSyncExternalStore(subscribeShopVacancy, shopVacancy, shopVacancy);
-  const wear = devPanel ? wearOfLook(testLook) : wearProp ?? NO_WEAR;
-  const look = devPanel ? testLook : lookProp;
+  // 옷집 피팅 중 임시 착장(피팅 창이 바꾼다)
+  const [fittingLook, setFittingLook] = useState<WearLook | null>(null);
+  const baseWear = devPanel ? wearOfLook(testLook) : wearProp ?? NO_WEAR;
+  const baseLook = devPanel ? testLook : lookProp;
+  // 피팅 중에는 임시 착장을 그린다
+  const wear = fittingLook ? wearOfLook(fittingLook) : baseWear;
+  const look = fittingLook ?? baseLook;
   const toggleTestSlot = (slot: WardrobeSlot) =>
     setTestLook((current) => ({ ...current, [slot]: current[slot] ? null : itemsInSlot(slot)[0] ?? null }));
   const cycleTestSlot = (slot: WardrobeSlot) =>
@@ -615,6 +632,9 @@ export default function Lobby3dScreen({
   const [clothingSheet, setClothingSheet] = useState<string | null>(null);
   const clothingSheetOpenRef = useRef(false);
   clothingSheetOpenRef.current = clothingSheet !== null;
+  // 옷집 피팅룸: 들어가는 중(walk-in)·안(inside)·나오는 중(walk-out)과 들어오기 전 착장, 피팅 중 임시 착장
+  const fittingRef = useRef<{ floor: ClothingFloor; phase: "walk-in" | "inside" | "walk-out"; base: WearLook } | null>(null);
+  const [curtainFloor, setCurtainFloor] = useState<ClothingFloor | null>(null);
   const productDownRef = useRef<string | null>(null);
   const pendingProductRef = useRef<string | null>(null);
   const ownedSet = useMemo(() => new Set(devPanel ? [] : ownedItems ?? []), [devPanel, ownedItems]);
@@ -1132,6 +1152,20 @@ export default function Lobby3dScreen({
       const entered = sim.consumeSceneEntered();
       if (entered && !enterPlaceRef.current(entered)) sim.endScene();
       const snap = sim.snapshot(Date.now());
+      // 옷집 피팅룸: 방 안까지 걸어 들어가 멈추면 그 방향으로 서고 커튼을 닫고(입구를 막음) 피팅 창을 연다. 나오는 길이 끝나면 피팅을 마친다
+      const fitting = fittingRef.current;
+      if (fitting && !sim.walking && !snap.moving) {
+        const room = CLOTHING_FITTING_ROOMS[fitting.floor];
+        if (fitting.phase === "walk-in") {
+          if (Math.hypot(snap.x - room.inside.x, snap.z - room.inside.z) <= 0.1) {
+            fitting.phase = "inside";
+            sim.placeAt(room.inside, room.inside.heading, Date.now(), true);
+            setClothingCurtainClosed(fitting.floor);
+            setCurtainFloor(fitting.floor);
+            setFittingLook(fitting.base);
+          } else fittingRef.current = null;
+        } else if (fitting.phase === "walk-out") fittingRef.current = null;
+      }
       // 옷집: 누른 진열 상품 앞에 멈춰 섰으면 그 상품을 선택하고 상품 창을 연다(못 가고 멈췄으면 잊는다)
       const pending = pendingProductRef.current;
       if (pending && !sim.walking && !snap.moving) {
@@ -1180,7 +1214,7 @@ export default function Lobby3dScreen({
       }
       // 시트를 연 동안에는 로비를 누르지 못한다. 막는 중에 누른 것이 남지 않게 지금 누르기도 거둔다.
       // 시트를 연 동안과 '들어가기' 동작을 하는 동안에는 로비를 누르지 못한다
-      if (inputBlockedRef.current || sim.scene || travelingRef.current || displayOpenRef.current || clothingSheetOpenRef.current) {
+      if (inputBlockedRef.current || sim.scene || travelingRef.current || displayOpenRef.current || clothingSheetOpenRef.current || fittingRef.current) {
         if (phase !== "move") sim.pointerCancel();
         return;
       }
@@ -1353,6 +1387,43 @@ export default function Lobby3dScreen({
   );
   const shownToon = devPanel ? toon : HOME_TOON;
   // 장소 안내 말풍선의 버튼과 아래 메뉴 버튼. 말풍선 묶음·메뉴가 다시 그려지지 않게 늘 같은 함수를 넘기고, 하는 일은 지금 그린 화면의 것을 부른다
+  /**
+   * 피팅룸에서 나온다. finished가 null이면 '취소'(들어오기 전 착장), 아니면 '끝내기': 가지지 않은 등록된 상품은 장바구니에 담고 그 부위를 들어오기 전 옷으로,
+   * 가진 옷으로 바꾼 착장은 입은 채 옷장에 저장한다(개발 화면은 시험 착장만). 커튼을 열고(입구를 풂) 방 앞으로 걸어 나온다.
+   */
+  const leaveFitting = (finished: WearLook | null) => {
+    const fitting = fittingRef.current;
+    if (!fitting) return;
+    const base = fitting.base;
+    if (finished) {
+      const kept: WearLook = { ...base };
+      let added = 0;
+      for (const slot of Object.keys(finished) as WardrobeSlot[]) {
+        const id = finished[slot];
+        if (id === base[slot]) continue;
+        if (id === null || ownsWearable(id, ownedSet)) {
+          kept[slot] = id;
+          continue;
+        }
+        // 가지지 않은 옷: 등록된 상품이면 장바구니에 담는다(미등록은 담지 않는다). 이 부위는 들어오기 전 옷으로
+        const product = CLOTHING_PRODUCTS.find((p) => p.catalogId === id);
+        if (product && clothingCatalogPrice(product.id) !== null && addToClothingCart(product.id)) added += 1;
+      }
+      const changed = (Object.keys(kept) as WardrobeSlot[]).some((slot) => kept[slot] !== base[slot]);
+      if (changed) {
+        if (devPanel || !onSaveLook) setTestLook(kept);
+        else void onSaveLook(kept).catch(() => showToast("옷을 저장하지 못했어요"));
+      }
+      if (added > 0) showToast(`장바구니에 ${added}개 담았어요`);
+    }
+    setFittingLook(null);
+    setClothingCurtainClosed(null);
+    setCurtainFloor(null);
+    fitting.phase = "walk-out";
+    const approach = CLOTHING_FITTING_ROOMS[fitting.floor].approach;
+    if (!sim.goTo({ x: approach.x, z: approach.z }, null)) fittingRef.current = null;
+    syncView();
+  };
   const pressPlaceRef = useRef<(id: PlaceId) => void>(() => {});
   pressPlaceRef.current = (id: PlaceId) => {
     // 걷기 시작해 이 안내가 사라졌는데 아직 다시 그리기 전이면 누르지 않은 것으로 본다
@@ -1392,6 +1463,17 @@ export default function Lobby3dScreen({
     }
     if (id === "clothingDown") {
       travel("clothing1");
+      return;
+    }
+    // 피팅룸의 '들어가기': 들어오기 전 착장을 기억하고 그 방 안까지 걸어 들어간다
+    const fittingFloor = clothingFittingFloorOf(id);
+    if (fittingFloor) {
+      const inside = CLOTHING_FITTING_ROOMS[fittingFloor].inside;
+      sim.pointerCancel();
+      if (sim.goTo({ x: inside.x, z: inside.z }, null)) {
+        fittingRef.current = { floor: fittingFloor, phase: "walk-in", base: shownLook(baseWear, baseLook) };
+        syncView();
+      }
       return;
     }
     // 계산대의 '인사하기': 라룹이가 손을 흔들고 버들 머리 위에 인사 말풍선이 뜬다
@@ -1451,6 +1533,7 @@ export default function Lobby3dScreen({
         onClothingReady={onClothingReady}
         onClothingFailed={onClothingFailed}
         clothingSelected={clothingSelected}
+        clothingCurtainClosed={curtainFloor}
         wear={wear}
         look={look}
       />
@@ -1909,6 +1992,15 @@ export default function Lobby3dScreen({
       </Animated.View>
       {/* 가구점 진열대의 진열 목록. 고르면 그 진열대만 바뀌고 닫힌다 */}
       <ShopDisplaySheet slot={displaySlot} onClose={() => setDisplaySlot(null)} />
+      <ClothingFittingSheet
+        visible={fittingLook !== null && clothingFloorOf(area) !== null}
+        look={fittingLook ?? NO_LOOK}
+        owned={ownedSet}
+        onWear={(slot, id) => setFittingLook((current) => (current ? { ...current, [slot]: id } : current))}
+        onOutfit={(outfitId) => setFittingLook((current) => (current ? { ...current, ...outfitPieces(outfitId, clothingDisplayed()) } : current))}
+        onCancel={() => leaveFitting(null)}
+        onFinish={() => leaveFitting(fittingLook)}
+      />
       <ClothingProductSheet
         productId={clothingFloorOf(area) ? clothingSheet : null}
         owned={ownedSet}

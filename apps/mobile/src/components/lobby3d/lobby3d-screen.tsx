@@ -1483,7 +1483,12 @@ export default function Lobby3dScreen({
       const changed = (Object.keys(saved) as WardrobeSlot[]).some((slot) => saved[slot] !== real[slot]);
       if (changed) {
         if (devPanel || !onSaveLook) setTestLook(saved);
-        else void onSaveLook(saved).catch(() => showToast("옷을 저장하지 못했어요"));
+        else
+          void onSaveLook(saved).catch(() => {
+            // 저장에 실패하면 들어오기 전 착장(피팅 시작 착장)으로 돌리고 안내한다
+            setShopLook(base);
+            showToast("옷을 저장하지 못했어요");
+          });
       }
       setShopLook(afterShop);
       if (added > 0) showToast(`장바구니에 ${added}개 담았어요`);

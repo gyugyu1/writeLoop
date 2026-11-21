@@ -172,7 +172,7 @@ describe("[spec] 입장(S10~S16)", () => {
     expect(textCount("가구점은 곧 열려요")).toBe(0);
   });
 
-  it("S11: 옷집 문 앞은 그대로 '옷집은 곧 열려요'이고 버튼이 없다", async () => {
+  it("S11: 옷집 문 앞은 '옷집에 들어갈까?'와 '들어가기' 버튼이다(133 ① 03 결정 1)", async () => {
     await renderLobby();
     await walkTo(MARKS.door.approach[0], "door");
     await press("나가기");
@@ -180,8 +180,9 @@ describe("[spec] 입장(S10~S16)", () => {
     const clothing = Object.entries(VILLAGE_PLACES).find(([, place]) => (place as { label?: string }).label === "옷집");
     expect(clothing).toBeDefined();
     await walkTo(clothing![1].approach[0], clothing![0] as PointerHit["mark"]);
-    expect(screen.getByText("옷집은 곧 열려요")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "들어가기" })).toBeNull();
+    expect(screen.getByText("옷집에 들어갈까?")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "들어가기" })).toBeTruthy();
+    expect(textCount("옷집은 곧 열려요")).toBe(0);
   });
 
   it("S12: '들어가기'를 누르면 어두워진 뒤(약 0.3초) 구역이 shop으로 바뀐다", async () => {

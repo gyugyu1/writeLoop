@@ -25,7 +25,8 @@ const PLACE_BUBBLE: Record<PlaceKey, { text: string; button: string | null }> = 
   home: { text: "집으로 들어갈까?", button: "들어가기" },
   // 작업 128(가구점 실내) 명세 3-1·03 결정 1: 가구점은 "가구점에 들어갈까?"와 버튼 '들어가기'
   furnitureShop: { text: "가구점에 들어갈까?", button: "들어가기" },
-  [CLOTHING]: { text: "옷집은 곧 열려요", button: null }
+  // 작업 133 ① 03 결정 1(사용자 "qa가 새 안내로 고침"): 옷집은 "옷집에 들어갈까?"와 버튼 '들어가기'
+  [CLOTHING]: { text: "옷집에 들어갈까?", button: "들어가기" }
 };
 
 const fountain: FloorPoint = { x: LAYOUT.fountain.x, z: LAYOUT.fountain.z };

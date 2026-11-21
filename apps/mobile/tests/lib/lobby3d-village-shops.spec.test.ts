@@ -149,10 +149,10 @@ describe("[spec] 106 바뀔 동작: 건물·장소(명세 1·2·3)", () => {
     expect(front).toEqual([]);
   });
 
-  it("V8 옷집 문 앞(명세 3·4): 라룹이 집 앞에서 옷집 장소를 누르면 그 서는 자리까지 걸어가 도착하고, 말풍선은 버튼 없이 '옷집은 곧 열려요'다", () => {
+  it("V8 옷집 문 앞(명세 3·4): 라룹이 집 앞에서 옷집 장소를 누르면 그 서는 자리까지 걸어가 도착하고, 말풍선은 '옷집에 들어갈까?'와 버튼 '들어가기'다(133 ① 03 결정 1)", () => {
     const id = clothingId();
     const info = markInfo(id as PlaceId);
-    expect({ prompt: info?.prompt, buttonLabel: info?.buttonLabel }).toEqual({ prompt: "옷집은 곧 열려요", buttonLabel: "" });
+    expect({ prompt: info?.prompt, buttonLabel: info?.buttonLabel }).toEqual({ prompt: "옷집에 들어갈까?", buttonLabel: "들어가기" });
     expect(hasPlaceBubble(id as PlaceId)).toBe(true);
     const goal = place(id).approach[0];
     const path = findPath(VILLAGE_START, [goal]);
@@ -168,7 +168,7 @@ describe("[spec] 106 바뀔 동작: 건물·장소(명세 1·2·3)", () => {
     }
     expect(Math.hypot(sim.x - goal.x, sim.z - goal.z)).toBeLessThanOrEqual(0.06);
     const snap = sim.snapshot(now);
-    expect({ arrived: snap.arrived, text: snap.bubbleText, button: snap.bubbleButton }).toEqual({ arrived: id, text: "옷집은 곧 열려요", button: null });
+    expect({ arrived: snap.arrived, text: snap.bubbleText, button: snap.bubbleButton }).toEqual({ arrived: id, text: "옷집에 들어갈까?", button: "들어가기" });
   });
 
   it("V9 나무(명세 3): 옷집 땅 안의 나무 [45.7, 19.2]는 없다. 나무는 28그루(117 전: 106이 옮긴 새 자리 하나가 옛 자리에서 8칸 안에 있었다)이고 어느 나무도 건물 땅·길 칸에 걸리지 않는다", () => {

@@ -190,7 +190,7 @@ describe("[spec] 120 자산 출처(명세 6, docs 커밋)", () => {
   });
 
   it("[그대로] C3 CREDITS.md의 다른 줄(마을 모델 줄과 가로등 줄 밖)은 기준 커밋과 같다(차례 포함). 마을 모델 줄은 Kenney 부품 목록 밖의 글이 같다", () => {
-    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.includes(`\`${LAMP_ASSET_NAME}\``) && !l.includes("WriteLoop_Tree") && !l.includes("`village-fountain.glb`") && !l.startsWith("| `shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다
+    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.includes(`\`${LAMP_ASSET_NAME}\``) && !l.includes("WriteLoop_Tree") && !l.includes("`village-fountain.glb`") && !l.startsWith("| `shop/") && !l.startsWith("| `clothing-shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다
     expect(others(readFileSync(join(REPO, CREDITS_PATH), "utf8"))).toEqual(others(gitShow(CREDITS_PATH)));
     const rest = (text: string) => {
       const line = text.split(/\r?\n/).filter((l) => l.includes("`lobby-village.glb`"))[0];

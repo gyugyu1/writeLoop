@@ -69,7 +69,7 @@ const HOME_PROMPT = "집으로 들어갈까?";
 // 작업 128(가구점 실내) 명세 3-1·03 결정 1: 가구점은 "가구점에 들어갈까?"와 버튼 '들어가기'로 바뀌었다(옷집은 그대로 버튼 없음).
 const CLOSED: Record<string, { label: string; prompt: string; button: string | null }> = {
   furnitureShop: { label: "가구점", prompt: "가구점에 들어갈까?", button: "들어가기" },
-  [clothingId()]: { label: "옷집", prompt: "옷집은 곧 열려요", button: null }
+  [clothingId()]: { label: "옷집", prompt: "옷집에 들어갈까?", button: "들어가기" } // 작업 133 ① 03 결정 1: 새 안내·버튼으로 고침
 };
 /** 마을 장소(없으면 그 테스트가 실패한다). */
 function placeOf(id: string) {

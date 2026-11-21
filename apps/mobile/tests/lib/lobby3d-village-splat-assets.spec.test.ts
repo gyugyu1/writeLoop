@@ -28,9 +28,9 @@ describe("[spec] 102 바뀔 동작: 섞을 무늬 그림 자산(명세 3)", () =
 });
 
 describe("[spec] 102 그대로 둘 동작: 앱 크기", () => {
-  it("A5 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 1,100,000바이트 이하다(약 1MB 안. 106이 키우는 마을 모델 파일과 113이 넣는 나무 폴더와 122가 넣는 오디오 폴더와 128이 넣는 가구점 실내·버들 폴더(assets/models/shop)는 뺀다)", () => {
+  it("A5 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 1,100,000바이트 이하다(약 1MB 안. 106이 키우는 마을 모델 파일과 113이 넣는 나무 폴더와 122가 넣는 오디오 폴더와 128이 넣는 가구점 실내·버들 폴더(assets/models/shop)와 133이 넣는 옷집 실내 폴더(assets/models/clothing-shop)는 뺀다)", () => {
     const sum = (m: Map<string, number>) =>
-      [...m.entries()].filter(([path]) => path !== VILLAGE_GLB_PATH_106 && !path.startsWith("apps/mobile/assets/models/trees/") && !path.startsWith("apps/mobile/assets/audio/") && !path.startsWith("apps/mobile/assets/models/shop/")).reduce((a, [, b]) => a + b, 0);
+      [...m.entries()].filter(([path]) => path !== VILLAGE_GLB_PATH_106 && !path.startsWith("apps/mobile/assets/models/trees/") && !path.startsWith("apps/mobile/assets/audio/") && !path.startsWith("apps/mobile/assets/models/shop/") && !path.startsWith("apps/mobile/assets/models/clothing-shop/")).reduce((a, [, b]) => a + b, 0);
     const base = baseAssets();
     expect(base.size).toBeGreaterThan(0);
     const growth = sum(nowAssets()) - sum(base);

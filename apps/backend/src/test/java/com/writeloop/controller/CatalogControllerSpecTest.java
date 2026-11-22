@@ -136,8 +136,10 @@ class CatalogControllerSpecTest extends IntegrationTestSupport {
         // 작업 130: 가구점 진열 상품 여섯(가구, 새 셋 포함)이 더해진다(실내·버들은 앱 자산이라 목록에 없다)
         expected.addAll(List.of("rainbootPlanter", "catPostDesk", "stargazerBed", "walnutBed", "grandmasFloorBedding", "cloudDesk"));
         // 작업 090 ③: 옷 열일곱 밖의 시험 옷 하나(id는 명세에 없어 보지 않는다)가 더해진다
-        assertThat(items.size()).as("C2 item count").isEqualTo(39);
-        assertThat(new LinkedHashSet<>(ids)).as("C2 ids are distinct").hasSize(39);
+        // 작업 134 ② 결정 04: 새 사람형 옷 다섯(판매 안 함)이 더해진다
+        expected.addAll(com.writeloop.service.ItemCatalogHumanWearablesSpecTest.NEW_NAMES.keySet());
+        assertThat(items.size()).as("C2 item count").isEqualTo(44);
+        assertThat(new LinkedHashSet<>(ids)).as("C2 ids are distinct").hasSize(44);
         assertThat(ids).as("C2 ids contain the known items").containsAll(expected);
         List<JsonNode> others = new ArrayList<>();
         for (JsonNode item : items) {

@@ -44,26 +44,26 @@ describe("[spec] 134-① 앱의 몸판은 사람형(2)이다", () => {
   });
 });
 
-describe("[spec] 134-① 라룹이 고글(goggles)은 그릴 수 있는 옷이 아니라 목록에서 빠진다(03-main-decision.md 사용자 결정)", () => {
-  it("[바뀔] isWearableDrawable(\"goggles\")는 거짓이다(받은 목록이 있든 없든)", () => {
+// 작업 134 ② 결정(사용자 2026-11-22 "새 목록대로 고침"): ①에서 빠졌던 고글이 사람형 고글과 함께 그릴 수 있는 옷으로 돌아와 얼굴장식 차례에 나온다(기본으로 씌우지는 않는다).
+describe("[spec] 134-② 사람형 고글(goggles)은 그릴 수 있는 옷이라 얼굴장식 목록에 나온다(04-main-decision.md 사용자 결정)", () => {
+  it("[바뀔] isWearableDrawable(\"goggles\")는 참이다(받은 목록이 있든 없든)", () => {
     setCatalogWithBody(2, "qa-134-goggles-drawable");
-    expect(isWearableDrawable("goggles")).toBe(false);
+    expect(isWearableDrawable("goggles")).toBe(true);
     let fresh!: typeof import("@/lib/lobby3d/wear");
     jest.isolateModules(() => {
       fresh = require("@/lib/lobby3d/wear");
     });
-    expect(fresh.isWearableDrawable("goggles")).toBe(false);
+    expect(fresh.isWearableDrawable("goggles")).toBe(true);
   });
 
-  it("[바뀔] 얼굴장식 차례(itemsInSlot(\"face\"))에 goggles가 없다(받은 목록이 있을 때와 없을 때)", () => {
+  it("[바뀔] 얼굴장식 차례(itemsInSlot(\"face\"))에 goggles가 든다(받은 목록이 있을 때와 없을 때. 목록이 없으면 [goggles, sunglassesBlack])", () => {
     setCatalogWithBody(2, "qa-134-goggles-face");
-    expect(itemsInSlot("face")).not.toContain("goggles");
+    expect(itemsInSlot("face")).toContain("goggles");
     let fresh!: typeof import("@/lib/lobby3d/wear");
     jest.isolateModules(() => {
       fresh = require("@/lib/lobby3d/wear");
     });
-    expect(fresh.itemsInSlot("face")).not.toContain("goggles");
-    expect(fresh.itemsInSlot("face")).toEqual(["sunglassesBlack"]);
+    expect(fresh.itemsInSlot("face")).toEqual(["goggles", "sunglassesBlack"]);
   });
 });
 

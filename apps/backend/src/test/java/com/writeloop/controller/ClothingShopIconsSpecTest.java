@@ -110,23 +110,41 @@ class ClothingShopIconsSpecTest extends IntegrationTestSupport {
         List<String> thirteen = thirteen();
         JsonNode now = JSON.readTree(repo().resolve(ITEMS_PATH).toFile());
         JsonNode base = JSON.readTree(gitShow(ITEMS_PATH));
+        // 작업 134 ② 결정 04: 새 사람형 옷 다섯은 빼고, 사람형으로 바뀐 열여섯 옷은 draw·files.model만 빼고 견준다(조끼·고글은 통째로 같다)
+        List<String> humanBase = new ArrayList<>();
+        com.writeloop.service.ItemCatalogHumanWearablesSpecTest.HUMANS.stream()
+                .filter(h -> !h.isNew() && !thirteen.contains(h.id())).forEach(h -> humanBase.add(h.id()));
+        assertThat(humanBase).as("setup: sixteen clothes of the Laroop body").hasSize(16);
         List<JsonNode> others = new ArrayList<>();
         for (JsonNode item : now.get("items")) {
-            if (!thirteen.contains(item.path("id").asText())) {
-                others.add(item);
+            String id = item.path("id").asText();
+            if (!thirteen.contains(id) && !com.writeloop.service.ItemCatalogHumanWearablesSpecTest.NEW_NAMES.containsKey(id)) {
+                others.add(stripHumanFields(item, humanBase.contains(id)));
             }
         }
         List<JsonNode> baseItems = new ArrayList<>();
         for (JsonNode item : base.get("items")) {
             if (!thirteen.contains(item.path("id").asText())) {
-                baseItems.add(item);
+                baseItems.add(stripHumanFields(item, humanBase.contains(item.path("id").asText())));
             }
         }
-        assertThat(others).as("items other than the thirteen equal the base items in order").isEqualTo(baseItems);
+        assertThat(others).as("items other than the thirteen and the five new equal the base items in order").isEqualTo(baseItems);
         for (String id : NINE) {
             String path = FILES_PATH + "/" + id + ".png";
             assertThat(Files.readAllBytes(repo().resolve(path))).as("registered icon %s unchanged", id).isEqualTo(gitShow(path));
         }
+    }
+
+    private static JsonNode stripHumanFields(JsonNode item, boolean human) {
+        if (!human) {
+            return item;
+        }
+        com.fasterxml.jackson.databind.node.ObjectNode copy = ((com.fasterxml.jackson.databind.node.ObjectNode) item).deepCopy();
+        copy.remove("draw");
+        if (copy.has("files")) {
+            ((com.fasterxml.jackson.databind.node.ObjectNode) copy.get("files")).remove("model");
+        }
+        return copy;
     }
 
     @Test

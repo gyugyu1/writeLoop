@@ -84,7 +84,7 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(u, expectedItems, equipped("face", "goggles")), "W1");
+        assertOkBody(response, wardrobe(u, expectedItems, equipped()), "W1");
         assertThat(JSON.readTree(response.body()).path("items").size()).as("W1 items count").isEqualTo(13);
     }
 
@@ -95,7 +95,7 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(u, expectedItems, equipped("face", "goggles")), "W2");
+        assertOkBody(response, wardrobe(u, expectedItems, equipped()), "W2");
         JsonNode items = JSON.readTree(response.body()).path("items");
         assertThat(items.size()).as("W2 items count").isEqualTo(17);
         List<String> firstFour = new ArrayList<>();
@@ -253,7 +253,7 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = put(y.token(), "{\"face\": \"sunglassesBlack\"}");
 
         assertInvalid(response, "W11 Y");
-        assertOkBody(get(y.token()), wardrobe(y, items(), equipped("face", "goggles")), "W11 Y GET");
+        assertOkBody(get(y.token()), wardrobe(y, items(), equipped()), "W11 Y GET");
         assertOkBody(get(x.token()), wardrobe(x, items(item("sunglassesBlack", "face", minute(0))), equipped("face", "sunglassesBlack")), "W11 X GET");
     }
 
@@ -302,7 +302,7 @@ class WardrobeItemsExpansionSpecTest extends IntegrationTestSupport {
                 .as("W14 second necklaceGold row")
                 .isInstanceOf(DataIntegrityViolationException.class);
 
-        assertOkBody(get(u.token()), wardrobe(u, items(item("necklaceGold", "accessory", minute(0))), equipped("face", "goggles")), "W14 GET");
+        assertOkBody(get(u.token()), wardrobe(u, items(item("necklaceGold", "accessory", minute(0))), equipped()), "W14 GET");
     }
 
     @Test

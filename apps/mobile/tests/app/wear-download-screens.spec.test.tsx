@@ -169,7 +169,7 @@ describe("[spec] 090-③ B1·B6: 목록이 없을 때와 저장한 목록으로 
     expect(cardNames()).toEqual([]);
   });
 
-  test("B1(옷장) 목록이 없으면 모자·상의·신발 탭에 '벗기'만 있고 얼굴장식 탭에도 (134 ①: 라룹이 고글은 그릴 수 없어) 벗기만 있으며, 상의를 '벗기'로 저장하면 본문은 모자 capOrange·상의 null·얼굴장식 goggles다", async () => {
+  test("B1(옷장) 목록이 없으면 모자·상의·신발 탭에 '벗기'만 있고 얼굴장식 탭에 '라룹이 고글'이 있으며, 상의를 '벗기'로 저장하면 본문은 모자 capOrange·상의 null·얼굴장식 goggles다", async () => {
     expect(currentItemCatalog()).toBeNull();
     const value = wardrobe(
       [["capOrange", "hat"], ["tshirtOrange", "top"], ["shoesBrown", "shoes"], ["goggles", "face"]],
@@ -182,7 +182,7 @@ describe("[spec] 090-③ B1·B6: 목록이 없을 때와 저장한 목록으로 
       expect({ slot, cells: cellNames().filter((name) => name !== "저장") }).toEqual({ slot, cells: ["벗기"] });
     }
     await pressTab("얼굴장식");
-    expect(cellNames().filter((name) => name !== "저장")).toEqual(["벗기"]);
+    expect(cellNames().filter((name) => name !== "저장")).toEqual(["벗기", "라룹이 고글"]);
     await pressTab("상의");
     await press(cellOf("벗기"));
     await press(screen.getByRole("button", { name: "저장", ...ALL }));
@@ -368,7 +368,7 @@ describe("[spec] 090-③ K: 옷장은 그릴 수 있는 옷에 칸을 만들고 
     ["goggles", "face"]
   ];
 
-  test("K1 모자 탭은 '벗기'·'주황 야구모자'·'파랑 야구모자'(QA 새 몸 모자 없음), 상의 탭은 '벗기'·'QA 초록 티'·'QA 조끼'이고 'QA 조끼'가 고른 표시, 얼굴장식 탭은 (134 ①: 라룹이 고글은 칸이 없다) 벗기뿐이다", async () => {
+  test("K1 모자 탭은 '벗기'·'주황 야구모자'·'파랑 야구모자'(QA 새 몸 모자 없음), 상의 탭은 '벗기'·'QA 초록 티'·'QA 조끼'이고 'QA 조끼'가 고른 표시, 얼굴장식 탭은 '벗기'·'라룹이 고글'이다", async () => {
     iconsOnDevice(useCatW());
     await openCloset(wardrobe(OWNED, { hat: "capOrange", top: "vestQa", face: "goggles" }));
     const cells = () => cellNames().filter((name) => name !== "저장");
@@ -378,7 +378,7 @@ describe("[spec] 090-③ K: 옷장은 그릴 수 있는 옷에 칸을 만들고 
     expect(selected(cellOf("QA 조끼"))).toBe(true);
     expect(selected(cellOf("QA 초록 티"))).toBe(false);
     await pressTab("얼굴장식");
-    expect(cells()).toEqual(["벗기"]);
+    expect(cells()).toEqual(["벗기", "라룹이 고글"]);
   });
 
   test("K2 QA 새 몸 모자를 입고 있으면 모자 탭은 어느 칸도 고른 표시가 아니고, 상의에서 QA 초록 티를 골라 저장하면 본문은 모자 hatBody2Qa·상의 tshirtGreenQa다", async () => {

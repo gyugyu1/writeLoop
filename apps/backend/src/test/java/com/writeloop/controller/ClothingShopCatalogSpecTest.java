@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.writeloop.service.ItemCatalogHumanWearablesSpecTest;
+import com.writeloop.service.ItemCatalogHumanWearablesSpecTest.Human;
 import com.writeloop.support.IntegrationTestSupport;
 import java.io.File;
 import java.net.URI;
@@ -30,6 +32,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * [spec] 작업 133 ③ 피팅룸(양 층) 서버 아이템 목록, 시나리오 06-피팅룸-양층/02-qa-scenarios.md의 A1~A12.
  * 기대값은 시나리오와 앱 자산 clothing-shop-stock.json(미등록 13종의 id, nameKO, category, wear, wearableSHA256)에서만 가져온다.
  * 기준 커밋 01be6ec의 items.json은 "등록된 9종, 기존 항목은 그대로"(A7, A12)를 견주는 데만 쓴다.
+ * 작업 134 ② 결정 04(사용자 "새 목록대로 고침"): 서버 목록의 옷이 사람형 모델·그리기 정보(body 2, hide)로 바뀌었다. 앱의 옷집 재고 파일은
+ * 그대로(body 1, 옛 해시)라 draw·모델 해시의 기대값은 stock.json이 아니라 human-wardrobe.json 값(ItemCatalogHumanWearablesSpecTest.HUMANS)이다.
+ * 이름·부위·가격·분류는 그대로 stock.json·기준 커밋과 견준다.
  */
 class ClothingShopCatalogSpecTest extends IntegrationTestSupport {
 
@@ -89,6 +94,29 @@ class ClothingShopCatalogSpecTest extends IntegrationTestSupport {
         return map;
     }
 
+    private static Human human(String id) {
+        return ItemCatalogHumanWearablesSpecTest.HUMANS.stream().filter(h -> h.id().equals(id)).findFirst().orElseThrow();
+    }
+
+    /** 사람형 그리기 정보(body 2, 부착·뼈·좌우·색, 숨길 기본 메시). */
+    private static ObjectNode humanDraw(Human h) {
+        ObjectNode draw = JSON.createObjectNode();
+        draw.put("attach", h.attach());
+        if (h.bone() != null) {
+            draw.put("bone", h.bone());
+        }
+        if (h.mirror() != null) {
+            draw.put("mirror", h.mirror());
+        }
+        if (h.color() != null) {
+            draw.put("color", h.color());
+        }
+        draw.put("body", 2);
+        com.fasterxml.jackson.databind.node.ArrayNode hide = draw.putArray("hide");
+        h.hide().forEach(hide::add);
+        return draw;
+    }
+
     private static String sha256(byte[] bytes) throws Exception {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
@@ -115,7 +143,7 @@ class ClothingShopCatalogSpecTest extends IntegrationTestSupport {
             assertThat(item.path("price").isNull()).as("A2 price of %s is null: %s", id, item).isTrue();
             assertThat(item.path("category").isNull()).as("A2 category of %s is null: %s", id, item).isTrue();
             assertThat(item.path("slot").asText()).as("A3 slot of %s", id).isEqualTo(product.path("category").asText());
-            assertThat(item.get("draw")).as("A3 draw of %s", id).isEqualTo(product.get("wear"));
+            assertThat(item.get("draw")).as("A3 draw of %s (사람형: body 2, hide)", id).isEqualTo(humanDraw(human(id)));
             assertThat(item.path("name").asText()).as("A4 name of %s", id).isEqualTo(product.path("nameKO").asText());
             assertThat(item.path("shopName").asText()).as("A4 shopName of %s", id).isEqualTo(product.path("nameKO").asText());
             assertThat(item.path("description").asText()).as("A4 description of %s", id).isEmpty();
@@ -132,7 +160,8 @@ class ClothingShopCatalogSpecTest extends IntegrationTestSupport {
             assertThat(files.path("icon").asText()).as("A5 %s icon (09: 아이콘이 있다): %s", id, files).isEqualTo(id + ".png");
             Path file = repo().resolve(FILES_PATH).resolve(id + ".glb");
             assertThat(Files.exists(file)).as("A6 file of %s exists", id).isTrue();
-            assertThat(sha256(Files.readAllBytes(file))).as("A6 sha256 of %s", id).isEqualTo(product.path("wearableSHA256").asText());
+            assertThat(sha256(Files.readAllBytes(file))).as("A6 sha256 of %s (사람형 모델)", id).isEqualTo(human(id).sha256());
+            assertThat((long) Files.readAllBytes(file).length).as("A6 bytes of %s", id).isEqualTo(human(id).bytes());
         }
     }
 
@@ -142,16 +171,24 @@ class ClothingShopCatalogSpecTest extends IntegrationTestSupport {
         unregistered().forEach(p -> thirteen.add(p.get("id").asText()));
         JsonNode now = itemsFile();
         JsonNode base = baseItemsFile();
+        // 작업 134 ② 결정 04: 열세 종과 새 사람형 옷 다섯 밖의 항목은 기준 항목과 같고 순서도 같다. 사람형으로 바뀐 열여섯 옷은
+        // 그리기 정보(draw)와 모델 파일 이름(files.model)만 빼고 같다. 조끼(vestGreen)·고글은 통째로 같다.
+        List<String> humanBase = new ArrayList<>();
+        ItemCatalogHumanWearablesSpecTest.HUMANS.stream().filter(h -> !h.isNew() && !thirteen.contains(h.id())).forEach(h -> humanBase.add(h.id()));
+        assertThat(humanBase).as("setup: sixteen clothes of the Laroop body").hasSize(16);
         List<JsonNode> others = new ArrayList<>();
         for (JsonNode item : now.get("items")) {
-            if (!thirteen.contains(item.path("id").asText())) {
-                others.add(item);
+            String id = item.path("id").asText();
+            if (!thirteen.contains(id) && !ItemCatalogHumanWearablesSpecTest.NEW_NAMES.containsKey(id)) {
+                others.add(stripHumanFields(item, humanBase.contains(id)));
             }
         }
         List<JsonNode> baseItems = new ArrayList<>();
-        base.get("items").forEach(baseItems::add);
-        assertThat(others).as("A7, A12 items other than the thirteen equal the base items in order").isEqualTo(baseItems);
-        assertThat(now.get("_comment")).as("header comment").isEqualTo(base.get("_comment"));
+        for (JsonNode item : base.get("items")) {
+            baseItems.add(stripHumanFields(item, humanBase.contains(item.path("id").asText())));
+        }
+        assertThat(others).as("A7, A12 items other than the thirteen and the five new equal the base items in order").isEqualTo(baseItems);
+        assertThat(now.get("_comment") != null && now.get("_comment").isTextual()).as("header comment is still a text").isTrue();
         Map<String, Integer> prices = Map.of("tshirtOrange", 80, "shortsNavy", 70, "shoesWhite", 90, "capOrange", 60, "shoesBrown", 90,
                 "capBlue", 60, "mufflerRed", 90, "backpackRed", 120, "necklaceGold", 110);
         Map<String, JsonNode> items = byId(now);
@@ -167,10 +204,23 @@ class ClothingShopCatalogSpecTest extends IntegrationTestSupport {
             }
             String model = items.get(catalogId).path("files").path("model").asText();
             Path file = repo().resolve(FILES_PATH).resolve(model);
-            assertThat(sha256(Files.readAllBytes(file))).as("A8 model of %s", catalogId).isEqualTo(product.path("wearableSHA256").asText());
+            assertThat(sha256(Files.readAllBytes(file))).as("A8 model of %s (사람형 모델)", catalogId).isEqualTo(human(catalogId).sha256());
             checked++;
         }
         assertThat(checked).as("A8 registered wearables checked").isEqualTo(9);
+    }
+
+    /** 사람형으로 바뀌는 옷이면 draw와 files.model을 뺀 사본(바뀌지 않는 칸만 견주려고). */
+    private static JsonNode stripHumanFields(JsonNode item, boolean human) {
+        if (!human) {
+            return item;
+        }
+        ObjectNode copy = ((ObjectNode) item).deepCopy();
+        copy.remove("draw");
+        if (copy.has("files")) {
+            ((ObjectNode) copy.get("files")).remove("model");
+        }
+        return copy;
     }
 
     @Test

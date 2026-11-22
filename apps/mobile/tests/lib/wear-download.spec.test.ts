@@ -8,7 +8,8 @@
 // "Z"는 백엔드 목록 파일(apps/backend/src/main/resources/catalog/items.json)과 files/를 서버 응답 모양(assets: /api/catalog/files/<sha256>.<확장자>)으로
 // 바꿔 앱에 넣는다. 기준 커밋 be00aac의 앱 착용 모델 묶음·옷 그림과 견준다(git show).
 import { execFileSync } from "child_process";
-import { readdirSync, readFileSync, statSync } from "fs";
+import { createHash } from "crypto";
+import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { join, relative } from "path";
 import { parseItemCatalog, setItemCatalog } from "@/lib/item-catalog-store";
 import { CLOSET_SLOTS, closetItems } from "@/lib/lobby3d/closet";
@@ -128,7 +129,7 @@ describe("[spec] 090-③ A: 앱에서 빠지는 옷 파일", () => {
 // ---------- B. 그릴 수 있는 옷인지 ----------
 
 describe("[spec] 090-③ B: 받은·저장한 목록의 draw로만 그릴 수 있는 옷", () => {
-  test("B1(모듈) 목록이 없으면 옷 열여섯 모두 그릴 줄 모르는 옷이다: 홈쇼핑에 보일 옷이 아니고 옷장 칸도 없으며(134 ①: 라룹이 고글도 그릴 수 없어 칸이 없다), 그리기 정보가 없다", () => {
+  test("B1(모듈) 목록이 없으면 옷 열여섯 모두 그릴 줄 모르는 옷이다: 홈쇼핑에 보일 옷이 아니고 옷장 칸도 없으며(고글만 칸이 남는다. 134 ②: 사람형 고글이 돌아와 얼굴장식 칸이 있다), 그리기 정보가 없다", () => {
     const mods = freshModules();
     expect(mods.store.currentItemCatalog()).toBeNull();
     for (const type of SIXTEEN) {
@@ -136,7 +137,7 @@ describe("[spec] 090-③ B: 받은·저장한 목록의 draw로만 그릴 수 �
     }
     const wardrobe = owned(...SIXTEEN.map((type): [string, WardrobeSlot] => [type, WEARABLE_ITEMS[type].slot]), ["goggles", "face"]);
     const cells = Object.fromEntries(SLOTS.map((slot) => [slot, mods.closet.closetItems(wardrobe, slot).map((item) => item.type)]));
-    expect(cells).toEqual({ hat: [], top: [], bottom: [], shoes: [], face: [], back: [], accessory: [] });
+    expect(cells).toEqual({ hat: [], top: [], bottom: [], shoes: [], face: ["goggles"], back: [], accessory: [] });
   });
 
   test("B2 draw가 없는 옷(noDrawQa)은 그릴 줄 모르는 옷이다: 홈쇼핑에 보이지 않고 옷장 모자 칸이 없으며 그리기 정보가 없다", () => {
@@ -178,13 +179,13 @@ describe("[spec] 090-③ B: 받은·저장한 목록의 draw로만 그릴 수 �
     expect(closetItems(wardrobe, "accessory")).toEqual([{ type: "bowtieQa", label: "QA 나비넥타이" }]);
   });
 
-  test("B8(모듈) 134 ①: 라룹이 고글은 목록이 없어도, CAT-W(draw·파일 없음)여도 옷장 얼굴장식 칸이 없고(그릴 수 없음) 그림은 앱의 goggles.png이며 받기 요청이 없다", async () => {
+  test("B8(모듈) 134 ②: 사람형 고글은 목록이 없어도, CAT-W(draw·파일 없음)여도 옷장 얼굴장식 칸이 있고 그림은 앱의 goggles.png이며 받기 요청이 없다", async () => {
     const appGoggles = require("../../assets/icons/wearables/goggles.png");
     const mods = freshModules();
-    expect(mods.closet.closetItems(owned(["goggles", "face"]), "face")).toEqual([]);
+    expect(mods.closet.closetItems(owned(["goggles", "face"]), "face")).toEqual([{ type: "goggles", label: "라룹이 고글" }]);
     expect(mods.icons.wearableIcon("goggles")).toEqual(appGoggles);
     useCatW();
-    expect(closetItems(owned(["goggles", "face"]), "face")).toEqual([]);
+    expect(closetItems(owned(["goggles", "face"]), "face")).toEqual([{ type: "goggles", label: "라룹이 고글" }]);
     expect(wearableIcon("goggles")).toEqual(appGoggles);
     await flush();
     expect(device.downloads).toEqual([]);
@@ -269,10 +270,10 @@ describe("[spec] 090-③ V(모듈): 시험판 옷 고르기는 받은 목록의 
     expect(DEFAULT_LOOK).toEqual({ hat: null, top: null, bottom: null, shoes: null, face: null, back: null, accessory: null });
   });
 
-  test("05 결정 Q5 목록이 없으면 시험판 차례는 앱 이름표 순서다(모자: capOrange·capBlue·capGreen, 얼굴장식: sunglassesBlack. 134 ①: goggles는 빠진다)", () => {
+  test("05 결정 Q5 목록이 없으면 시험판 차례는 앱 이름표 순서다(모자: capOrange·capBlue·capGreen, 얼굴장식: goggles·sunglassesBlack. 134 ②: 사람형 고글이 돌아온다)", () => {
     const mods = freshModules();
     expect(mods.wear.itemsInSlot("hat")).toEqual(["capOrange", "capBlue", "capGreen"]);
-    expect(mods.wear.itemsInSlot("face")).toEqual(["sunglassesBlack"]);
+    expect(mods.wear.itemsInSlot("face")).toEqual(["goggles", "sunglassesBlack"]);
   });
 });
 
@@ -366,18 +367,24 @@ function expectClose(label: string, actual: number[], expected: number[]) {
 }
 const serverModelFile = (id: string) => rawServerItems().find((item) => item.id === id)!.files!.model!;
 
-/** writeloop.glb 뼈대(스킨 관절)의 뼈 이름. */
+/** writeloop.glb 뼈대(스킨 관절)의 뼈 이름(라룹이 몸. 조끼는 134 ②에서도 라룹이 몸이다). */
 function characterBones(): Set<string> {
   const glb = parseGlb(readFileSync(join(MOBILE_DIR, "assets", "models", "writeloop.glb")));
   return new Set((glb.json.skins ?? []).flatMap((skin) => skin.joints.map((j) => glb.json.nodes[j].name ?? "")));
 }
 
+/** player-human.glb 뼈대(스킨 관절)의 뼈 이름(사람형 몸). */
+function humanBones(): Set<string> {
+  const glb = parseGlb(readFileSync(join(MOBILE_DIR, "assets", "models", "player-human.glb")));
+  return new Set((glb.json.skins ?? []).flatMap((skin) => skin.joints.map((j) => glb.json.nodes[j].name ?? "")));
+}
+
 describe("[spec] 090-③ Z: 실제 서버 목록 파일·모델·그림을 앱이 읽을 때", () => {
-  test("Z1 서버 목록 파일의 옷을 응답 모양으로 앱에 넣으면 열여섯 모두 그릴 수 있는 옷이고 몸 판이 1이다", () => {
+  test("Z1 서버 목록 파일의 옷을 응답 모양으로 앱에 넣으면 열여섯 모두 그릴 수 있는 옷이고 몸 판이 2(사람형. 134 ②)다", () => {
     setItemCatalog(parseItemCatalog(serverWearCatalog("qa-z1"))!);
     for (const type of SIXTEEN) expect({ type, drawable: wearDraw(type) !== null, shop: isShopWearable(type) }).toEqual({ type, drawable: true, shop: true });
     const raw = rawServerItems();
-    for (const type of SIXTEEN) expect({ type, body: raw.find((item) => item.id === type)!.draw!.body }).toEqual({ type, body: 1 });
+    for (const type of SIXTEEN) expect({ type, body: raw.find((item) => item.id === type)!.draw!.body }).toEqual({ type, body: 2 });
   });
 
   test("Z2 열여섯의 방식·뼈·뒤집을 뼈·색이 지금 앱과 같고, 서로 다른 모델 해시는 열이다(모자 셋은 서로 다르고 티셔츠·반바지·신발 셋은 각각 하나)", () => {
@@ -418,41 +425,34 @@ describe("[spec] 090-③ Z: 실제 서버 목록 파일·모델·그림을 앱�
     }
   });
 
-  // 작업 089 ⑤ 24-main-decision.md(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 옷 모델 열하나를 새 몸용으로 바꿔(묶음에서 나누지 않고
-  // 모델마다 바로 만듦, 커밋 057a534) 견주는 기준을 기준 커밋 be00aac의 착용 모델 묶음에서 새 옷 파일을 넣은 커밋 057a534의 같은 서버 파일로 바꿨다.
-  // 확인하는 내용(점 자리·skin 뼈 이름·묶음 역행렬이 기준과 같고, 뼈 이름은 모두 지금 라룹이 뼈대에 있다)은 그대로다.
-  test("Z3 서버 옷 모델 파일의 메시 점 자리가 새 옷 파일 커밋(057a534)의 같은 모델과 같고, 상의·하의의 skin 뼈 이름·묶음 역행렬이 그 파일과 같으며 뼈 이름은 모두 라룹이 뼈대에 있다", () => {
-    const NEW_WEAR_COMMIT = "057a534";
-    const referenceOf = (type: string) =>
-      parseGlb(execFileSync("git", ["show", `${NEW_WEAR_COMMIT}:apps/backend/src/main/resources/catalog/files/${serverModelFile(type)}`], { cwd: REPO_DIR, maxBuffer: 64 * 1024 * 1024 }));
-    const bones = characterBones();
+  // 작업 134 ② 결정(사용자 2026-11-22 "새 목록대로 고침"): 서버 옷 모델 파일이 사람형 GLB로 바뀌었다. 예전에는 새 옷 파일 커밋(057a534)의 같은 모델과 점 자리를 견줬지만
+  // 이제 그 파일이 아니라, 사람형 뼈대(player-human.glb)에 맞는지(skin 뼈 이름이 모두 사람형 뼈대에 있고, 상의·하의만 skin 하나, 나머지는 skin 없음)와
+  // 사람형 착용물 원본(human-wardrobe.json, 이 컴퓨터에 있을 때)의 sha256과 같은지를 본다.
+  test("Z3 134 ②: 서버 옷 모델 파일의 skin 뼈 이름은 모두 사람형 뼈대에 있고(상의·하의만 skin 하나, 나머지는 skin 없음), 사람형 착용물 원본이 있으면 sha256이 그 원본과 같다", () => {
+    const bones = humanBones();
+    const WARDROBE = "C:/WriteLoop-asset/꾸미기/사람형-이관/human-wardrobe.json";
+    const wardrobe = existsSync(WARDROBE) ? (JSON.parse(readFileSync(WARDROBE, "utf8")) as { items: { path: string; sha256: string }[] }).items : [];
     const pairs: [string, string][] = [
-      ["capOrange", "wear-hat"],
-      ["capBlue", "wear-hat-blue"],
-      ["capGreen", "wear-hat-green"],
-      ["tshirtOrange", "wear-top"],
-      ["shortsNavy", "wear-bottom"],
-      ["shoesBrown", "wear-shoe-l"],
-      ["sunglassesBlack", "wear-sunglasses"],
-      ["backpackRed", "wear-backpack"],
-      ["mufflerRed", "wear-muffler"],
-      ["necklaceGold", "wear-necklace"]
+      ["capOrange", "라룹이-착장/모자/사람형/wear-hat.glb"],
+      ["capBlue", "라룹이-착장/모자/사람형/wear-hat-blue.glb"],
+      ["capGreen", "라룹이-착장/모자/사람형/wear-hat-green.glb"],
+      ["tshirtOrange", "라룹이-착장/상의/사람형/wear-top.glb"],
+      ["shortsNavy", "라룹이-착장/하의/사람형/wear-bottom.glb"],
+      ["shoesBrown", "라룹이-착장/신발/사람형/wear-shoe.glb"],
+      ["sunglassesBlack", "라룹이-착장/선글라스/사람형/wear-sunglasses.glb"],
+      ["backpackRed", "라룹이-착장/백팩/사람형/wear-backpack.glb"],
+      ["mufflerRed", "라룹이-착장/머플러/사람형/wear-muffler.glb"],
+      ["necklaceGold", "라룹이-착장/목걸이/사람형/wear-necklace.glb"]
     ];
-    for (const [type, node] of pairs) {
-      const bundle = referenceOf(type);
-      const server = parseGlb(readFileSync(join(SERVER_FILES_DIR, serverModelFile(type))));
-      const serverNode = server.json.nodes.find((n) => n.mesh !== undefined)!;
-      expectClose(`${type} 점 자리`, scenePositions(server, serverNode.name!), scenePositions(bundle, node));
-      const before = skinOf(bundle, node);
+    for (const [type, suffix] of pairs) {
+      const data = readFileSync(join(SERVER_FILES_DIR, serverModelFile(type)));
+      const server = parseGlb(data);
       const now = server.json.nodes.filter((n) => n.skin !== undefined).map((n) => skinOf(server, n.name!)!);
-      if (!before) {
-        expect({ type, skins: now.length }).toEqual({ type, skins: 0 });
-        continue;
-      }
-      expect({ type, skins: now.length }).toEqual({ type, skins: 1 });
-      expect({ type, joints: now[0].joints }).toEqual({ type, joints: before.joints });
-      expectClose(`${type} 묶음 역행렬`, now[0].inverse, before.inverse);
-      expect({ type, missing: now[0].joints.filter((name) => !bones.has(name)) }).toEqual({ type, missing: [] });
+      const wantSkins = type === "tshirtOrange" || type === "shortsNavy" ? 1 : 0;
+      expect({ type, skins: now.length }).toEqual({ type, skins: wantSkins });
+      for (const skin of now) expect({ type, missing: skin.joints.filter((name) => !bones.has(name)) }).toEqual({ type, missing: [] });
+      const entry = wardrobe.find((item) => item.path.split("\\").join("/").endsWith(suffix));
+      if (entry) expect({ type, sha256: createHash("sha256").update(data).digest("hex") }).toEqual({ type, sha256: entry.sha256 });
     }
   });
 
@@ -468,7 +468,7 @@ describe("[spec] 090-③ Z: 실제 서버 목록 파일·모델·그림을 앱�
   });
 
   test("Z5 조끼는 목록에 옷·상의·price null·draw skin 몸 판 1로 있고, 모델의 skin 뼈 이름이 모두 라룹이 뼈대에 있으며, 앱이 읽으면 그릴 수 있는 옷이다", () => {
-    const vest = rawServerItems().filter((item) => item.kind === "wearable" && item.slot === "top" && item.price === null && !CLOTHING_UNREGISTERED.includes(item.id) && (item.draw as { attach?: string } | undefined)?.attach === "skin");
+    const vest = rawServerItems().filter((item) => item.id === "vestGreen");
     expect(vest.length).toBe(1);
     const item = vest[0];
     expect({ kind: item.kind, slot: item.slot, price: item.price, draw: item.draw }).toEqual({ kind: "wearable", slot: "top", price: null, draw: { attach: "skin", body: 1 } });

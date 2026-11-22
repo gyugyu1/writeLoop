@@ -37,6 +37,10 @@ const ELEVEN = [
   "wear-backpack.glb", "wear-bottom.glb", "wear-hat.glb", "wear-hat-blue.glb", "wear-hat-green.glb", "wear-muffler.glb",
   "wear-necklace.glb", "wear-shoe.glb", "wear-sunglasses.glb", "wear-top.glb", "wear-vest.glb"
 ];
+/** 작업 134 ② 결정(사용자 2026-11-22 "새 목록대로 고침"): 서버 목록에 더해진 새 사람형 옷 다섯(판매 안 함, 모델 파일 이름은 `<id>.glb`로 가정). */
+const NEW_HUMAN_FIVE = ["wear-top-henley-oatmeal", "wear-bottom-chino-graphite", "wear-shoe-strap-sneaker", "wear-hat-newsboy-walnut", "wear-hat-pawprint-cap"];
+/** 사람형 몸 모델. */
+const HUMAN_BODY = join(MOBILE, "assets", "models", "player-human.glb");
 /** 시나리오 "옷 그림 열일곱"(열여섯 + 조끼). */
 const SEVENTEEN = [
   "capOrange", "capBlue", "capGreen", "tshirtOrange", "tshirtWhite", "tshirtYellow", "shortsNavy", "shortsBrown",
@@ -263,9 +267,10 @@ describe("[spec] 089-⑤ 23 NG: 앱에 든 고글 착용 모델(wear-goggles.glb
   it("NG1 고글 모델 파일이 앱 폴더에 있고 glTF 2 바이너리이며, 앱 코드(src)가 이 파일을 require한다", () => {
     expect(existsSync(GOGGLES)).toBe(true);
     expect(isGlb2(readFileSync(GOGGLES))).toBe(true);
-    const requires = filesContaining(join(MOBILE, "src"), ["wear-goggles.glb"]).filter((line) => {
+    // 작업 134 ②: 앱 코드는 사람형 고글 파일(wear-goggles-human.glb)을 require하고 라룹이 고글 파일은 남기기만 하므로 둘 중 하나를 require하면 된다
+    const requires = filesContaining(join(MOBILE, "src"), ["wear-goggles.glb", "wear-goggles-human.glb"]).filter((line) => {
       const file = line.slice(0, line.lastIndexOf(" : "));
-      return /require\(\s*["'][^"']*assets\/models\/wear-goggles\.glb["']\s*\)/.test(readFileSync(file, "utf8"));
+      return /require\(\s*["'][^"']*assets\/models\/wear-goggles(-human)?\.glb["']\s*\)/.test(readFileSync(file, "utf8"));
     });
     expect(requires.length).toBeGreaterThan(0);
   });
@@ -296,66 +301,79 @@ describe("[spec] 089-⑤ 23 NF1~NF5: 서버 옷 모델 파일 교체", () => {
   const now = (file: string) => readFileSync(join(SERVER_FILES, file));
   const before = (file: string) => baseFile(`${SERVER_FILES_PATH}/${file}`);
 
-  it("NF1 11옷 모두 있고 각각 B의 파일과 바이트가 다르며, 서버 파일 폴더의 wear-*.glb는 이 열하나뿐이다", () => {
+  it("NF1 11옷 모두 있고 각각 B의 파일과 바이트가 다르며, 서버 파일 폴더의 wear-*.glb는 이 열하나와 새 사람형 옷 다섯(134 ②)뿐이다", () => {
     for (const file of ELEVEN) {
       expect({ file, exists: existsSync(join(SERVER_FILES, file)) }).toEqual({ file, exists: true });
       expect({ file, same: now(file).equals(before(file)) }).toEqual({ file, same: false });
     }
-    expect(readdirSync(SERVER_FILES).filter((f) => /^wear-.*\.glb$/.test(f) && !CLOTHING_UNREGISTERED.includes(f.replace(/\.glb$/, ""))).sort()).toEqual(ELEVEN.slice().sort());
+    expect(readdirSync(SERVER_FILES).filter((f) => /^wear-.*\.glb$/.test(f) && !CLOTHING_UNREGISTERED.includes(f.replace(/\.glb$/, ""))).sort()).toEqual([...ELEVEN, ...NEW_HUMAN_FIVE.map((id) => `${id}.glb`)].sort());
   });
 
-  it("NF2 목록 파일의 옷 열일곱은 slot·draw(attach·bone·mirror·color·body)·files.model·files.icon이 B와 같고, 모든 옷의 draw.body가 1이다", () => {
+  it("NF2 134 ②: 목록 파일의 옷 열일곱은 slot·draw의 attach·bone·mirror·color·files.model 이름·files.icon이 B와 같고, draw.body는 조끼만 1이고 나머지는 2이며(사람형), 새 사람형 옷 다섯이 더해진다", () => {
     type Item = { id: string; kind: string; slot?: string; draw?: Record<string, unknown>; files?: { model?: string; icon?: string } };
-    const pick = (items: Item[]) =>
+    const pick = (items: Item[], ids: readonly string[]) =>
       Object.fromEntries(
         items
-          .filter((item) => item.kind === "wearable" && item.id !== "goggles" && !CLOTHING_UNREGISTERED.includes(item.id))
+          .filter((item) => item.kind === "wearable" && ids.includes(item.id))
           .map((item) => [
             item.id,
             {
               slot: item.slot,
-              draw: item.draw ? { attach: item.draw.attach, bone: item.draw.bone, mirror: item.draw.mirror, color: item.draw.color, body: item.draw.body } : null,
-              model: item.files?.model,
+              draw: item.draw ? { attach: item.draw.attach, bone: item.draw.bone, mirror: item.draw.mirror, color: item.draw.color } : null,
               icon: item.files?.icon
             }
           ])
       );
     const nowItems = (JSON.parse(readFileSync(join(SERVER_CATALOG, "items.json"), "utf8")) as { items: Item[] }).items;
     const beforeItems = (JSON.parse(baseFile(ITEMS_PATH).toString("utf8")) as { items: Item[] }).items;
-    const nowWear = pick(nowItems);
-    expect(Object.keys(nowWear).sort()).toEqual(SEVENTEEN.slice().sort());
-    expect(nowWear).toEqual(pick(beforeItems));
-    for (const [id, value] of Object.entries(nowWear)) expect({ id, body: value.draw?.body }).toEqual({ id, body: 1 });
+    expect(pick(nowItems, SEVENTEEN)).toEqual(pick(beforeItems, SEVENTEEN));
+    expect(Object.keys(pick(nowItems, SEVENTEEN)).sort()).toEqual(SEVENTEEN.slice().sort());
+    for (const id of SEVENTEEN) {
+      const item = nowItems.find((i) => i.id === id)!;
+      expect({ id, body: item.draw?.body, hasModel: Boolean(item.files?.model) }).toEqual({ id, body: id === "vestGreen" ? 1 : 2, hasModel: true });
+    }
+    for (const id of NEW_HUMAN_FIVE) {
+      const item = nowItems.find((i) => i.id === id);
+      expect({ id, kind: item?.kind, body: item?.draw?.body }).toEqual({ id, kind: "wearable", body: 2 });
+    }
   });
 
-  it("NF3 11옷마다 메시가 있는 노드 이름 목록과 skin 여부가 B와 같고, skin은 top·bottom·vest만 있다", () => {
+  it("NF3 134 ②: 조끼는 메시가 있는 노드 이름 목록과 skin 여부가 B와 같고, 사람형으로 바뀐 열 옷은 skin이 top·bottom에만 있다", () => {
     for (const file of ELEVEN) {
       const a = parseGlb(now(file));
-      const b = parseGlb(before(file));
-      expect({ file, nodes: meshNodeNames(a) }).toEqual({ file, nodes: meshNodeNames(b) });
       const skinned = (g: Glb) => meshNodes(g).map((n) => n.skin !== undefined);
-      expect({ file, skinned: skinned(a) }).toEqual({ file, skinned: skinned(b) });
+      if (file === "wear-vest.glb") {
+        const b = parseGlb(before(file));
+        expect({ file, nodes: meshNodeNames(a) }).toEqual({ file, nodes: meshNodeNames(b) });
+        expect({ file, skinned: skinned(a) }).toEqual({ file, skinned: skinned(b) });
+      }
       const expected = ["wear-top.glb", "wear-bottom.glb", "wear-vest.glb"].includes(file);
       expect({ file, anySkin: skinned(a).some(Boolean) }).toEqual({ file, anySkin: expected });
     }
   });
 
-  it("NF4 top·bottom·vest의 skin 뼈 이름은 모두 뼈 열여덟에 있고, 뼈마다 묶음 역행렬이 새 몸의 같은 이름 뼈와 같다(오차 1e-3)", () => {
-    const bodyGlb = parseGlb(readFileSync(BODY));
-    const bodySkin = skinOf(bodyGlb, meshNodes(bodyGlb)[0]);
-    for (const file of ["wear-top.glb", "wear-bottom.glb", "wear-vest.glb"]) {
-      const glb = parseGlb(now(file));
-      for (const node of meshNodes(glb)) {
-        const skin = skinOf(glb, node);
-        expect({ file, missing: skin.joints.filter((name) => !BONES.includes(name)) }).toEqual({ file, missing: [] });
-        for (const name of skin.joints) {
-          const mine = skin.inverse.get(name)!;
-          const theirs = bodySkin.inverse.get(name)!;
-          const diff = mine.reduce((max, v, i) => Math.max(max, Math.abs(v - theirs[i])), 0);
-          expect({ file, bone: name, close: diff <= 1e-3 }).toEqual({ file, bone: name, close: true });
+  it("NF4 134 ②: 조끼의 skin 뼈 이름은 모두 뼈 열여덟에 있고 묶음 역행렬이 라룹이 몸과 같으며, 사람형 top·bottom의 skin 뼈 이름은 모두 사람형 몸에 있고 묶음 역행렬이 사람형 몸의 같은 이름 뼈와 같다(오차 1e-3)", () => {
+    const check = (files: string[], bodyPath: string, allowed: (name: string) => boolean) => {
+      const bodyGlb = parseGlb(readFileSync(bodyPath));
+      const bodySkin = skinOf(bodyGlb, meshNodes(bodyGlb)[0]);
+      for (const file of files) {
+        const glb = parseGlb(now(file));
+        for (const node of meshNodes(glb)) {
+          const skin = skinOf(glb, node);
+          expect({ file, missing: skin.joints.filter((name) => !allowed(name)) }).toEqual({ file, missing: [] });
+          for (const name of skin.joints) {
+            const mine = skin.inverse.get(name)!;
+            const theirs = bodySkin.inverse.get(name)!;
+            const diff = mine.reduce((max, v, i) => Math.max(max, Math.abs(v - theirs[i])), 0);
+            expect({ file, bone: name, close: diff <= 1e-3 }).toEqual({ file, bone: name, close: true });
+          }
         }
       }
-    }
+    };
+    check(["wear-vest.glb"], BODY, (name) => BONES.includes(name));
+    const human = parseGlb(readFileSync(HUMAN_BODY));
+    const humanJoints = new Set((human.json.skins ?? []).flatMap((skin) => skin.joints.map((j) => human.json.nodes[j].name ?? "")));
+    check(["wear-top.glb", "wear-bottom.glb"], HUMAN_BODY, (name) => humanJoints.has(name));
   });
 
   it("NF5 모자 셋(wear-hat, wear-hat-blue, wear-hat-green)의 바탕색 그림이 서로 다르다", () => {

@@ -846,13 +846,29 @@ describe("[spec] 095 그대로: 옷 내려받기·서버 아이템 목록 파일
   it("R1 서버 아이템 목록 폴더(apps/backend/src/main/resources/catalog)가 기준 커밋과 같다(다른 착용 옷 11개와 목록 파일 포함. 가구점 진열 상품 항목·파일은 뺀다)", () => {
     const diff = spawnSync("git", ["diff", "--name-only", BASE, "--", "apps/backend/src/main/resources/catalog"], { cwd: REPO, encoding: "utf8" });
     expect(diff.status).toBe(0);
-    const changed = diff.stdout.split(/\r?\n/).filter(Boolean).filter((f) => !SHOP_FILES.includes(f) && !CLOTHING_FILES.includes(f) && f !== "apps/backend/src/main/resources/catalog/clothing-shop-stock.json");
+    // 작업 134 ② 결정(사용자 2026-11-22 "새 목록대로 고침"): 사람형으로 바뀐 옷 모델 파일(wear-*.glb)과 새 사람형 옷 다섯의 모델 파일(wear-*.glb)도 뺀다
+    const changed = diff.stdout
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .filter((f) => !SHOP_FILES.includes(f) && !CLOTHING_FILES.includes(f) && f !== "apps/backend/src/main/resources/catalog/clothing-shop-stock.json" && !/\/catalog\/files\/wear-[^/]*\.glb$/.test(f));
     // 가구점 파일과 옷집 진열 파일(clothing-shop-stock.json) 말고는 목록 파일(items.json)만 바뀔 수 있다(다른 모델·그림 파일은 그대로)
     expect(changed).toEqual([ITEMS]);
     const base = JSON.parse(baseFile(ITEMS).toString("utf8")) as { _comment: string; items: { id: string }[] };
     const now = JSON.parse(readFileSync(join(REPO, ITEMS), "utf8")) as { _comment: string; items: { id: string }[] };
     // 가구점 항목을 빼면 기준 커밋의 항목과 차례·내용이 같다
-    expect(now.items.filter((item) => !SHOP_IDS.includes(item.id) && !CLOTHING_UNREGISTERED.includes(item.id))).toEqual(base.items);
+    // 134 ②: 옷 항목은 사람형으로 바뀐 draw.body·draw.hide·files.model을 빼고 같고(조끼·고글·아이콘·부착·뼈·색은 그대로), 새 사람형 옷 다섯 항목은 뺀다
+    const NEW_HUMAN_FIVE = ["wear-top-henley-oatmeal", "wear-bottom-chino-graphite", "wear-shoe-strap-sneaker", "wear-hat-newsboy-walnut", "wear-hat-pawprint-cap"];
+    const plain = (item: { id: string }) => {
+      const copy = JSON.parse(JSON.stringify(item)) as { draw?: Record<string, unknown>; files?: Record<string, unknown> };
+      if (copy.draw) {
+        delete copy.draw.body;
+        delete copy.draw.hide;
+      }
+      if (copy.files) delete copy.files.model;
+      return copy;
+    };
+    expect(now.items.filter((item) => !SHOP_IDS.includes(item.id) && !CLOTHING_UNREGISTERED.includes(item.id) && !NEW_HUMAN_FIVE.includes(item.id)).map(plain)).toEqual(base.items.map(plain));
+    expect(NEW_HUMAN_FIVE.every((id) => now.items.some((item) => item.id === id))).toBe(true);
     expect(now.items.filter((item) => SHOP_IDS.includes(item.id)).map((item) => item.id).sort()).toEqual([...SHOP_IDS].sort());
     // 머리 설명(_comment)은 그대로다
     expect(now._comment).toBe(base._comment);

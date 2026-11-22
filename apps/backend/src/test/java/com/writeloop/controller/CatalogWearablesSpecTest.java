@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.writeloop.service.ItemCatalogDrawSpecTest;
+import com.writeloop.service.ItemCatalogHumanWearablesSpecTest;
 import com.writeloop.service.ItemCatalogWearablesSpecTest;
 import com.writeloop.service.ItemCatalogWearablesSpecTest.Wear;
 import com.writeloop.support.IntegrationTestSupport;
@@ -62,10 +63,14 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
     /** 허용 오차(가정 G7). */
     private static final double TOLERANCE = 1e-3;
 
-    /** 라룹이 뼈 이름 열여덟. */
+    /**
+     * 옷 모델의 몸 뼈 이름. 라룹이 뼈 열여덟(조끼는 라룹이 몸 그대로)과 사람형 뼈 열여덟(human-wardrobe.json reference.joints)을 합친 것.
+     * 작업 134 ② 결정 04: 옷 모델이 사람형이 되어 뼈 이름이 shin_*·forearm_*로 늘었다.
+     */
     private static final Set<String> BONES = Set.of(
             "root", "hips", "leg_l", "foot_l", "leg_r", "foot_r", "spine", "arm_l", "hand_l", "arm_r", "hand_r", "thumb_r",
-            "head", "ear_l", "ear_r", "tail_1", "tail_2", "tail_3");
+            "head", "ear_l", "ear_r", "tail_1", "tail_2", "tail_3",
+            "shin_l", "shin_r", "forearm_l", "forearm_r");
 
     /** 기준 묶음의 착용 메시 노드 이름(부록 C)과 오른쪽 신발 이름. */
     private static final Set<String> WEAR_NODES = Set.of(
@@ -107,6 +112,8 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
      * 부록 C: 메시 경계 상자와 텍스처 없는 재질 색(조각마다). colors가 null이면 텍스처(모자).
      * 작업 089 ⑤ 24-main-decision(사용자 결정 "qa가 새 동작에 맞게 고침"): 22 결정으로 옷 모델 열하나를 새 몸용으로 바꿔(커밋 057a534)
      * 경계 상자를 그 파일 값으로 고쳤다. 색은 17 결정("같은 색 그대로")대로 그대로다.
+     * 작업 134 ② 결정 04(사용자 "새 목록대로 고침"): 옷 모델이 사람형 파일이 되어 경계 상자를 human-wardrobe.json의 bounds로 고쳤다.
+     * 메시 노드 이름·재질 색(모자는 텍스처)은 그대로다.
      */
     private record Mesh(boolean skin, double[] min, double[] max, List<double[]> colors) {
     }
@@ -115,22 +122,22 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
 
     private static Map<String, Mesh> meshes() {
         Map<String, Mesh> map = new LinkedHashMap<>();
-        map.put("wear-backpack", new Mesh(false, v(-0.1646, 0.2652, -0.2764), v(0.1631, 0.4208, 0.1749),
+        map.put("wear-backpack", new Mesh(false, v(-0.1654, 0.2471, -0.1788), v(0.1654, 0.4341, 0.0968),
                 List.of(v(0.5776, 0.0578, 0.0423, 1), v(0.3916, 0.0331, 0.0252, 1), v(0.1559, 0.0232, 0.0176, 1))));
-        map.put("wear-hat", new Mesh(false, v(-0.1352, 0.8823, -0.1808), v(0.1321, 1.0943, 0.1808), null));
-        map.put("wear-hat-blue", new Mesh(false, v(-0.1352, 0.8823, -0.1808), v(0.1321, 1.0943, 0.1808), null));
-        map.put("wear-hat-green", new Mesh(false, v(-0.1352, 0.8823, -0.1808), v(0.1321, 1.0943, 0.1808), null));
-        map.put("wear-muffler", new Mesh(false, v(-0.2276, 0.2263, -0.2196), v(0.2259, 0.4078, 0.2076),
+        map.put("wear-hat", new Mesh(false, v(-0.2678, 0.7965, -0.256), v(0.2615, 1.0997, 0.337), null));
+        map.put("wear-hat-blue", new Mesh(false, v(-0.2678, 0.7965, -0.256), v(0.2615, 1.0997, 0.337), null));
+        map.put("wear-hat-green", new Mesh(false, v(-0.2678, 0.7965, -0.256), v(0.2615, 1.0997, 0.337), null));
+        map.put("wear-muffler", new Mesh(false, v(-0.135, 0.2747, -0.1068), v(0.1349, 0.4462, 0.1262),
                 List.of(v(0.6445, 0.0452, 0.0452, 1))));
-        map.put("wear-necklace", new Mesh(false, v(-0.1931, 0.2923, -0.1847), v(0.1914, 0.4287, 0.2026),
+        map.put("wear-necklace", new Mesh(false, v(-0.1509, 0.3108, -0.0766), v(0.1507, 0.4203, 0.1192),
                 List.of(v(0.7454, 0.4508, 0.0452, 1))));
-        map.put("wear-shoe-l", new Mesh(false, v(0.0137, -0.004, -0.1064), v(0.2091, 0.085, 0.1418),
+        map.put("wear-shoe-l", new Mesh(false, v(0.0346, 0, -0.0579), v(0.1598, 0.0688, 0.1169),
                 List.of(v(0.1946, 0.0685, 0.0232, 1))));
-        map.put("wear-sunglasses", new Mesh(false, v(-0.3313, 0.5537, -0.0224), v(0.3273, 0.7263, 0.2864),
+        map.put("wear-sunglasses", new Mesh(false, v(-0.2835, 0.5751, -0.0591), v(0.2835, 0.7409, 0.2627),
                 List.of(v(0.013, 0.013, 0.0176, 1), v(0.0052, 0.0052, 0.007, 1))));
-        map.put("wear-bottom", new Mesh(true, v(-0.2167, 0.094, -0.1685), v(0.2124, 0.2207, 0.1709),
+        map.put("wear-bottom", new Mesh(true, v(-0.156, 0.107, -0.088), v(0.156, 0.2503, 0.088),
                 List.of(v(0.0343, 0.0802, 0.1946, 1))));
-        map.put("wear-top", new Mesh(true, v(-0.2868, 0.1981, -0.1965), v(0.2823, 0.394, 0.1864),
+        map.put("wear-top", new Mesh(true, v(-0.2603, 0.1991, -0.1111), v(0.2603, 0.4397, 0.1112),
                 List.of(v(0.8714, 0.2423, 0.0423, 1))));
         return map;
     }
@@ -206,7 +213,7 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
         assertThat(draw.hasNonNull("bone")).as("%s has no bone", label).isFalse();
         assertThat(draw.hasNonNull("mirror")).as("%s has no mirror", label).isFalse();
         assertThat(draw.path("body").isIntegralNumber()).as("%s body is an integer", label).isTrue();
-        assertThat(draw.path("body").asInt()).as("%s body", label).isEqualTo(ItemCatalogWearablesSpecTest.BODY);
+        assertThat(draw.path("body").asInt()).as("%s body", label).isEqualTo(ItemCatalogWearablesSpecTest.VEST_BODY);
     }
 
     @Test
@@ -267,8 +274,8 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
     void w13_w14_everyClothFileIsServedAtItsContentHash() throws Exception {
         TestUser user = newUser("w13");
         List<JsonNode> entries = clothFileEntries(catalog());
-        // 열일곱 옷(열여섯 + 시험 옷) × 모델·아이콘
-        assertThat(entries).as("W13 cloth file entries").hasSize(34);
+        // 열일곱 옷(열여섯 + 시험 옷) × 모델·아이콘 + 새 사람형 옷 다섯 × 모델(아이콘 없음)
+        assertThat(entries).as("W13 cloth file entries").hasSize(39);
         for (JsonNode entry : entries) {
             String url = entry.path("url").asText();
             String sha = entry.path("sha256").asText();
@@ -524,7 +531,8 @@ class CatalogWearablesSpecTest extends IntegrationTestSupport {
         List<JsonNode> others = new ArrayList<>();
         for (JsonNode item : catalog().get("items")) {
             if ("wearable".equals(item.path("kind").asText())
-                    && !ItemCatalogWearablesSpecTest.SEVENTEEN.contains(item.path("id").asText())) {
+                    && !ItemCatalogWearablesSpecTest.SEVENTEEN.contains(item.path("id").asText())
+                    && !ItemCatalogHumanWearablesSpecTest.NEW_NAMES.containsKey(item.path("id").asText())) {
                 others.add(item);
             }
         }

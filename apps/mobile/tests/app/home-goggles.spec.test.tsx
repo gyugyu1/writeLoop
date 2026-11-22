@@ -838,26 +838,26 @@ describe("[spec] 089-⑤ 10 GH: 홈의 그릴 아이템", () => {
 
 describe("[spec] 089-⑤ 10 GK·23 NI3: 옷장의 얼굴장식 탭과 고글 칸 그림", () => {
   it(
-    "GK1 134 ①: GW1로 열면 얼굴장식 탭의 칸이 [벗기, 검정 선글라스]이다(라룹이 고글은 그릴 수 없어 칸이 없고, 입은 칸도 없으며, 빈 부위 문구는 없다)",
+    "GK1 GW1로 열면 얼굴장식 탭의 칸이 [벗기, 라룹이 고글, 검정 선글라스]이고 '라룹이 고글'이 입은 칸이며 빈 부위 문구가 없다",
     async () => {
       await openCloset(GW1());
       await chooseTab("얼굴장식");
-      expect(cellNames()).toEqual([OFF, SUNGLASSES]);
-      expect(selectedCells()).toEqual([]);
+      expect(cellNames()).toEqual([OFF, GOGGLES, SUNGLASSES]);
+      expect(selectedCells()).toEqual([GOGGLES]);
       expect(hasText(FACE_EMPTY)).toBe(false);
     },
     SLOW_TEST_MS
   );
 
   it(
-    "GK2·NI3 134 ①: '라룹이 고글' 칸이 없고, 고글의 칸 그림(wearableIcon goggles = 앱의 goggles.png)은 그대로이며 받기 요청이 없다(다른 옷 파일은 기기에 둔 상태)",
+    "GK2·NI3 '라룹이 고글' 칸 그림이 고글의 칸 그림(wearableIcon goggles = 앱의 goggles.png)이고 받기 요청이 없다(다른 옷 파일은 기기에 둔 상태)",
     async () => {
       await openCloset(GW1());
       await chooseTab("얼굴장식");
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const bundled = require("@/assets/icons/wearables/goggles.png");
       expect(wearableIcon("goggles")).toBe(bundled);
-      expect(cellNames()).not.toContain(GOGGLES);
+      expect(cellImages(GOGGLES)).toEqual([bundled]);
       expect(device.downloads).toEqual([]);
     },
     SLOW_TEST_MS
@@ -873,18 +873,19 @@ describe("[spec] 089-⑤ 10 GK·23 NI3: 옷장의 얼굴장식 탭과 고글 칸
   );
 
   it(
-    "GK4 134 ①: '검정 선글라스' → '벗기'를 차례로 누르면 미리보기 look.face가 sunglassesBlack → null이고 표시되는 칸도 차례로 바뀐다(라룹이 고글 칸은 없다)",
+    "GK4 '검정 선글라스' → '벗기' → '라룹이 고글'을 차례로 누르면 미리보기 look.face가 sunglassesBlack → null → goggles이고 표시되는 칸도 차례로 바뀐다",
     async () => {
       await openCloset(GW1());
       await chooseTab("얼굴장식");
       const seen: unknown[] = [];
-      for (const name of [SUNGLASSES, OFF]) {
+      for (const name of [SUNGLASSES, OFF, GOGGLES]) {
         await chooseCell(name);
         seen.push({ face: (rawPreviewLook() as { face?: unknown }).face, selected: selectedCells() });
       }
       expect(seen).toEqual([
         { face: "sunglassesBlack", selected: [SUNGLASSES] },
-        { face: null, selected: [OFF] }
+        { face: null, selected: [OFF] },
+        { face: "goggles", selected: [GOGGLES] }
       ]);
     },
     SLOW_TEST_MS
@@ -927,7 +928,7 @@ describe("[spec] 089-⑤ 10 GK·23 NI3: 옷장의 얼굴장식 탭과 고글 칸
   );
 
   it(
-    "GK7 134 ①: GW0으로 열면 일곱 탭이 모두 [벗기]와 빈 부위 문구다(라룹이 고글은 그릴 수 없어 얼굴장식 탭도 비어 있다)",
+    "GK7 GW0으로 열면 얼굴장식 탭은 [벗기, 라룹이 고글](고글 표시)이고 다른 여섯 탭은 [벗기]와 빈 부위 문구다",
     async () => {
       await openCloset(GW0());
       const seen: Record<string, unknown> = {};
@@ -939,7 +940,7 @@ describe("[spec] 089-⑤ 10 GK·23 NI3: 옷장의 얼굴장식 탭과 고글 칸
       seen["얼굴장식"] = { cells: cellNames(), selected: selectedCells(), empty: hasText(FACE_EMPTY) };
       expect(seen).toEqual({
         ...Object.fromEntries(TAB_EMPTY.map(([name]) => [name, { cells: [OFF], empty: true }])),
-        얼굴장식: { cells: [OFF], selected: [], empty: true }
+        얼굴장식: { cells: [OFF, GOGGLES], selected: [GOGGLES], empty: false }
       });
     },
     SLOW_TEST_MS

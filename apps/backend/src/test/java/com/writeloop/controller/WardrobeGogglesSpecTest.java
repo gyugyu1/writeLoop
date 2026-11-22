@@ -42,7 +42,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *
  * <ul>
  *   <li>로그인은 토큰 로그인(Bearer). 테스트마다 새 사용자를 만들고, users.created_at을 C = 2026-11-01T00:00:00Z로 정해 둔다.</li>
- *   <li>G = {goggles, face, C}. E0 = 저장한 적 없는 입은 것(face만 goggles).</li>
+ *   <li>G = {goggles, face, C}. E0 = 저장한 적 없는 입은 것(작업 134 ②부터 모든 부위 없음. 이전에는 face만 goggles).</li>
  *   <li>홈쇼핑 날짜는 시계 빈으로 고정한다(T = 2026-11-16 서울 정오, 방송 상품 bed).</li>
  *   <li>WNC: 요청 전후로 GET /api/wardrobe 본문과 wardrobe_outfits의 그 계정 줄이 같다.</li>
  * </ul>
@@ -119,7 +119,7 @@ class WardrobeGogglesSpecTest extends IntegrationTestSupport {
     // =====================================================================
 
     @Test
-    void g1_newAccountOwnsAndWearsGoggles() throws Exception {
+    void g1_newAccountOwnsGogglesAndWearsNothing() throws Exception {
         TestUser u = newUser("g1");
 
         assertOkBody(get(u.token()), wardrobe(items(g()), e0()), "G1");
@@ -196,7 +196,7 @@ class WardrobeGogglesSpecTest extends IntegrationTestSupport {
         assertThat(put(x.token(), "{}").statusCode()).as("G8 X saves bare face").isEqualTo(200);
 
         assertThat(JSON.readTree(get(x.token()).body()).path("equipped").get("face").isNull()).as("G8 X face is null").isTrue();
-        assertThat(JSON.readTree(get(y.token()).body()).path("equipped").path("face").asText()).as("G8 Y face").isEqualTo("goggles");
+        assertThat(JSON.readTree(get(y.token()).body()).path("equipped").get("face").isNull()).as("G8 Y face is null (default has no face item)").isTrue();
     }
 
     /** 결정 12 A 09-1: wardrobe_items에 goggles 행이 있어도 무시한다(맨 앞 고글 하나, 얻은 때는 계정을 만든 때). */
@@ -219,7 +219,7 @@ class WardrobeGogglesSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = put(u.token(), "{\"face\": \"goggles\"}");
 
-        assertOkBody(response, wardrobe(items(g()), e0()), "Q1 PUT");
+        assertOkBody(response, wardrobe(items(g()), gogglesOn()), "Q1 PUT");
         assertThat(JSON.readTree(get(u.token()).body())).as("Q1 GET equals PUT").isEqualTo(JSON.readTree(response.body()));
         Map<String, String> row = nullRow();
         row.put("face", "goggles");
@@ -252,7 +252,7 @@ class WardrobeGogglesSpecTest extends IntegrationTestSupport {
         TestUser u = newUser("q4");
         assertThat(put(u.token(), "{}").statusCode()).as("Q4 setup").isEqualTo(200);
 
-        assertEquipped(put(u.token(), "{\"face\": \"goggles\"}"), e0(), "Q4");
+        assertEquipped(put(u.token(), "{\"face\": \"goggles\"}"), gogglesOn(), "Q4");
     }
 
     @Test
@@ -295,7 +295,7 @@ class WardrobeGogglesSpecTest extends IntegrationTestSupport {
         assertThat(put(u.token(), "{\"face\": \"goggles\"}").statusCode()).as("Q8 setup").isEqualTo(200);
 
         assertInvalidAndUnchanged(u, "{\"face\": null, \"hat\": \"capOrange\"}", "Q8");
-        assertEquipped(get(u.token()), e0(), "Q8 GET");
+        assertEquipped(get(u.token()), gogglesOn(), "Q8 GET");
     }
 
     @Test
@@ -307,8 +307,8 @@ class WardrobeGogglesSpecTest extends IntegrationTestSupport {
         HttpResponse<String> xPut = put(x.token(), "{\"face\": \"goggles\"}");
         HttpResponse<String> yPut = put(y.token(), "{\"face\": \"goggles\"}");
 
-        assertOkBody(xPut, wardrobe(items(g()), e0()), "Q9 X");
-        assertOkBody(yPut, wardrobe(items(item("goggles", "face", "2026-11-02T00:00:00Z")), e0()), "Q9 Y");
+        assertOkBody(xPut, wardrobe(items(g()), gogglesOn()), "Q9 X");
+        assertOkBody(yPut, wardrobe(items(item("goggles", "face", "2026-11-02T00:00:00Z")), gogglesOn()), "Q9 Y");
     }
 
     @Test
@@ -387,13 +387,13 @@ class WardrobeGogglesSpecTest extends IntegrationTestSupport {
     }
 
     @Test
-    void s5_buyingSunglassesKeepsGogglesOn() throws Exception {
+    void s5_buyingSunglassesKeepsFaceBare() throws Exception {
         TestUser u = newUser("s5");
         setBalance(u, 300);
 
         JsonNode wardrobe = JSON.readTree(assertOk(order(u.token(), "sunglassesBlack", 100), "S5").body()).path("wardrobe");
 
-        assertThat(wardrobe.path("equipped").path("face").asText()).as("S5 face").isEqualTo("goggles");
+        assertThat(wardrobe.path("equipped").get("face").isNull()).as("S5 face stays null").isTrue();
     }
 
     @Test
@@ -442,7 +442,13 @@ class WardrobeGogglesSpecTest extends IntegrationTestSupport {
         return item("goggles", "face", C);
     }
 
+    /** 저장한 적 없는 입은 것(작업 134 ②: 얼굴장식도 없음). */
     private static ObjectNode e0() {
+        return equipped();
+    }
+
+    /** 고글을 입은 것(face만 goggles). */
+    private static ObjectNode gogglesOn() {
         return equipped("face", "goggles");
     }
 

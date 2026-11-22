@@ -316,7 +316,7 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
         assertThat(body.has("layout") && body.get("layout").isNull()).as("O1 layout is null: %s", body).isTrue();
         JsonNode wardrobe = body.path("wardrobe");
         assertThat(typesAndSlots(wardrobe)).as("O1 wardrobe items").containsExactly("goggles/face", "sunglassesBlack/face");
-        assertThat(wardrobe.path("equipped")).as("O1 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
+        assertThat(wardrobe.path("equipped")).as("O1 equipped").isEqualTo(equipped(Map.of()));
 
         // O2
         assertThat(balanceRow(user.id())).as("O2 balance row").isEqualTo(200);
@@ -361,7 +361,7 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
 
         assertThat(last.path("balance").asInt()).as("O4 balance").isEqualTo(980);
         assertThat(typesAndSlots(last.path("wardrobe"))).as("O4 wardrobe items").containsExactlyElementsOf(expected);
-        assertThat(last.path("wardrobe").path("equipped")).as("O4 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
+        assertThat(last.path("wardrobe").path("equipped")).as("O4 equipped").isEqualTo(equipped(Map.of()));
         Map<String, Integer> owned = ownedMap(JSON.readTree(shop(user.token()).body()));
         for (Object[] row : NEW_TWELVE) {
             assertThat(owned.get((String) row[0])).as("O4 %s owned", row[0]).isEqualTo(1);
@@ -411,7 +411,7 @@ class HomeShoppingMoreClothesSpecTest extends IntegrationTestSupport {
 
         JsonNode body = JSON.readTree(assertOk(order(user.token(), "backpackRed", 120), "O7").body());
 
-        assertThat(body.path("wardrobe").path("equipped")).as("O7 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
+        assertThat(body.path("wardrobe").path("equipped")).as("O7 equipped").isEqualTo(equipped(Map.of()));
     }
 
     @Test

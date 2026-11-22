@@ -152,8 +152,8 @@ class CatalogFilesSpecTest extends IntegrationTestSupport {
                 assertThat(item.has("draw") && item.get("draw").isObject()).as("B6 draw of %s is an object: %s", id, item).isTrue();
             }
         }
-        // 작업 090 ③: 옷 열일곱 + 시험 옷 하나
-        assertThat(count).as("B6 wearable count").isEqualTo(18);
+        // 작업 090 ③: 옷 열일곱 + 시험 옷 하나. 작업 134 ② 결정 04: 새 사람형 옷 다섯을 더해 스물셋(옷집 13종은 뺀 값)
+        assertThat(count).as("B6 wearable count").isEqualTo(23);
     }
 
     @Test
@@ -253,7 +253,7 @@ class CatalogFilesSpecTest extends IntegrationTestSupport {
     void b11_b13_everyListedFileIsServedWithoutLoginAtItsContentHash() throws Exception {
         List<JsonNode> entries = allFileEntries(catalog());
         // 작업 090 ③: 가구(모델 15 + 아이콘 11)에 옷 열일곱(열여섯 + 시험 옷)의 모델·아이콘 34가 더해진다(고글은 파일 없음)
-        assertThat(entries).as("B11 file entries (furniture 15 models + 11 icons, wearables 17 models + 17 icons, 작업 130 가구점 진열 상품 모델 여섯 + 명패 그림 여섯)").hasSize(72);
+        assertThat(entries).as("B11 file entries (furniture 15 models + 11 icons, wearables 17 models + 17 icons, 작업 130 가구점 진열 상품 모델 여섯 + 명패 그림 여섯, 작업 134 ② 새 사람형 옷 모델 다섯(아이콘 없음))").hasSize(77);
         for (JsonNode entry : entries) {
             String url = entry.path("url").asText();
             String sha = entry.path("sha256").asText();

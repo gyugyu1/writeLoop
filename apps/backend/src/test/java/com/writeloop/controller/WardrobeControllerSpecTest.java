@@ -70,7 +70,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(u, items(), equipped("face", "goggles")), "S1");
+        assertOkBody(response, wardrobe(u, items(), equipped()), "S1");
     }
 
     @Test
@@ -80,7 +80,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
 
         HttpResponse<String> response = get(u.token());
 
-        assertOkBody(response, wardrobe(u, items(item("capOrange", "hat", T1)), equipped("face", "goggles")), "S2");
+        assertOkBody(response, wardrobe(u, items(item("capOrange", "hat", T1)), equipped()), "S2");
         // F2: acquiredAt 문자열 그대로
         assertThat(JSON.readTree(response.body()).path("items").get(1).path("acquiredAt").asText())
                 .as("F2 acquiredAt").isEqualTo("2026-11-13T12:00:00Z");
@@ -101,7 +101,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
                 item("shoesBrown", "shoes", T1),
                 item("capOrange", "hat", T2),
                 item("shortsNavy", "bottom", T3),
-                item("tshirtOrange", "top", T4)), equipped("face", "goggles")), "S3");
+                item("tshirtOrange", "top", T4)), equipped()), "S3");
     }
 
     @Test
@@ -295,7 +295,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> response = put(y.token(), "{\"shoes\": \"shoesBrown\"}");
 
         assertInvalid(response, "X11 Y");
-        assertOkBody(get(y.token()), wardrobe(y, items(), equipped("face", "goggles")), "X11 Y GET");
+        assertOkBody(get(y.token()), wardrobe(y, items(), equipped()), "X11 Y GET");
         assertOkBody(get(x.token()), wardrobe(x, items(item("shoesBrown", "shoes", T1)), equipped("shoes", "shoesBrown")), "X11 X GET");
     }
 
@@ -441,7 +441,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         assertThat(put(x.token(), "{\"hat\": \"capOrange\"}").statusCode()).as("K1 setup").isEqualTo(200);
         TestUser y = newUser("k1y");
 
-        assertOkBody(get(y.token()), wardrobe(y, items(), equipped("face", "goggles")), "K1 Y");
+        assertOkBody(get(y.token()), wardrobe(y, items(), equipped()), "K1 Y");
     }
 
     @Test
@@ -452,7 +452,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
         own(y, "capOrange", T2);
         assertThat(put(x.token(), "{\"hat\": \"capOrange\"}").statusCode()).as("K2 X equips").isEqualTo(200);
 
-        assertOkBody(get(y.token()), wardrobe(y, items(item("capOrange", "hat", T2)), equipped("face", "goggles")), "K2 first Y GET");
+        assertOkBody(get(y.token()), wardrobe(y, items(item("capOrange", "hat", T2)), equipped()), "K2 first Y GET");
 
         assertThat(put(y.token(), "{\"hat\": \"capOrange\"}").statusCode()).as("K2 Y equips").isEqualTo(200);
         assertThat(put(x.token(), "{}").statusCode()).as("K2 X unequips").isEqualTo(200);
@@ -476,7 +476,7 @@ class WardrobeControllerSpecTest extends IntegrationTestSupport {
                 .as("D1 second capOrange row")
                 .isInstanceOf(DataIntegrityViolationException.class);
 
-        assertOkBody(get(u.token()), wardrobe(u, items(item("capOrange", "hat", T1)), equipped("face", "goggles")), "D1 GET");
+        assertOkBody(get(u.token()), wardrobe(u, items(item("capOrange", "hat", T1)), equipped()), "D1 GET");
     }
 
     @Test

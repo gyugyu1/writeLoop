@@ -222,8 +222,8 @@ public class ItemCatalogDrawSpecTest {
                 }
             }
         }
-        // 작업 090 ③: 옷 열일곱 + 시험 옷 하나
-        assertThat(count).as("B3 wearable count").isEqualTo(18);
+        // 작업 090 ③: 옷 열일곱 + 시험 옷 하나. 작업 134 ② 결정 04: 새 사람형 옷 다섯을 더해 스물셋(옷집 13종은 뺀 값)
+        assertThat(count).as("B3 wearable count").isEqualTo(23);
     }
 
     @Test

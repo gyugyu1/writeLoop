@@ -166,7 +166,7 @@ describe("[spec] 115 ② 자산 출처(명세 4)", () => {
     const base = gitShow115b(BASE_115_2, CREDITS_PATH_115_2);
     expect(villageCredit(now).rest).toBe(villageCredit(base).rest);
     // 118(명세 6): 새 분수 모델 줄(village-fountain.glb)도 양쪽에서 뺀다(분수 줄은 118 qa 테스트가 본다). 120(명세 6): 새 가로등 모델 줄(village-streetlamp.glb)도 뺀다(120 qa 테스트가 본다)
-    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.startsWith("| `player-human.glb`") && !l.startsWith("| `writeloop.glb`") && !l.includes("WriteLoop_Tree") && !l.includes("`village-fountain.glb`") && !l.includes("`village-streetlamp.glb`") && !l.startsWith("| `shop/") && !l.startsWith("| `clothing-shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다. 116 06 결정 2: 나무 줄(A·Pine으로 바뀜)은 양쪽에서 뺀다
+    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.startsWith("| `player-human.glb`") && !l.startsWith("| `wear-goggles-human.glb`") && !l.startsWith("| `writeloop.glb`") && !l.includes("WriteLoop_Tree") && !l.includes("`village-fountain.glb`") && !l.includes("`village-streetlamp.glb`") && !l.startsWith("| `shop/") && !l.startsWith("| `clothing-shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다. 116 06 결정 2: 나무 줄(A·Pine으로 바뀜)은 양쪽에서 뺀다
     expect(others(now)).toEqual(others(base));
   });
 });

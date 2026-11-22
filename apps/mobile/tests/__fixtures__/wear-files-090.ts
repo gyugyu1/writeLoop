@@ -72,7 +72,7 @@ export function serverWearableItems(): Record<string, unknown>[] {
       category: item.category,
       slot: item.slot ?? null,
       price: item.price,
-      // 134 ①: 앱의 몸판이 사람형(2)이라 서버 목록 파일(②에서 body 2로 바뀐다. 지금은 1)의 그리기 정보를 body 2로 바꿔 쓴다
+      // 134 ①: 앱의 몸판이 사람형(2)이라 서버 목록 파일의 그리기 정보를 body 2로 바꿔 쓴다. 134 ②에서 서버 목록 파일도 body 2가 되어(조끼만 1) 덮어쓰기는 조끼를 그릴 수 있게 하는 데만 쓰인다
       draw: item.draw ? { ...item.draw, body: 2 } : null,
       assets: item.files?.model ? { model: serverRef(item.files.model), icon: item.files.icon ? serverRef(item.files.icon) : null } : null
     }));

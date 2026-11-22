@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
  *
  * <ul>
  *   <li>W1: 옷마다 draw와 files(model, icon). 고글은 draw도 files도 없다(결정 05 1).</li>
- *   <li>W2: 옷 열여섯의 draw 값 = 시나리오 부록 A(방식·붙일 뼈·뒤집어 붙일 뼈·칠할 색·맞춘 몸 판 1).</li>
+ *   <li>W2: 옷 열여섯의 draw 값 = 시나리오 부록 A(방식·붙일 뼈·뒤집어 붙일 뼈·칠할 색·맞춘 몸 판 2, 작업 134 ② 결정 04로 1에서 바뀜. 숨길 기본 메시 hide는 human-wardrobe.json 값).</li>
  *   <li>W3: skin 방식 옷에는 붙일 뼈·뒤집어 붙일 뼈가 없다. 뒤집을 뼈가 없는 bone 옷에도 그 칸이 없다.</li>
  *   <li>W4: 시험 옷(옷 열일곱 밖의 옷 하나)은 top, 팔지 않음, skin, 몸 판 1, 늘 가진 옷이 아님.</li>
  *   <li>W5: 서버의 옷 부위는 slot에서만 만들어진다(옷 열일곱 그대로 + 시험 옷 top).</li>
@@ -60,11 +60,14 @@ public class ItemCatalogWearablesSpecTest {
     /** 옷 열일곱 = 열여섯 + 고글. */
     public static final Set<String> SEVENTEEN = seventeen();
 
-    /** 결정 1: 지금 몸 판. */
-    public static final int BODY = 1;
+    /** 결정 1: 지금 몸 판. 작업 134 ② 결정 04: 옷 열여섯은 사람형 몸 판 2. */
+    public static final int BODY = 2;
+
+    /** 조끼(시험 옷)는 라룹이 몸 판 1 그대로다(작업 134 ② 명세). */
+    public static final int VEST_BODY = 1;
 
     /** draw에 있어도 되는 칸(구현 이름, 가정 G1). */
-    public static final Set<String> DRAW_KEYS = Set.of("attach", "bone", "mirror", "color", "body");
+    public static final Set<String> DRAW_KEYS = Set.of("attach", "bone", "mirror", "color", "body", "hide");
 
     private static Set<String> seventeen() {
         Set<String> set = new LinkedHashSet<>();
@@ -156,7 +159,7 @@ public class ItemCatalogWearablesSpecTest {
         assertThat(draw.isObject()).as("%s draw is an object", label).isTrue();
         assertThat(draw.path("attach").asText()).as("%s draw attach", label).isEqualTo("skin");
         assertThat(draw.path("body").isIntegralNumber()).as("%s draw body is an integer: %s", label, draw).isTrue();
-        assertThat(draw.path("body").asInt()).as("%s draw body", label).isEqualTo(BODY);
+        assertThat(draw.path("body").asInt()).as("%s draw body", label).isEqualTo(VEST_BODY);
         // 가정 G3: 지금 목록의 팔지 않는 아이템 관례
         assertThat(item.hasNonNull("category")).as("%s category is null: %s", label, item).isFalse();
         assertThat(item.path("description").asText("")).as("%s description is empty", label).isEqualTo("");
@@ -173,6 +176,9 @@ public class ItemCatalogWearablesSpecTest {
         SIXTEEN.forEach(wear -> expected.put(wear.id(), wear.slot()));
         expected.put(GOGGLES, "face");
         expected.put(testClothInFile().path("id").asText(), "top");
+        // 작업 134 ② 결정 04: 새 사람형 옷 다섯도 서버 옷 부위에 있다
+        ItemCatalogHumanWearablesSpecTest.HUMANS.stream().filter(ItemCatalogHumanWearablesSpecTest.Human::isNew)
+                .forEach(h -> expected.put(h.id(), h.slot()));
         // 작업 133 ③ 결정: 옷집 미등록 13종은 빼고 견준다
         Map<String, String> actual = new HashMap<>(ItemCatalog.DEFAULT.wearableSlots());
         ItemCatalogDrawSpecTest.CLOTHING_UNREGISTERED.forEach(actual::remove);
@@ -202,6 +208,8 @@ public class ItemCatalogWearablesSpecTest {
         assertThat(textOrNull(draw, "mirror")).as("%s mirror of %s", label, id).isEqualTo(wear.mirror());
         assertThat(draw.path("body").isIntegralNumber()).as("%s body of %s is an integer: %s", label, id, draw).isTrue();
         assertThat(draw.path("body").asInt()).as("%s body of %s", label, id).isEqualTo(BODY);
+        ItemCatalogHumanWearablesSpecTest.HUMANS.stream().filter(h -> h.id().equals(id)).findFirst().ifPresent(h ->
+                assertThat(ItemCatalogHumanWearablesSpecTest.hide(draw)).as("%s hide of %s", label, id).isEqualTo(h.hide()));
         String color = textOrNull(draw, "color");
         if (wear.color() == null) {
             assertThat(color).as("%s %s has no color", label, id).isNull();
@@ -244,7 +252,8 @@ public class ItemCatalogWearablesSpecTest {
     private static JsonNode testClothInFile() throws Exception {
         List<JsonNode> others = new ArrayList<>();
         for (JsonNode item : catalogFile().get("items")) {
-            if ("wearable".equals(item.path("kind").asText()) && !SEVENTEEN.contains(item.path("id").asText())) {
+            if ("wearable".equals(item.path("kind").asText()) && !SEVENTEEN.contains(item.path("id").asText())
+                    && !ItemCatalogHumanWearablesSpecTest.NEW_NAMES.containsKey(item.path("id").asText())) {
                 others.add(item);
             }
         }

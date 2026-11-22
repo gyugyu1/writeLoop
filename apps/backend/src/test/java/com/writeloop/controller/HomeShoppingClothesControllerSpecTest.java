@@ -312,7 +312,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
         JsonNode wardrobe = body.path("wardrobe");
         assertThat(wardrobe.isObject()).as("O1 wardrobe is an object: %s", body).isTrue();
         assertThat(typesAndSlots(wardrobe)).as("O1 wardrobe items").containsExactly("goggles/face", "capOrange/hat");
-        assertThat(wardrobe.path("equipped")).as("O1 wardrobe equipped").isEqualTo(equipped(Map.of("face", "goggles")));
+        assertThat(wardrobe.path("equipped")).as("O1 wardrobe equipped").isEqualTo(equipped(Map.of()));
 
         // O2
         assertThat(balanceRow(user.id())).as("O2 balance row").isEqualTo(240);
@@ -328,7 +328,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
         HttpResponse<String> get = getWardrobe(user.token());
         assertThat(get.statusCode()).as("O3 GET /api/wardrobe, body %s", get.body()).isEqualTo(200);
         assertSameWardrobe(wardrobe, JSON.readTree(get.body()), "O3");
-        assertThat(JSON.readTree(get.body()).path("equipped")).as("O7 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
+        assertThat(JSON.readTree(get.body()).path("equipped")).as("O7 equipped").isEqualTo(equipped(Map.of()));
     }
 
     @Test
@@ -429,7 +429,7 @@ class HomeShoppingClothesControllerSpecTest extends IntegrationTestSupport {
         assertThat(last.path("balance").asInt()).as("O11 balance").isEqualTo(700);
         assertThat(typesAndSlots(last.path("wardrobe"))).as("O11 wardrobe items")
                 .containsExactly("goggles/face", "capOrange/hat", "tshirtOrange/top", "shortsNavy/bottom", "shoesBrown/shoes");
-        assertThat(last.path("wardrobe").path("equipped")).as("O11 equipped").isEqualTo(equipped(Map.of("face", "goggles")));
+        assertThat(last.path("wardrobe").path("equipped")).as("O11 equipped").isEqualTo(equipped(Map.of()));
         Map<String, Integer> owned = ownedMap(JSON.readTree(shop(user.token()).body()));
         for (String cloth : CLOTHES) {
             assertThat(owned.get(cloth)).as("O11 %s owned", cloth).isEqualTo(1);

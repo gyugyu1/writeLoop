@@ -1,5 +1,5 @@
 {
-  "_comment": "라이트루프 아이템 목록(가구·옷). 서버의 홈쇼핑 가격표·옷 부위·배치 검사·처음 가진 가구와 GET /api/catalog가 모두 이 파일을 읽는다. 파는 아이템은 가격이 낮은 것부터 적고(같은 가격이면 적은 순서), 오늘의 방송도 이 순서로 돈다. 가구의 draw는 앱이 그리는 값(앱 furniture-catalog와 같은 모양)이고 서버 검사(두는 곳·장소·소품 자리 수)도 여기서 만든다. 옷의 draw는 앱이 라룹이에 입히는 값이다: attach(bone 뼈에 붙임, skin 라룹이 뼈대로 휨), bone(붙일 뼈), mirror(좌우로 뒤집어 하나 더 붙일 뼈), color(모델 색 대신 칠할 색), body(맞춘 라룹이 몸 판. 앱은 자기 몸과 같은 판만 그린다). 서버 옷 검사는 slot만 본다. 라룹이 고글은 모두 처음부터 가진 얼굴장식이라 모델(wear-goggles.glb)과 그림이 앱에 들어 있어 draw와 files가 없다. files는 옆 폴더 files/ 안의 모델(glb)·아이콘(png) 이름이다(가구 묶음에서 나누는 스크립트: scripts/lobby3d/split-furniture.py, 서버로만 더하는 가구: build-extra-furniture.py, 착용 모델을 모델마다 만드는 스크립트: scripts/lobby3d/build-wearables.py, 그림: render-wearable-icons.py). 아이템을 더하거나 고치면 이 파일과 files/를 고쳐 배포한다.",
+  "_comment": "라이트루프 아이템 목록(가구·옷). 서버의 홈쇼핑 가격표·옷 부위·배치 검사·처음 가진 가구와 GET /api/catalog가 모두 이 파일을 읽는다. 파는 아이템은 가격이 낮은 것부터 적고(같은 가격이면 적은 순서), 오늘의 방송도 이 순서로 돈다. 가구의 draw는 앱이 그리는 값(앱 furniture-catalog와 같은 모양)이고 서버 검사(두는 곳·장소·소품 자리 수)도 여기서 만든다. 옷의 draw는 앱이 플레이어에 입히는 값이다: attach(bone 뼈에 붙임, skin 플레이어 뼈대로 휨), bone(붙일 뼈), mirror(좌우로 뒤집어 하나 더 붙일 뼈), color(모델 색 대신 칠할 색), body(맞춘 몸 판: 1 라룹이, 2 사람형 플레이어. 앱은 자기 몸과 같은 판만 그린다), hide(입은 동안 숨길 플레이어 기본 착장 메시 이름). 서버 옷 검사는 slot만 본다. 라룹이 고글은 모두 처음부터 가진 얼굴장식이라 모델(사람형 wear-goggles-human.glb)과 그림이 앱에 들어 있어 draw와 files가 없다. files는 옆 폴더 files/ 안의 모델(glb)·아이콘(png) 이름이다(가구 묶음에서 나누는 스크립트: scripts/lobby3d/split-furniture.py, 서버로만 더하는 가구: build-extra-furniture.py, 착용 모델을 모델마다 만드는 스크립트: scripts/lobby3d/build-wearables.py, 그림: render-wearable-icons.py). 아이템을 더하거나 고치면 이 파일과 files/를 고쳐 배포한다.",
   "items": [
     {
       "id": "books",
@@ -119,7 +119,8 @@
       "draw": {
         "attach": "bone",
         "bone": "head",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-hat.glb",
@@ -138,7 +139,8 @@
       "draw": {
         "attach": "bone",
         "bone": "head",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-hat-blue.glb",
@@ -157,7 +159,8 @@
       "draw": {
         "attach": "bone",
         "bone": "head",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-hat-green.glb",
@@ -218,7 +221,10 @@
       "slot": "bottom",
       "draw": {
         "attach": "skin",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "bottom_charcoal_cuffs"
+        ]
       },
       "files": {
         "model": "wear-bottom.glb",
@@ -237,7 +243,10 @@
       "draw": {
         "attach": "skin",
         "color": "#8A5A3B",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "bottom_charcoal_cuffs"
+        ]
       },
       "files": {
         "model": "wear-bottom.glb",
@@ -256,7 +265,10 @@
       "draw": {
         "attach": "skin",
         "color": "#C8443A",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "bottom_charcoal_cuffs"
+        ]
       },
       "files": {
         "model": "wear-bottom.glb",
@@ -316,7 +328,10 @@
       "slot": "top",
       "draw": {
         "attach": "skin",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "top_white_pocket_tee"
+        ]
       },
       "files": {
         "model": "wear-top.glb",
@@ -335,7 +350,10 @@
       "draw": {
         "attach": "skin",
         "color": "#F4F0E8",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "top_white_pocket_tee"
+        ]
       },
       "files": {
         "model": "wear-top.glb",
@@ -354,7 +372,10 @@
       "draw": {
         "attach": "skin",
         "color": "#F2C440",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "top_white_pocket_tee"
+        ]
       },
       "files": {
         "model": "wear-top.glb",
@@ -374,7 +395,11 @@
         "attach": "bone",
         "bone": "foot_l",
         "mirror": "foot_r",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "shoe_canvas_l",
+          "shoe_canvas_r"
+        ]
       },
       "files": {
         "model": "wear-shoe.glb",
@@ -395,7 +420,11 @@
         "bone": "foot_l",
         "mirror": "foot_r",
         "color": "#C8443A",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "shoe_canvas_l",
+          "shoe_canvas_r"
+        ]
       },
       "files": {
         "model": "wear-shoe.glb",
@@ -416,7 +445,11 @@
         "bone": "foot_l",
         "mirror": "foot_r",
         "color": "#DCD8CF",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "shoe_canvas_l",
+          "shoe_canvas_r"
+        ]
       },
       "files": {
         "model": "wear-shoe.glb",
@@ -435,7 +468,8 @@
       "draw": {
         "attach": "bone",
         "bone": "spine",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-muffler.glb",
@@ -497,7 +531,8 @@
       "draw": {
         "attach": "bone",
         "bone": "head",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-sunglasses.glb",
@@ -558,7 +593,8 @@
       "draw": {
         "attach": "bone",
         "bone": "spine",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-necklace.glb",
@@ -577,7 +613,8 @@
       "draw": {
         "attach": "bone",
         "bone": "spine",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-backpack.glb",
@@ -1332,7 +1369,10 @@
       "slot": "top",
       "draw": {
         "attach": "skin",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "top_white_pocket_tee"
+        ]
       },
       "files": {
         "model": "wear-top-kiln-jacket.glb",
@@ -1350,7 +1390,10 @@
       "slot": "bottom",
       "draw": {
         "attach": "skin",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "bottom_charcoal_cuffs"
+        ]
       },
       "files": {
         "model": "wear-bottom-sage-cargo.glb",
@@ -1369,7 +1412,8 @@
       "draw": {
         "attach": "bone",
         "bone": "head",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-hat-breakwater-bucket.glb",
@@ -1387,7 +1431,10 @@
       "slot": "top",
       "draw": {
         "attach": "skin",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "top_white_pocket_tee"
+        ]
       },
       "files": {
         "model": "wear-top-tide-sailor.glb",
@@ -1405,7 +1452,10 @@
       "slot": "bottom",
       "draw": {
         "attach": "skin",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "bottom_charcoal_cuffs"
+        ]
       },
       "files": {
         "model": "wear-bottom-jetty-denim.glb",
@@ -1423,7 +1473,10 @@
       "slot": "top",
       "draw": {
         "attach": "skin",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "top_white_pocket_tee"
+        ]
       },
       "files": {
         "model": "wear-top-field-blouse.glb",
@@ -1441,7 +1494,10 @@
       "slot": "bottom",
       "draw": {
         "attach": "skin",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "bottom_charcoal_cuffs"
+        ]
       },
       "files": {
         "model": "wear-bottom-field-trousers.glb",
@@ -1461,7 +1517,12 @@
         "attach": "bone",
         "bone": "foot_l",
         "mirror": "foot_r",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "shoe_canvas_l",
+          "shoe_canvas_r",
+          "socks"
+        ]
       },
       "files": {
         "model": "wear-shoe-combat-boot.glb",
@@ -1479,7 +1540,10 @@
       "slot": "top",
       "draw": {
         "attach": "skin",
-        "body": 1
+        "body": 2,
+        "hide": [
+          "top_white_pocket_tee"
+        ]
       },
       "files": {
         "model": "wear-top-quilted-liner.glb",
@@ -1498,7 +1562,8 @@
       "draw": {
         "attach": "bone",
         "bone": "head",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-hat-peddler-straw.glb",
@@ -1517,7 +1582,8 @@
       "draw": {
         "attach": "bone",
         "bone": "head",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-hat-bramble-beret.glb",
@@ -1536,7 +1602,8 @@
       "draw": {
         "attach": "bone",
         "bone": "head",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-face-honey-panto.glb",
@@ -1555,11 +1622,113 @@
       "draw": {
         "attach": "bone",
         "bone": "head",
-        "body": 1
+        "body": 2,
+        "hide": []
       },
       "files": {
         "model": "wear-hat-field-cap.glb",
         "icon": "wear-hat-field-cap.png"
+      }
+    },
+    {
+      "id": "wear-top-henley-oatmeal",
+      "kind": "wearable",
+      "name": "오트밀 헨리넥 반팔",
+      "shopName": "오트밀 헨리넥 반팔",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "top",
+      "draw": {
+        "attach": "skin",
+        "body": 2,
+        "hide": [
+          "top_white_pocket_tee"
+        ]
+      },
+      "files": {
+        "model": "wear-top-henley-oatmeal.glb"
+      }
+    },
+    {
+      "id": "wear-bottom-chino-graphite",
+      "kind": "wearable",
+      "name": "그래파이트 치노 반바지",
+      "shopName": "그래파이트 치노 반바지",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "bottom",
+      "draw": {
+        "attach": "skin",
+        "body": 2,
+        "hide": [
+          "bottom_charcoal_cuffs"
+        ]
+      },
+      "files": {
+        "model": "wear-bottom-chino-graphite.glb"
+      }
+    },
+    {
+      "id": "wear-shoe-strap-sneaker",
+      "kind": "wearable",
+      "name": "아이보리 스트랩 스니커즈",
+      "shopName": "아이보리 스트랩 스니커즈",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "shoes",
+      "draw": {
+        "attach": "bone",
+        "bone": "foot_l",
+        "mirror": "foot_r",
+        "body": 2,
+        "hide": [
+          "shoe_canvas_l",
+          "shoe_canvas_r"
+        ]
+      },
+      "files": {
+        "model": "wear-shoe-strap-sneaker.glb"
+      }
+    },
+    {
+      "id": "wear-hat-newsboy-walnut",
+      "kind": "wearable",
+      "name": "월넛 뉴스보이캡",
+      "shopName": "월넛 뉴스보이캡",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "hat",
+      "draw": {
+        "attach": "bone",
+        "bone": "head",
+        "body": 2,
+        "hide": []
+      },
+      "files": {
+        "model": "wear-hat-newsboy-walnut.glb"
+      }
+    },
+    {
+      "id": "wear-hat-pawprint-cap",
+      "kind": "wearable",
+      "name": "발바닥 로고 캡모자",
+      "shopName": "발바닥 로고 캡모자",
+      "description": "",
+      "category": null,
+      "price": null,
+      "slot": "hat",
+      "draw": {
+        "attach": "bone",
+        "bone": "head",
+        "body": 2,
+        "hide": []
+      },
+      "files": {
+        "model": "wear-hat-pawprint-cap.glb"
       }
     }
   ]

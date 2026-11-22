@@ -160,6 +160,8 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
     model.traverse((o) => {
       if ((o as THREE.SkinnedMesh).isSkinnedMesh) skinned.push(o as THREE.SkinnedMesh);
     });
+    // 기본 착장 메시(이름 → 메시와 외곽선 껍질). 옷의 hide가 이 이름으로 숨긴다
+    const baseMeshes = new Map<string, THREE.Object3D[]>();
     // 몸의 외곽선 껍질
     for (const mesh of skinned) {
       const source = mesh.material as THREE.MeshStandardMaterial;
@@ -185,6 +187,7 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
       shell.frustumCulled = false;
       shell.raycast = () => {};
       mesh.parent?.add(shell);
+      if (mesh.name) baseMeshes.set(mesh.name, [mesh, shell]);
     }
     // 누르기 판정용 보이지 않는 통. 플레이어와 함께 움직이고 돈다. 폭은 머리 폭(귀 포함 키의 약 62%),
     // 높이는 점프로 몸이 들려도 머리까지 들게 키의 1.2배다. (Raycaster는 보이지 않는 물체도 맞힌다.)
@@ -215,7 +218,7 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
     book.group.visible = false;
     group.add(book.group);
     materials.push(...book.materials);
-    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips, hit, handR, handL, book, body: skinned[0] ?? null };
+    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips, hit, handR, handL, book, body: skinned[0] ?? null, baseMeshes };
   }, [gltf]);
 
   // 카툰 명암 단계·외곽선 굵기 설정을 따른다.
@@ -355,7 +358,7 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
   useEffect(() => {
     if (!built.body) return;
     if (wearHost ? wearHost.kit === kit && wearHost.body === built.body : !wearsAnything(wear, look)) return;
-    setWearHost({ model: built.model, body: built.body, uniforms: built.uniforms, kit });
+    setWearHost({ model: built.model, body: built.body, uniforms: built.uniforms, kit, baseMeshes: built.baseMeshes });
   }, [built, kit, wear, look, wearHost]);
 
   return (

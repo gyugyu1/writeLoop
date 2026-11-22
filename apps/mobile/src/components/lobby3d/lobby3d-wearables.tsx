@@ -17,19 +17,28 @@ import { characterOutlineMaterial, type CharacterOutlineUniforms, type ToonKit }
 // 라룹이 고글은 모두 처음부터 가진 얼굴장식이라 앱에 든 모델(wear-goggles.glb)로 머리 뼈에 붙인다. 입은 것을 모르면(look 없음) 고글을 쓴 모습이다.
 // 옷 모델 파일은 scripts/lobby3d/build-wearables.py, 고글은 build-goggles.py가 만든다. 이 모듈은 그릴 것(고글 포함)이 있을 때 처음 불러온다.
 
-/** 라룹이 쪽에서 넘겨 주는 것: 모델 뿌리(착용 모델을 같은 좌표로 둔다), 몸 메시(뼈대·묶음 행렬), 외곽선 설정, 카툰 명암. */
+/**
+ * 플레이어 쪽에서 넘겨 주는 것: 모델 뿌리(착용 모델을 같은 좌표로 둔다), 몸 메시(뼈대·묶음 행렬), 외곽선 설정, 카툰 명암,
+ * 기본 착장 메시(이름 → 그 메시와 외곽선 껍질. 옷의 hide가 이 이름으로 숨긴다).
+ */
 export interface WearHost {
   model: THREE.Object3D;
   body: THREE.SkinnedMesh;
   uniforms: CharacterOutlineUniforms;
   kit: ToonKit;
+  baseMeshes?: ReadonlyMap<string, readonly THREE.Object3D[]>;
 }
 
 const LOOK_SLOTS: readonly WardrobeSlot[] = ["hat", "top", "bottom", "shoes", "face", "back", "accessory"];
 
-/** 라룹이 고글: 모두 처음부터 가진 얼굴장식이라 앱에 든 모델로 머리 뼈에 붙인다(내려받지 않는다). 모델은 라룹이 쉬는 자세 좌표다. */
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const GOGGLES_ASSET = require("../../../assets/models/wear-goggles.glb") as string;
+/**
+ * 라룹이 고글: 모두 처음부터 가진 얼굴장식이라 앱에 든 사람형 모델로 머리 뼈에 붙인다(내려받지 않는다). 모델은 플레이어 쉬는 자세 좌표다.
+ * 파일은 고글을 그릴 때 처음 찾는다(번들에는 늘 들어 있다).
+ */
+function gogglesAsset(): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require("../../../assets/models/wear-goggles-human.glb") as string;
+}
 const GOGGLES_DRAW: WearDraw = {
   type: "goggles",
   slot: "face",
@@ -37,7 +46,8 @@ const GOGGLES_DRAW: WearDraw = {
   bone: "head",
   mirror: null,
   color: null,
-  model: { url: "", sha256: "bundled:wear-goggles", bytes: 0 }
+  hide: [],
+  model: { url: "", sha256: "bundled:wear-goggles-human", bytes: 0 }
 };
 
 /** 기기에 받은 모델 파일을 읽은 것(파일 해시 → 읽기). 읽지 못하면 지워 다음에 다시 읽는다. */
@@ -122,7 +132,7 @@ export function Wearables({ host, wear, look }: { host: WearHost; wear: WearStat
 
 /** 앱에 든 라룹이 고글(읽는 동안은 바깥 Suspense가 기다린다). */
 function Goggles({ host }: { host: WearHost }) {
-  const gltf = useLoader(GLTFLoader, GOGGLES_ASSET) as GLTF;
+  const gltf = useLoader(GLTFLoader, gogglesAsset()) as GLTF;
   return <WearPiece host={host} draw={GOGGLES_DRAW} gltf={gltf} />;
 }
 
@@ -222,11 +232,13 @@ function WearPiece({ host, draw, gltf }: { host: WearHost; draw: WearDraw; gltf:
     return { objects, materials, disposables };
   }, [host, draw, gltf]);
 
-  // 라룹이에 붙이고, 카툰 명암 단계를 바꾸면 라룹이와 함께 바뀌게 명암 목록에 넣는다. 사라지면 떼고 버린다
+  // 플레이어에 붙이고, 카툰 명암 단계를 바꾸면 플레이어와 함께 바뀌게 명암 목록에 넣는다. 그리는 동안 이 옷의 hide 기본 메시를 숨긴다. 사라지면 떼고 버린다
   useEffect(() => {
     for (const { parent, object } of built.objects) parent.add(object);
     host.kit.toonMaterials.push(...built.materials);
+    const hidden = hideBaseMeshes(host, draw.hide);
     return () => {
+      hidden();
       for (const m of built.materials) {
         const i = host.kit.toonMaterials.indexOf(m);
         if (i >= 0) host.kit.toonMaterials.splice(i, 1);
@@ -234,9 +246,29 @@ function WearPiece({ host, draw, gltf }: { host: WearHost; draw: WearDraw; gltf:
       for (const { object } of built.objects) object.removeFromParent();
       built.disposables.forEach((d) => d.dispose());
     };
-  }, [built, host]);
+  }, [built, host, draw.hide]);
 
   return null;
+}
+
+/** 기본 착장 메시마다 지금 숨기고 있는 옷 수. 여러 옷이 같은 메시를 숨기면 하나라도 그리는 동안 숨는다. */
+const HIDE_COUNTS = new WeakMap<THREE.Object3D, number>();
+
+/** 옷의 hide 이름에 맞는 기본 착장 메시(본 메시·외곽선 껍질)를 숨기고, 되돌리는 함수를 돌려준다. */
+function hideBaseMeshes(host: WearHost, names: readonly string[]): () => void {
+  const objects: THREE.Object3D[] = [];
+  for (const name of names) for (const object of host.baseMeshes?.get(name) ?? []) objects.push(object);
+  for (const object of objects) {
+    HIDE_COUNTS.set(object, (HIDE_COUNTS.get(object) ?? 0) + 1);
+    object.visible = false;
+  }
+  return () => {
+    for (const object of objects) {
+      const left = (HIDE_COUNTS.get(object) ?? 1) - 1;
+      HIDE_COUNTS.set(object, left);
+      if (left <= 0) object.visible = true;
+    }
+  };
 }
 
 /** 착용 모델을 그리다 오류가 나면 라룹이는 그대로 둔다(옷이 붙지 않는다). */

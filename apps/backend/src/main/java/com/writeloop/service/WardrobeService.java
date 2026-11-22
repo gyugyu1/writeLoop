@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public class WardrobeService {
 
     static final String INVALID_CODE = "WARDROBE_INVALID";
-    /** 라룹이 고글: 모든 계정이 처음부터 가지고(DB 행 없이), 입은 것을 저장한 적 없으면 입고 있는 얼굴장식. */
+    /** 라룹이 고글: 모든 계정이 처음부터 가진다(DB 행 없이). 입은 것을 저장한 적 없으면 아무것도 입지 않은 상태다(고글도 기본으로 입히지 않는다). */
     static final String GOGGLES = "goggles";
     static final String INVALID_MESSAGE = "입을 수 없는 아이템이에요";
 
@@ -129,7 +129,7 @@ public class WardrobeService {
                 .forEach(list::add);
         // 입은 것을 저장한 적 없으면 고글을 쓰고 있다
         WardrobeDto.Equipped equipped = outfit == null
-                ? new WardrobeDto.Equipped(null, null, null, null, GOGGLES, null, null)
+                ? new WardrobeDto.Equipped(null, null, null, null, null, null, null)
                 : new WardrobeDto.Equipped(
                         outfit.getHatItem(), outfit.getTopItem(), outfit.getBottomItem(), outfit.getShoesItem(),
                         outfit.getFaceItem(), outfit.getBackItem(), outfit.getAccessoryItem()

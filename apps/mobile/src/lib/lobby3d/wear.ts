@@ -78,7 +78,10 @@ export const WEARABLE_ITEMS: Readonly<Record<string, WearableItemInfo>> = {
 /** 이 앱의 플레이어 몸 판. 옷 그리기 정보의 body가 이 값과 같아야 그린다(1: 라룹이, 2: 사람형 플레이어). */
 export const WEAR_BODY = 2;
 
-/** 받은 목록에서 읽은 옷 그리기 정보. bone은 붙일 뼈(뼈에 붙일 때), mirror는 좌우로 뒤집어 하나 더 붙일 뼈, color는 모델 색 대신 칠할 색. */
+/**
+ * 받은 목록에서 읽은 옷 그리기 정보. bone은 붙일 뼈(뼈에 붙일 때), mirror는 좌우로 뒤집어 하나 더 붙일 뼈, color는 모델 색 대신 칠할 색,
+ * hide는 이 옷을 그리는 동안 숨길 플레이어 기본 착장 메시 이름(없으면 빈 목록).
+ */
 export interface WearDraw {
   type: string;
   slot: WardrobeSlot;
@@ -86,6 +89,7 @@ export interface WearDraw {
   bone: string | null;
   mirror: string | null;
   color: string | null;
+  hide: readonly string[];
   model: ItemFileRef;
 }
 
@@ -105,13 +109,15 @@ function optionalText(value: unknown, pattern?: RegExp): string | null | undefin
 
 function readDraw(item: CatalogItem): WearDraw | null {
   if (item.kind !== "wearable" || !isLookSlot(item.slot) || !item.draw || !item.assets?.model) return null;
-  const { attach, bone, mirror, color, body } = item.draw;
+  const { attach, bone, mirror, color, body, hide } = item.draw as typeof item.draw & { hide?: unknown };
   if (body !== WEAR_BODY || (attach !== "bone" && attach !== "skin")) return null;
   const boneName = attach === "bone" ? optionalText(bone) : null;
   const mirrorName = optionalText(mirror);
   const tint = optionalText(color, COLOR);
   if (boneName === undefined || mirrorName === undefined || tint === undefined || (attach === "bone" && !boneName)) return null;
-  return { type: item.id, slot: item.slot, attach, bone: boneName, mirror: mirrorName, color: tint, model: item.assets.model };
+  // 숨길 기본 메시: 배열의 글만 쓴다(글이 아닌 값은 무시)
+  const hidden = Array.isArray(hide) ? hide.filter((name): name is string => typeof name === "string" && name !== "") : [];
+  return { type: item.id, slot: item.slot, attach, bone: boneName, mirror: mirrorName, color: tint, hide: hidden, model: item.assets.model };
 }
 
 /** 그 옷을 이 앱이 그릴 수 있으면 그리기 정보, 아니면 null(목록에 없거나 그리기 정보·모델이 없거나 모르는 방식이거나 몸 판이 다름). */
@@ -127,8 +133,8 @@ export function wearDraw(type: string | null | undefined): WearDraw | null {
   return draw;
 }
 
-/** 앱에 든 옷. 받은 목록의 그리기 정보·모델 파일 없이 앱에 든 모델로 그린다. 라룹이 고글(wear-goggles.glb)은 라룹이 몸이라 사람형 플레이어에게 그리지 않는다(지금은 없다). */
-export const BODY_WEARABLES: ReadonlySet<string> = new Set<string>();
+/** 앱에 든 옷(라룹이 고글). 받은 목록의 그리기 정보·모델 파일 없이 앱에 든 사람형 모델(assets/models/wear-goggles-human.glb)로 그린다. 기본으로 씌우지는 않는다. */
+export const BODY_WEARABLES: ReadonlySet<string> = new Set(["goggles"]);
 
 /** 라룹이에 입힐 수 있는 옷인지: 받은 목록으로 그릴 수 있는 옷(wearDraw)이거나 몸에 그려진 옷. 옷장 칸은 이런 옷에만 만든다. */
 export function isWearableDrawable(type: string | null | undefined): boolean {
@@ -156,9 +162,11 @@ export function itemsInSlot(slot: WardrobeSlot): string[] {
   const catalog = currentItemCatalog();
   if (catalog) {
     const ids = catalog.items.filter((item) => item.kind === "wearable" && item.slot === slot && isWearableDrawable(item.id)).map((item) => item.id);
-    return [...ids.filter((id) => BODY_WEARABLES.has(id)), ...ids.filter((id) => !BODY_WEARABLES.has(id))];
+    // 앱에 든 옷(라룹이 고글)은 받은 목록에 없어도 그 부위의 맨 앞이다
+    const bundled = [...BODY_WEARABLES].filter((id) => WEARABLE_ITEMS[id]?.slot === slot);
+    return [...bundled, ...ids.filter((id) => !BODY_WEARABLES.has(id))];
   }
-  // 라룹이 고글은 앱에 든 모델이 있을 때만(지금 사람형 플레이어에게는 없다)
+  // 라룹이 고글은 앱에 든 모델이 있을 때만
   return Object.keys(WEARABLE_ITEMS).filter((type) => WEARABLE_ITEMS[type].slot === slot && (type !== "goggles" || BODY_WEARABLES.has(type)));
 }
 

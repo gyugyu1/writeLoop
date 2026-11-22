@@ -9,6 +9,7 @@
 | `player-human.glb` | 메인 플레이어(사람형, 키 1.0·발바닥 원점·T포즈 쉬는 자세, 뼈 18개, 몸·머리·얼굴과 기본 착장(흰 포켓 티셔츠·차콜 반바지·양말·운동화 두 짝) 메시 11개, 공용 그림 1장, 동작 클립 22개와 표정 모프 셋). 가구점 주인 버들을 기준으로 비율을 맞춰 WriteLoop이 Tripo로 만든 뒤 Blender로 다듬었다 | 저장소와 같다 |
 | `writeloop.glb` | WriteLoop 캐릭터 모델(라룹이. 지금은 플레이어로 쓰지 않고 영어 조언 캐릭터용으로 남겨 둔다). 고글 없는 몸을 WriteLoop이 Tripo 웹으로 만들고 뼈대를 붙였으며, 꼬리 자리·얼굴(눈·코 크기와 색)·동작 클립·외곽선을 손보고 이마의 앞머리를 지워 매끈한 이마로 만들었다 | 저장소와 같다 |
 | `wear-goggles.glb` | 라룹이 고글(얼굴장식, 모두 처음부터 가짐). WriteLoop이 Tripo 웹으로 만든 고글을 `scripts/lobby3d/build-goggles.py`로 줄이고 라룹이 머리에 맞춘 뒤, `scripts/lobby3d/fit-goggles-to-head.py`로 렌즈 판은 모양 그대로 이마에 더 붙이고 띠는 머리를 따라 감기게 새로 만들었다 | 저장소와 같다 |
+| `wear-goggles-human.glb` | 사람형 플레이어의 라룹이 고글(얼굴장식, 모두 처음부터 가짐. 기본으로 씌우지 않는다). 라룹이 고글을 바탕으로 렌즈와 밴드를 사람형 이마·옆머리·뒤통수 곡면에 맞췄다. WriteLoop이 Blender로 만들었다 | 저장소와 같다 |
 | `village-flowers.glb` | 마을 땅의 3D 꽃 무리(흰·노랑·분홍·빨강)·클로버·풀 포기. WriteLoop이 Blender 스크립트로 만들었다(꼭짓점 색, 텍스처 없음) | 저장소와 같다 |
 | `village-fountain.glb` | 마을 광장 분수(석재 받침·윗그릇과, 윗그릇 가장자리에서 아래 수조로 졸졸 흐르는 물. 물은 모프 타깃 셋을 움직이는 약 2초 고리 클립 `Fountain_Flow`). WriteLoop 제작 | 저장소와 같다 |
 | `village-streetlamp.glb` | 마을 광장 가로등(나무 기둥·석재 받침·네 면 유리창 등갓. 색 그림과 유리창만 빛나는 발광 그림). WriteLoop 제작 | 저장소와 같다 |

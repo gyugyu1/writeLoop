@@ -1,4 +1,4 @@
-// [spec] qa 테스트(작업 134 ① 플레이어 교체, 기능 변경, 모바일): 로비 캐릭터(Character)가 사람형 모델(player-human.glb)을 1.513배로 그리고,
+// [spec] qa 테스트(작업 134 ① 플레이어 교체, 기능 변경, 모바일): 로비 캐릭터(Character)가 사람형 모델(player-human.glb)을 2.27배로 그리고,
 // 체형에 맞춘 값(말풍선·누르기 판정·손에 드는 책)과 동작 연결·첫 그릴 때 자세·재질·기본 착장·고글을 지금 규칙대로 다루는지 본다.
 // 기대값은 명세(private 작업 폴더 134-2026-11-22-사람형-플레이어-교체/02-플레이어-교체/01-main-spec.md)의 바뀌는 동작 1~6과 "그대로여야 할 동작"에서만 가져온다.
 // 테스트 이름 앞의 [바뀔]은 구현 전에 실패해야 하는 테스트, [그대로]는 구현 전·뒤 모두 통과해야 하는 테스트다(02-qa-tests.md의 분류와 같다).
@@ -12,8 +12,8 @@
 //   (키 1.0 기준 0.112, 0.067)만큼 든다. 클립 22개(실제 파일과 같은 이름. sleep·surprised·talk 포함).
 // - 재질: 실제 파일은 그림 한 장을 메시 열한 개가 함께 쓴다. 가짜도 한 장을 함께 쓴다.
 // - 모델을 복제하는 SkeletonUtils.clone 가짜는 복제본을 적어 둔다(첫 그릴 때 자세를 보려고).
-// 가정(명세에 숫자가 없는 것): 말풍선 꼬리는 머리 꼭대기(1.513) 위 0.4칸 안, 누르기 통의 폭은 머리 폭 62% ±(0.80~1.08칸), 책 높이는 키 대비 0.273 ±25%
-//   (지금 라룹이: 책 0.62 / 키 2.27). 손에 든 책의 자리는 손 사이 가운데·몸 앞쪽·머리 꼭대기 아래.
+// 가정(명세에 숫자가 없는 것): 말풍선 꼬리는 머리 꼭대기(2.27) 위 0.6칸 안(키의 약 26%), 누르기 통의 폭은 머리 폭 62% ±15%(1.20~1.62칸), 책 높이는 키 대비 0.273 ±25%
+//   (라룹이: 책 0.62 / 키 2.27). 손에 든 책의 자리는 손 사이 가운데·몸 앞쪽·머리 꼭대기 아래.
 import { act, render } from "@testing-library/react-native";
 import { Suspense, useLayoutEffect, type MutableRefObject, type ReactElement } from "react";
 import * as THREE from "three";
@@ -250,12 +250,12 @@ describe("[spec] 134-① 플레이어 모델 파일과 배율", () => {
     expect(mockLoaded).not.toContain("writeloop.glb");
   });
 
-  it("[바뀔] 배율은 1.513이다(MODEL_SCALE, 모델 뿌리의 배율)", async () => {
+  it("[바뀔] 배율은 2.27이다(MODEL_SCALE, 모델 뿌리의 배율)", async () => {
     const { model } = await draw();
-    expect(MODEL_SCALE).toBe(1.513);
-    expect(model.scale.x).toBeCloseTo(1.513, 9);
-    expect(model.scale.y).toBeCloseTo(1.513, 9);
-    expect(model.scale.z).toBeCloseTo(1.513, 9);
+    expect(MODEL_SCALE).toBe(2.27);
+    expect(model.scale.x).toBeCloseTo(2.27, 9);
+    expect(model.scale.y).toBeCloseTo(2.27, 9);
+    expect(model.scale.z).toBeCloseTo(2.27, 9);
   });
 });
 
@@ -373,19 +373,19 @@ describe("[spec] 134-① GLB 클립을 지금 동작 상태에 그대로 잇는�
 
 // ---------- 말풍선 ----------
 
-describe("[spec] 134-① 말풍선 꼬리: 서 있을 때 머리 꼭대기(1.513) 바로 위, 머리를 따라 움직인다", () => {
-  const TOP = 1.513;
+describe("[spec] 134-① 말풍선 꼬리: 서 있을 때 머리 꼭대기(2.27) 바로 위, 머리를 따라 움직인다", () => {
+  const TOP = 2.27;
 
-  it("[바뀔] 서 있을 때 꼬리 높이는 머리 꼭대기보다 높고 0.4칸 안이다", async () => {
+  it("[바뀔] 서 있을 때 꼬리 높이는 머리 꼭대기보다 높고 0.6칸 안이다", async () => {
     const { handle } = await draw();
     const y = handle.bubblePoint().y;
     expect(y).toBeGreaterThan(TOP);
-    expect(y).toBeLessThanOrEqual(TOP + 0.4);
+    expect(y).toBeLessThanOrEqual(TOP + 0.6);
   });
 
   it("[바뀔] 머리·엉덩이 뼈를 못 찾을 때 쓰는 높이(BUBBLE_HEIGHT)도 같은 범위다", () => {
     expect(BUBBLE_HEIGHT).toBeGreaterThan(TOP);
-    expect(BUBBLE_HEIGHT).toBeLessThanOrEqual(TOP + 0.4);
+    expect(BUBBLE_HEIGHT).toBeLessThanOrEqual(TOP + 0.6);
   });
 
   it("[그대로] 점프로 몸이 들리면 꼬리도 update가 돌려준 들린 높이만큼 함께 올라간다", async () => {
@@ -418,19 +418,19 @@ describe("[spec] 134-① 누르기 판정(보이지 않는 통): 발바닥에서
     expect(hit.userData.isCharacter).toBe(true);
   });
 
-  it("[바뀔] 통은 발바닥(0)에서 시작해 머리 꼭대기(1.513)보다 위까지 닿되, 2.27칸을 넘지 않는다", async () => {
+  it("[바뀔] 통은 발바닥(0)에서 시작해 머리 꼭대기(2.27)보다 위까지 닿되, 3.405칸(키의 1.5배)을 넘지 않는다", async () => {
     const { handle } = await draw();
     const { minY, maxY } = extents(handle);
     expect(minY).toBeLessThanOrEqual(0.02);
-    expect(maxY).toBeGreaterThanOrEqual(1.513);
-    expect(maxY).toBeLessThanOrEqual(1.513 * 1.5);
+    expect(maxY).toBeGreaterThanOrEqual(2.27);
+    expect(maxY).toBeLessThanOrEqual(2.27 * 1.5);
   });
 
-  it("[바뀔] 통의 폭은 머리 폭(키 1.513의 62% = 0.938칸) 정도, 0.80~1.08칸이다", async () => {
+  it("[바뀔] 통의 폭은 머리 폭(키 2.27의 62% = 1.407칸) 정도, 1.20~1.62칸이다", async () => {
     const { handle } = await draw();
     const { width } = extents(handle);
-    expect(width).toBeGreaterThanOrEqual(0.8);
-    expect(width).toBeLessThanOrEqual(1.08);
+    expect(width).toBeGreaterThanOrEqual(1.2);
+    expect(width).toBeLessThanOrEqual(1.62);
   });
 
   it("[그대로] 점프·폴짝으로 몸이 들려도 머리 꼭대기까지 통이 닿는다", async () => {
@@ -444,7 +444,7 @@ describe("[spec] 134-① 누르기 판정(보이지 않는 통): 발바닥에서
       }
     }
     expect(maxLift).toBeGreaterThan(0.1);
-    expect(extents(handle).maxY).toBeGreaterThanOrEqual(1.513 + maxLift);
+    expect(extents(handle).maxY).toBeGreaterThanOrEqual(2.27 + maxLift);
   });
 });
 
@@ -466,9 +466,9 @@ describe("[spec] 134-① 손에 드는 책: 두 손 사이, 머리에 가리지 
     expect(book.visible).toBe(true);
   });
 
-  it("[바뀔] 책의 맨 위는 머리 꼭대기(1.513) 아래라 머리를 가리지 않는다(가짜 모델의 손 높이 0.73 기준)", async () => {
+  it("[바뀔] 책의 맨 위는 머리 꼭대기(2.27) 아래라 머리를 가리지 않는다(가짜 모델의 손 높이 1.09 기준)", async () => {
     const { book } = await holdBook();
-    expect(new THREE.Box3().setFromObject(book).max.y).toBeLessThan(1.513);
+    expect(new THREE.Box3().setFromObject(book).max.y).toBeLessThan(2.27);
   });
 
   it("[그대로] 책은 두 손의 가운데에서 좌우로 0.1칸 안이고, 손보다 앞(+z)이다", async () => {
@@ -493,7 +493,7 @@ describe("[spec] 134-① 손에 드는 책: 두 손 사이, 머리에 가리지 
       mesh.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
       height = Math.max(height, parameters.height * scale.y);
     });
-    const expected = 0.273 * 1.513;
+    const expected = 0.273 * 2.27;
     expect(height).toBeGreaterThanOrEqual(expected * 0.75);
     expect(height).toBeLessThanOrEqual(expected * 1.25);
   });

@@ -34,7 +34,8 @@ const ASSETS = "apps/mobile/assets";
 const BASE = "25e9cc7";
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 const MODEL_EXTS = new Set([".glb", ".gltf"]);
-const LIMIT_BYTES = 1_100_000;
+// 134 ①(사용자 결정 12): 사람형 플레이어 모델(player-human.glb 약 1.38MB)을 더하고 라룹이 파일은 남기므로 한도를 2,500,000바이트로 올린다(빼는 파일은 없다)
+const LIMIT_BYTES = 2_500_000;
 
 /** 기준 커밋의 자산 파일(저장소 기준 경로 → 크기). */
 function baseAssets(): Map<string, number> {
@@ -82,7 +83,7 @@ describe("[spec] 101 바뀔 동작: 그림·모델 자산(01의 4, 03 결정 3·
 });
 
 describe("[spec] 101 그대로 둘 동작: 앱 크기와 마을 모델 파일", () => {
-  it("A3 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 1,100,000바이트 이하다(그림과 모델을 합쳐 약 1MB 안. 106이 키우는 마을 모델 파일과 113이 넣는 나무 폴더와 122가 넣는 오디오 폴더와 128이 넣는 가구점 실내·버들 폴더(assets/models/shop)와 133이 넣는 옷집 실내 폴더(assets/models/clothing-shop)는 뺀다)", () => {
+  it("A3 앱 자산 폴더(apps/mobile/assets)의 크기 증가가 기준 커밋보다 2,500,000바이트 이하다(134 ①: 1,100,000에서 올림)(그림과 모델을 합쳐 약 1MB 안. 106이 키우는 마을 모델 파일과 113이 넣는 나무 폴더와 122가 넣는 오디오 폴더와 128이 넣는 가구점 실내·버들 폴더(assets/models/shop)와 133이 넣는 옷집 실내 폴더(assets/models/clothing-shop)는 뺀다)", () => {
     const sum = (m: Map<string, number>) =>
       [...m.entries()].filter(([path]) => path !== VILLAGE_GLB_PATH_106 && !path.startsWith(`${ASSETS}/models/trees/`) && !path.startsWith(`${ASSETS}/audio/`) && !path.startsWith(`${ASSETS}/models/shop/`) && !path.startsWith(`${ASSETS}/models/clothing-shop/`)).reduce((a, [, b]) => a + b, 0);
     const base = baseAssets();

@@ -279,7 +279,8 @@ describe("[spec] 113 불러오기 11·13: 새 나무 GLB를 앱 자산에 넣고
 
   it("[그대로] A4 자산 출처의 다른 모델 줄은 기준 커밋과 같고 차례도 같다(나무 줄을 더하기만 한다)", () => {
     // 114: 마을 모델(`lobby-village.glb`) 줄은 양쪽에서 뺀다
-    const notVillage = (cells: string[]) => cells[0] !== "`lobby-village.glb`";
+    // 134 ①(사용자 결정 12): 사람형 플레이어(player-human.glb) 줄 추가와 라룹이(writeloop.glb) 줄 변경도 양쪽에서 뺀다
+    const notVillage = (cells: string[]) => cells[0] !== "`lobby-village.glb`" && cells[0] !== "`player-human.glb`" && cells[0] !== "`writeloop.glb`";
     const now = tableRows(readFileSync(join(MODELS_DIR, "CREDITS.md"), "utf8")).filter(notVillage).map((cells) => cells.join(" | "));
     const base = tableRows(execFileSync("git", ["show", `${BASE}:${CREDITS_PATH}`], { cwd: REPO }).toString("utf8")).filter(notVillage).map((cells) => cells.join(" | "));
     expect(base.length).toBeGreaterThan(0);

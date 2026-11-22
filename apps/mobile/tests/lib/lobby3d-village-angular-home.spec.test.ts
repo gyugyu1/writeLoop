@@ -202,7 +202,7 @@ describe("[spec] 100 바뀔 동작: 각진 집 모델, 땅, 스크립트 머리�
     const line = villageCreditLine(now);
     const missing = ["Kenney", "CC0", "라룹이 집", "가구점", "옷집"].filter((word) => !line.includes(word));
     expect({ line, missing }).toEqual({ line, missing: [] });
-    const others = (text: string) => text.split("\n").filter((l) => !l.includes("`lobby-village.glb`") && !l.startsWith("| `shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다
+    const others = (text: string) => text.split("\n").filter((l) => !l.includes("`lobby-village.glb`") && !l.startsWith("| `player-human.glb`") && !l.startsWith("| `writeloop.glb`") && !l.startsWith("| `shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다
     // 기준 커밋의 다른 줄은 차례 그대로 모두 있고, 그 사이에 더해진 줄은 기준 커밋에 없던 모델 파일의 표 줄(| `이름.glb` | 출처 | 라이선스 |)뿐이다
     const baseLines = others(base);
     const baseFiles = new Set([...base.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]));

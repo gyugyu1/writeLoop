@@ -139,7 +139,7 @@ describe("[spec] 127 출처 기록(명세 4)", () => {
   });
 
   it("[그대로] C2 CREDITS.md의 다른 줄(마을 모델 줄 밖)과 마을 모델 줄의 Kenney 부품 목록 밖의 글은 기준 커밋과 같다", () => {
-    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.startsWith("| `shop/") && !l.startsWith("| `clothing-shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다
+    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.startsWith("| `player-human.glb`") && !l.startsWith("| `writeloop.glb`") && !l.startsWith("| `shop/") && !l.startsWith("| `clothing-shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다
     expect(others(nowText(CREDITS_PATH))).toEqual(others(baseText(CREDITS_PATH)));
     const rest = (text: string) => {
       const line = villageLine(text);

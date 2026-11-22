@@ -169,7 +169,7 @@ describe("[spec] 118 자산 출처(명세 6, docs 커밋)", () => {
   });
 
   it("[그대로] C3 CREDITS.md의 다른 줄(마을 모델 줄과 분수 줄 밖)은 기준 커밋과 같다(차례 포함)", () => {
-    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.includes(`\`${FOUNTAIN_ASSET_NAME}\``) && !l.includes("WriteLoop_Tree") && !l.includes("`village-streetlamp.glb`") && !l.startsWith("| `shop/") && !l.startsWith("| `clothing-shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다
+    const others = (text: string) => text.split(/\r?\n/).filter((l) => !l.includes("`lobby-village.glb`") && !l.startsWith("| `player-human.glb`") && !l.startsWith("| `writeloop.glb`") && !l.includes(`\`${FOUNTAIN_ASSET_NAME}\``) && !l.includes("WriteLoop_Tree") && !l.includes("`village-streetlamp.glb`") && !l.startsWith("| `shop/") && !l.startsWith("| `clothing-shop/")); // 128(가구점 실내, 03 결정 2): 가구점 모델 줄(`shop/…`)은 양쪽에서 뺀다
     expect(others(readFileSync(join(REPO, CREDITS_PATH), "utf8"))).toEqual(others(gitShow(CREDITS_PATH)));
   });
 });

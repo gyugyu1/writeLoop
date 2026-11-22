@@ -34,6 +34,8 @@ jest.mock("@react-three/fiber/native", () => ({
   useLoader: (_loader: unknown, url: unknown) => {
     mockLoaded.push(String(url));
     if (String(url) === "player-human.glb" || String(url) === "writeloop.glb") return mockModel.value;
+    // 작업 134 ② 결정(사용자 2026-11-22 09): 사람형 고글 앱 파일 이름을 안다(얼굴장식 goggles일 때 읽는 파일. 가짜 고글 모델은 따로 없고 모델 없이 빈 장면을 준다)
+    if (String(url) === "wear-goggles-human.glb") return mockHumanGoggles.value;
     throw new Error(`테스트가 모르는 모델 파일: ${String(url)}`);
   }
 }));
@@ -71,10 +73,13 @@ jest.mock("three/examples/jsm/utils/SkeletonUtils.js", () => ({
 jest.mock("expo-file-system", () => require("../__fixtures__/wear-files-090").fakeExpoFileSystem());
 jest.mock("@/assets/models/writeloop.glb", () => "writeloop.glb");
 jest.mock("@/assets/models/wear-goggles.glb", () => "wear-goggles.glb");
+jest.mock("../../assets/models/wear-goggles-human.glb", () => "wear-goggles-human.glb", { virtual: true });
 // 구현이 새 파일을 require하므로 가상 모듈로 이름만 준다(파일이 아직 없어도 된다)
 jest.mock("../../assets/models/player-human.glb", () => "player-human.glb", { virtual: true });
 
 const mockModel: { value: unknown } = { value: null };
+/** 사람형 고글의 가짜 모델(빈 장면). */
+const mockHumanGoggles: { value: unknown } = { value: null };
 
 // ---------- 가짜 사람형 모델 ----------
 
@@ -232,6 +237,7 @@ beforeEach(() => {
   mockClones.length = 0;
   mockActions.clear();
   mockModel.value = fakePlayer();
+  mockHumanGoggles.value = { scene: new THREE.Group(), scenes: [], animations: [], cameras: [], asset: {}, parser: {}, userData: {} };
   const original = THREE.AnimationMixer.prototype.clipAction;
   spy = jest.spyOn(THREE.AnimationMixer.prototype, "clipAction").mockImplementation(function (this: THREE.AnimationMixer, clip: never, root?: never) {
     const action = original.call(this, clip, root);

@@ -574,7 +574,7 @@ describe("[spec] 089-⑤ 23 NR5~NR10: 다른 얼굴장식·맨얼굴·모르는 
     expect(shown.every((m) => m.geometry.attributes.position.count === BODY_POINTS)).toBe(true);
   });
 
-  it("NR9 goggles → sunglassesBlack → goggles → ALL_NULL → 모름 → ALL_NULL로 바꿀 때마다 바로 보임 → 숨김(선글라스) → 보임(선글라스 없음) → 숨김 → 보임 → 숨김이고, 보일 때마다 고글은 겉 하나·외곽선 하나다", async () => {
+  it("NR9 goggles → sunglassesBlack → goggles → ALL_NULL → 모름 → ALL_NULL로 바꿀 때마다 바로 보임 → 숨김(선글라스) → 보임(선글라스 없음) → 숨김 → 숨김(모름은 고글 없음, 134 ① 명세 6) → 숨김이고, 보일 때마다 고글은 겉 하나·외곽선 하나다", async () => {
     const cat = newCatW();
     putOnDevice(cat.model.GLASSES);
     const rig = makeRig();
@@ -584,7 +584,7 @@ describe("[spec] 089-⑤ 23 NR5~NR10: 다른 얼굴장식·맨얼굴·모르는 
       [look({ face: "sunglassesBlack" }), false, true],
       [look({ face: "goggles" }), true, false],
       [ALL_NULL, false, false],
-      [undefined, true, false],
+      [undefined, false, false],
       [ALL_NULL, false, false]
     ];
     for (const [i, [value, shown, glasses]] of steps.entries()) {

@@ -870,7 +870,8 @@ describe("[spec] 095 그대로: 옷 내려받기·서버 아이템 목록 파일
     expect(now.items.filter((item) => !SHOP_IDS.includes(item.id) && !CLOTHING_UNREGISTERED.includes(item.id) && !NEW_HUMAN_FIVE.includes(item.id)).map(plain)).toEqual(base.items.map(plain));
     expect(NEW_HUMAN_FIVE.every((id) => now.items.some((item) => item.id === id))).toBe(true);
     expect(now.items.filter((item) => SHOP_IDS.includes(item.id)).map((item) => item.id).sort()).toEqual([...SHOP_IDS].sort());
-    // 머리 설명(_comment)은 그대로다
-    expect(now._comment).toBe(base._comment);
+    // 작업 134 ② 결정(사용자 2026-11-22 09): 머리 설명(_comment)은 사람형에 맞게 고쳐지므로 완전 일치를 빼고, 글이 있는 것만 본다
+    expect(typeof now._comment).toBe("string");
+    expect(now._comment.length).toBeGreaterThan(0);
   });
 });

@@ -1103,12 +1103,35 @@ function easeInOut(x: number): number {
   return k * k * (3 - 2 * k);
 }
 
+/** 달리기(run 클립) 속도(칸/초). */
+export const RUN_SPEED = 3.6;
+/** 빠른 달리기(sprint 클립) 속도(칸/초). */
+export const SPRINT_SPEED = 5.0;
+
+/**
+ * 갈 거리(칸)로 정하는 이동 목표 속도(2026-11-23 사용자 결정, 작업 137).
+ * 4칸 미만은 걷기(walkSpeed), 4~10칸은 달리기, 10~16칸은 달리기에서 빠른 달리기로 고르게, 16칸 이상은 빠른 달리기.
+ */
+export function moveSpeedForDistance(d: number, walkSpeed: number): number {
+  if (d < 4) return walkSpeed;
+  if (d < 10) return RUN_SPEED;
+  if (d < 16) return RUN_SPEED + ((d - 10) / 6) * (SPRINT_SPEED - RUN_SPEED);
+  return SPRINT_SPEED;
+}
+
+/** 경로의 첫 점부터 끝 점까지 이은 길이. */
+function pathLength(path: readonly FloorPoint[]): number {
+  let total = 0;
+  for (let i = 1; i < path.length; i += 1) total += Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z);
+  return total;
+}
+
 function lerpPoint(a: FloorPoint, b: FloorPoint, k: number): FloorPoint {
   return { x: a.x + (b.x - a.x) * k, z: a.z + (b.z - a.z) * k };
 }
 
 export interface LobbySettings {
-  /** 걷는 속도(칸/초). */
+  /** 걷기 모드 속도(칸/초). 갈 길이 4칸 미만일 때의 속도다(달리기 속도는 moveSpeedForDistance가 정한다). */
   speed: number;
   /** 돌아서는 빠르기(클수록 빨리 돈다). */
   turn: number;
@@ -1149,8 +1172,8 @@ export class LobbySim {
   vx = 0;
   vz = 0;
   heading = 0;
-  // 기본 걷는 속도(칸/초). 3D 모델로 바꾼 뒤 조금 빠르게 했다(2026-11-06 사용자 요청, 2.6에서).
-  settings: LobbySettings = { speed: 3.2, turn: 10 };
+  // 기본 걷기 모드 속도(칸/초). 먼 곳은 달려가므로 걷기는 3.2에서 2.4로 늦췄다(2026-11-23 사용자 결정, 작업 137).
+  settings: LobbySettings = { speed: 2.4, turn: 10 };
   reduceMotion = false;
   action: { type: ActionType; t: number } | null = null;
   arrived: PlaceId | null = null;
@@ -1630,7 +1653,10 @@ export class LobbySim {
         }
       } else if (d > (this.dragging ? 0.25 : 0)) {
         const lastLeg = !this.dragging && this.path.length === 1;
-        const sp = lastLeg ? Math.min(this.settings.speed, d * 4 + 0.5) : this.settings.speed;
+        // 갈 거리: 끌기는 손가락이 가리키는 점까지, 누른 곳으로 가는 중은 남은 길 전체 길이
+        const remaining = this.dragging ? d : d + pathLength(this.path);
+        const mode = moveSpeedForDistance(remaining, this.settings.speed);
+        const sp = lastLeg ? Math.min(mode, d * 4 + 0.5) : mode;
         desiredX = (dx / d) * sp;
         desiredZ = (dz / d) * sp;
       }

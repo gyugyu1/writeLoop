@@ -8,6 +8,7 @@ import {
   type PostureKind,
   type SceneState
 } from "./engine";
+import { PLAYER_SCALE } from "./player";
 
 // 시뮬레이션 상태(속도, 동작)를 라이트루프 모델의 클립 재생으로 옮기는 규칙.
 // 모델(docs/guides/character-3d-model-spec.ko.md)의 클립을 쓰고, 움직임은 도형 캐릭터 시험본과 같게 맞춘다.
@@ -99,8 +100,8 @@ export interface CharacterClipState {
   spinLift: number;
 }
 
-/** walk 클립 길이(초). 두 걸음. */
-const WALK_SECONDS = 0.8;
+/** walk 클립(0.8초, 두 걸음)을 배속 1로 틀 때 디딘 발이 뒤로 가는 속도(키 1.0 모델 단위/초). player-human.glb 원본 측정값. */
+const WALK_STRIDE_SPEED = 0.689999;
 /** 도형 캐릭터에서 spin으로 들어 올린 최고 높이(0.35)를 바닥 칸으로(캐릭터 배율 1.25). */
 const SPIN_PEAK = 0.35 * 1.25;
 
@@ -109,8 +110,8 @@ export function characterClipState({ speed, action, posture, scene }: CharacterC
   const state: CharacterClipState = {
     idleWeight: 1 - walk,
     walkWeight: walk,
-    // 걸음 주기가 도형 캐릭터(초당 3 + 3.2 × 속도 라디안)와 같게.
-    walkTimeScale: (3 + 3.2 * speed) / ((2 * Math.PI) / WALK_SECONDS),
+    // 디딘 발이 뒤로 가는 속도가 이동 속도와 같게(발이 미끄러지지 않게).
+    walkTimeScale: speed / (WALK_STRIDE_SPEED * PLAYER_SCALE),
     actionClip: null,
     actionTime: 0,
     actionWeight: 0,

@@ -88,6 +88,14 @@ export interface CharacterClipState {
   idleWeight: number;
   walkWeight: number;
   walkTimeScale: number;
+  /** 달리기(run 클립) 무게. 속력 2.4~3.6에서 걷기와, 3.6~5.0에서 빠른 달리기와 섞는다. */
+  runWeight: number;
+  /** 빠른 달리기(sprint 클립) 무게. */
+  sprintWeight: number;
+  /** run 클립을 혼자 틀 때 발이 미끄러지지 않는 배속. */
+  runTimeScale: number;
+  /** sprint 클립을 혼자 틀 때 발이 미끄러지지 않는 배속. */
+  sprintTimeScale: number;
   /** 한 번 하는 동작 클립 이름. 없으면 null. */
   actionClip: string | null;
   /** 그 클립 안의 시간(초) = 동작이 시작된 뒤 지난 시간. */
@@ -102,16 +110,53 @@ export interface CharacterClipState {
 
 /** walk 클립(0.8초, 두 걸음)을 배속 1로 틀 때 디딘 발이 뒤로 가는 속도(키 1.0 모델 단위/초). player-human.glb 원본 측정값. */
 const WALK_STRIDE_SPEED = 0.689999;
+/** run 클립(16/30초, 두 걸음)의 같은 값. */
+const RUN_STRIDE_SPEED = 1.189421;
+/** sprint 클립(0.6초, 두 걸음)의 같은 값. */
+const SPRINT_STRIDE_SPEED = 1.22379;
+/** 세 클립의 길이(초). 셋 다 왼발 디딤이 위상 0, 오른발 디딤이 0.5다. */
+const WALK_SECONDS = 0.8;
+const RUN_SECONDS = 16 / 30;
+const SPRINT_SECONDS = 0.6;
+/** 걷기 → 달리기, 달리기 → 빠른 달리기로 섞는 속력 구간(칸/초). engine의 걷기 2.4·RUN_SPEED·SPRINT_SPEED와 같다. */
+const WALK_RUN_FROM = 2.4;
+const RUN_FULL = 3.6;
+const SPRINT_FULL = 5.0;
+
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+/**
+ * 걷기·달리기·빠른 달리기를 같은 걸음 위상으로 함께 돌릴 때, 위상(한 바퀴 = 1)이 1초에 나아가는 양.
+ * 이동한 거리를 무게로 섞은 한 바퀴 거리(디딘 발 속도 × 클립 길이)로 나눈다. 한 클립만 쓰면 그 클립의 배속 ÷ 길이와 같아
+ * 발이 미끄러지지 않고, 섞는 동안에는 위상 하나로 세 클립을 꺼내 다리·팔이 엇갈리지 않는다.
+ */
+export function locomotionPhaseRate(speed: number, state: Pick<CharacterClipState, "walkWeight" | "runWeight" | "sprintWeight">): number {
+  const total = state.walkWeight + state.runWeight + state.sprintWeight;
+  if (total <= 1e-6 || speed <= 0) return 0;
+  const cycle =
+    (state.walkWeight * WALK_STRIDE_SPEED * WALK_SECONDS +
+      state.runWeight * RUN_STRIDE_SPEED * RUN_SECONDS +
+      state.sprintWeight * SPRINT_STRIDE_SPEED * SPRINT_SECONDS) /
+    total;
+  return speed / PLAYER_SCALE / cycle;
+}
 /** 도형 캐릭터에서 spin으로 들어 올린 최고 높이(0.35)를 바닥 칸으로(캐릭터 배율 1.25). */
 const SPIN_PEAK = 0.35 * 1.25;
 
 export function characterClipState({ speed, action, posture, scene }: CharacterClipInput): CharacterClipState {
-  const walk = Math.min(1, speed / 1.6);
+  const move = Math.min(1, speed / 1.6);
+  // 움직이는 몫(move)을 속력에 따라 걷기 → 달리기 → 빠른 달리기로 나눈다
+  const toRun = clamp01((speed - WALK_RUN_FROM) / (RUN_FULL - WALK_RUN_FROM));
+  const toSprint = clamp01((speed - RUN_FULL) / (SPRINT_FULL - RUN_FULL));
   const state: CharacterClipState = {
-    idleWeight: 1 - walk,
-    walkWeight: walk,
+    idleWeight: 1 - move,
+    walkWeight: move * (1 - toRun),
     // 디딘 발이 뒤로 가는 속도가 이동 속도와 같게(발이 미끄러지지 않게).
     walkTimeScale: speed / (WALK_STRIDE_SPEED * PLAYER_SCALE),
+    runWeight: move * toRun * (1 - toSprint),
+    sprintWeight: move * toSprint,
+    runTimeScale: speed / (RUN_STRIDE_SPEED * PLAYER_SCALE),
+    sprintTimeScale: speed / (SPRINT_STRIDE_SPEED * PLAYER_SCALE),
     actionClip: null,
     actionTime: 0,
     actionWeight: 0,

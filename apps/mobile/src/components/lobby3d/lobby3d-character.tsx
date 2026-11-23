@@ -3,7 +3,7 @@ import { Component, Suspense, useEffect, useMemo, useState, type MutableRefObjec
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
-import { characterClipState } from "@/lib/lobby3d/character-clips";
+import { characterClipState, locomotionPhaseRate } from "@/lib/lobby3d/character-clips";
 import { outlineAttributes, type OutlineAttributeChoice } from "@/lib/lobby3d/outline-attributes";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 import { PLAYER_RATIO, PLAYER_SCALE } from "@/lib/lobby3d/player";
@@ -255,6 +255,8 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
     const handMid = new THREE.Vector3();
     const bookAt = new THREE.Vector3();
     let activeOneShot: string | null = null;
+    // 걷기·달리기·빠른 달리기가 함께 쓰는 걸음 위상(한 바퀴 = 1). 셋 다 왼발 디딤이 0이다
+    let stepPhase = 0;
     const handle: CharacterHandle = {
       group: built.group,
       update(sim, dt, nowSec) {
@@ -262,10 +264,20 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
         const state = characterClipState({ speed, action: sim.action, posture: sim.posture, scene: sim.scene });
         const base = 1 - state.actionWeight;
         built.actions.get("idle")?.setEffectiveWeight(state.idleWeight * base);
-        const walk = built.actions.get("walk");
-        if (walk) {
-          walk.setEffectiveWeight(state.walkWeight * base);
-          walk.setEffectiveTimeScale(state.walkTimeScale);
+        // 세 이동 클립은 같은 위상에서 꺼내, 섞이는 동안 다리·팔이 엇갈리지 않게 한다.
+        // 위상은 이동 거리만큼 나아가 발이 미끄러지지 않는다(한 클립만 쓸 때는 walkTimeScale 등 배속으로 트는 것과 같다).
+        stepPhase = (stepPhase + locomotionPhaseRate(speed, state) * dt) % 1;
+        const moves: [string, number][] = [
+          ["walk", state.walkWeight],
+          ["run", state.runWeight],
+          ["sprint", state.sprintWeight]
+        ];
+        for (const [name, weight] of moves) {
+          const move = built.actions.get(name);
+          if (!move) continue;
+          move.setEffectiveWeight(weight * base);
+          move.setEffectiveTimeScale(0);
+          move.time = stepPhase * move.getClip().duration;
         }
         // 한 번 하는 동작은 시뮬레이션의 지난 시간에 맞춰 클립 시간을 직접 둔다.
         const shot = state.actionClip;
@@ -284,7 +296,7 @@ export function Character({ kit, outline, handleRef, wear = NO_WEAR, look = null
         built.mixer.update(dt);
 
         // 가만히 있을 때 가끔 고개를 돌린다(도형 캐릭터와 같은 규칙). 클립 위에 머리 뼈를 더 돌린다.
-        const idle = state.walkWeight < 0.05 && !sim.action;
+        const idle = state.idleWeight > 0.95 && !sim.action;
         if (idle && nowSec > look.next) {
           look.target = (sim.nextRandom() - 0.5) * 1.1;
           look.next = nowSec + 3 + sim.nextRandom() * 4;

@@ -176,9 +176,9 @@ describe("[spec] 마을에서 움직이기(B1~B9)", () => {
     expect(snap.bubbleButton).toBe(PLACE_BUBBLE[to].button);
   });
 
-  it("B7: 걷는 속도 3.2칸/초, 돌아서는 빠르기 10(방과 같다)", () => {
+  it("B7: 걷는 속도 2.4칸/초, 돌아서는 빠르기 10(방과 같다)", () => {
     const sim = newSim();
-    expect(sim.settings).toEqual({ speed: 3.2, turn: 10 });
+    expect(sim.settings).toEqual({ speed: 2.4, turn: 10 }); // 작업 137(08 결정): 기본 걷기 3.2 -> 2.4
   });
 
   it("B8: 아무것도 하지 않으면 20초 전에는 서 있고, 20초 뒤에 앉기 시작한다", () => {

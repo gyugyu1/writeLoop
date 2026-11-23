@@ -264,9 +264,9 @@ describe("[spec] 개발 화면에서 마을 열기(D1~D8)", () => {
     expect(sim().action?.type).toBe("wave");
     expect(screen.getByText("동작: 손 흔들기")).toBeTruthy();
 
-    await nudge("걷는 속도", "decrement", 12);
-    expect(sliderNow("걷는 속도")).toBeCloseTo(2.0, 9);
-    expect(sim().settings.speed).toBeCloseTo(2.0, 9);
+    await nudge("걷는 속도", "decrement", 12); // 작업 137(08 결정): 기본 2.4에서 12번 낮추면 슬라이더 최소 1.4에서 멈춘다
+    expect(sliderNow("걷는 속도")).toBeCloseTo(1.4, 9);
+    expect(sim().settings.speed).toBeCloseTo(1.4, 9);
   });
 
   it("D7: '꾸미기'가 보이는 로비 화면에서 마을에 있는 동안은 '꾸미기'가 없고, 방으로 돌아오면 다시 있다(04 결정 3)", async () => {

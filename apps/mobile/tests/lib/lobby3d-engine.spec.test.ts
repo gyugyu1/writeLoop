@@ -278,11 +278,11 @@ describe("[spec] 손가락 따라 걷기와 충돌(S17~S21)", () => {
     expect(speeds[speeds.length - 1]).toBe(0);
   });
 
-  it("S21: 걷는 속도 값을 키우면 같은 시간에 더 멀리 간다", () => {
+  it("S21: 걷는 속도 값을 키우면(작업 137 08 결정: 3.5칸 앞, 걷기 모드로 고침) 같은 시간에 더 멀리 간다", () => {
     const traveled = (speed: number) => {
       const sim = new LobbySim({ x: 4.2, z: 3 });
       sim.settings = { ...sim.settings, speed };
-      tap(sim, floorHit({ x: 4.2, z: 10.5 }), 0);
+      tap(sim, floorHit({ x: 4.2, z: 6.5 }), 0);
       run(sim, 15, 100);
       return Math.hypot(sim.x - 4.2, sim.z - 3);
     };

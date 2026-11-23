@@ -279,9 +279,9 @@ describe("[spec] 길 찾기와 누르기(S09, S17)", () => {
     expect(dist(end, target)).toBeLessThanOrEqual(near + 0.6);
   });
 
-  it("S17: 걷는 속도 3.2칸/초, 돌아서는 빠르기 10(방·마을과 같다)", () => {
+  it("S17: 걷는 속도 2.4칸/초, 돌아서는 빠르기 10(방·마을과 같다)", () => {
     applyArea("shop");
-    expect(new LobbySim({ x: 16.01, z: 14.65 }).settings).toEqual({ speed: 3.2, turn: 10 });
+    expect(new LobbySim({ x: 16.01, z: 14.65 }).settings).toEqual({ speed: 2.4, turn: 10 }); // 작업 137(08 결정): 기본 걷기 3.2 -> 2.4
   });
 });
 

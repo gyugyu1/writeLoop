@@ -9,25 +9,26 @@
 import { characterClipState } from "@/lib/lobby3d/character-clips";
 import type { ActionType } from "@/lib/lobby3d/engine";
 
-const CYCLE = (2 * Math.PI) / 0.8;
-const walkScale = (speed: number) => (3 + 3.2 * speed) / CYCLE;
+// 최종 모델(Codex 16차) walk: 디딘 발 속도 0.689999 모델 단위/초 × PLAYER_SCALE 2.27(18 결정).
+const STANCE_SPEED = 0.689999 * 2.27;
+const walkScale = (speed: number) => speed / STANCE_SPEED;
 const SPIN_PEAK = 0.35 * 1.25;
 
 describe("[spec] 서 있기·걷기 클립 섞기", () => {
-  it("[spec] 속도 0: walk 무게 0, idle 무게 1, walk 재생 속도 3 ÷ (2π/0.8)", () => {
+  it("[spec] 속도 0: walk 무게 0, idle 무게 1, walk 재생 속도 0 ÷ (0.689999 × 2.27)", () => {
     const s = characterClipState({ speed: 0, action: null });
     expect(s.walkWeight).toBeCloseTo(0, 10);
     expect(s.idleWeight).toBeCloseTo(1, 10);
     expect(s.walkTimeScale).toBeCloseTo(walkScale(0), 10);
-    expect(s.walkTimeScale).toBeCloseTo(0.381972, 5);
+    expect(s.walkTimeScale).toBeCloseTo(0, 5);
   });
 
-  it("[spec] 속도 0.8: 걷는 정도 0.5라 walk 0.5, idle 0.5, walk 재생 속도 (3 + 3.2×0.8) ÷ (2π/0.8)", () => {
+  it("[spec] 속도 0.8: 걷는 정도 0.5라 walk 0.5, idle 0.5, walk 재생 속도 0.8 ÷ (0.689999 × 2.27)", () => {
     const s = characterClipState({ speed: 0.8, action: null });
     expect(s.walkWeight).toBeCloseTo(0.5, 10);
     expect(s.idleWeight).toBeCloseTo(0.5, 10);
     expect(s.walkTimeScale).toBeCloseTo(walkScale(0.8), 10);
-    expect(s.walkTimeScale).toBeCloseTo(0.707921, 5);
+    expect(s.walkTimeScale).toBeCloseTo(0.510759, 5);
   });
 
   it("[spec] 속도 0.4: walk 0.25, idle 0.75", () => {
@@ -44,12 +45,12 @@ describe("[spec] 서 있기·걷기 클립 섞기", () => {
     expect(s.walkTimeScale).toBeCloseTo(walkScale(1.6), 10);
   });
 
-  it("[spec] 속도 2.6(기본 걷는 속도): 걷는 정도는 1을 넘지 않고, walk 재생 속도는 속도를 따라 (3 + 3.2×2.6) ÷ (2π/0.8)", () => {
+  it("[spec] 속도 2.6(기본 걷는 속도): 걷는 정도는 1을 넘지 않고, walk 재생 속도는 속도를 따라 2.6 ÷ (0.689999 × 2.27)", () => {
     const s = characterClipState({ speed: 2.6, action: null });
     expect(s.walkWeight).toBeCloseTo(1, 10);
     expect(s.idleWeight).toBeCloseTo(0, 10);
     expect(s.walkTimeScale).toBeCloseTo(walkScale(2.6), 10);
-    expect(s.walkTimeScale).toBeCloseTo(1.441307, 5);
+    expect(s.walkTimeScale).toBeCloseTo(1.659965, 5);
   });
 
   it("[spec] 동작이 없으면 재생할 동작 클립이 없고 돌리기·들어 올리기도 없다", () => {

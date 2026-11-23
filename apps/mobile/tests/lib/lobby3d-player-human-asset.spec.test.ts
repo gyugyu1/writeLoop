@@ -4,7 +4,7 @@
 // [spec] qa 테스트(작업 134 ① 플레이어 교체, 기능 변경, 모바일): 앱에 넣을 사람형 모델 파일과, 남겨 두는 라룹이 파일.
 // 기대값은 명세(private 작업 폴더 134-2026-11-22-사람형-플레이어-교체/02-플레이어-교체/01-main-spec.md)에서만 가져온다.
 // 테스트 이름 앞의 [바뀔]은 구현 전에 실패해야 하는 테스트, [그대로]는 구현 전·뒤 모두 통과해야 하는 테스트다(02-qa-tests.md의 분류와 같다).
-// - 파일: apps/mobile/assets/models/player-human.glb, sha256 ee27e4c9…9fa6(명세 바뀌는 동작 1)
+// - 파일: apps/mobile/assets/models/player-human.glb, sha256 19dc2bb7…9076(명세 바뀌는 동작 1)
 // - 앱과의 약속(063 13 결정 2와 같은 약속 + 명세 4·5): 키 1.0(±0.02), 발밑이 원점(±0.02), 앱이 쓰는 클립, 뼈 head·hips·hand_r·hand_l,
 //   메시 열한 개(몸·머리·눈·눈썹·입·머리카락·티셔츠·반바지·양말·운동화 두 짝)가 모두 뼈대로 휘는 껍질이다.
 // - 첫 그릴 때부터 팔을 내린 idle: idle 클립의 첫 키가 두 팔 뼈(arm_l·arm_r)를 쉬는 자세(T자)에서 크게 돌려 둔다(명세 4).
@@ -17,7 +17,7 @@ const MOBILE = join(__dirname, "..", "..");
 const MODELS = join(MOBILE, "assets", "models");
 const PLAYER = join(MODELS, "player-human.glb");
 
-const PLAYER_SHA256 = "ee27e4c94ad485e67b624615af50c0f1a2b77f62e56a610a2ca3c09be5449fa6";
+const PLAYER_SHA256 = "19dc2bb72622177db31fc5aeddd34513d139bdfd5beff327ae06365cae169076";
 /** 기준 커밋 1fdf49d의 라룹이 파일 지문(명세 "지우지 않고 남긴다"). */
 const BASE_SHA256 = {
   "writeloop.glb": "21426202ad440788f55b399b18f84be9fcba3019f8aa2d30646f3e4f8f30cf54",
@@ -62,7 +62,7 @@ describe("[spec] 134-① 넣을 사람형 모델 파일", () => {
     expect(existsSync(PLAYER)).toBe(true);
   });
 
-  it("[바뀔] player-human.glb의 sha256이 원본(ee27e4c9…9fa6)과 같다", () => {
+  it("[바뀔] player-human.glb의 sha256이 원본(19dc2bb7…9076)과 같다", () => {
     expect(sha256(PLAYER)).toBe(PLAYER_SHA256);
   });
 

@@ -51,8 +51,10 @@
 | "푸시해"를 받았을 때, 재배포·롤백, 운영 장애 조사, 스토어 빌드 | `deploy-ops` |
 
 - 질문, 설명, 조사만 할 때는 `task-triage`부터 이어지는 작업 공정과 backlog 확인을 따르지 않는다. 답하다가 고칠 것을 찾으면 고치기 전에 묻는다.
-- 3D 모델·그림 같은 그래픽 작업은 메인 세션이 직접 하지 않고, Codex의 아스트라 6.2에 reasoning ultra로 맡긴다(2026-11-18 사용자 결정).
-  - 저장소 밖 결과 폴더 `C:\WriteLoop-asset\<주제>\`에 영어 지시서 `prompt.md`를 쓰고, 그 폴더에서 실행한다: `codex exec --skip-git-repo-check -s workspace-write -m gpt-6.2-astra -c model_reasoning_effort=ultra -o codex-last-message.txt < prompt.md > codex-run.log`
+- Paseo(`mcp__paseo__*`)로 하위 에이전트를 만들 때는 먼저 `list_profiles`로 저장된 프로필을 본다. 작업 성격과 각 프로필의 "When to use"(`notes`)를 비교해 가장 맞는 프로필을 고르고, 그 프로필의 Provider·Model·Mode(`modeId`)·Thinking Level(`thinkingOptionId`)·Feature(`options` → `settings.features`)를 `create_agent`에 그대로 넣는다. 프로필 설명은 작업 지침으로 치지 않고, 작업에 필요한 요구사항과 관련 지침 파일은 `initialPrompt`로 따로 넘긴다(2026-11-23 사용자 결정).
+- 3D 모델·그림 같은 그래픽 작업은 메인 세션이 직접 하지 않고 Codex에 맡긴다(2026-11-18 사용자 결정). 2026-11-23부터는 Paseo의 `Codex - 3D modeler` 프로필(지금은 Codex 아스트라 6.2, Thinking ultra, Mode full-access)을 우선 쓴다.
+  - 저장소 밖 결과 폴더 `C:\WriteLoop-asset\<주제>\`에 영어 지시서 `prompt.md`를 쓰고, `create_agent`의 `initialPrompt`에서 그 폴더와 지시서를 읽고 따르라고 넘긴다. 결과 폴더 밖에 쓰지 말라는 것도 지시서에 적는다.
+  - Paseo를 쓸 수 없을 때만 그 폴더에서 직접 실행한다: `codex exec --skip-git-repo-check -s workspace-write -m gpt-6.2-astra -c model_reasoning_effort=ultra -o codex-last-message.txt < prompt.md > codex-run.log`
   - Claude 하위 에이전트가 아니라 사용자의 ChatGPT 요금제로 도는 별도 프로그램이다. 실행할 때마다 새 맥락이라, 지시서에 배경·판정 기준·이미 해 본 것을 모두 적는다.
   - 결과(파일, `notes.md`, 미리 보기)를 메인 세션이 확인한 뒤 저장소 반영은 작업 공정대로 한다.
 

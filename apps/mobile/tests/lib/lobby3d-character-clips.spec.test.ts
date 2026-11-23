@@ -45,12 +45,13 @@ describe("[spec] 서 있기·걷기 클립 섞기", () => {
     expect(s.walkTimeScale).toBeCloseTo(walkScale(1.6), 10);
   });
 
-  it("[spec] 속도 2.6(기본 걷는 속도): 걷는 정도는 1을 넘지 않고, walk 재생 속도는 속도를 따라 2.6 ÷ (0.689999 × 2.27)", () => {
-    const s = characterClipState({ speed: 2.6, action: null });
+  // 작업 137 명세 2·"고칠 기존 테스트": 옛 속도 2.6은 걷기와 run이 섞이기 시작하는 2.4를 넘으므로, 기본 걷는 속도 2.4로 고쳤다.
+  it("[spec] 속도 2.4(기본 걷는 속도): 걷는 정도는 1을 넘지 않고, walk 재생 속도는 속도를 따라 2.4 ÷ (0.689999 × 2.27)", () => {
+    const s = characterClipState({ speed: 2.4, action: null });
     expect(s.walkWeight).toBeCloseTo(1, 10);
     expect(s.idleWeight).toBeCloseTo(0, 10);
-    expect(s.walkTimeScale).toBeCloseTo(walkScale(2.6), 10);
-    expect(s.walkTimeScale).toBeCloseTo(1.659965, 5);
+    expect(s.walkTimeScale).toBeCloseTo(walkScale(2.4), 10);
+    expect(s.walkTimeScale).toBeCloseTo(1.532275, 5);
   });
 
   it("[spec] 동작이 없으면 재생할 동작 클립이 없고 돌리기·들어 올리기도 없다", () => {
@@ -117,7 +118,7 @@ describe("[spec] 동작 클립", () => {
   });
 
   it("[spec] 걸으면서 poke를 받아도 동작 클립은 poke다", () => {
-    const s = characterClipState({ speed: 2.6, action: { type: "poke", t: 0.4 } });
+    const s = characterClipState({ speed: 2.4, action: { type: "poke", t: 0.4 } });
     expect(s.actionClip).toBe("poke");
     expect(s.actionTime).toBeCloseTo(0.4, 10);
     expect(s.actionWeight).toBeCloseTo(1, 10);
@@ -146,5 +147,75 @@ describe("[spec] spin(클립 없음)", () => {
   it("[spec] 가장 높이 들 때 0.35 × 1.25 = 0.4375칸", () => {
     const s = characterClipState({ speed: 0, action: { type: "spin", t: 0.45 } });
     expect(s.spinLift).toBeCloseTo(0.4375, 10);
+  });
+});
+
+// ---- 작업 137 명세 2: 동작 섞기는 실제 속도로 정한다(바뀔 동작) ----
+// 서 있기 ↔ 걷기는 지금처럼(0~1.6), 걷기 ↔ run은 2.4~3.6, run ↔ sprint는 3.6~5.0에서 고르게 섞는다.
+// 각 클립의 재생 속도는 디딘 발 속도가 이동 속도와 같게: 속도 ÷ (클립의 디딘 발 속도 × 2.27).
+// 디딘 발 속도(03 결정 표, 모델 단위/초): walk 0.689999, run 1.189421, sprint 1.223790.
+// 가정한 부르는 방법: characterClipState의 결과에 runWeight, sprintWeight, runTimeScale, sprintTimeScale를 더한다.
+const RUN_SCALE = (speed: number) => speed / (1.189421 * 2.27);
+const SPRINT_SCALE = (speed: number) => speed / (1.22379 * 2.27);
+
+type Mix = { idleWeight: number; walkWeight: number; runWeight: number; sprintWeight: number; runTimeScale: number; sprintTimeScale: number };
+const mix = (speed: number) => characterClipState({ speed, action: null }) as unknown as ReturnType<typeof characterClipState> & Mix;
+
+describe("[spec] 137 걷기 ↔ run ↔ sprint 섞기(바뀔 동작)", () => {
+  // [속도, idle, walk, run, sprint]
+  const WEIGHTS: [number, number, number, number, number][] = [
+    [0, 1, 0, 0, 0],
+    [0.8, 0.5, 0.5, 0, 0],
+    [1.6, 0, 1, 0, 0],
+    [2.0, 0, 1, 0, 0],
+    [2.4, 0, 1, 0, 0],
+    [3.0, 0, 0.5, 0.5, 0],
+    [3.6, 0, 0, 1, 0],
+    [4.3, 0, 0, 0.5, 0.5],
+    [5.0, 0, 0, 0, 1],
+    [6.0, 0, 0, 0, 1]
+  ];
+
+  it.each(WEIGHTS)("[spec] 속도 %s: idle %s, walk %s, run %s, sprint %s", (speed, idle, walk, run, sprint) => {
+    const s = mix(speed);
+    expect(s.idleWeight).toBeCloseTo(idle, 10);
+    expect(s.walkWeight).toBeCloseTo(walk, 10);
+    expect(s.runWeight).toBeCloseTo(run, 10);
+    expect(s.sprintWeight).toBeCloseTo(sprint, 10);
+  });
+
+  it("[spec] 2.4~3.6에서 walk 무게는 고르게 줄고 run 무게는 고르게 는다(2.7: walk 0.75, run 0.25)", () => {
+    const s = mix(2.7);
+    expect(s.walkWeight).toBeCloseTo(0.75, 10);
+    expect(s.runWeight).toBeCloseTo(0.25, 10);
+  });
+
+  it("[spec] 3.6~5.0에서 run ↔ sprint는 고르게 섞는다(4.0: run 0.714286…, sprint 0.285714…)", () => {
+    const s = mix(4.0);
+    expect(s.runWeight).toBeCloseTo(1 - 0.4 / 1.4, 10);
+    expect(s.sprintWeight).toBeCloseTo(0.4 / 1.4, 10);
+  });
+
+  it("[spec] 어느 속도에서도 무게의 합은 1이다", () => {
+    for (let speed = 0; speed <= 6; speed += 0.1) {
+      const s = mix(speed);
+      expect(s.idleWeight + s.walkWeight + s.runWeight + s.sprintWeight).toBeCloseTo(1, 10);
+    }
+  });
+
+  it("[spec] run 재생 속도는 속도 ÷ (1.189421 × 2.27), sprint는 속도 ÷ (1.223790 × 2.27)이다", () => {
+    expect(mix(3.6).runTimeScale).toBeCloseTo(RUN_SCALE(3.6), 10);
+    expect(mix(3.0).runTimeScale).toBeCloseTo(RUN_SCALE(3.0), 10);
+    expect(mix(5.0).sprintTimeScale).toBeCloseTo(SPRINT_SCALE(5.0), 10);
+    expect(mix(4.3).sprintTimeScale).toBeCloseTo(SPRINT_SCALE(4.3), 10);
+  });
+
+  it("[spec] 걷기 재생 속도 식은 그대로다(3.0에서도 속도 ÷ (0.689999 × 2.27))", () => {
+    expect(mix(3.0).walkTimeScale).toBeCloseTo(walkScale(3.0), 10);
+  });
+
+  it("[spec] 3.6에서 run 재생 속도 ≈ 1.33334, 5.0에서 sprint 재생 속도 ≈ 1.79985", () => {
+    expect(mix(3.6).runTimeScale).toBeCloseTo(1.33334, 4);
+    expect(mix(5.0).sprintTimeScale).toBeCloseTo(1.79985, 4);
   });
 });

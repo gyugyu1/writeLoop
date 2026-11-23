@@ -8,16 +8,17 @@
 import { characterClipState } from "@/lib/lobby3d/character-clips";
 import { LobbySim, type PointerHit } from "@/lib/lobby3d/engine";
 
-const NEW_SPEED = 3.2;
+// 작업 137 명세 4·"고칠 기존 테스트": 기본 걷기 속도 3.2 -> 2.4(걷기 모드 속도). 먼 곳은 거리별 모드(lobby3d-move-modes.spec.test.ts)가 정한다.
+const NEW_SPEED = 2.4;
 
 describe("[spec] 기본 걷기 속도(바뀔 동작)", () => {
-  it("[spec] 새 LobbySim의 기본 걷는 속도는 3.2칸/초다", () => {
+  it("[spec] 새 LobbySim의 기본 걷는 속도는 2.4칸/초다", () => {
     expect(new LobbySim({ random: () => 0.5 }).settings.speed).toBe(NEW_SPEED);
   });
 
-  it("[spec] 설정을 건드리지 않고 먼 곳을 톡 하면, 걷는 동안 빨라지다가 3.2칸/초에 닿고 그보다 빨라지지 않는다", () => {
-    const sim = new LobbySim({ random: () => 0.5 }); // (4.2, 6.2)에서 시작
-    const hit: PointerHit = { point: { x: 4.2, z: 10.5 }, mark: null, onCharacter: false };
+  it("[spec] 설정을 건드리지 않고 가까운 곳(남은 거리 4 미만)을 톡 하면, 걷는 동안 빨라지다가 2.4칸/초에 닿고 그보다 빨라지지 않는다", () => {
+    const sim = new LobbySim({ random: () => 0.5 }); // (4.2, 6.2)에서 시작, 3.3칸 앞
+    const hit: PointerHit = { point: { x: 4.2, z: 9.5 }, mark: null, onCharacter: false };
     sim.pointerDown(hit, 100, 100, 0);
     expect(sim.pointerUp(50)).toBe("walk");
     let fastest = 0;
@@ -35,7 +36,7 @@ describe("[spec] 그대로 둘 동작", () => {
     expect(new LobbySim({ random: () => 0.5 }).settings.turn).toBe(10);
   });
 
-  it("[spec] 새 기본 속도 3.2에서 걷기 클립은 다 섞이고(1), 재생 속도는 3.2 ÷ (0.689999 × 2.27)이다", () => {
+  it("[spec] 새 기본 속도 2.4에서 걷기 클립은 다 섞이고(1), 재생 속도는 2.4 ÷ (0.689999 × 2.27)이다", () => {
     const s = characterClipState({ speed: NEW_SPEED, action: null });
     expect(s.walkWeight).toBe(1);
     expect(s.idleWeight).toBe(0);

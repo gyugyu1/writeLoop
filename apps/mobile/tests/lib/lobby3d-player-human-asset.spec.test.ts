@@ -24,9 +24,10 @@ const BASE_SHA256 = {
   "wear-goggles.glb": "6b03823f93a7d7ba645b43cd7888ce2bc902a3941d0e99c053bda2f5e5604f3e"
 };
 
-/** 지금 동작 상태(character-clips)가 쓰는 클립. 새 클립(sleep·surprised·talk)은 앱이 쓰지 않아도 된다. */
+/** 지금 동작 상태(character-clips)가 쓰는 클립. 새 클립(sleep·surprised·talk)은 앱이 쓰지 않아도 된다.
+ * 작업 137 명세 3·"고칠 기존 테스트"로 qa가 고침: run·sprint를 앱이 쓰는 클립에 더했다(모델 파일 해시는 그대로). */
 const APP_CLIPS = [
-  "idle", "walk", "wave", "hop", "jump", "sit_down", "sit_idle", "stand_up", "chair_sit_down", "chair_sit_idle", "chair_stand_up",
+  "idle", "walk", "run", "sprint", "wave", "hop", "jump", "sit_down", "sit_idle", "stand_up", "chair_sit_down", "chair_sit_idle", "chair_stand_up",
   "book_take", "book_put", "look_around", "point", "poke", "think_in", "think_idle", "think_out"
 ];
 const APP_BONES = ["head", "hips", "hand_r", "hand_l"];
@@ -84,7 +85,7 @@ describe("[spec] 134-① 넣을 사람형 모델 파일", () => {
     expect(Math.abs(minY)).toBeLessThanOrEqual(TOLERANCE);
   });
 
-  it("[바뀔] 앱이 쓰는 클립 19개가 모두 있다", () => {
+  it("[바뀔] 앱이 쓰는 클립 21개(walk·run·sprint 포함)가 모두 있다", () => {
     const names = new Set(parse(readFileSync(PLAYER)).gltf.animations.map((a) => a.name));
     expect(APP_CLIPS.filter((name) => !names.has(name))).toEqual([]);
   });
